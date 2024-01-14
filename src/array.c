@@ -87,7 +87,7 @@ void* nqiv_array_pop_ptr(nqiv_array* array)
 		return NULL;
 	}
 	const void* output = ((void**)array->data)[offset];
-	memset( array->data + offset, 0, sizeof(void*) );
+	memset( &array->data[offset], 0, sizeof(void*) );
 	array->position = offset;
 	return output;
 }
