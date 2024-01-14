@@ -37,11 +37,9 @@ void nqiv_log_destroy(nqiv_log_ctx* ctx)
 	ctx->level = 0;
 	if(ctx->streams != NULL) {
 		omp_destroy_lock(&ctx->lock);
-		memset( ctx->streams, 0, ctx->streams_len * sizeof(FILE*) );
-		free(ctx->streams);
+		nqiv_array_destroy(ctx->streams);
 		ctx->streams = NULL;
 	}
-	ctx->streams_len = 0;
 	assert(ctx->streams == NULL)
 }
 
@@ -52,13 +50,12 @@ void nqiv_log_init(nqiv_log_ctx* ctx)
 		return;
 	}
 	nqiv_log_destroy(ctx);
-	ctx->streams = (FILE**)calloc( 1, sizeof(FILE*) );
+	ctx->streams = nqiv_array_create( 1 * sizeof(FILE*) );
 	if(ctx->streams == NULL) {
 		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN,
 			"Failed to allocate starting streams memory.\n");
 		return;
 	}
-	ctx->streams_len = 1;
 	ctx->level = level;
 	omp_init_lock(&ctx->lock);
 }
@@ -79,20 +76,10 @@ void nqiv_log_add_stream(nqiv_log_ctx* ctx, FILE* stream)
 			"Cannot add stream without available memory.\n");
 		return;
 	}
-	const int new_streams_len = ctx->streams_len + 1;
-	assert(new_streams_len >= 1);
-	FILE** new_streams = (FILE**)realloc(ctx->streams,
-		sizeof(FILE*) * new_streams_len);
-	if(new_streams == NULL) {
+	if( !nqiv_array_push_FILE_ptr(ctx->streams, stream) ) {
 		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN,
 			"Could not allocate memory for new stream.\n");
-		return;
 	}
-	ctx->streams = new_streams;
-	assert(ctx->streams[ctx->streams_len - 1] == NULL);
-	ctx->streams[ctx->streams_len - 1] = stream;
-	ctx->streams_len = new_streams_len;
-	ctx->streams[ctx->streams_len - 1] = NULL;
 }
 
 void write_prefix_timeinfo(FILE* stream, const char* fmt, const int formatter_start, const int formatter_len)
@@ -213,7 +200,6 @@ void nqiv_log_write(nqiv_log_ctx* ctx,
 		return;
 	}
 	omp_set_lock(&ctx->lock);
-	assert(ctx->streams_len >= 1);
 	if(format == NULL) {
 		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN,
 			"No format message to write.\n");
@@ -224,13 +210,19 @@ void nqiv_log_write(nqiv_log_ctx* ctx,
 		omp_unset_lock(&ctx->lock);
 		return;
 	}
-	int idx;
-	for(idx = 0; idx < ctx->streams_len - 1; ++idx) {
+	int idx = 0;
+	int stream = NULL;
+	while(true) {
+		stream = nqiv_array_get_FILE_ptr(ctx->streams, idx);
+		if(stream == NULL) {
+			break;
+		}
 		va_list args;
 		va_start(args, format);
 		write_prefix(ctx, level, stream);
-		vfprintf(ctx->streams[idx], format, args);
+		vfprintf(stream, format, args);
 		va_end(args);
+		++idx;
 	}
 	omp_unset_lock(&ctx->lock);
 }

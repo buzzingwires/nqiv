@@ -24,8 +24,7 @@ typedef struct nqiv_log_ctx
 	char prefix_format[NQIV_LOG_PREFIX_FORMAT_LEN];
 	char error_message[NQIV_LOG_ERROR_MESSAGE_LEN];
 	nqiv_log_level level;
-	FILE** streams;
-	int streams_len;
+	nqiv_array* streams;
 } nqiv_log_ctx;
 
 void nqiv_log_clear_error(nqiv_log_ctx* ctx);

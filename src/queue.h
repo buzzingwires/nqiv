@@ -10,9 +10,7 @@
 typedef struct nqiv_queue
 {
 	omp_lock_t lock;
-	void** entries;
-	int length;
-	int position;
+	nqiv_array* array;
 	nqiv_log_ctx* logger;
 } nqiv_queue;
 
