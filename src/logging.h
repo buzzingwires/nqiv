@@ -1,0 +1,41 @@
+#ifndef NQIV_LOG_H
+#define NQIV_LOG_H
+
+#include <stdio.h>
+
+#include <omp.h>
+
+#define NQIV_LOG_PREFIX_FORMAT_LEN 255
+#define NQIV_LOG_ERROR_MESSAGE_LEN 255
+#define NQIV_LOG_STRFTIME_LEN 255
+
+typedef enum nqiv_log_level
+{
+	NQIV_LOG_ANY = 0,
+	NQIV_LOG_DEBUG = 10,
+	NQIV_LOG_INFO = 20,
+	NQIV_LOG_WARNING = 30,
+	NQIV_LOG_ERROR = 40,
+} NQIV_log_level;
+
+typedef struct nqiv_log_ctx
+{
+	omp_lock_t lock;
+	char prefix_format[NQIV_LOG_PREFIX_FORMAT_LEN];
+	char error_message[NQIV_LOG_ERROR_MESSAGE_LEN];
+	nqiv_log_level level;
+	FILE** streams;
+	int streams_len;
+} nqiv_log_ctx;
+
+void nqiv_log_clear_error(nqiv_log_ctx* ctx);
+void nqiv_log_set_prefix_format(nqiv_log_ctx* ctx, const char* fmt);
+void nqiv_log_destroy(nqiv_log_ctx* ctx);
+void nqiv_log_init(nqiv_log_ctx* ctx);
+void nqiv_log_add_stream(nqiv_log_ctx* ctx, FILE* stream);
+void nqiv_log_write(nqiv_log_ctx* ctx,
+	const nqiv_log_level level,
+	const char* format,
+	...);
+
+#endif /* NQIV_LOG_H */
