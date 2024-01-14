@@ -131,6 +131,5 @@ void nqiv_array_destroy(nqiv_array* array)
 		memset(array->data, 0, array->data_length);
 		free(array->data);
 	}
-	array->data_length = 0;
-	array->position = 0;
+	memset( array, 0, sizeof(nqiv_array) );
 }

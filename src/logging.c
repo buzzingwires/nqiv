@@ -34,13 +34,11 @@ void nqiv_log_destroy(nqiv_log_ctx* ctx)
 	}
 	nqiv_log_clear_error(ctx);
 	nqiv_log_set_prefix_format(ctx, NULL);
-	ctx->level = 0;
 	if(ctx->streams != NULL) {
 		omp_destroy_lock(&ctx->lock);
 		nqiv_array_destroy(ctx->streams);
-		ctx->streams = NULL;
 	}
-	assert(ctx->streams == NULL)
+	memset( ctx, 0, sizeof(nqiv_log_ctx) );
 }
 
 /* test null ctx */

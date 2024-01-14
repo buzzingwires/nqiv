@@ -14,10 +14,9 @@ void nqiv_queue_destroy(nqiv_queue* queue)
 	if(queue->array != NULL) {
 		omp_destroy_lock(&queue->lock);
 		nqiv_array_destroy(queue->array);
-		queue->array = NULL;
 	}
 	nqiv_log_write(logger, NQIV_LOG_INFO, "Destroyed queue of length %d\n.", queue->array->data_size);
-	queue->logger = NULL;
+	memset( queue, 0, sizeof(nqiv_queue) );
 }
 
 bool nqiv_queue_init(nqiv_queue* queue, nqiv_log_ctx* logger, const int starting_length)
