@@ -16,7 +16,7 @@ typedef enum nqiv_log_level
 	NQIV_LOG_INFO = 20,
 	NQIV_LOG_WARNING = 30,
 	NQIV_LOG_ERROR = 40,
-} NQIV_log_level;
+} nqiv_log_level;
 
 typedef struct nqiv_log_ctx
 {
