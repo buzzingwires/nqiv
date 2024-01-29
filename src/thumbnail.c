@@ -79,7 +79,7 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	assert(image->image.wand != NULL);
 	assert(image->parent.thumbnail.height > 0);
 	assert(image->parent.thumbnail.width > 0);
-	assert(image->thumbnail.path == NULL);
+	/* assert(image->thumbnail.path == NULL); */
 
 	char* pathptr = NULL;
 	if(image->thumbnail.path == NULL) {
