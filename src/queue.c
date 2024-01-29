@@ -36,41 +36,45 @@ bool nqiv_queue_init(nqiv_queue* queue, nqiv_log_ctx* logger, const int starting
 	omp_init_lock(&queue->lock);
 	queue->logger = logger;
 	nqiv_log_write(logger, NQIV_LOG_INFO, "Initialized queue of length %d\n." starting_length);
+	return true;
 }
 
-bool nqiv_queue_push(nqiv_queue* queue, void* entry)
+/*
+bool nqiv_array_push_bytes(nqiv_array* array, void* ptr, const int count);
+bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, void* ptr);
+bool nqiv_array_pop_bytes(nqiv_array* array, const int count, void* ptr);
+*/
+
+bool nqiv_queue_push(nqiv_queue* queue, const int count, void* entry)
 {
-	if(queue == NULL) {
-		return false;
-	}
-	if(queue->array == NULL) {
-		return false;
-	}
+	assert(entry != NULL);
+	assert(queue != NULL);
+	assert(queue->array != NULL);
+	bool result = false
 	omp_set_lock(&queue->lock);
-	if( !nqiv_array_push_ptr(queue->array, entry) ) {
+	if( !nqiv_array_push_bytes(queue->array, entry, count) ) {
 		nqiv_log_write(logger, NQIV_LOG_WARNING, "Failed to push to array of length.\n", queue->array->data_length);
+		result = true;
 	} else {
 		nqiv_log_write(logger, NQIV_LOG_DEBUG, "Pushed to queue of length %d at position %d.\n", queue->array->data_length, queue->array->position - 1);
 	}
 	omp_unset_lock(&queue->lock);
-	return true;
+	return result;
 }
 
-void* nqiv_queue_pop(nqiv_queue* queue)
+bool nqiv_queue_pop(nqiv_queue* queue, const int count, void* entry)
 {
-	if(queue == NULL) {
-		return NULL;
-	}
-	if(queue->array == NULL) {
-		return NULL;
-	}
+	assert(entry != NULL);
+	assert(queue != NULL);
+	assert(queue->array != NULL);
+	bool result = false
 	omp_set_lock(&queue->lock);
-	void* entry = nqiv_array_pop_ptr(queue->array);
-	if(entry != NULL) {
+	if( nqiv_array_pop_bytes(queue->array, count, entry) ) {
 		nqiv_log_write(logger, NQIV_LOG_DEBUG, "Popped from queue at position %d.\n", queue->array->position + 1);
+		result = true;
 	} else {
 		nqiv_log_write(logger, NQIV_LOG_DEBUG, "Queue is already empty. Nothing to pop.\n");
 	}
 	omp_unset_lock(&queue->lock);
-	return entry;
+	return result;
 }
