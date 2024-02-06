@@ -197,6 +197,7 @@ bool nqiv_keybind_text_to_keybind(const char* text, nqiv_keybind_pair* pair)
 bool nqiv_keybind_create_manager(nqiv_keybind_manger* manager, nqiv_log_ctx* logger, const int starting_array_length)
 {
 	assert(manager != NULL);
+	nqiv_log_write(logger, NQIV_LOG_INFO, "Creating keybind manager.\n");
 	nqiv_array* arrayptr = nqiv_array_create( starting_array_length * sizeof(nqiv_keybind_pair) );
 	if(arrayptr == NULL) {
 		return false;
@@ -220,6 +221,7 @@ bool nqiv_keybind_add(nqiv_keybind_manger* manager, const SDL_Keysym* key, const
 bool nqiv_keybind_add_from_text(nqiv_keybind_manger* manager, const char* text)
 {
 	bool success = false;
+	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Adding keybind %s.\n", text);
 	nqiv_keybind_pair pair;
 	if( nqiv_keybind_text_to_keybind(text, &pair) ) {
 		nqiv_keybind_add(manager, &pair.key, pair.action);
@@ -266,6 +268,7 @@ nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manger* manager, const 
 void nqiv_keybind_destroy_manager(nqiv_keybind_manager* manager) {
 	assert(manager != NULL);
 	assert(manager->lookup != NULL);
+	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Destroying keybind manager.\n");
 	nqiv_array_destroy(manager->lookup);
 	memset( manager, 0, sizeof(nqiv_keybind_manager) );
 }
