@@ -3,13 +3,6 @@
 
 #include "queue.h"
 
-typedef struct nqiv_queue
-{
-	omp_lock_t lock;
-	nqiv_array* array;
-	nqiv_log_ctx* logger;
-} nqiv_queue;
-
-void nqiv_worker_main(nqiv_queue* queue);
+void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock);
 
 #endif /* NQIV_WORKER_H */
