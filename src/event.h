@@ -11,18 +11,24 @@ typedef struct nqiv_event_image_load_form_options
 {
 	bool unload;
 	bool file;
+	bool file_soft;
 	bool wand;
-	bool frame;
+	bool wand_soft;
+	bool first_frame;
+	bool next_frame;
 	bool raw;
+	bool raw_soft;
 	bool surface;
+	bool surface_soft;
 } nqiv_event_image_load_form_options;
 
 typedef struct nqiv_event_image_load_options
 {
 	nqiv_image* image;
+	bool set_thumbnail_path;
 	bool create_thumbnail;
-	nqiv_event_image_load_form_options image;
-	nqiv_event_image_load_form_options thumbnail;
+	nqiv_event_image_load_form_options image_options;
+	nqiv_event_image_load_form_options thumbnail_options;
 } nqiv_event_image_load_options;
 
 typedef union nqiv_event_options
@@ -35,7 +41,5 @@ typedef struct nqiv_event
 	nqiv_event_type type;
 	nqiv_event_options options;
 } nqiv_event;
-
-#define NQIV_SDL_EVENT_WORKER_FINISHED 1
 
 #endif /* NQIV_EVENT_H */
