@@ -1,0 +1,926 @@
+#include "logging.h"
+#include "image.h"
+#include "worker.h"
+#include "queue.h"
+#include "event.h"
+#include "montage.h"
+#include "drawing.h"
+#include "keybinds.h"
+
+#define OPTPARSE_IMPLEMENTATION
+#define OPTPARSE_API static
+#include "optparse.h"
+
+#define STARTING_QUEUE_LENGTH 1024
+
+typedef struct nqiv_state
+{
+	bool read_from_stdin;
+	nqiv_log_ctx logger;
+	nqiv_image_manager images;
+	nqiv_keybind_manager keybinds;
+	nqiv_montage_state montage;
+	nqiv_queue thread_queue;
+	bool SDL_inited;
+	SDL_Window* window;
+	SDL_Renderer* renderer;
+	SDL_Texture* texture_background;
+	SDL_Texture* texture_montage_selection;
+	SDL_Texture* texture_montage_alpha_background;
+	SDL_Texture* texture_montage_unloaded_background;
+	SDL_Texture* texture_montage_error_background;
+	SDL_Texture* texture_alpha_background;
+	Uint32 thread_event_number;
+	int thread_count;
+	omp_lock_t* thread_locks;
+	bool in_montage;
+} nqiv_state;
+
+bool nqiv_check_and_print_logger_error(nqiv_log_ctx* logger)
+{
+	if( nqiv_logger_has_error(logger) ) {
+		fputs(logger->error_message, stderr);
+		return false;
+	}
+	return true;
+}
+
+bool nqiv_add_logger_path(nqiv_log_ctx* logger, const char* path)
+{
+	FILE* stream = NULL;
+	if( strcmp(path, "stdout") == 0 ) {
+		stream = stdout;
+	} else if( strcmp(path, "stderr") == 0 ) {
+		stream = stderr;
+	} else {
+		stream = open(path, "r");
+	}
+	if(stream == NULL) {
+		return false;
+	}
+	nqiv_log_add_stream(logger, stream);
+	if( !nqiv_check_and_print_logger_error(logger) ) {
+		return false;
+	}
+	return true;
+}
+
+void nqiv_close_log_streams(nqiv_log_ctx* logger)
+{
+	const int streams_len = logger->streams->position / sizeof(FILE*);
+	int idx;
+	FILE* ptr;
+	for(idx = 0; idx < streams_len; ++idx) {
+		if( nqiv_array_get_bytes(logger->lookup, idx, sizeof(FILE*), &ptr) && ptr != stderr && ptr != stdout ) {
+			close(ptr);
+		}
+	}
+}
+
+void nqiv_state_clear(nqiv_state* state)
+{
+	if(state->thread_queue.array != NULL) {
+		nqiv_queue_destroy(&state->thread_queue);
+	}
+	if(state->keybinds.lookup != NULL) {
+		nqiv_keybind_destroy_manager(&state->keybinds);
+	}
+	if(state->images.images != NULL) {
+		nqiv_image_manager_destroy(&state->images);
+	}
+	if(state->logger.streams != NULL) {
+		nqiv_close_log_streams(&state->logger);
+		nqiv_log_destroy(&state->logger);
+	}
+	if(state->texture_background != NULL) {
+		SDL_DestroyTexture(state->texture_background);
+	}
+	if(state->texture_montage_selection != NULL) {
+		SDL_DestroyTexture(state->texture_montage_selection);
+	}
+	if(state->texture_montage_alpha_background != NULL) {
+		SDL_DestroyTexture(state->texture_montage_alpha_background);
+	}
+	if(state->texture_alpha_background != NULL) {
+		SDL_DestroyTexture(state->texture_alpha_background);
+	}
+	if(state->renderer != NULL) {
+		SDL_DestroyRenderer(state->renderer);
+	}
+	if(state->window != NULL) {
+		SDL_DestroyWindow(state->window);
+	}
+	if(state->sdl_inited) {
+		SDL_Quit();
+	}
+	if(state->thread_locks != NULL) {
+		int idx;
+		for(idx = 0; idx < state->thread_count; ++idx) {
+			omp_destroy_lock(&state->thread_locks[idx]);
+		}
+		free(state->thread_locks);
+	}
+	memset( state, 0, sizeof(nqiv_state) );
+}
+
+bool nqiv_parse_args(int argc, char *argv[], nqiv_state* state)
+{
+	/*
+	nqiv_log_level arg_log_level = NQIV_LOG_WARNING;
+	char* arg_log_prefix = "#time:%Y-%m-%d_%H:%M:%S%z# #level#: ";
+	*/
+	bool success = false;
+	state->read_from_stdin = false;
+	if( !nqiv_log_init(&state->logger) ) {
+		fputs(state->logger.error_message, stderr);
+		return false;
+	}
+	if( !nqiv_image_manager_init(&state->images, &state->logger, STARTING_QUEUE_LENGTH) ) {
+		fputs("Failed to initialize image manager.\n", stderr);
+		return false;
+	}
+	if( !nqiv_keybind_create_manager(&state->keybinds, &state->logger, STARTING_QUEUE_LENGTH) ) {
+		fputs("Failed to initialize image manager.\n", stderr);
+		return false;
+	}
+	if( !nqiv_queue_init(&state->queue, &state->logger, STARTING_QUEUE_LENGTH) ) {
+		fputs("Failed to initialize thread queue.\n", stderr);
+		return false;
+	}
+	struct optparse_long longopts[] = {
+		{"log-level", "v", OPTPARSE_OPTIONAL},
+		{"log-stream", "l", OPTPARSE_OPTIONAL},
+		{"log-prefix", "L", OPTPARSE_OPTIONAL},
+		{"read-from-stdin", "r", OPTPARSE_NONE},
+		{"thumbnail-root", "P", OPTPARSE_OPTIONAL},
+		{"thumbnail-height", "H", OPTPARSE_OPTIONAL},
+		{"thumbnail-width", "W", OPTPARSE_OPTIONAL},
+		{"thumbnail-load", "L", OPTPARSE_NONE},
+		{"thumbnail-save", "S", OPTPARSE_NONE},
+		{"accepted-extension", "e", OPTPARSE_OPTIONAL},
+		{"keybind", "k", OPTPARSE_OPTIONAL},
+		{"queue-length", "q", OPTPARSE_OPTIONAL},
+		{0}
+	};
+	struct optparse options;
+	optparse_init(&options, argv);
+	int option;
+	int tmpint = 0;
+    while ((option = optparse_long(&options, longopts, NULL)) != -1) {
+        switch (option) {
+        case 'v':
+			state->logger.level = nqiv_log_level_from_string(options.optarg);
+			if(state->logger.level == NQIV_LOG_UNKNOWN) {
+				fprintf(stderr, "Unknown log level %s", options.optarg);
+				return false;
+			}
+            break;
+        case 'l':
+			if( !nqiv_add_logger_path(state->logger, options.optarg) ) {
+				return false;
+			}
+            break;
+        case 'L':
+			nqiv_log_set_prefix_format(state->logger, options.optarg);
+			if( nqiv_check_and_print_logger_error(state->logger) ) {
+				return false;
+			}
+            break;
+		case 'r':
+			state->read_from_stdin = true;
+			break;
+        case 'P':
+			state->images.thumbnail.root = options.optarg;
+			break;
+        case 'H':
+            tmpint = strtol(options.optarg);
+			if(tmpint <= 0 || errno == ERANGE) {
+				fprintf(stderr, "Thumbnail height of %s must be a valid base-ten integer and greater than or equal to %d\n", options.optarg, 1);
+				return false;
+			}
+			state->images.thumbnail.height = tmpint;
+            break;
+        case 'W':
+            tmpint = strtol(options.optarg);
+			if(tmpint <= 0 || errno == ERANGE) {
+				fprintf(stderr, "Thumbnail width of %s must be a valid base-ten integer and greater than or equal to %d\n", options.optarg, 1);
+				return false;
+			}
+			state->images.thumbnail.width = tmpint;
+            break;
+		case 'L':
+			state->images.thumbnail.load = true;
+			break;
+		case 'S':
+			state->images.thumbnail.save = true;
+			break;
+		case 'e':
+			if( !nqiv_image_manager_add_extension(&state->images, options.optarg) ) {
+				fprintf(stderr, "Failed to add allowed extension of %s\n", options.optarg);
+				return false;
+			}
+			break;
+        case 'k':
+			if( !nqiv_keybind_add_from_text(&state->images, options.optarg) ) {
+				fprintf(stderr, "Failed to add keybind of %s\n", options.optarg);
+				return false;
+			}
+			break;
+        case 'q':
+            tmpint = strtol(options.optarg);
+			if(tmpint < STARTING_QUEUE_LENGTH || errno == ERANGE) {
+				fprintf(stderr, "Queue length of %s must be a valid base-ten integer and greater than or equal to %d\n", options.optarg, starting_queue_length);
+				return false;
+			}
+			if( !nqiv_array_grow(state->keybinds.lookup, tmpint) ||
+				!nqiv_array_grow(state->images.images, tmpint) ||
+				!nqiv_array_grow(state->images.extensions, tmpint) ||
+				!nqiv_array_grow(state->thread_queue.array, tmpint) ) {
+				fprintf(stderr, "Failed to grow to queue length of %s\n", options.optarg);
+				return false;
+			}
+            break;
+        case '?':
+            fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
+			return false;
+        }
+    }
+	char* arg;
+    while ( ( arg = optparse_arg(&options) ) ) {
+		if( nqiv_image_manager_has_path_extension(&state->images, arg) ) {
+			if( !nqiv_image_manager_append(&state->images, arg) ) {
+				return false;
+			}
+		}
+	}
+	/* TODO: STDIN */
+	return true;
+} /* parse_args */
+
+bool nqiv_create_sdl_drawing_surface(nqiv_log_ctx* logger, const int width, const int height, SDL_Surface** surface)
+{
+	*surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 4 * 8, 4 * width, SDL_PIXELFORMAT_RGBA8888);
+	if(*surface == NULL) {
+		nqiv_log_write( logger, NQIV_LOG_ERROR, "Failed to create SDL Surface. SDL Error: %s\n", SDL_GetError() );
+		return false;
+	}
+	return true;
+}
+
+bool nqiv_sdl_surface_to_texture(nqiv_log_ctx* logger, SDL_Renderer* renderer, SDL_Surface* surface, SDL_Texture** texture)
+{
+	*texture = SDL_CreateTextureFromSurface(renderer, surface);
+	if(*texture == NULL) {
+		nqiv_log_write( logger, NQIV_LOG_ERROR, "Failed to create SDL Texture. SDL Error: %s\n", SDL_GetError() );
+		return false;
+	}
+	SDL_FreeSurface(surface);
+	return true;
+}
+
+bool nqiv_create_solid_rect_texture(nqiv_log_ctx* logger, SDL_Renderer* renderer, const SDL_Rect* rect, const SDL_Color* color, SDL_Texture** texture)
+{
+	SDL_Surface* surface;
+	if( !nqiv_create_sdl_drawing_surface(logger, rect->w, rect->h, &surface) ) {
+		return false;
+	}
+	nqiv_fill_rect(surface, rect, color);
+	if( !nqiv_sdl_surface_to_texture(logger, renderer, surface, texture) ) {
+		return false;
+	}
+	return true;
+}
+
+bool nqiv_create_border_rect_texture(nqiv_log_ctx* logger, SDL_Renderer* renderer, const SDL_Rect* rect, const SDL_Color* color, SDL_Texture** texture)
+{
+	SDL_Surface* surface;
+	if( !nqiv_create_sdl_drawing_surface(logger, rect->w, rect->h, &surface) ) {
+		return false;
+	}
+	nqiv_fill_rect(surface, rect, color, ( (rect->w + rect->h) / 2 ) / 64);
+	if( !nqiv_sdl_surface_to_texture(logger, renderer, surface, texture) ) {
+		return false;
+	}
+	return true;
+}
+
+
+bool nqiv_create_alpha_background_texture(nqiv_log_ctx* logger, SDL_Renderer* renderer, const SDL_Rect* rect, SDL_Texture** texture)
+{
+	SDL_Surface* surface;
+	if( !nqiv_create_sdl_drawing_surface(logger, rect->w, rect->h, &surface) ) {
+		return false;
+	}
+	SDL_Color color_one;
+	color_one.r = 40;
+	color_one.g = 40;
+	color_one.b = 40;
+	color_one.a = 255;
+	SDL_Color color_two;
+	color_two.r = 60;
+	color_two.g = 60;
+	color_two.b = 60;
+	color_two.a = 255;
+	nqiv_draw_alpha_background(surface, rect, ( (rect->w + rect->h) / 2 ) / 64, &color_one, &color_two);
+	if( !nqiv_sdl_surface_to_texture(logger, renderer, surface, texture) ) {
+		return false;
+	}
+	return true;
+}
+
+bool nqiv_setup_sdl(nqiv_state* state)
+{
+	/* TODO Starting size? */
+	if( SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0 ) {
+		nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to init SDL. SDL Error: %s\n", SDL_GetError() );
+		return false;
+	}
+	state->sdl_inited = true;
+	state->window = SDL_CreateWindow("nqiv", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+	if(state->window == NULL) {
+		nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL Window. SDL Error: %s\n", SDL_GetError() );
+		return false;
+	}
+	state->renderer = SDL_CreateRenderer(state->window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
+	if(state->renderer == NULL) {
+		nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL Renderer. SDL Error: %s\n", SDL_GetError() );
+		return false;
+	}
+	SDL_Color color;
+	color.r = 0;
+	color.g = 0;
+	color.b = 0;
+	color.a = 255;
+	SDL_Rect window_rect;
+	window_rect.x = 0;
+	window_rect.y = 0;
+	SDL_GetWindowSizeInPixels(state->window, &window_rect.w, &window_rect.h);
+	if( !nqiv_create_solid_rect_texture(&state->logger, &state->renderer, &window_rect, &color, &state->texture_background) ) {
+		return false;
+	}
+	SDL_Rect thumbnail_rect;
+	thumbnail_rect.x = 0;
+	thumbnail_rect.y = 0;
+	thumbnail_rect.w = state->images.thumbnail.width;
+	thumbnail_rect.h = state->images.thumbnail.height;
+	color.g = 255;
+	color.b = 255;
+	if( !nqiv_create_border_rect_texture(&state->logger, &state->renderer, &thumbnail_rect, &color, &state->texture_montage_selection) ) {
+		return false;
+	}
+	color.g = 0;
+	if( !nqiv_create_solid_rect_texture(&state->logger, &state->renderer, &thumbnail_rect, &color, &state->texture_montage_unloaded_background) ) {
+		return false;
+	}
+	color.r = 255;
+	color.b = 0;
+	if( !nqiv_create_solid_rect_texture(&state->logger, &state->renderer, &thumbnail_rect, &color, &state->texture_montage_error_background) ) {
+		return false;
+	}
+	if( !nqiv_create_alpha_background_texture(&state->logger, &state->renderer, &thumbnail_rect, &state->texture_montage_alpha_background) ) {
+		return false;
+	}
+	if( !nqiv_create_alpha_background_texture(&state->logger, &state->renderer, &window_rect, &state->texture_alpha_background) ) {
+		return false;
+	}
+	return true;
+}
+
+void nqiv_setup_montage(nqiv_state* state)
+{
+	state->montage.logger = &state->logger;
+	state->montage.window = &state->window;
+	state->montage.images = &state->images;
+	nqiv_montage_calculate_dimensions(nqiv_montage_state* state);
+}
+
+void nqiv_act_on_thread_locks( nqiv_state* state, void (*action)(omp_lock_t *lock) )
+{
+	int idx;
+	for(idx = 0; idx < state->thread_count; ++idx) {
+		if(lock) {
+			action(&state->thread_locks[idx]);
+		}
+	}
+}
+
+bool nqiv_setup_thread_info(nqiv_state* state)
+{
+	state->thread_event_number = SDL_RegisterEvent(1);
+	if(state->thread_event_number == 0xFFFFFFFF) {
+		nqiv_log_write( logger, NQIV_LOG_ERROR, "Failed to create SDL event for messages from threads. SDL Error: %s\n", SDL_GetError() );
+		return false;
+	}
+	state->thread_count = omp_get_num_threads();
+	nqiv_act_on_thread_locks(state, omp_init_lock);
+	return true;
+}
+
+void nqiv_unlock_threads(nqiv_state* state)
+{
+	nqiv_act_on_thread_locks(state, omp_unset_lock);
+}
+
+bool nqiv_send_thread_event(nqiv_state* state, nqiv_event* event)
+{
+		const bool event_sent = nqiv_queue_push(&state->thread_queue, sizeof(nqiv_event), event);
+		if(!event_sent) {
+			return false;
+		}
+		nqiv_unlock_threads(state);
+}
+
+/* TODO STEP FRAME? */
+/* TODO Reset frame */
+bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_background, const SDL_Rect* srcrect, const SDL_Rect* dstrect, const bool is_thumbnail, const bool first_frame, const bool next_frame, const bool selected, const bool hard)
+{
+	/* TODO Srcrect easily can make this work for both views DONE */
+	/* TODO Merge load/save thumbnail, or have an short load to check for the thumbnail before saving  DONE*/
+	/* TODO Use load thumbnail for is_thumbnail? */
+	omp_set_lock(image->lock);
+	nqiv_image_form* form = is_thumbnail ? image->thumbnail : image->image;
+	if(!is_thumbnail && state->images.thumbnail.save) {
+		if(!image->thumbnail_attempted) {
+			nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Creating thumbnail for instance that won't load it.\n");
+			nqiv_event event = {0};
+			event.type = NQIV_EVENT_IMAGE_LOAD;
+			event.options.image_load.image = image;
+			event.options.image_load.set_thumbnail_path = true;
+			event.options.image_load.create_thumbnail = true;
+			if( nqiv_send_thread_event(state, &event) ) {
+				omp_unset_lock(image->lock);
+				return false;
+			}
+		/* TODO Signal to create thumbnail from main image, set thumbnail attempted after DONE */
+		} else {
+		/* TODO Signal to unload thumbnail from the image, make sure not to unload twice??? */
+		}
+	}
+	/*
+	if(!is_Thumbnail && !image->thumbnail_attempted && state->images.thumbnail.save) {
+	}
+	if(!is_Thumbnail && image->thumbnail_attempted && state->images.thumbnail.save) {
+	}
+	*/
+	if(form->error) {
+		if( SDL_RenderCopy(state->renderer, state->texture_montage_error_background, NULL, dstrect) != 0 ) {
+			omp_unset_lock(image->lock);
+			return false;
+		}
+		/* TODO We check this because we try to load a non-existent thumbnail */
+		if(is_thumbnail && !image->image.error) {
+			if(!image->thumbnail_attempted && state->images.thumbnail.save) {
+				nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Creating thumbnail after failing to load it.\n");
+				form->error = false;
+				nqiv_event event = {0};
+				event.type = NQIV_EVENT_IMAGE_LOAD;
+				event.options.image_load.image = image;
+				event.options.image_load.set_thumbnail_path = true;
+				event.options.image_load.create_thumbnail = true;
+				if( nqiv_send_thread_event(state, &event) ) {
+					omp_unset_lock(image->lock);
+					return false;
+				}
+				/* TODO Signal to create thumbnail from main image, set thumbnail attempted after */
+				/* TODO UNSET ERROR */
+			} else {
+				if( !render_from_form(state, image, alpha_background, srcrect, dstrect, false, true, false, selected) ) {
+					omp_unset_lock(image->lock);
+					return false;
+				}
+				/* TODO Use main image for the thumbnail */
+			}
+		}
+	} else {
+		if(form->surface != NULL) {
+			form->texture = SDL_CreateTextureFromSurface(state->renderer, form->surface);
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loaded texture for image %s.\n", image->image.path);
+			if(form->texture == NULL) {
+				omp_unset_lock(image->lock);
+				return false;
+			}
+		} else {
+			if( SDL_RenderCopy(state->renderer, state->texture_montage_unloaded_background, NULL, dstrect) != 0 ) {
+				omp_unset_lock(image->lock);
+				return false;
+			}
+			if(is_thumbnail) {
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading thumbnail.\n");
+				nqiv_event event = {0};
+				/* TODO SOFTEN EVENTS */
+				event.type = NQIV_EVENT_IMAGE_LOAD;
+				event.options.image_load.image = image;
+				if(hard) {
+					event.options.image_load.thumbnail_options.file = true;
+					event.options.image_load.thumbnail_options.wand = true;
+				} else {
+					event.options.image_load.thumbnail_options.file_soft = true;
+					event.options.image_load.thumbnail_options.wand_soft = true;
+				}
+				if( hard || next_frame || (first_frame && image->thumbnail.wand != NULL && MagickGetIteratorIndex(image->thumbnail.wand) != 0) ) {
+					event.options.image_load.thumbnail_options.raw = true;
+					event.options.image_load.thumbnail_options.surface = true;
+				} else {
+					event.options.image_load.thumbnail_options.raw_soft = true;
+					event.options.image_load.thumbnail_options.surface_soft = true;
+				}
+				event.options.image_load.thumbnail_options.first_frame = first_frame;
+				event.options.image_load.thumbnail_options.next_frame = next_frame;
+				if( nqiv_send_thread_event(state, &event) ) {
+					omp_unset_lock(image->lock);
+					return false;
+				}
+				/* TODO Signal to load thumbnail image if it's available, otherwise use main */
+			} else {
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading image.\n");
+				nqiv_event event = {0};
+				event.type = NQIV_EVENT_IMAGE_LOAD;
+				event.options.image_load.image = image;
+				if(hard) {
+					event.options.image_load.image_options.file = true;
+					event.options.image_load.image_options.wand = true;
+				} else {
+					event.options.image_load.image_options.file_soft = true;
+					event.options.image_load.image_options.wand_soft = true;
+				}
+				if( hard || next_frame || (first_frame && image->thumbnail.wand != NULL && MagickGetIteratorIndex(image->thumbnail.wand) != 0) ) {
+					event.options.image_load.image_options.raw = true;
+					event.options.image_load.image_options.surface = true;
+				} else {
+					event.options.image_load.image_options.raw_soft = true;
+					event.options.image_load.image_options.surface_soft = true;
+				}
+				event.options.image_load.image_options.first_frame = first_frame;
+				event.options.image_load.image_options.next_frame = next_frame;
+				if( nqiv_send_thread_event(state, &event) ) {
+					omp_unset_lock(image->lock);
+					return false;
+				}
+				/* TODO Signal to use main image as thumbnail */
+			}
+			/* TODO Else if try to save thumbnail if not attempted yet??? */
+			/*
+			if(is_thumbnail) {
+state->images.thumbnail.load
+
+			}
+			if(state->images.thumbnail.load && state->images.thumbnail.save) {
+
+			}
+			nqiv_event event;
+			event.type = NQIV_EVENT_IMAGE_LOAD;
+			event.options.image_load.image = image;
+			if( nqiv_send_thread_event(state, &event) ) {
+				return false;
+			}
+			*/
+		}
+		if(form->texture != NULL) {
+			if( SDL_RenderCopy(state->renderer, alpha_background, NULL, dstrect) != 0 ) {
+				omp_unset_lock(image->lock);
+				return false;
+			}
+			if( SDL_RenderCopy(state->renderer, form->texture, srcrect, dstrect) != 0 ) {
+				omp_unset_lock(image->lock);
+				return false;
+			}
+		}
+	}
+	if(selected) {
+		if( SDL_RenderCopy(state->renderer, state->texture_montage_selection, NULL, dstrect) != 0 ) {
+			omp_unset_lock(image->lock);
+			return false;
+		}
+	}
+	omp_unset_lock(image->lock);
+	return true;
+}
+
+/*
+bool render_montage_item_from_image(nqiv_state* state, nqiv_image* image, const SDL_Rect* dstrect)
+{
+	* TODO PRobably delete this *
+}
+*/
+
+/*
+bool render_montage_item(nqiv_state* state, nqiv_image* image, const SDL_Rect* dstrect)
+{
+	* TODO Most of this is handled from rendering from form, maybe it can even be removed *
+	if(state->images->thumbnail.load) {
+		if(image->thumbnail.error) {
+			* TODO MAin image *
+			if( SDL_RenderCopy(state->renderer, texture_montage_error_background, NULL, dstrect) != 0 ) {
+				return false;
+			}
+		} else if(image->thumbnail.texture != NULL) {
+			if( SDL_RenderCopy(state->renderer, state->texture_montage_alpha_background, NULL, dstrect) != 0 ) {
+				return false;
+			}
+			if( SDL_RenderCopy(state->renderer, image->thumbnail.texture, NULL, dstrect) != 0 ) {
+				return false;
+			}
+		} else if(state->images->thumbnail.save) {
+			* TODO complete event and set loading indicator *
+			nqiv_event event = {0};
+			event.type = NQIV_EVENT_WORKER_STOP;
+			if( nqiv_send_thread_event(state, &event) ) {
+				return false;
+			}
+		} else {
+			* TODO MAin image *
+		}
+	} else {
+		* TODO Use main image, set error, or load main image *
+	}
+}
+*/
+
+bool render_montage(nqiv_state* state, const bool hard)
+{
+	/*
+	bool read_from_stdin;
+	nqiv_log_ctx logger;
+	nqiv_image_manager images;
+	nqiv_keybind_manager keybinds;
+	nqiv_montage_state montage;
+	nqiv_queue thread_queue;
+	bool SDL_inited;
+	SDL_Window* window;
+	SDL_Renderer* renderer;
+	SDL_Texture* texture_background;
+	SDL_Texture* texture_montage_selection;
+	SDL_Texture* texture_montage_alpha_background;
+	SDL_Texture* texture_alpha_background;
+	Uint32 thread_event_number;
+	int thread_count;
+	omp_lock_t* thread_locks;
+	void nqiv_montage_get_image_rect(nqiv_montage_state* state, const int idx, SDL_Rect* rect)
+
+	if load thumbnail and thumbnail available, use that
+	if not load thubmnail, thumbnail should not be available
+	if load thumbnail and thumbnail not available, set loading indicator, send load thumbnail and quit
+	if there's an error set, set error indicator, then quit
+	*/
+	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage.\n");
+	if( SDL_RenderCopy(state->renderer, state->texture_background, NULL, NULL) != 0 ) {
+		return false;
+	}
+	int idx;
+	for(idx = state->montage.positions.start; idx < state->montage.positions.end; ++idx) {
+		sdl_rect dstrect;
+		nqiv_montage_get_image_rect(&state->montage, idx, &dstrect);
+		nqiv_image* image;
+		if( nqiv_array_get_bytes(&state->images.images, idx, sizeof(nqiv_image*), &image) ) {
+			return false;
+		}
+		if( !render_from_form(state, image, state->texture_montage_alpha_background, NULL, &dstrect, state->images.thumbnail.save, true, false, state->montage.positions.selection == idx, hard) ) {
+			return false;
+		}
+	}
+}
+
+bool render_image(nqiv_state* state, const bool start, const bool hard)
+{
+	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering selected image.\n");
+	if( SDL_RenderCopy(state->renderer, state->texture_background, NULL, NULL) != 0 ) {
+		return false;
+	}
+	nqiv_image* image;
+	if( nqiv_array_get_bytes(&state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &image) ) {
+		return false;
+	}
+	SDL_Rect srcrect;
+	nqiv_image_manager_calculate_zoomrect(&state->images, &image->image, &srcrect); /* TODO aspect ratio */
+	SDL_Rect dstrect = {0};
+	/* TODO RECT DONE BUT ASPECT RATIO */
+	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
+	if( !render_from_form(state, image, state->texture_alpha_background, &srcrect, &dstrect, false, start, true, false, hard) ) {
+		return false;
+	}
+/* TODO */
+}
+
+void render_and_update(nqiv_state* state, const bool* running, const bool* result, const bool first_render, const bool hard)
+{
+	if(state->in_montage) {
+		nqiv_montage_calculate_dimensions(state);
+		if( !render_montage(state, hard) ) {
+			*running = false;
+			*result = false;
+		}
+	} else {
+		if( !render_image(state, first_render, hard) ) {
+			*running = false;
+			*result = false;
+		}
+	}
+}
+
+bool nqiv_master_thread(nqiv_state* state)
+{
+	nqiv_array* keybind_pairs = nqiv_array_create(STARTING_QUEUE_LENGTH);
+	if(keybind_pairs == NULL) {
+		return false;
+	}
+	bool result = true;
+	bool running = true;
+	while(running) {
+		SDL_PumpEvents(void);
+		SDL_Event input_event;
+		nqiv_event output_event = {0};
+		const event_result = SDL_WaitEvent(&input_event);
+		if(event_result == 0) {
+			nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to wait on an SDL event. SDL Error: %s\n", SDL_GetError() );
+			/* TODO CHECK ME */
+			running = false;
+			result = false;
+			break;
+		}
+		/*nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manger* manager, const SDL_Keysym* key, nqiv_array* output);*/
+		/* TODO mousebuttonevent */
+		switch(input_event.type) {
+			case SDL_USEREVENT:
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received response from worker thread.\n");
+				if(input_event.user.code == state->thread_event_number) {
+					omp_set_lock(input_event.user.data1);
+				}
+				render_and_update(state, &running, &result, false, false);
+				break;
+			case SDL_WINDOWEVENT:
+				if(input_event.window.event == SDL_WINDOWEVENT_RESIZED || input_event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+					nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received window resize event.\n");
+					render_and_update(state, &running, &result, false, false);
+				}
+				break;
+			case SDL_QUITEVENT:
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received window quit event.\n");
+				running = false;
+				break;
+			case SDL_KEYBOARDEVENT:
+				/*
+				 * TODO
+				SDL_Keysym
+				nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, const SDL_Keysym* key, nqiv_array* output);
+				*/
+				const nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, &input_event.key.keysym, keybind_pairs);
+				if(lookup_summary == NQIV_KEY_LOOKUP_FAILURE) {
+					running = false;
+					result = false;
+				} else if(lookup_summary == NQIV_KEY_LOOKUP_FOUND) {
+					/*
+					bool nqiv_array_insert_bytes(nqiv_array* array, void* ptr, const int count, const int idx);
+					void nqiv_array_remove_bytes(nqiv_array* array, const int idx, const int count);
+					bool nqiv_array_push_bytes(nqiv_array* array, void* ptr, const int count);
+					bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, void* ptr);
+					*/
+					nqiv_keybind_pair pair;
+					while( nqiv_array_get_bytes(keybind_pairs, 0, sizeof(nqiv_keybind_pair), &pair) ) {
+						/*
+	NQIV_KEY_ACTION_TOGGLE_STRETCH,
+	NQIV_KEY_ACTION_STRETCH,
+	NQIV_KEY_ACTION_KEEP_ASPECT_RATIO,
+	NQIV_KEY_ACTION_RELOAD,
+	*/
+						if(pair.action == NQIV_KEY_ACTION_QUIT) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action quit.\n");
+							running = false;
+						} else if(pair.action == NQIV_KEY_ACTION_NEXT) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action next.\n");
+							state->montage.selection = state->montage.selection == state->montage.end + 1 ? state->montage.selection : state->montage.selection + 1;
+							render_and_update(state, &running, &result, false, false);
+						} else if(pair.action == NQIV_KEY_ACTION_PREVIOUS) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action previous.\n");
+							state->montage.selection = state->montage.selection == 0 ? state->montage.selection : state->montage.selection - 1;
+							render_and_update(state, &running, &result, false, false);
+						} else if(pair.action == NQIV_KEY_ACTION_PAGE_UP) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action page up.\n");
+							const int new_selection = state->montage.selection - state->montage.selection.count_per_row;
+							state->montage.selection = new_selection < 0 ? 0 : new_selection;
+							render_and_update(state, &running, &result, false, false);
+						} else if(pair.action == NQIV_KEY_ACTION_PAGE_DOWN) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action page down.\n");
+							const int new_selection = state->montage.selection + state->montage.selection.count_per_row;
+							state->montage.selection = new_selection >= state->montage.end ? state->montage.end - 1 : new_selection;
+							render_and_update(state, &running, &result, false, false);
+						} else if(pair.action == NQIV_KEY_ACTION_TOGGLE_MONTAGE) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage toggle.\n");
+							state->in_montage = !state->in_montage;
+							render_and_update(state, &running, &result, false, false);
+						} else if(pair.action == NQIV_KEY_ACTION_SET_MONTAGE) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv montage set.\n");
+							state->in_montage = true;
+							render_and_update(state, &running, &result, false, false);
+						} else if(pair.action == NQIV_KEY_ACTION_SET_VIEWING) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action viewing set.\n");
+							state->in_montage = false;
+							render_and_update(state, &running, &result, false, false);
+						} else if(pair.action == NQIV_KEY_ACTION_ZOOM_IN) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom in.\n");
+							state->images.zoom.image_to_viewport_ratio += 0.05;
+							render_and_update(state, &running, &result, false, false);
+						} else if(pair.action == NQIV_KEY_ACTION_ZOOM_OUT) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom out.\n");
+							state->images.zoom.image_to_viewport_ratio -= 0.05;
+							render_and_update(state, &running, &result, false, false);
+						} else if(pair.action == NQIV_KEY_ACTION_LEFT) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan left.\n");
+							state->images.zoom.viewport_horizontal_shift -= 0.05;
+							render_and_update(state, &running, &result, false, false);
+						} else if(pair.action == NQIV_KEY_ACTION_RIGHT) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan right.\n");
+							state->images.zoom.viewport_horizontal_shift += 0.05;
+							render_and_update(state, &running, &result, false, false);
+						} else if(pair.action == NQIV_KEY_ACTION_UP) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan up.\n");
+							state->images.zoom.viewport_vertical_shift -= 0.05;
+							render_and_update(state, &running, &result, false, false);
+						} else if(pair.action == NQIV_KEY_ACTION_DOWN) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan down.\n");
+							state->images.zoom.viewport_vertical_shift += 0.05;
+							render_and_update(state, &running, &result, false, false);
+						} else if(pair.action == NQIV_KEY_ACTION_RELOAD) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action reload.\n");
+							render_and_update(state, &running, &result, false, true);
+						}
+						nqiv_array_remove_bytes( keybind_pairs, 0, sizeof(nqiv_keybind_pair) );
+					}
+				break;
+		}
+	}
+	output_event.type = NQIV_EVENT_WORKER_STOP;
+	if( nqiv_send_thread_event(state, &event) ) {
+		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to send shutdown signal to threads. Aborting.\n");
+		abort();
+	}
+	return result;
+}
+
+bool nqiv_run(nqiv_state* state)
+{
+	bool result;
+	const int thread_count = state->thread_count;
+	omp_lock_t* thread_locks = state->thread_locks;
+	nqiv_queue* thread_queue = &state->thread_queue;
+	const Uint32 event_code = state->thread_event_number;
+	#pragma omp parallel default(none) lastprivate(result) firstprivate(state, thread_count, thread_locks, thread_queue, event_code)
+	{
+		#pragma omp master
+		{
+			int thread;
+			for(thread = 0; thread < thread_count; ++thread)
+			{
+				omp_lock_t* lock = &thread_locks[thread];
+				#pragma omp task default(none) firstprivate(thread_queue, lock, event_code)
+				nqiv_worker_main(thread_queue, lock, event_code);
+			}
+			result = nqiv_master_thread(state);
+		}
+		#pragma omp taskwait
+	}
+	return result;
+}
+
+int main(int argc, char *argv[])
+{
+	nqiv_state state;
+	memset( &state, 0, sizeof(nqiv_state) );
+
+	state.in_montage = true;
+
+	if( !nqiv_parse_args(argc, argv, &state) ) {
+		nqiv_state_clear(&state);
+		return 1;
+	}
+	if( !nqiv_setup_sdl(&state) ) {
+		nqiv_state_clear(&state);
+		return 1;
+	}
+	nqiv_setup_montage(&state);
+	if( !nqiv_setup_thread_info(&state) ) {
+		nqiv_state_clear(&state);
+		return 1;
+	}
+
+	/* TODO
+	 *
+	 * In other files:
+	 * Logging everywhere
+	 * Synchronize functions
+	 * Proper includes
+	 * Appropriate asserts
+	 *
+	 * -Setup montage info
+	 * -Setup SDL
+	 * -Create templates
+	 * -Create locks
+	 * -Start threads
+	 * -Start main event loop
+	 * -changed status for image or return the image itself or just redraw all of them?
+	 * -Write image to rect
+	 */
+
+	const bool result = nqiv_run(&state);
+	nqiv_state_clear(&state);
+	return result;
+}
