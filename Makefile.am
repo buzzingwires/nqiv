@@ -1,4 +1,2 @@
-bin_PROGRAMS = nqiv tester
-nqiv_SOURCES = src/main.c
-tester_SOURCES = test/tester.c
+AUTOMAKE_OPTIONS = subdir-objects
 SUBDIRS = src test
