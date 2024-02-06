@@ -45,7 +45,7 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr, const bool
 	}
 
 	size_t path_len = rootlen + thumblen + typelen + md5len + pnglen;
-	pathptr = calloc(1, path_len);
+	char* pathptr = calloc(1, path_len);
 	if(pathptr == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to allocate memory for path data %s.", path);
 		return false;
@@ -61,6 +61,8 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr, const bool
 	MD5_Final(pathptr, &md5state);
 	pathptr += md5len;
 	strncpy(pathptr, pngext, pnglen);
+	*pathptr_store = pathptr;
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Calculated thumbnail path '%s' for image at path '%s'.\n", pathptr, image->image.path);
 	return true;
 }
 
@@ -81,46 +83,36 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	assert(image->parent.thumbnail.width > 0);
 	/* assert(image->thumbnail.path == NULL); */
 
-	char* pathptr = NULL;
 	if(image->thumbnail.path == NULL) {
-		if( !nqiv_thumbnail_calculate_path(image, &pathptr, false) ) {
-			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to create thumbnail path for %s", image->image.path);
-			return false;
-		}
-		assert(pathptr != NULL);
+		return false;
 	}
 	Image* image_object = GetImageFromMagickWand(image->image.wand); /* TODO NEED TO FREE */
 	if(image_object == NULL) {
-		free(pathptr);
 		nqiv_log_magick_wand_exception(image->parent->logger, image->image.wand, image->image.path);
 		return false;
 	}
 	ExceptionInfo* exception_info = AcquireExceptionInfo(); /* TODO LOG ME AND FREE WHEN NEEDED WHAT NEEDS TO BE FREED */
 	if(exception_info == NULL) {
-		free(pathptr);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to create exception info for new thumbnail of path %s", image->image.path);
 		return false;
 	}
 	image_object = CloneImage(image_object, 0, 0, 0, exception_info);
 	if( CatchException(exception_info) ) {
 		nqiv_log_magick_exception(image->image.path, exception_info);
-		free(pathptr);
 		DestroyExceptionInfo(exception_info);
 		return false;
 	}
 	ImageInfo* image_info = CloneImageInfo(NULL);
 	if(image_info == NULL) {
-		free(pathptr);
 		DestroyExceptionInfo(exception_info);
 		DestroyImage(image_object);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to create image info for new thumbnail of path %s", image->image.path);
 		return false;
 	}
-	strcpy(image_info->filename, pathptr);
+	strcpy(image_info->filename, image->thumbnail.path);
 	ResizeImage(image, image->parent.thumbnail.width, image->parent.thumbnail.height, image->parent.interpolation, exception_info);
 	if( CatchException(exception_info) ) {
 		nqiv_log_magick_exception(image->image.path, exception_info);
-		free(pathptr);
 		DestroyExceptionInfo(exception_info);
 		DestroyImage(image_object);
 		DestroyImageInfo(image_info);
@@ -129,15 +121,14 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	WriteImage(image_info, image_object, exception_info);
 	if( CatchException(exception_info) ) {
 		nqiv_log_magick_exception(image->image.path, exception_info);
-		free(pathptr);
 		DestroyExceptionInfo(exception_info);
 		DestroyImage(image_object);
 		DestroyImageInfo(image_info);
 		return false;
 	}
-	image->thumbnail.path = pathptr;
 	DestroyExceptionInfo(exception_info);
 	DestroyImage(image_object);
 	DestroyImageInfo(image_info);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Created thumbnail at path '%s' for image at path '%s'.\n", image->thumbnail.path, image->image.path);
 	return true;
 }
