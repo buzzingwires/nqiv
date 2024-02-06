@@ -6,12 +6,35 @@
 
 #include "logging.h"
 
+nqiv_log_level nqiv_log_level_from_string(const char* text)
+{
+	if(strcmp(text, "any") == 0) {
+		return NQIV_LOG_ANY;
+	} else if(strcmp(text, "debug") == 0) {
+		return NQIV_LOG_DEBUG;
+	} else if(strcmp(text, "info") == 0) {
+		return NQIV_LOG_INFO;
+	} else if(strcmp(text, "warning") == 0) {
+		return NQIV_LOG_WARNING;
+	} else if(strcmp(text, "error") == 0) {
+		return NQIV_LOG_ERROR;
+	} else {
+		return NQIV_LOG_UNKNOWN;
+	}
+}
+
 void nqiv_log_clear_error(nqiv_log_ctx* ctx)
 {
 	if(ctx == NULL) {
 		return;
 	}
 	memset(ctx->error_messsage, 0, NQIV_LOG_ERROR_MESSAGE_LEN);
+}
+
+bool nqiv_log_has_error(nqiv_log_ctx* ctx)
+{
+	assert(ctx != NULL);
+	return strlen(ctx->error_message) != 0;
 }
 
 void nqiv_log_set_prefix_format(nqiv_log_ctx* ctx, const char* fmt)

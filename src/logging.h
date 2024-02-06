@@ -2,6 +2,7 @@
 #define NQIV_LOG_H
 
 #include <stdio.h>
+#include <stdbool.h>
 
 #include <omp.h>
 
@@ -16,6 +17,7 @@ typedef enum nqiv_log_level
 	NQIV_LOG_INFO = 20,
 	NQIV_LOG_WARNING = 30,
 	NQIV_LOG_ERROR = 40,
+	NQIV_LOG_UNKNOWN = 999,
 } nqiv_log_level;
 
 typedef struct nqiv_log_ctx
@@ -27,7 +29,9 @@ typedef struct nqiv_log_ctx
 	nqiv_array* streams;
 } nqiv_log_ctx;
 
+nqiv_log_level nqiv_log_level_from_string(const char* text);
 void nqiv_log_clear_error(nqiv_log_ctx* ctx);
+bool nqiv_log_has_error(nqiv_log_ctx* ctx);
 void nqiv_log_set_prefix_format(nqiv_log_ctx* ctx, const char* fmt);
 void nqiv_log_destroy(nqiv_log_ctx* ctx);
 void nqiv_log_init(nqiv_log_ctx* ctx);
