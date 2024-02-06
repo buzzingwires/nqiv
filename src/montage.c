@@ -46,6 +46,7 @@ void nqiv_montage_calculate_axis(int* counter, const double margin, const double
 
 void nqiv_montage_calculate_dimensions(nqiv_montage_state* state)
 {
+	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Caculating montage dimensions.\n");
 	assert(state != NULL);
 	assert(state->images != NULL);
 	assert(state->window != NULL);
@@ -89,6 +90,7 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 		state->positions.start += (idx - state->positions.end);
 		state->positions.end = idx;
 	}
+	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Setting montage selection to %d.\n", state->positions.selection);
 }
 
 void nqiv_montage_jump_selection(nqiv_montage_state* state, const int offset)
@@ -128,13 +130,17 @@ void nqiv_montage_previous_selection_row(nqiv_montage_state* state);
 
 void nqiv_montage_get_image_rect(nqiv_montage_state* state, const int idx, SDL_Rect* rect)
 {
+	const int images_len = state->images->position / sizeof(nqiv_image*);
+	assert(idx >= 0);
+	assert(idx < images_len);
+	/*
 	if(idx < 0) {
 		return;
 	}
-	const int images_len = state->images->position / sizeof(nqiv_image*);
 	if(idx >= images_len) {
 		return;
 	}
+	*/
 	int window_width;
 	int window_height;
 	SDL_GetWindowSizeInPixels(state->window, &window_width, &window_height);
@@ -145,8 +151,8 @@ void nqiv_montage_get_image_rect(nqiv_montage_state* state, const int idx, SDL_R
 	const int native_position = idx - state->positions.start;
 	const int row = native_position / state->dimensions.count_per_row;
 	const int column = native_position % state->dimensions.count_per_row;
-	rect->x = vertical_margin_pixels + (column_space_pixels + state->images->thumbnai.width) * column;
-	rect->y = horizontal_margin_pixels + (row_space_pixels + state->images->thumbnai.height) * row;
-	rect->w = state->images->thumbnai.width;
-	rect->h = state->images->thumbnai.height;
+	rect->x = vertical_margin_pixels + (column_space_pixels + state->images->thumbnail.width) * column;
+	rect->y = horizontal_margin_pixels + (row_space_pixels + state->images->thumbnail.height) * row;
+	rect->w = state->images->thumbnail.width;
+	rect->h = state->images->thumbnail.height;
 }
