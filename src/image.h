@@ -25,6 +25,7 @@
 typedef struct nqiv_image_form
 {
 	bool animated;
+	double frame_delta;
 	bool error;
 	char* path;
 	FILE* file;
@@ -42,6 +43,8 @@ typedef struct nqiv_image_manager nqiv_image_manager;
 struct nqiv_image
 {
 	nqiv_image_manager* parent;
+	omp_lock_t lock;
+	bool thumbnail_attempted;
 	nqiv_image_form image;
 	nqiv_image_form thumbnail;
 };
@@ -93,6 +96,7 @@ bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, co
 void nqiv_image_manager_remove(nqiv_image_manager* manager, const int index);
 bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path);
 bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, const char* extension);
+bool nqiv_image_manager_has_path_extension(nqiv_image_manager* manager, const char* path);
 */
 /* REMOVE? */
 /* Dynamic array? */

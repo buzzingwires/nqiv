@@ -65,6 +65,8 @@ void nqiv_unload_image_form(nqiv_image_form* form)
 
 void nqiv_destroy_image(nqiv_image* image) {
 	assert(image != NULL);
+	nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Destroying image %s.\n", image->image.path);
+	omp_destroy_lock(&image->lock);
 	nqiv_unload_image_form(image->image);
 	nqiv_unload_image_form(image->thumbnail);
 	memset( image, 0, sizeof(nqiv_image) );
@@ -90,8 +92,10 @@ nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* path)
 		nqiv_image_destroy(image);
 		return NULL;
 	}
+	omp_init_lock(&image->lock);
 	strncpy(image->image.path, path, path_len + 1);
 	assert(strcmp(image->image.path, path) == 0);
+	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Created image %s.\n", image->image.path);
 	return image;
 }
 
@@ -135,9 +139,11 @@ bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form)
 	}
 	if( MagickHasNextImage(form->wand) ) {
 		form->animated = true;
+		form->frame_delta = 0.0;
 	}
 	form->height = MagickGetImageHeight(magick_wand);
 	form->width = MagickGetImageWidth(magick_wand);
+	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Loaded wand for image %s.\n", image->image.path);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
 }
@@ -161,6 +167,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		form->error = true;
 		return false;
 	}
+	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Loaded raw for image %s.\n", image->image.path);
 	return true
 }
 
@@ -178,6 +185,7 @@ bool nqiv_image_load_sdl_surface(nqiv_image* image, nqiv_image_form* form)
 		form->error = true;
 		return false;
 	}
+	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Loaded surface for image %s.\n", image->image.path);
 	return true;
 }
 
@@ -194,6 +202,7 @@ bool nqiv_image_load_sdl_texture(nqiv_image* image, nqiv_image_form* form, SDL_R
 		form->error = true;
 		return false;
 	}
+	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Loaded texture for image %s.\n", image->image.path);
 	return true;
 }
 
@@ -259,6 +268,29 @@ bool nqiv_array_remove_nqiv_image_ptr(nqiv_array* array, const int idx)
 	return nqiv_array_remove_ptr(array, idx);
 }
 /* HELPERS END */
+
+bool nqiv_image_manager_has_path_extension(nqiv_image_manager* manager, const char* path)
+{
+	assert(manager != NULL);
+	assert(manager->extensions != NULL);
+
+	const size_t path_len = strlen(path);
+	const int num_extensions = manager->extensions->position / sizeof(char*);
+	int idx;
+	for(idx = 0; idx < lookup_len; ++idx) {
+		char* ext;
+		if( nqiv_array_get_bytes(manager->extensions, idx, sizeof(char*), ext) ) {
+			const size_t extlen = strlen(ext);
+			if(extlen > path_len) {
+				continue;
+			}
+			if(strcmp(path + path_len - extlen, ext) == 0) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
 
 bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, const int index)
 {
@@ -337,6 +369,20 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nq
 	rect->w = rect->w <= form->width ? rect->w : form->width;
 	assert(rect->h > rect->y);
 	assert(rect->w > rect->x);
+}
+
+bool nqiv_image_form_first_frame(nqiv_image_form* form)
+{
+	assert(form != NULL);
+	assert(form->file != NULL);
+	assert(form->wand != NULL);
+	if(!form->animated) {
+		return true;
+	}
+	MagickResetIterator();
+	MagickNextImage(form->wand);
+	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
+	return true;
 }
 
 bool nqiv_image_form_next_frame(nqiv_image_form* form)
