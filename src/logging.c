@@ -1,9 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdarg.h>
+#include <assert.h>
+#include <time.h>
 
 #include <omp.h>
 
+#include "array.h"
 #include "logging.h"
 
 nqiv_log_level nqiv_log_level_from_string(const char* text)
@@ -28,7 +32,7 @@ void nqiv_log_clear_error(nqiv_log_ctx* ctx)
 	if(ctx == NULL) {
 		return;
 	}
-	memset(ctx->error_messsage, 0, NQIV_LOG_ERROR_MESSAGE_LEN);
+	memset(ctx->error_message, 0, NQIV_LOG_ERROR_MESSAGE_LEN);
 }
 
 bool nqiv_log_has_error(nqiv_log_ctx* ctx)
@@ -46,7 +50,7 @@ void nqiv_log_set_prefix_format(nqiv_log_ctx* ctx, const char* fmt)
 	if(fmt == NULL) {
 		return;
 	}
-	strncpy(ctx->prefix_format, fmt, NQIV_LOG_PREFIX_FORMAT_LEN);
+	memcpy(ctx->prefix_format, fmt, NQIV_LOG_PREFIX_FORMAT_LEN);
 }
 
 /* test null ctx */
@@ -77,7 +81,6 @@ void nqiv_log_init(nqiv_log_ctx* ctx)
 			"Failed to allocate starting streams memory.\n");
 		return;
 	}
-	ctx->level = level;
 	omp_init_lock(&ctx->lock);
 }
 
@@ -111,11 +114,11 @@ void write_prefix_timeinfo(FILE* stream, const char* fmt, const int formatter_st
 	timeinfo = localtime(&rawtime);
 	char fmtbuf[NQIV_LOG_PREFIX_FORMAT_LEN];
 	memset(fmtbuf, 0, NQIV_LOG_PREFIX_FORMAT_LEN);
-	assert(formatter_len - strlen("TIME:") >= 0);
+	assert(formatter_len - (int)strlen("TIME:") >= 0);
 	strncpy(fmtbuf, &fmt[formatter_start + 1 + strlen("TIME:")], formatter_len - strlen("TIME:"));
 	char timebuf[NQIV_LOG_STRFTIME_LEN];
-	memset(timebuf, 0, nqiv_LOG_STRFTIME_LEN);
-	strftime(timebuf, nqiv_LOG_STRFTIME_LEN, fmtbuf, timeinfo);
+	memset(timebuf, 0, NQIV_LOG_STRFTIME_LEN);
+	strftime(timebuf, NQIV_LOG_STRFTIME_LEN, fmtbuf, timeinfo);
 	fprintf(stream, timebuf);
 }
 
@@ -154,7 +157,7 @@ void write_prefix_flush_slice(FILE* stream, char* slice, int* slice_idx)
 	if(*slice_idx != 0) {
 		fprintf(stream, slice);
 	}
-	write_prefix_clean_slice(slice, &slice_idx);
+	write_prefix_clean_slice(slice, slice_idx);
 }
 
 void write_prefix_increment_slice(char* slice, int* slice_idx, const char c)
@@ -179,13 +182,13 @@ void write_prefix(nqiv_log_ctx* ctx, const nqiv_log_level level, FILE* stream)
 		}
 		if(formatter_start != -1) {
 			assert(formatter_end == -1);
-			write_prefix_increment_slice(slice, &slice_idx, c)
+			write_prefix_increment_slice(slice, &slice_idx, c);
 			if(c == '#') {
 				formatter_end = idx;
-				assert(formatter_end > formatter_start)
-				const formatter_len = formatter_end - (formatter_start + 1);
+				assert(formatter_end > formatter_start);
+				const int formatter_len = formatter_end - (formatter_start + 1);
 				if(strncmp( &ctx->prefix_format[formatter_start + 1], "time:", strlen("time:") ) == 0) {
-					write_prefix_timeinfo(stream, &ctx->prefix_format, formatter_start, formatter_len);
+					write_prefix_timeinfo(stream, ctx->prefix_format, formatter_start, formatter_len);
 				} else if(strncmp( &ctx->prefix_format[formatter_start + 1], "level", strlen("level") ) == 0) {
 					write_prefix_level(stream, level);
 				} else if(formatter_len == 0) {
@@ -199,13 +202,13 @@ void write_prefix(nqiv_log_ctx* ctx, const nqiv_log_level level, FILE* stream)
 			}
 		} else {
 			if(c == '#') {
-				write_prefix_flush_slice(stream, slice, &slice_idx)
+				write_prefix_flush_slice(stream, slice, &slice_idx);
 				formatter_start = idx;
 			}
-			write_prefix_increment_slice(slice, &slice_idx, c)
+			write_prefix_increment_slice(slice, &slice_idx, c);
 		}
 	}
-	write_prefix_flush_slice(stream, slice, &slice_idx)
+	write_prefix_flush_slice(stream, slice, &slice_idx);
 }
 
 /* Test with null CTX, test with NULL streams, test with null format, test with higher level, */
@@ -232,7 +235,7 @@ void nqiv_log_write(nqiv_log_ctx* ctx,
 		return;
 	}
 	int idx = 0;
-	int stream = NULL;
+	FILE* stream = NULL;
 	while(true) {
 		stream = nqiv_array_get_FILE_ptr(ctx->streams, idx);
 		if(stream == NULL) {

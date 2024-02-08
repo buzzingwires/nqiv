@@ -3,8 +3,9 @@
 
 #include <stdbool.h>
 
-#include <SDL.h>
-#include <wand/MagickWand.h>
+#include <SDL2/SDL.h>
+#include <MagickCore/MagickCore.h>
+#include <MagickWand/MagickWand.h>
 
 #include "array.h"
 #include "logging.h"
@@ -29,7 +30,7 @@ typedef struct nqiv_image_form
 	bool error;
 	char* path;
 	FILE* file;
-	magick_wand* wand;
+	MagickWand* wand;
 	void* data;
 	SDL_Surface* surface;
 	SDL_Texture* texture;
@@ -63,6 +64,22 @@ bool nqiv_image_next_frame(nqiv_image* image);
 void nqiv_image_destroy(nqiv_image* image);
 */
 
+
+bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form);
+bool nqiv_image_form_first_frame(nqiv_image_form* form);
+bool nqiv_image_form_next_frame(nqiv_image_form* form);
+
+void nqiv_unload_image_form_wand(nqiv_image_form* form);
+void nqiv_unload_image_form_file(nqiv_image_form* form);
+void nqiv_unload_image_form_texture(nqiv_image_form* form);
+void nqiv_unload_image_form_surface(nqiv_image_form* form);
+void nqiv_unload_image_form_raw(nqiv_image_form* form);
+
+bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form);
+bool nqiv_image_load_texture(nqiv_image* image, nqiv_image_form* form);
+bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form);
+bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form);
+
 typedef struct nqiv_image_manager_thumbnail_settings
 {
 	char* root;
@@ -89,15 +106,17 @@ struct nqiv_image_manager
 	nqiv_array* extensions;
 };
 
-/*
+void nqiv_log_magick_wand_exception(nqiv_log_ctx* logger, const MagickWand* magick_wand, const char* path);
+
 void nqiv_image_manager_destroy(nqiv_image_manager* manager);
 bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, const int starting_length);
 bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, const int index);
 void nqiv_image_manager_remove(nqiv_image_manager* manager, const int index);
 bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path);
-bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, const char* extension);
+bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, char* extension);
 bool nqiv_image_manager_has_path_extension(nqiv_image_manager* manager, const char* path);
-*/
+
+void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nqiv_image_form* form, SDL_Window* window, SDL_Rect* rect);
 /* REMOVE? */
 /* Dynamic array? */
 /* convert to dynamic */

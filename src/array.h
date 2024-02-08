@@ -2,6 +2,7 @@
 #define NQIV_ARRAY_H
 
 #include <stdio.h>
+#include <stdbool.h>
 
 typedef struct nqiv_array
 {

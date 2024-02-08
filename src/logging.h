@@ -6,6 +6,8 @@
 
 #include <omp.h>
 
+#include "array.h"
+
 #define NQIV_LOG_PREFIX_FORMAT_LEN 255
 #define NQIV_LOG_ERROR_MESSAGE_LEN 255
 #define NQIV_LOG_STRFTIME_LEN 255

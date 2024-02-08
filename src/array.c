@@ -1,10 +1,13 @@
+#include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #include "array.h"
 
 nqiv_array* nqiv_array_create(const int starting_length)
 {
-	nqiv_array* array = (nqiv_array*)calloc( 1, sizeof(nqiv_array) )
+	nqiv_array* array = (nqiv_array*)calloc( 1, sizeof(nqiv_array) );
 	if(array == NULL) {
 		return array;
 	}
@@ -26,7 +29,7 @@ bool nqiv_array_grow(nqiv_array* array, const int new_length)
 	if(array->data == NULL) {
 		return false;
 	}
-	if(new_length <= array->starting_length) {
+	if(new_length <= array->data_length) {
 		return false;
 	}
 	void* new_data = (void*)realloc(array->data, new_length);
@@ -35,7 +38,8 @@ bool nqiv_array_grow(nqiv_array* array, const int new_length)
 	}
 	array->data = new_data;
 	array->data_length = new_length;
-	memset(array->data + array->position, 0, new_length - array->position);
+	assert( sizeof(void*) == sizeof(char*) );
+	memset( (char*)array->data + array->position, 0, new_length - array->position );
 	return true;
 }
 
@@ -47,7 +51,7 @@ bool nqiv_array_make_room(nqiv_array* array, const int size)
 	if(array->data == NULL) {
 		return false;
 	}
-	const int minimum_length = array->position + sizeof(void*);
+	const int minimum_length = array->position + size;
 	if( array->data_length < minimum_length && !nqiv_array_grow(array, minimum_length) ) {
 		return false;
 	}
@@ -64,10 +68,11 @@ bool nqiv_array_insert_bytes(nqiv_array* array, void* ptr, const int count, cons
 	const int final_offset = array->data_length - count;
 	assert(next_offset <= final_offset);
 	assert(array->position <= final_offset);
+	char* data = array->data;
 	if(next_offset < final_offset) {
-		memcpy(&array->data[next_offset], &array->data[offset], array->position - offset)
+		memcpy(&data[next_offset], &data[offset], array->position - offset);
 	}
-	memcpy(&array->data[offset], ptr, count);
+	memcpy(&data[offset], ptr, count);
 	array->position += count;
 	assert(array->position <= final_offset);
 	return true;
@@ -80,21 +85,22 @@ void nqiv_array_remove_bytes(nqiv_array* array, const int idx, const int count)
 	const int final_offset = array->data_length - count;
 	assert(next_offset <= final_offset);
 	assert(array->position <= final_offset);
+	char* data = array->data;
 	if(next_offset < final_offset) {
-		memcpy(&array->data[offset], &array->data[next_offset], array->position - next_offset)
+		memcpy(&data[offset], &data[next_offset], array->position - next_offset);
 	}
 	array->position -= count;
 	assert(array->position <= final_offset);
 	assert(array->position >= 0);
 }
 
-bool nqiv_array_push_bytes(nqiv_array* array, void* ptr, const int count);
+bool nqiv_array_push_bytes(nqiv_array* array, void* ptr, const int count)
 {
 	assert(array->position % count == 0);
-	return nqiv_array_insert_bytes(array, ptr, array->position / count);
+	return nqiv_array_insert_bytes(array, ptr, count, array->position / count);
 }
 
-bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, void* ptr);
+bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, void* ptr)
 {
 	if(array == NULL) {
 		return false;
@@ -109,11 +115,12 @@ bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, voi
 	if( offset >= array->data_length - count ) {
 		return false;
 	}
-	memcpy(ptr, &array->data[offset], count);
+	char* data = array->data;
+	memcpy(ptr, &data[offset], count);
 	return true;
 }
 
-bool nqiv_array_pop_bytes(nqiv_array* array, const int count, void* ptr);
+bool nqiv_array_pop_bytes(nqiv_array* array, const int count, void* ptr)
 {
 	if(array == NULL) {
 		return false;
@@ -125,8 +132,9 @@ bool nqiv_array_pop_bytes(nqiv_array* array, const int count, void* ptr);
 	if(offset < 0) {
 		return false;
 	}
-	memcpy(ptr, &array->data[offset], count);
-	memset(&array->data[offset], 0, count);
+	char* data = array->data;
+	memcpy(ptr, &data[offset], count);
+	memset(&data[offset], 0, count);
 	array->position = offset;
 	return true;
 }
@@ -181,7 +189,7 @@ char* nqiv_array_get_char_ptr(nqiv_array* array, const int idx)
 	return (char*)nqiv_array_get_ptr(array, idx);
 }
 
-void* nqiv_array_pop_char_ptr(nqiv_array* array)
+char* nqiv_array_pop_char_ptr(nqiv_array* array)
 {
 	return (char*)nqiv_array_pop_ptr(array);
 }
@@ -206,19 +214,17 @@ FILE* nqiv_array_get_FILE_ptr(nqiv_array* array, const int idx)
 	return (FILE*)nqiv_array_get_ptr(array, idx);
 }
 
-void* nqiv_array_pop_FILE_ptr(nqiv_array* array)
+FILE* nqiv_array_pop_FILE_ptr(nqiv_array* array)
 {
 	return (FILE*)nqiv_array_pop_ptr(array);
 }
 
 void nqiv_array_destroy(nqiv_array* array)
 {
-	if(data == NULL) {
+	if(array->data == NULL) {
 		return;
 	}
-	if(array->data != NULL) {
-		memset(array->data, 0, array->data_length);
-		free(array->data);
-	}
+	memset(array->data, 0, array->data_length);
+	free(array->data);
 	memset( array, 0, sizeof(nqiv_array) );
 }

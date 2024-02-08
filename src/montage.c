@@ -1,3 +1,8 @@
+#include <assert.h>
+
+#include <SDL2/SDL.h>
+
+#include "image.h"
 #include "montage.h"
 
 /* TODO LOGGING AND CHECKS */
@@ -54,14 +59,14 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state)
 	int window_width;
 	int window_height;
 	SDL_GetWindowSizeInPixels(state->window, &window_width, &window_height);
-	const double width_ratio = (double)(state->images.thumbnail.width) / (double)(window_width);
-	const double height_ratio = (double)(state->images.thumbnail.height) / (double)(window_height);
+	const double width_ratio = (double)(state->images->thumbnail.width) / (double)(window_width);
+	const double height_ratio = (double)(state->images->thumbnail.height) / (double)(window_height);
 	int count_per_column;
 	nqiv_montage_calculate_axis(&count_per_column, state->dimensions.vertical_margin, state->dimensions.row_space, height_ratio);
 	nqiv_montage_calculate_axis(&state->dimensions.count_per_row, state->dimensions.horizontal_margin, state->dimensions.column_space, width_ratio);
 	state->dimensions.count = count_per_column * state->dimensions.count_per_row;
 	state->positions.end = state->positions.start + state->dimensions.count;
-	const int images_len = state->images->position / sizeof(nqiv_image*);
+	const int images_len = state->images->images->position / sizeof(nqiv_image*);
 	if(state->positions.end > images_len) {
 		state->positions.end = images_len;
 	}
@@ -78,7 +83,7 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 	if(idx == state->positions.selection) {
 		return;
 	}
-	const int images_len = state->images->position / sizeof(nqiv_image*);
+	const int images_len = state->images->images->position / sizeof(nqiv_image*);
 	if(idx >= images_len) {
 		return;
 	}
@@ -98,24 +103,24 @@ void nqiv_montage_jump_selection(nqiv_montage_state* state, const int offset)
 	nqiv_montage_set_selection(state, state->positions.selection + offset);
 }
 
-void nqiv_montage_next_selection(nqiv_montage_state* state);
+void nqiv_montage_next_selection(nqiv_montage_state* state)
 {
-	nqiv_montage_jump_selection(nqiv_montage_state* state, 1);
+	nqiv_montage_jump_selection(state, 1);
 }
 
-void nqiv_montage_previous_selection(nqiv_montage_state* state);
+void nqiv_montage_previous_selection(nqiv_montage_state* state)
 {
-	nqiv_montage_jump_selection(nqiv_montage_state* state, -1);
+	nqiv_montage_jump_selection(state, -1);
 }
 
-void nqiv_montage_set_selection_row(nqiv_montage_state* state, const int idx);
+void nqiv_montage_set_selection_row(nqiv_montage_state* state, const int idx)
 {
-	nqiv_montage_set_selection(state, state->positions.selection % state->positions.count_per_row + idx * state->dimensions.count_per_row);
+	nqiv_montage_set_selection(state, state->positions.selection % state->dimensions.count_per_row + idx * state->dimensions.count_per_row);
 }
 
-void nqiv_montage_jump_selection_row(nqiv_montage_state* state, const int offset);
+void nqiv_montage_jump_selection_row(nqiv_montage_state* state, const int offset)
 {
-	nqiv_montage_set_selection_row(nqiv_montage_state* state, state->positions.selection / state->dimentions.count_per_row + offset);
+	nqiv_montage_set_selection_row(state, state->positions.selection / state->dimensions.count_per_row + offset);
 }
 
 void nqiv_montage_next_selection_row(nqiv_montage_state* state)
@@ -123,14 +128,14 @@ void nqiv_montage_next_selection_row(nqiv_montage_state* state)
 	nqiv_montage_jump_selection_row(state, 1);
 }
 
-void nqiv_montage_previous_selection_row(nqiv_montage_state* state);
+void nqiv_montage_previous_selection_row(nqiv_montage_state* state)
 {
 	nqiv_montage_jump_selection_row(state, -1);
 }
 
 void nqiv_montage_get_image_rect(nqiv_montage_state* state, const int idx, SDL_Rect* rect)
 {
-	const int images_len = state->images->position / sizeof(nqiv_image*);
+	const int images_len = state->images->images->position / sizeof(nqiv_image*);
 	assert(idx >= 0);
 	assert(idx < images_len);
 	/*

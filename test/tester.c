@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #include "logging_tests.h"
 #include "array_tests.h"
@@ -18,10 +20,10 @@ struct test_set
 	void (*test_ptr)(void);
 };
 
-print_test_set_designation(const test_set* tests)
+void print_test_set_designation(const test_set* tests)
 {
 	assert(tests->number >= 0);
-	fprintf(stderr, "%d %s", tests->name, tests->number);
+	fprintf(stderr, "%d %s", tests->number, tests->name);
 }
 
 void destroy_test_set(test_set* tests)
@@ -48,11 +50,11 @@ test_set* new_test_set(const char* name, const int number)
 	assert(name != NULL);
 	assert(number >= 0);
 	test_set* tests = (test_set*)calloc( 1, sizeof(test_set) );
-	if(test == NULL) {
+	if(tests == NULL) {
 		fprintf(stderr, "Failed to create new test set %d %s\n", number, name);
 		return tests;
 	}
-	strncpy(tests->name, name, TEST_NAME_LEN);
+	strncpy(tests->name, name, TEST_NAME_LEN - 1);
 	tests->number = number;
 	return tests;
 }
@@ -80,9 +82,9 @@ test_set* add_test_subset(test_set* tests, int* test_counter, const char* name)
 		tests->subsets_len = 1;
 	}
 	assert(tests->subsets_len > 0);
-	if(tests->subsets[tests->subset_len - 1] != NULL) {
+	if(tests->subsets[tests->subsets_len - 1] != NULL) {
 		const int new_subsets_len = tests->subsets_len + 1;
-		test_set** new_subsets = (test_set**)realloc(ctx->streams,
+		test_set** new_subsets = (test_set**)realloc(tests->subsets,
 			sizeof(test_set*) * new_subsets_len);
 		if(new_subsets == NULL) {
 			print_test_set_designation(tests);
@@ -94,7 +96,7 @@ test_set* add_test_subset(test_set* tests, int* test_counter, const char* name)
 	}
 	test_set* new_tests = new_test_set(name, *test_counter);
 	if(new_tests != NULL) {
-		tests->subsets[tests->subset_len - 1] = new_tests;
+		tests->subsets[tests->subsets_len - 1] = new_tests;
 		*test_counter += 1;
 	}
 	return new_tests;
@@ -104,17 +106,20 @@ test_set* add_test( test_set* tests, int* test_counter, const char* name, void (
 {
 	assert(test_ptr != NULL);
 	test_set* test = add_test_subset(tests, test_counter, name);
-	if(new_tests != NULL) {
+	if(test != NULL) {
 		test->test_ptr = test_ptr;
 	}
 	return test;
 }
 
-bool string_in_array(const char** array, const int count, const char* string)
+bool check_name(char** array, const int count, const char* string)
 {
 	assert(array != NULL);
 	assert(string != NULL);
 	assert(count >= 0);
+	if(count == 0) {
+		return true;
+	}
 	int idx;
 	for(idx = 0; idx < count; ++idx) {
 		if(strcmp(array[idx], string) == 0) {
@@ -124,27 +129,27 @@ bool string_in_array(const char** array, const int count, const char* string)
 	return false;
 }
 
-void run_tests_step(const test_set* tests, const bool parent_allowed, const char** names_to_run, const int names_to_run_len)
+void run_tests_step(const test_set* tests, const bool parent_allowed, char** names_to_run, const int names_to_run_len)
 {
 	assert(tests != NULL);
-	const allowed = parent_allowed || string_in_array(names_to_run, tests->name);
+	const bool allowed = parent_allowed || check_name(names_to_run, names_to_run_len, tests->name);
 	if(tests->subsets != NULL) {
 		assert(tests->subsets_len > 0);
 		int idx;
 		for(idx = 0; idx < tests->subsets_len; ++idx) {
 			assert(tests->subsets[idx] != NULL);
-			run_tests_step(tests->subsets[idx], allowed, names_to_run);
+			run_tests_step(tests->subsets[idx], allowed, names_to_run, names_to_run_len);
 		}
 	}
 	if(tests->test_ptr != NULL && allowed) {
 		fprintf(stderr, "RUNNING: ");
 		print_test_set_designation(tests);
-		fprintf("\n");
+		fprintf(stderr, "\n");
 		tests->test_ptr();
 	}
 }
 
-void run_tests(const test_set* tests, const char** names_to_run, names_to_run_count)
+void run_tests(const test_set* tests, char** names_to_run, const int names_to_run_count)
 {
 	run_tests_step(tests, false, names_to_run, names_to_run_count);
 }

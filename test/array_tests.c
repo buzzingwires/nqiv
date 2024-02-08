@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "../src/array.h"
 
 #include "array_tests.h"
@@ -22,7 +24,7 @@ void array_test_bytes(void)
 			assert(gotten == popped);
 		}
 		assert( !nqiv_array_get_bytes(array, idx, sizeof(int), &gotten) );
-		assert( !nqiv_array_remove_bytes( array, idx, sizeof(int) ) );
+		nqiv_array_remove_bytes( array, idx, sizeof(int) );
 		assert( !nqiv_array_pop_bytes(array, sizeof(int), &popped) );
 	}
 	nqiv_array_destroy(array);
@@ -36,12 +38,12 @@ void array_test_ptr(void)
 	for(times = 0; times < 2; ++times) {
 		int idx;
 		for(idx = 0; idx < 5; ++idx) {
-			assert( nqiv_array_push_ptr(array, (char*)idx) );
-			assert( nqiv_array_insert_ptr(array, (char*)idx, idx) );
+			assert( nqiv_array_push_ptr(array, (char*)0 + idx) );
+			assert( nqiv_array_insert_ptr(array, (char*)0 + idx, idx) );
 		}
 		/* XXX: We intentionally use an unsafe cast here, since the pointer should be the same. */
-		int* gotten = -1;
-		int* popped = -1;
+		int* gotten = (int*)-1;
+		int* popped = (int*)-1;
 		for(idx = 4; idx >= 0; ++idx) {
 			gotten = nqiv_array_get_ptr(array, idx);
 			assert(gotten != NULL);
@@ -63,12 +65,12 @@ void array_test_char_ptr(void)
 	for(times = 0; times < 2; ++times) {
 		int idx;
 		for(idx = 0; idx < 5; ++idx) {
-			assert( nqiv_array_push_char_ptr(array, (char*)idx) );
-			assert( nqiv_array_insert_char_ptr(array, (char*)idx, idx) );
+			assert( nqiv_array_push_char_ptr(array, (char*)0 + idx) );
+			assert( nqiv_array_insert_char_ptr(array, (char*)0 + idx, idx) );
 		}
 		/* XXX: We intentionally use an unsafe cast here, since the pointer should be the same. */
-		char* gotten = -1;
-		char* popped = -1;
+		char* gotten = (char*)-1;
+		char* popped = (char*)-1;
 		for(idx = 4; idx >= 0; ++idx) {
 			gotten = nqiv_array_get_char_ptr(array, idx);
 			assert(gotten != NULL);
@@ -90,12 +92,12 @@ void array_test_FILE_ptr(void)
 	for(times = 0; times < 2; ++times) {
 		int idx;
 		for(idx = 0; idx < 5; ++idx) {
-			assert( nqiv_array_push_ptr(array, (FILE*)idx) );
-			assert( nqiv_array_insert_ptr(array, (FILE*)idx, idx) );
+			assert( nqiv_array_push_ptr(array, (FILE*)0 + idx) );
+			assert( nqiv_array_insert_ptr(array, (FILE*)0 + idx, idx) );
 		}
 		/* XXX: We intentionally use an unsafe cast here, since the pointer should be the same. */
-		FILE* gotten = -1;
-		FILE* popped = -1;
+		FILE* gotten = (FILE*)-1;
+		FILE* popped = (FILE*)-1;
 		for(idx = 4; idx >= 0; ++idx) {
 			gotten = nqiv_array_get_ptr(array, idx);
 			assert(gotten != NULL);

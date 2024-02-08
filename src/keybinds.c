@@ -1,7 +1,10 @@
 #include <stdbool.h>
+#include <assert.h>
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
+#include "logging.h"
+#include "array.h"
 #include "keybinds.h"
 
 /*
@@ -40,8 +43,8 @@ typedef struct nqiv_keybind_manager
 } nqiv_keybind_manager;
 
 
-bool nqiv_keybind_add_from_text(nqiv_keybind_manger* manager, const char* key, const char* action);
-nqiv_key_action nqiv_keybind_lookup_text(nqiv_keybind_manger* manager, const char* key);
+bool nqiv_keybind_add_from_text(nqiv_keybind_manager* manager, const char* key, const char* action);
+nqiv_key_action nqiv_keybind_lookup_text(nqiv_keybind_manager* manager, const char* key);
 
 */
 
@@ -147,7 +150,8 @@ bool nqiv_text_to_keysym(char* text, const int length, SDL_Keysym* key)
 		const char endchar = text[length];
 		text[length] = '\0';
 		const SDL_Scancode sc = SDL_GetScancodeFromName(text);
-		assert(strlen(text) == length);
+		assert(length >= 0);
+		assert(strlen(text) == (size_t)length);
 		text[length] = endchar;
 		if(sc == SDL_SCANCODE_UNKNOWN) {
 			success = false;
@@ -158,14 +162,14 @@ bool nqiv_text_to_keysym(char* text, const int length, SDL_Keysym* key)
 	return success;
 }
 
-bool nqiv_keybind_text_to_keybind(const char* text, nqiv_keybind_pair* pair)
+bool nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair)
 {
 	const size_t textlen = strlen(text);
 	if(textlen == 0) {
 		return false;
 	}
-	int equal_start = nqiv_findchar(text, '=', textlen - 1, -1);
-	if(textlen <= equal_start + 1) {
+	const int equal_start = nqiv_findchar(text, '=', textlen - 1, -1);
+	if( equal_start == -1 || textlen <= (size_t)equal_start + 1 ) {
 		return false;
 	}
 	const nqiv_key_action action = nqiv_text_to_key_action(text + equal_start + 1, textlen);
@@ -185,7 +189,7 @@ bool nqiv_keybind_text_to_keybind(const char* text, nqiv_keybind_pair* pair)
 			success = nqiv_text_to_keysym(text + section_start, idx, &pair->key);
 			break;
 		}
-		if(!successe) {
+		if(!success) {
 			return false;
 		}
 	}
@@ -194,7 +198,7 @@ bool nqiv_keybind_text_to_keybind(const char* text, nqiv_keybind_pair* pair)
 	return true;
 }
 
-bool nqiv_keybind_create_manager(nqiv_keybind_manger* manager, nqiv_log_ctx* logger, const int starting_array_length)
+bool nqiv_keybind_create_manager(nqiv_keybind_manager* manager, nqiv_log_ctx* logger, const int starting_array_length)
 {
 	assert(manager != NULL);
 	nqiv_log_write(logger, NQIV_LOG_INFO, "Creating keybind manager.\n");
@@ -202,12 +206,12 @@ bool nqiv_keybind_create_manager(nqiv_keybind_manger* manager, nqiv_log_ctx* log
 	if(arrayptr == NULL) {
 		return false;
 	}
-	manager->array = arrayptr;
-	manager->logger = logger
+	manager->lookup = arrayptr;
+	manager->logger = logger;
 	return true;
 }
 
-bool nqiv_keybind_add(nqiv_keybind_manger* manager, const SDL_Keysym* key, const nqiv_key_action action)
+bool nqiv_keybind_add(nqiv_keybind_manager* manager, const SDL_Keysym* key, const nqiv_key_action action)
 {
 	assert(manager != NULL);
 	assert(manager->lookup != NULL);
@@ -218,11 +222,11 @@ bool nqiv_keybind_add(nqiv_keybind_manger* manager, const SDL_Keysym* key, const
 	return nqiv_array_push_bytes( manager->lookup, &pair, sizeof(nqiv_keybind_pair) );
 }
 
-bool nqiv_keybind_add_from_text(nqiv_keybind_manger* manager, const char* text)
+bool nqiv_keybind_add_from_text(nqiv_keybind_manager* manager, char* text)
 {
 	bool success = false;
 	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Adding keybind %s.\n", text);
-	nqiv_keybind_pair pair;
+	nqiv_keybind_pair pair = {0};
 	if( nqiv_keybind_text_to_keybind(text, &pair) ) {
 		nqiv_keybind_add(manager, &pair.key, pair.action);
 		success = true;
@@ -239,23 +243,23 @@ bool nqiv_compare_mod(Uint16 a, Uint16 b)
 		(a & KMOD_NUM && b & KMOD_NUM) ||
 		(a & KMOD_CAPS && b & KMOD_CAPS) ||
 		(a & KMOD_MODE && b & KMOD_MODE) ||
-		(a & KMOD_SCROLL && b & KMOD_SCROLL)
+		(a & KMOD_SCROLL && b & KMOD_SCROLL);
 }
 
-nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manger* manager, const SDL_Keysym* key, nqiv_array* output)
+nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manager* manager, const SDL_Keysym* key, nqiv_array* output)
 {
 	assert(manager != NULL);
 	assert(manager->lookup != NULL);
 	assert(key != NULL);
 
-	result = NQIV_KEY_LOOKUP_NOT_FOUND;
+	nqiv_key_lookup_summary result = NQIV_KEY_LOOKUP_NOT_FOUND;
 	const int lookup_len = manager->lookup->position / sizeof(nqiv_keybind_pair);
 	int idx;
 	for(idx = 0; idx < lookup_len; ++idx) {
 		nqiv_keybind_pair pair;
 		if( nqiv_array_get_bytes(manager->lookup, idx, sizeof(nqiv_keybind_pair), &pair) &&
-			pair.key.keycode == key->keycode && nqiv_compare_mod(pair.key.mod, key->mod) ) {
-			if( output != NULL && !nqiv_array_push_bytes( output, &pair.action, sizeof(nqiv_keybind_action) ) ) {
+			pair.key.sym == key->sym && nqiv_compare_mod(pair.key.mod, key->mod) ) {
+			if( output != NULL && !nqiv_array_push_bytes( output, &pair.action, sizeof(nqiv_key_action) ) ) {
 				result |= NQIV_KEY_LOOKUP_FAILURE;
 			} else {
 				result |= NQIV_KEY_LOOKUP_FOUND;

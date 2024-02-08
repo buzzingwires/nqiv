@@ -1,7 +1,7 @@
 #ifndef NQIV_MONTAGE_H
 #define NQIV_MONTAGE_H
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include "image.h"
 

@@ -1,6 +1,10 @@
 #ifndef NQIV_EVENT_H
 #define NQIV_EVENT_H
 
+#include <stdbool.h>
+
+#include "image.h"
+
 typedef enum nqiv_event_type
 {
 	NQIV_EVENT_WORKER_STOP,
@@ -34,7 +38,7 @@ typedef struct nqiv_event_image_load_options
 typedef union nqiv_event_options
 {
 	nqiv_event_image_load_options image_load;
-} nqiv_event_data
+} nqiv_event_options;
 
 typedef struct nqiv_event
 {

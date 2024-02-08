@@ -1,8 +1,14 @@
-#include "image.h"
-#include "array.h"
+#include <stdio.h>
+#include <stdbool.h>
+#include <assert.h>
 
-#include <SDL.h>
-#include <wand/MagickWand.h>
+#include <SDL2/SDL.h>
+#include <MagickCore/MagickCore.h>
+#include <MagickWand/MagickWand.h>
+#include <omp.h>
+
+#include "array.h"
+#include "image.h"
 
 /* Image */
 void nqiv_unload_image_form_wand(nqiv_image_form* form)
@@ -20,7 +26,7 @@ void nqiv_unload_image_form_file(nqiv_image_form* form)
 	assert(form != NULL);
 	assert(form->wand == NULL);
 	if(form->file != NULL) {
-		close(form->file);
+		fclose(form->file);
 		form->file = NULL;
 	}
 }
@@ -43,7 +49,7 @@ void nqiv_unload_image_form_surface(nqiv_image_form* form)
 	}
 }
 
-void nqiv_unload_image_form_data(nqiv_image_form* form)
+void nqiv_unload_image_form_raw(nqiv_image_form* form)
 {
 	assert(form != NULL);
 	assert(form->surface == NULL);
@@ -60,15 +66,16 @@ void nqiv_unload_image_form(nqiv_image_form* form)
 	nqiv_unload_image_form_file(form);
 	nqiv_unload_image_form_texture(form);
 	nqiv_unload_image_form_surface(form);
-	nqiv_unload_image_form_data(form);
+	nqiv_unload_image_form_raw(form);
 }
 
-void nqiv_destroy_image(nqiv_image* image) {
+void nqiv_image_destroy(nqiv_image* image) {
 	assert(image != NULL);
-	nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Destroying image %s.\n", image->image.path);
+	assert(image->parent != NULL);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Destroying image %s.\n", image->image.path);
 	omp_destroy_lock(&image->lock);
-	nqiv_unload_image_form(image->image);
-	nqiv_unload_image_form(image->thumbnail);
+	nqiv_unload_image_form(&image->image);
+	nqiv_unload_image_form(&image->thumbnail);
 	memset( image, 0, sizeof(nqiv_image) );
 	free(image);
 }
@@ -81,7 +88,7 @@ nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* path)
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Cannot create image with zero-length path.");
 		return NULL;
 	}
-	nqiv_image* image = (nqiv_image*)calloc( 1, sizeof(nqiv_image) )
+	nqiv_image* image = (nqiv_image*)calloc( 1, sizeof(nqiv_image) );
 	if(image == NULL) {
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to allocate memory for image at path %s.", path);
 		return image;
@@ -95,7 +102,7 @@ nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* path)
 	omp_init_lock(&image->lock);
 	strncpy(image->image.path, path, path_len + 1);
 	assert(strcmp(image->image.path, path) == 0);
-	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Created image %s.\n", image->image.path);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Created image %s.\n", image->image.path);
 	return image;
 }
 
@@ -123,15 +130,15 @@ bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form)
 	assert(form != NULL);
 	assert( (form->file == NULL && form->wand == NULL) );
 	form->file = fopen(form->path, "r");
-	if(file == NULL) {
+	if(form->file == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to open image file at path %s.", form->path);
-		nqiv_set_invalid_image_form(form);
+		/*nqiv_set_invalid_image_form(form);*/
 		form->error = true;
 		return false;
 	}
-	rewind(file);
+	rewind(form->file);
 	form->wand = NewMagickWand();
-	if(MagickReadImageFile(form->wand, file) == MagickFalse) {
+	if(MagickReadImageFile(form->wand, form->file) == MagickFalse) {
 		nqiv_log_magick_wand_exception(image->parent->logger, form->wand, form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
@@ -141,9 +148,9 @@ bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form)
 		form->animated = true;
 		form->frame_delta = 0.0;
 	}
-	form->height = MagickGetImageHeight(magick_wand);
-	form->width = MagickGetImageWidth(magick_wand);
-	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Loaded wand for image %s.\n", image->image.path);
+	form->height = MagickGetImageHeight(form->wand);
+	form->width = MagickGetImageWidth(form->wand);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded wand for image %s.\n", image->image.path);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
 }
@@ -156,7 +163,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	assert(sizeof(CharPixel) == 1);
 	form->data = calloc( 1, strlen("RGBA") * sizeof(CharPixel) * form->height * form->width );
 	if(form->data == NULL) {
-		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to allocate memory for raw image data at path %s.", form->path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to allocate memory for raw image data at path %s.", form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
@@ -167,25 +174,25 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		form->error = true;
 		return false;
 	}
-	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Loaded raw for image %s.\n", image->image.path);
-	return true
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded raw for image %s.\n", image->image.path);
+	return true;
 }
 
-bool nqiv_image_load_sdl_surface(nqiv_image* image, nqiv_image_form* form)
+bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form)
 {
 	assert(image != NULL);
 	assert(form != NULL);
 	assert( (form->data != NULL) );
 	assert(form->width > 0);
 	assert(form->height > 0);
-	form->surface = SDL_CreateRGBSurfaceWithFortmatFrom(form->data, form->width, form->height, 4 * 8, 4 * form->width, SDL_PIXELFORMAT_RGBA8888)
+	form->surface = SDL_CreateRGBSurfaceWithFormatFrom(form->data, form->width, form->height, 4 * 8, 4 * form->width, SDL_PIXELFORMAT_RGBA8888);
 	if(form->surface == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to create SDL surface for path %s (%s).", form->path, SDL_GetError() );
 		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
-	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Loaded surface for image %s.\n", image->image.path);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded surface for image %s.\n", image->image.path);
 	return true;
 }
 
@@ -195,14 +202,14 @@ bool nqiv_image_load_sdl_texture(nqiv_image* image, nqiv_image_form* form, SDL_R
 	assert(form != NULL);
 	assert( (form->data != NULL) );
 	assert( (form->surface != NULL) );
-	form->texture = SDL_CreateTextureFromSurface(renderer, form->surface)
+	form->texture = SDL_CreateTextureFromSurface(renderer, form->surface);
 	if(form->texture == NULL) {
 		nqiv_log_write( image->parent->logger, NQIV_LOG_ERROR, "Failed to create SDL texture for path %s (%s).", form->path, SDL_GetError() );
 		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
-	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Loaded texture for image %s.\n", image->image.path);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded texture for image %s.\n", image->image.path);
 	return true;
 }
 
@@ -213,8 +220,8 @@ void nqiv_image_manager_destroy(nqiv_image_manager* manager)
 		return;
 	}
 	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Destroying image manager.");
-	if(manager->image != NULL) {
-		nqiv_array_destroy(manager->image);
+	if(manager->images != NULL) {
+		nqiv_array_destroy(manager->images);
 	}
 	if(manager->extensions != NULL) {
 		nqiv_array_destroy(manager->extensions);
@@ -263,9 +270,14 @@ bool nqiv_array_insert_nqiv_image_ptr(nqiv_array* array, nqiv_image* image, cons
 	return nqiv_array_insert_ptr(array, (void*)image, idx);
 }
 
-bool nqiv_array_remove_nqiv_image_ptr(nqiv_array* array, const int idx)
+void nqiv_array_remove_nqiv_image_ptr(nqiv_array* array, const int idx)
 {
-	return nqiv_array_remove_ptr(array, idx);
+	nqiv_array_remove_ptr(array, idx);
+}
+
+nqiv_image* nqiv_array_get_nqiv_image_ptr(nqiv_array* array, const int idx)
+{
+	return (nqiv_image*)nqiv_array_get_ptr(array, idx);
 }
 /* HELPERS END */
 
@@ -277,9 +289,9 @@ bool nqiv_image_manager_has_path_extension(nqiv_image_manager* manager, const ch
 	const size_t path_len = strlen(path);
 	const int num_extensions = manager->extensions->position / sizeof(char*);
 	int idx;
-	for(idx = 0; idx < lookup_len; ++idx) {
+	for(idx = 0; idx < num_extensions; ++idx) {
 		char* ext;
-		if( nqiv_array_get_bytes(manager->extensions, idx, sizeof(char*), ext) ) {
+		if( nqiv_array_get_bytes(manager->extensions, idx, sizeof(char*), &ext) ) {
 			const size_t extlen = strlen(ext);
 			if(extlen > path_len) {
 				continue;
@@ -294,12 +306,12 @@ bool nqiv_image_manager_has_path_extension(nqiv_image_manager* manager, const ch
 
 bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, const int index)
 {
-	nqiv_image* image = nqiv_image_create(manager, path);
+	nqiv_image* image = nqiv_image_create(manager->logger, path);
 	if(image == NULL) {
 		// nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Failed to generate image at path '%s'. Success: %s", path, "false");
 		return false;
 	}
-	if(!nqiv_array_insert_image_ptr(manager->images, image, index)) {
+	if(!nqiv_array_insert_nqiv_image_ptr(manager->images, image, index)) {
 		nqiv_image_destroy(image);
 		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Failed to add image at path '%s' to image manager at index %d.", path, index);
 		return false;
@@ -319,7 +331,7 @@ void nqiv_image_manager_remove(nqiv_image_manager* manager, const int index)
 
 bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path)
 {
-	nqiv_image* image = nqiv_image_create(path);
+	nqiv_image* image = nqiv_image_create(manager->logger, path);
 	if(image == NULL) {
 		// nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Failed to generate image at path '%s'. Success: %s", path, "false");
 		return false;
@@ -335,15 +347,18 @@ bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path)
 	return true;
 }
 
-bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, const char* extension)
+bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, char* extension)
 {
 	const bool outcome = nqiv_array_push_char_ptr(manager->extensions, extension);
 	nqiv_log_write(manager->logger, outcome?NQIV_LOG_INFO:NQIV_LOG_ERROR, "Adding extension '%s' to image manager. Success: %s", extension, outcome?"true":"false");
 	return outcome;
 }
 
-void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nqiv_image_form* form, SDL_Rect* rect)
+void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nqiv_image_form* form, SDL_Window* window, SDL_Rect* rect)
 {
+	int window_width;
+	int window_height;
+	SDL_GetWindowSizeInPixels(window, &window_width, &window_height);
 	assert(manager != NULL);
 	assert(form != NULL);
 	assert(rect != NULL);
@@ -379,7 +394,7 @@ bool nqiv_image_form_first_frame(nqiv_image_form* form)
 	if(!form->animated) {
 		return true;
 	}
-	MagickResetIterator();
+	MagickResetIterator(form->wand);
 	MagickNextImage(form->wand);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
@@ -394,7 +409,7 @@ bool nqiv_image_form_next_frame(nqiv_image_form* form)
 		return true;
 	}
 	if( !MagickHasNextImage(form->wand) ) {
-		MagickResetIterator();
+		MagickResetIterator(form->wand);
 	}
 	MagickNextImage(form->wand);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */

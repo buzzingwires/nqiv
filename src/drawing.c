@@ -1,4 +1,6 @@
-#include <SDL.h>
+#include <assert.h>
+
+#include <SDL2/SDL.h>
 
 #include "drawing.h"
 
@@ -14,7 +16,8 @@ void nqiv_fill_rect(SDL_Surface* surface, const SDL_Rect* rect, const SDL_Color*
 	int x;
 	for(y = rect->y; y < rect->h; ++y) {
 		for(x = rect->x; x < rect->w; ++x) {
-			Uint8* pixel = surface->pixels + y * surface->pitch + x * surface->format->BytesPerPixel;
+			assert( sizeof(Uint8*) == sizeof(void*) );
+			Uint8* pixel = (Uint8*)(surface->pixels) + y * surface->pitch + x * surface->format->BytesPerPixel;
 			pixel[0] = color->r;
 			pixel[1] = color->g;
 			pixel[2] = color->b;
@@ -26,7 +29,7 @@ void nqiv_fill_rect(SDL_Surface* surface, const SDL_Rect* rect, const SDL_Color*
 
 void nqiv_draw_rect(SDL_Surface* surface, const SDL_Rect* from_rect, const SDL_Color* color, const int thickness)
 {
-	assert(rect != NULL);
+	assert(from_rect != NULL);
 	assert(thickness > 0);
 
 	SDL_Rect to_rect;
@@ -52,7 +55,7 @@ void nqiv_draw_rect(SDL_Surface* surface, const SDL_Rect* from_rect, const SDL_C
 	nqiv_fill_rect(surface, &to_rect, color);
 }
 
-void nqiv_draw_alpha_background(SDL_Surface* surface, SDL_Rect* rect, const int size, const SDL_Color* color_one, const SDL_Color* color_two);
+void nqiv_draw_alpha_background(SDL_Surface* surface, const SDL_Rect* rect, const int size, const SDL_Color* color_one, const SDL_Color* color_two)
 {
 	assert(surface != NULL);
 	assert(surface->format->format == SDL_PIXELFORMAT_RGBA8888);
@@ -69,15 +72,16 @@ void nqiv_draw_alpha_background(SDL_Surface* surface, SDL_Rect* rect, const int 
 	const int y_start_margin_end = rect->y + y_start_margin;
 	const int x_start_margin_end = rect->x + x_start_margin;
 	const int y_end_margin_start = rect->y + rect->h - y_end_margin;
-	const int x_end_margin_start = rect->x + rect->w - w_end_margin;
+	const int x_end_margin_start = rect->x + rect->w - x_end_margin;
 	SDL_LockSurface(surface);
 	int y;
 	int x;
-	SDL_Color* color = color_one;
+	const SDL_Color* color = color_one;
 	int square_count = 0;
 	for(y = rect->y; y < rect->h; ++y) {
 		for(x = rect->x; x < rect->w; ++x) {
-			Uint8* pixel = surface->pixels + y * surface->pitch + x * surface->format->BytesPerPixel;
+			assert( sizeof(Uint8*) == sizeof(void*) );
+			Uint8* pixel = (Uint8*)(surface->pixels) + y * surface->pitch + x * surface->format->BytesPerPixel;
 			pixel[0] = color->r;
 			pixel[1] = color->g;
 			pixel[2] = color->b;
