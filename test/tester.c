@@ -30,7 +30,6 @@ void destroy_test_set(test_set* tests)
 {
 	assert(tests != NULL);
 	memset(tests->name, 0, TEST_NAME_LEN);
-	tests->number = 0;
 	if(tests->subsets != NULL) {
 		assert(tests->subsets_len > 0);
 		int idx;
@@ -42,7 +41,8 @@ void destroy_test_set(test_set* tests)
 		tests->subsets_len = 0;
 	}
 	assert(tests->subsets_len == 0);
-	tests->test_ptr = NULL;
+	memset( tests, 0, sizeof(test_set) );
+	free(tests);
 }
 
 test_set* new_test_set(const char* name, const int number)
@@ -182,7 +182,8 @@ int main(int argc, char *argv[])
 	if(tests == NULL) {
 		return 1;
 	}
-	run_tests(tests, argv, argc);
+	assert(argc >= 1);
+	run_tests(tests, &argv[1], argc - 1);
 	destroy_test_set(tests);
 	return 0;
 }

@@ -9,6 +9,7 @@
 size_t get_file_contents(FILE* f, char* buf, const int n)
 {
 	const long orig_pos = ftell(f);
+	fseek (f, 0, SEEK_SET);
 	const int bytes_read = fread(buf, 1, n, f);
 	fseek (f, orig_pos, SEEK_SET);
 	assert(ftell(f) == orig_pos);
@@ -18,17 +19,17 @@ size_t get_file_contents(FILE* f, char* buf, const int n)
 void logging_test_general(void)
 {
 	nqiv_log_ctx ctx = {0};
-	int streams_len = ctx.streams->position / sizeof(FILE*);
 
 	/* Update set prefix and level use info level */
 	nqiv_log_init(&ctx);
+	int streams_len = ctx.streams->position / sizeof(FILE*);
 	ctx.level = NQIV_LOG_INFO;
 	assert(ctx.streams != NULL);
-	assert(streams_len == 1);
+	assert(streams_len == 0);
 	assert(ctx.error_message[0] == '\0');
 	assert(ctx.prefix_format[0] == '\0');
 	assert(ctx.level == NQIV_LOG_INFO);
-	nqiv_log_set_prefix_format(NULL, "LOG###level# #time:%Y-%m-%d %T%z# ");
+	nqiv_log_set_prefix_format(&ctx, "LOG###level# #time:%Y-%m-%d %T%z# ");
 	assert(strcmp(ctx.prefix_format, "LOG###level# #time:%Y-%m-%d %T%z# ") == 0);
 
 	FILE* testfile_1 = tmpfile();
@@ -39,15 +40,15 @@ void logging_test_general(void)
 	nqiv_log_add_stream(&ctx, testfile_1);
 	assert( strlen(ctx.error_message) == 0 );
 	streams_len = ctx.streams->position / sizeof(FILE*);
-	assert(streams_len == 2);
+	assert(streams_len == 1);
 	nqiv_log_add_stream(&ctx, testfile_2);
 	assert( strlen(ctx.error_message) == 0 );
 	streams_len = ctx.streams->position / sizeof(FILE*);
-	assert(streams_len == 3);
+	assert(streams_len == 2);
 	nqiv_log_add_stream(&ctx, stderr);
 	assert( strlen(ctx.error_message) == 0 );
 	streams_len = ctx.streams->position / sizeof(FILE*);
-	assert(streams_len == 4);
+	assert(streams_len == 3);
 
 	nqiv_log_write(&ctx, NQIV_LOG_DEBUG, "Should not be listed because debug.\n");
 	nqiv_log_write(&ctx, NQIV_LOG_INFO, "Should be listed because equal to info.\n");
@@ -59,7 +60,7 @@ void logging_test_general(void)
 	memset(buf1, 0, 500);
 	memset(buf2, 0, 500);
 	assert( get_file_contents(testfile_1, buf1, 500) ==  get_file_contents(testfile_2, buf2, 500) );
-	assert(strncmp(buf1, buf2, 500) != 0);
+	assert(strncmp(buf1, buf2, 500) == 0);
 	assert(strncmp( buf1, "LOG#INFO ", strlen("LOG#INFO ") ) == 0);
 	assert(buf1[strlen("LOG#INFO ")] >= '0');
 	assert(buf1[strlen("LOG#INFO ")] <= '9');
@@ -68,13 +69,14 @@ void logging_test_general(void)
 	fclose(testfile_1);
 	fclose(testfile_2);
 
+	nqiv_log_write(&ctx, NQIV_LOG_INFO, NULL);
+	assert( strcmp(ctx.error_message, "No format message to write.\n") == 0 );
+
 	nqiv_log_destroy(&ctx);
 	assert(ctx.prefix_format[0] == '\0');
 	assert(ctx.error_message[0] == '\0');
 	assert(ctx.level == NQIV_LOG_ANY);
 	assert(ctx.streams == NULL);
-	streams_len = ctx.streams->position / sizeof(FILE*);
-	assert(streams_len = 0);
 
 }
 
@@ -91,7 +93,7 @@ void logging_test_nulls(void)
 	nqiv_log_add_stream(&ctx, NULL);
 	assert( strcmp(ctx.error_message, "Cannot add NULL stream.\n") == 0 );
 	/*nqiv_log_add_stream(&ctx, (void*)12345);*/
-	assert( strcmp(ctx.error_message, "Cannot add stream without available memory.\n") == 0 );
+	/*assert( strcmp(ctx.error_message, "Cannot add stream without available memory.\n") == 0 );*/
 	nqiv_log_set_prefix_format(NULL, "TEST");
 	nqiv_log_set_prefix_format(&ctx, "TEST");
 	assert( strcmp(ctx.prefix_format, "TEST") == 0 );
@@ -99,6 +101,4 @@ void logging_test_nulls(void)
 	assert(ctx.prefix_format[0] == '\0');
 
 	nqiv_log_write(NULL, NQIV_LOG_INFO, "TEST");
-	nqiv_log_write(&ctx, NQIV_LOG_INFO, "TEST");
-	assert( strcmp(ctx.error_message, "No format message to write.\n") == 0 );
 }

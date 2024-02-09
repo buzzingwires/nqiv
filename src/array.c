@@ -60,37 +60,38 @@ bool nqiv_array_make_room(nqiv_array* array, const int size)
 
 bool nqiv_array_insert_bytes(nqiv_array* array, void* ptr, const int count, const int idx)
 {
+	assert(idx >= 0);
 	if( !nqiv_array_make_room(array, count) ) {
 		return false;
 	}
 	const int offset = idx * count;
 	const int next_offset = offset + count;
-	const int final_offset = array->data_length - count;
-	assert(next_offset <= final_offset);
-	assert(array->position <= final_offset);
+	/*array->position = array->position >= offset ? array->position : offset;*/
+	assert(array->position >= offset);
 	char* data = array->data;
-	if(next_offset < final_offset) {
-		memcpy(&data[next_offset], &data[offset], array->position - offset);
-	}
+	memcpy(&data[next_offset], &data[offset], array->position - offset);
 	memcpy(&data[offset], ptr, count);
 	array->position += count;
-	assert(array->position <= final_offset);
+	assert(array->position <= array->data_length);
 	return true;
 }
 
 void nqiv_array_remove_bytes(nqiv_array* array, const int idx, const int count)
 {
+	if(idx < 0) {
+		return;
+	}
 	const int offset = idx * count;
+	if(offset >= array->position) {
+		return;
+	}
 	const int next_offset = offset + count;
-	const int final_offset = array->data_length - count;
-	assert(next_offset <= final_offset);
-	assert(array->position <= final_offset);
 	char* data = array->data;
-	if(next_offset < final_offset) {
+	if(next_offset < array->position) {
 		memcpy(&data[offset], &data[next_offset], array->position - next_offset);
 	}
 	array->position -= count;
-	assert(array->position <= final_offset);
+	memset(&data[array->position], 0, count);
 	assert(array->position >= 0);
 }
 
@@ -112,7 +113,7 @@ bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, voi
 		return false;
 	}
 	const int offset = idx * count;
-	if( offset >= array->data_length - count ) {
+	if(offset >= array->position) {
 		return false;
 	}
 	char* data = array->data;
@@ -221,10 +222,13 @@ FILE* nqiv_array_pop_FILE_ptr(nqiv_array* array)
 
 void nqiv_array_destroy(nqiv_array* array)
 {
-	if(array->data == NULL) {
-		return;
+	if(array == NULL) {
+		 return;
 	}
-	memset(array->data, 0, array->data_length);
-	free(array->data);
+	if(array->data != NULL) {
+		memset(array->data, 0, array->data_length);
+		free(array->data);
+	}
 	memset( array, 0, sizeof(nqiv_array) );
+	free(array);
 }
