@@ -76,11 +76,12 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 {
 	bool running = true;
 	while(running) {
+		nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locking thread %d.\n", omp_get_thread_num() );
 		omp_set_lock(lock);
+		nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locked thread %d.\n", omp_get_thread_num() );
 		nqiv_event event = {0};
 		const bool event_found = nqiv_queue_pop(queue, sizeof(nqiv_event), &event);
 		if(event_found) {
-			omp_set_lock(&event.options.image_load.image->lock);
 			switch(event.type) {
 				case NQIV_EVENT_WORKER_STOP:
 					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Received stop event on thread %d.\n", omp_get_thread_num() );
@@ -88,6 +89,9 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 					break;
 				case NQIV_EVENT_IMAGE_LOAD:
 					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Received image load event on thread %d.\n", omp_get_thread_num() );
+					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
+					omp_set_lock(&event.options.image_load.image->lock);
+					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
 					nqiv_worker_handle_image_load_form(&event.options.image_load.image_options, event.options.image_load.image, &event.options.image_load.image->image);
 					nqiv_worker_handle_image_load_form(&event.options.image_load.thumbnail_options, event.options.image_load.image, &event.options.image_load.image->thumbnail);
 					if(event.options.image_load.set_thumbnail_path) {
@@ -115,12 +119,16 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 						}
 						event.options.image_load.image->thumbnail_attempted = true;
 					}
+					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
+					omp_unset_lock(&event.options.image_load.image->lock);
+					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
 					break;
 			}
-			omp_unset_lock(&event.options.image_load.image->lock);
 		}
+		nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocking thread %d.\n", omp_get_thread_num() );
 		omp_unset_lock(lock);
-		SDL_Event tell_finished;
+		nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocked thread %d.\n", omp_get_thread_num() );
+		SDL_Event tell_finished = {0};
 		tell_finished.type = SDL_USEREVENT;
 		tell_finished.user.code = (Sint32)event_code;
 		tell_finished.user.data1 = lock;

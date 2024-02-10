@@ -30,7 +30,7 @@ bool nqiv_array_grow(nqiv_array* array, const int new_length)
 		return false;
 	}
 	if(new_length <= array->data_length) {
-		return false;
+		return true;
 	}
 	void* new_data = (void*)realloc(array->data, new_length);
 	if(new_data == NULL) {

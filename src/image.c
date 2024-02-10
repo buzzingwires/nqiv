@@ -14,7 +14,6 @@
 void nqiv_unload_image_form_wand(nqiv_image_form* form)
 {
 	assert(form != NULL);
-	assert(form->file != NULL);
 	if(form->wand != NULL) {
 		DestroyMagickWand(form->wand); /* TODO: Where should this be? */
 		form->wand = NULL;
@@ -24,7 +23,6 @@ void nqiv_unload_image_form_wand(nqiv_image_form* form)
 void nqiv_unload_image_form_file(nqiv_image_form* form)
 {
 	assert(form != NULL);
-	assert(form->wand == NULL);
 	if(form->file != NULL) {
 		fclose(form->file);
 		form->file = NULL;
@@ -33,6 +31,7 @@ void nqiv_unload_image_form_file(nqiv_image_form* form)
 
 void nqiv_unload_image_form_texture(nqiv_image_form* form)
 {
+	assert(form != NULL);
 	if(form->texture != NULL) {
 		SDL_DestroyTexture( (SDL_Texture *)form->data );
 		form->texture = NULL;
@@ -42,7 +41,6 @@ void nqiv_unload_image_form_texture(nqiv_image_form* form)
 void nqiv_unload_image_form_surface(nqiv_image_form* form)
 {
 	assert(form != NULL);
-	assert(form->data != NULL);
 	if(form->surface != NULL) {
 		SDL_FreeSurface(form->surface);
 		form->surface = NULL;
@@ -52,7 +50,6 @@ void nqiv_unload_image_form_surface(nqiv_image_form* form)
 void nqiv_unload_image_form_raw(nqiv_image_form* form)
 {
 	assert(form != NULL);
-	assert(form->surface == NULL);
 	if(form->data != NULL) {
 		free(form->data);
 		form->data = NULL;
@@ -76,6 +73,12 @@ void nqiv_image_destroy(nqiv_image* image) {
 	omp_destroy_lock(&image->lock);
 	nqiv_unload_image_form(&image->image);
 	nqiv_unload_image_form(&image->thumbnail);
+	if(image->image.path != NULL) {
+		free(image->image.path);
+	}
+	if(image->thumbnail.path != NULL) {
+		free(image->thumbnail.path);
+	}
 	memset( image, 0, sizeof(nqiv_image) );
 	free(image);
 }
@@ -88,21 +91,22 @@ nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* path)
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Cannot create image with zero-length path.");
 		return NULL;
 	}
+	const size_t path_size = path_len + 1;
 	nqiv_image* image = (nqiv_image*)calloc( 1, sizeof(nqiv_image) );
 	if(image == NULL) {
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to allocate memory for image at path %s.", path);
 		return image;
 	}
-	image->image.path = calloc(1, path_len);
+	image->image.path = calloc(1, path_size);
 	if(image->image.path == NULL) {
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to allocate memory for path data %s.", path);
 		nqiv_image_destroy(image);
 		return NULL;
 	}
 	omp_init_lock(&image->lock);
-	strncpy(image->image.path, path, path_len + 1);
+	strncpy(image->image.path, path, path_len);
 	assert(strcmp(image->image.path, path) == 0);
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Created image %s.\n", image->image.path);
+	nqiv_log_write(logger, NQIV_LOG_DEBUG, "Created image %s.\n", image->image.path);
 	return image;
 }
 
@@ -131,7 +135,7 @@ bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form)
 	assert( (form->file == NULL && form->wand == NULL) );
 	form->file = fopen(form->path, "r");
 	if(form->file == NULL) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to open image file at path %s.", form->path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to open image file at path %s.\n", form->path);
 		/*nqiv_set_invalid_image_form(form);*/
 		form->error = true;
 		return false;
@@ -219,7 +223,17 @@ void nqiv_image_manager_destroy(nqiv_image_manager* manager)
 	if(manager == NULL) {
 		return;
 	}
-	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Destroying image manager.");
+	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Destroying image manager.\n");
+
+	nqiv_image* current_image;
+	while(true) {
+		current_image = nqiv_array_pop_ptr(manager->images);
+		if(current_image == NULL) {
+			break;
+		}
+		nqiv_image_destroy(current_image);
+	}
+
 	if(manager->images != NULL) {
 		nqiv_array_destroy(manager->images);
 	}
@@ -313,18 +327,18 @@ bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, co
 	}
 	if(!nqiv_array_insert_nqiv_image_ptr(manager->images, image, index)) {
 		nqiv_image_destroy(image);
-		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Failed to add image at path '%s' to image manager at index %d.", path, index);
+		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Failed to add image at path '%s' to image manager at index %d.\n", path, index);
 		return false;
 	}
 	// nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Generated image at path '%s'.", path);
-	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Added image at path '%s' to image manager at index %d.", path, index);
+	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Added image at path '%s' to image manager at index %d.\n", path, index);
 	image->parent = manager;
 	return true;
 }
 
 void nqiv_image_manager_remove(nqiv_image_manager* manager, const int index)
 {
-	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Adding image at index %d from image manager.", index);
+	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Adding image at index %d from image manager.\n", index);
 	nqiv_image_destroy( nqiv_array_get_nqiv_image_ptr(manager->images, index) );
 	nqiv_array_remove_nqiv_image_ptr(manager->images, index);
 }
@@ -342,7 +356,7 @@ bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path)
 		return false;
 	}
 	// nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Generated image at path '%s'.", path);
-	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Added image at path '%s' to image manager.", path);
+	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Added image at path '%s' to image manager.\n", path);
 	image->parent = manager;
 	return true;
 }
@@ -350,7 +364,7 @@ bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path)
 bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, char* extension)
 {
 	const bool outcome = nqiv_array_push_char_ptr(manager->extensions, extension);
-	nqiv_log_write(manager->logger, outcome?NQIV_LOG_INFO:NQIV_LOG_ERROR, "Adding extension '%s' to image manager. Success: %s", extension, outcome?"true":"false");
+	nqiv_log_write(manager->logger, outcome?NQIV_LOG_INFO:NQIV_LOG_ERROR, "Adding extension '%s' to image manager. Success: %s\n", extension, outcome?"true":"false");
 	return outcome;
 }
 

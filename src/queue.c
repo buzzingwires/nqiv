@@ -14,11 +14,15 @@ void nqiv_queue_destroy(nqiv_queue* queue)
 	if(queue == NULL) {
 		return;
 	}
+	int array_length = 0;
 	if(queue->array != NULL) {
+		array_length = queue->array->data_length;
 		omp_destroy_lock(&queue->lock);
 		nqiv_array_destroy(queue->array);
 	}
-	nqiv_log_write(queue->logger, NQIV_LOG_INFO, "Destroyed queue of length %d\n.", queue->array->data_length);
+	if(queue->logger != NULL) {
+		nqiv_log_write(queue->logger, NQIV_LOG_INFO, "Destroyed queue of length %d.\n", array_length);
+	}
 	memset( queue, 0, sizeof(nqiv_queue) );
 }
 
@@ -57,9 +61,9 @@ bool nqiv_queue_push(nqiv_queue* queue, const int count, void* entry)
 	omp_set_lock(&queue->lock);
 	if( !nqiv_array_push_bytes(queue->array, entry, count) ) {
 		nqiv_log_write(queue->logger, NQIV_LOG_WARNING, "Failed to push to array of length.\n", queue->array->data_length);
-		result = true;
 	} else {
 		nqiv_log_write(queue->logger, NQIV_LOG_DEBUG, "Pushed to queue of length %d at position %d.\n", queue->array->data_length, queue->array->position - 1);
+		result = true;
 	}
 	omp_unset_lock(&queue->lock);
 	return result;

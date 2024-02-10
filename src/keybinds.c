@@ -51,7 +51,7 @@ nqiv_key_action nqiv_keybind_lookup_text(nqiv_keybind_manager* manager, const ch
 int nqiv_findchar(const char* text, const char query, const int start, const int stop)
 {
 	assert(text != NULL);
-	assert(stop >= 0);
+	assert(stop >= -1);
 	assert(start >= 0);
 	const int step = stop >= start ? 1 : -1;
 	int idx = start;
