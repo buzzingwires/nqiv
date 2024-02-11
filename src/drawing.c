@@ -14,8 +14,8 @@ void nqiv_fill_rect(SDL_Surface* surface, const SDL_Rect* rect, const SDL_Color*
 	SDL_LockSurface(surface);
 	int y;
 	int x;
-	for(y = rect->y; y < rect->h; ++y) {
-		for(x = rect->x; x < rect->w; ++x) {
+	for(y = rect->y; y < rect->y + rect->h; ++y) {
+		for(x = rect->x; x < rect->x + rect->w; ++x) {
 			assert( sizeof(Uint8*) == sizeof(void*) );
 			Uint8* pixel = (Uint8*)(surface->pixels) + y * surface->pitch + x * surface->format->BytesPerPixel;
 			pixel[0] = color->r;
