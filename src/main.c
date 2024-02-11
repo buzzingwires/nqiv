@@ -306,7 +306,9 @@ bool nqiv_create_border_rect_texture(nqiv_log_ctx* logger, SDL_Renderer* rendere
 	if( !nqiv_create_sdl_drawing_surface(logger, rect->w, rect->h, &surface) ) {
 		return false;
 	}
-	nqiv_draw_rect(surface, rect, color, ( (rect->w + rect->h) / 2 ) / 64);
+	int pixel_size = ( (rect->w + rect->h) / 2 ) / 64;
+	pixel_size = pixel_size > 0 ? pixel_size : 1;
+	nqiv_draw_rect(surface, rect, color, pixel_size);
 	if( !nqiv_sdl_surface_to_texture(logger, renderer, surface, texture) ) {
 		return false;
 	}
