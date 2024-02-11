@@ -63,22 +63,20 @@ void nqiv_draw_alpha_background(SDL_Surface* surface, const SDL_Rect* rect, cons
 	assert(rect != NULL);
 	assert(color_one != NULL);
 	assert(color_two != NULL);
-	const int x_leftover = rect->w % size;
-	const int x_start_margin = x_leftover / 2;
-	const int x_end_margin = x_leftover / 2 + x_leftover % 2;
-	const int y_leftover = rect->h % size;
-	const int y_start_margin = y_leftover / 2;
-	const int y_end_margin = y_leftover / 2 + y_leftover % 2;
-	const int y_start_margin_end = rect->y + y_start_margin;
-	const int x_start_margin_end = rect->x + x_start_margin;
-	const int y_end_margin_start = rect->y + rect->h - y_end_margin;
-	const int x_end_margin_start = rect->x + rect->w - x_end_margin;
 	SDL_LockSurface(surface);
 	int y;
 	int x;
 	const SDL_Color* color = color_one;
-	int square_count = 0;
+	int x_square_count = 0;
+	int y_square_count = 0;
 	for(y = rect->y; y < rect->h; ++y) {
+		const SDL_Color* row_start_color = color;
+		if(y_square_count == size) {
+			row_start_color = color == color_one ? color_two : color_one;
+			y_square_count = 0;
+		}
+		color = row_start_color;
+		x_square_count = 0;
 		for(x = rect->x; x < rect->w; ++x) {
 			assert( sizeof(Uint8*) == sizeof(void*) );
 			Uint8* pixel = (Uint8*)(surface->pixels) + y * surface->pitch + x * surface->format->BytesPerPixel;
@@ -86,16 +84,13 @@ void nqiv_draw_alpha_background(SDL_Surface* surface, const SDL_Rect* rect, cons
 			pixel[1] = color->g;
 			pixel[2] = color->b;
 			pixel[3] = color->a;
-			++square_count;
-			if(x == x_start_margin_end || x == x_end_margin_start || square_count == size) {
+			++x_square_count;
+			if(x_square_count == size) {
 				color = color == color_one ? color_two : color_one;
-				square_count = 0;
+				x_square_count = 0;
 			}
 		}
-		if(y == y_start_margin_end || y == y_end_margin_start || square_count == size) {
-			color = color == color_one ? color_two : color_one;
-			square_count = 0;
-		}
+		++y_square_count;
 	}
 	SDL_UnlockSurface(surface);
 }
