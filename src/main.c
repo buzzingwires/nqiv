@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 
 #include <MagickCore/MagickCore.h>
 #include <MagickWand/MagickWand.h>
@@ -267,7 +268,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 
 bool nqiv_create_sdl_drawing_surface(nqiv_log_ctx* logger, const int width, const int height, SDL_Surface** surface)
 {
-	*surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 4 * 8, SDL_PIXELFORMAT_RGBA8888);
+	*surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 4 * 8, SDL_PIXELFORMAT_ABGR8888);
 	if(*surface == NULL) {
 		nqiv_log_write( logger, NQIV_LOG_ERROR, "Failed to create SDL Surface. SDL Error: %s\n", SDL_GetError() );
 		return false;
@@ -352,6 +353,10 @@ bool nqiv_setup_sdl(nqiv_state* state)
 	state->renderer = SDL_CreateRenderer(state->window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
 	if(state->renderer == NULL) {
 		nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL Renderer. SDL Error: %s\n", SDL_GetError() );
+		return false;
+	}
+	if( SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255) != 0 ) {
+		nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to set SDL Renderer draw color. SDL Error: %s\n", SDL_GetError() );
 		return false;
 	}
 	SDL_Color color;
@@ -441,8 +446,10 @@ bool nqiv_send_thread_event(nqiv_state* state, nqiv_event* event)
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent attempted, status: %s.\n", event_sent ? "Success" : "Failure");
 		if(!event_sent) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Failed to send event.\n");
+			/*
 			nqiv_unlock_threads(state);
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for event.\n");
+			*/
 			return false;
 		}
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent successfully.\n");
@@ -453,14 +460,16 @@ bool nqiv_send_thread_event(nqiv_state* state, nqiv_event* event)
 
 /* TODO STEP FRAME? */
 /* TODO Reset frame */
-bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_background, const SDL_Rect* srcrect, const SDL_Rect* dstrect, const bool is_thumbnail, const bool first_frame, const bool next_frame, const bool selected, const bool hard)
+bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_background, const SDL_Rect* srcrect, const SDL_Rect* dstrect, const bool is_thumbnail, const bool first_frame, const bool next_frame, const bool selected, const bool hard, const bool lock)
 {
 	/* TODO Srcrect easily can make this work for both views DONE */
 	/* TODO Merge load/save thumbnail, or have an short load to check for the thumbnail before saving  DONE*/
 	/* TODO Use load thumbnail for is_thumbnail? */
-	nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-	omp_set_lock(&image->lock);
-	nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+	if(lock) {
+		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+		omp_set_lock(&image->lock);
+		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+	}
 	nqiv_image_form* form = is_thumbnail ? &image->thumbnail : &image->image;
 	if(!is_thumbnail && state->images.thumbnail.save) {
 		if(!image->thumbnail_attempted) {
@@ -513,7 +522,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				/* TODO Signal to create thumbnail from main image, set thumbnail attempted after */
 				/* TODO UNSET ERROR */
 			} else {
-				if( !render_from_form(state, image, alpha_background, srcrect, dstrect, false, true, false, selected, hard) ) {
+				if( !render_from_form(state, image, alpha_background, srcrect, dstrect, false, true, false, selected, hard, false) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -710,7 +719,10 @@ bool render_montage(nqiv_state* state, const bool hard)
 	if there's an error set, set error indicator, then quit
 	*/
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage.\n");
-	if( SDL_RenderCopy(state->renderer, state->texture_background, NULL, NULL) != 0 ) {
+	if(SDL_RenderClear(state->renderer) != 0) {
+		return false;
+	}
+	if(SDL_RenderCopy(state->renderer, state->texture_background, NULL, NULL) != 0) {
 		return false;
 	}
 	int idx;
@@ -722,7 +734,7 @@ bool render_montage(nqiv_state* state, const bool hard)
 			return false;
 		}
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n", image->image.path, idx);
-		if( !render_from_form(state, image, state->texture_montage_alpha_background, NULL, &dstrect, state->images.thumbnail.save, true, false, state->montage.positions.selection == idx, hard) ) {
+		if( !render_from_form(state, image, state->texture_montage_alpha_background, NULL, &dstrect, state->images.thumbnail.save, true, false, state->montage.positions.selection == idx, hard, true) ) {
 			return false;
 		}
 	}
@@ -732,7 +744,10 @@ bool render_montage(nqiv_state* state, const bool hard)
 bool render_image(nqiv_state* state, const bool start, const bool hard)
 {
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering selected image.\n");
-	if( SDL_RenderCopy(state->renderer, state->texture_background, NULL, NULL) != 0 ) {
+	if(SDL_RenderClear(state->renderer) != 0) {
+		return false;
+	}
+	if(SDL_RenderCopy(state->renderer, state->texture_background, NULL, NULL) != 0) {
 		return false;
 	}
 	nqiv_image* image;
@@ -744,7 +759,7 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	SDL_Rect dstrect = {0};
 	/* TODO RECT DONE BUT ASPECT RATIO */
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
-	if( !render_from_form(state, image, state->texture_alpha_background, &srcrect, &dstrect, false, start, true, false, hard) ) {
+	if( !render_from_form(state, image, state->texture_alpha_background, &srcrect, &dstrect, false, start, true, false, hard, true) ) {
 		return false;
 	}
 	return true;
@@ -764,6 +779,9 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 			*running = false;
 			*result = false;
 		}
+	}
+	if(*result != false) {
+		SDL_RenderPresent(state->renderer);
 	}
 }
 
@@ -794,9 +812,23 @@ bool nqiv_master_thread(nqiv_state* state)
 			case SDL_USEREVENT:
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received response from worker thread.\n");
 				if(input_event.user.code >= 0 && (Uint32)input_event.user.code == state->thread_event_number) {
+					/*
 					nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locking thread from master.\n");
 					omp_set_lock(input_event.user.data1);
 					nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locked thread from master.\n");
+					*/
+					omp_set_lock(&state->thread_queue.lock);
+					const int queue_length = state->thread_queue.array->position / sizeof(nqiv_event*);
+					if(queue_length == 0) {
+						if( omp_test_lock(input_event.user.data1) ) {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locked thread from master.\n");
+						} else {
+							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Thread already locked from master.\n");
+						}
+					} else {
+						nqiv_unlock_threads(state);
+					}
+					omp_unset_lock(&state->thread_queue.lock);
 				}
 				render_and_update(state, &running, &result, false, false);
 				break;
@@ -816,6 +848,7 @@ bool nqiv_master_thread(nqiv_state* state)
 				SDL_Keysym
 				nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, const SDL_Keysym* key, nqiv_array* output);
 				*/
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received key up event.\n");
 				{
 					const nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, &input_event.key.keysym, keybind_pairs);
 					if(lookup_summary == NQIV_KEY_LOOKUP_FAILURE) {

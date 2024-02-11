@@ -59,6 +59,7 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 
 	size_t path_len = rootlen + thumblen + typelen + md5len + pnglen;
 	char* pathptr = calloc(1, path_len);
+	char* pathptr_base = pathptr;
 	if(pathptr == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to allocate memory for path data %s.", image->image.path);
 		return false;
@@ -76,8 +77,8 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 	nqiv_thumbnail_digest_to_string(pathptr, md5raw);
 	pathptr += md5len;
 	memcpy(pathptr, pngext, pnglen);
-	*pathptr_store = pathptr;
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Calculated thumbnail path '%s' for image at path '%s'.\n", pathptr, image->image.path);
+	*pathptr_store = pathptr_base;
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Calculated thumbnail path '%s' for image at path '%s'.\n", pathptr_base, image->image.path);
 	return true;
 }
 

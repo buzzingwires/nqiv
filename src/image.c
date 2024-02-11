@@ -164,15 +164,14 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	assert(image != NULL);
 	assert(form != NULL);
 	assert( (form->file != NULL && form->wand != NULL && form->data == NULL) );
-	assert(sizeof(CharPixel) == 1);
-	form->data = calloc( 1, strlen("RGBA") * sizeof(CharPixel) * form->height * form->width );
+	form->data = calloc( 1, strlen("ABGR") * form->height * form->width );
 	if(form->data == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to allocate memory for raw image data at path %s.", form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
-	if(MagickExportImagePixels(form->wand, 0, 0, form->width, form->height, "RGBA", CharPixel, form->data) == MagickFalse) {
+	if(MagickExportImagePixels(form->wand, 0, 0, form->width, form->height, "ABGR", CharPixel, form->data) == MagickFalse) {
 		nqiv_log_magick_wand_exception(image->parent->logger, form->wand, form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
@@ -189,7 +188,7 @@ bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form)
 	assert( (form->data != NULL) );
 	assert(form->width > 0);
 	assert(form->height > 0);
-	form->surface = SDL_CreateRGBSurfaceWithFormatFrom(form->data, form->width, form->height, 4 * 8, 4 * form->width, SDL_PIXELFORMAT_RGBA8888);
+	form->surface = SDL_CreateRGBSurfaceWithFormatFrom(form->data, form->width, form->height, 4 * 8, 4 * form->width, SDL_PIXELFORMAT_ABGR8888);
 	if(form->surface == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to create SDL surface for path %s (%s).", form->path, SDL_GetError() );
 		nqiv_unload_image_form(form);

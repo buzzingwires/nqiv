@@ -7,7 +7,7 @@
 void nqiv_fill_rect(SDL_Surface* surface, const SDL_Rect* rect, const SDL_Color* color)
 {
 	assert(surface != NULL);
-	assert(surface->format->format == SDL_PIXELFORMAT_RGBA8888);
+	assert(surface->format->format == SDL_PIXELFORMAT_ABGR8888);
 	assert(surface->format->BytesPerPixel == 4);
 	assert(rect != NULL);
 	assert(color != NULL);
@@ -58,7 +58,7 @@ void nqiv_draw_rect(SDL_Surface* surface, const SDL_Rect* from_rect, const SDL_C
 void nqiv_draw_alpha_background(SDL_Surface* surface, const SDL_Rect* rect, const int size, const SDL_Color* color_one, const SDL_Color* color_two)
 {
 	assert(surface != NULL);
-	assert(surface->format->format == SDL_PIXELFORMAT_RGBA8888);
+	assert(surface->format->format == SDL_PIXELFORMAT_ABGR8888);
 	assert(surface->format->BytesPerPixel == 4);
 	assert(rect != NULL);
 	assert(color_one != NULL);

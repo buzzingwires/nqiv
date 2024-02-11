@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include <SDL2/SDL.h>
 #include <omp.h>
 
@@ -45,11 +47,16 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 	} else {
 		bool success = true;
 		if(options->wand || options->wand_soft) {
-			if(options->wand && form->wand != NULL) {
-				nqiv_unload_image_form_wand(form);
-				nqiv_unload_image_form_file(form);
+			if(form->wand != NULL) {
+				assert(form->file != NULL);
+				if(options->wand) {
+					nqiv_unload_image_form_wand(form);
+					nqiv_unload_image_form_file(form);
+					success = nqiv_image_load_wand(image, form);
+				}
+			} else {
+				success = nqiv_image_load_wand(image, form);
 			}
-			success = nqiv_image_load_wand(image, form);
 		}
 		if(success && options->first_frame) {
 			success = nqiv_image_form_first_frame(form);
@@ -58,16 +65,24 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 			success = nqiv_image_form_next_frame(form);
 		}
 		if( success && (options->raw || options->raw_soft) ) {
-			if(options->raw && form->data != NULL) {
-				nqiv_unload_image_form_raw(form);
+			if(form->data != NULL) {
+				if(options->raw) {
+					nqiv_unload_image_form_raw(form);
+					success = nqiv_image_load_raw(image, form);
+				}
+			} else {
+				success = nqiv_image_load_raw(image, form);
 			}
-			success = nqiv_image_load_raw(image, form);
 		}
 		if( success && (options->surface || options->surface_soft) ) {
-			if(options->surface && form->surface != NULL) {
-				nqiv_unload_image_form_surface(form);
+			if(form->surface != NULL) {
+				if(options->surface) {
+					nqiv_unload_image_form_surface(form);
+					success = nqiv_image_load_surface(image, form);
+				}
+			} else {
+				success = nqiv_image_load_surface(image, form);
 			}
-			nqiv_image_load_surface(image, form);
 		}
 	}
 }
@@ -75,10 +90,14 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_code)
 {
 	bool running = true;
+	bool last_event_found = false;
 	while(running) {
-		nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locking thread %d.\n", omp_get_thread_num() );
-		omp_set_lock(lock);
-		nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locked thread %d.\n", omp_get_thread_num() );
+		if(!last_event_found) {
+			last_event_found = true;
+			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locking thread %d.\n", omp_get_thread_num() );
+			omp_set_lock(lock);
+			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locked thread %d.\n", omp_get_thread_num() );
+		}
 		nqiv_event event = {0};
 		const bool event_found = nqiv_queue_pop(queue, sizeof(nqiv_event), &event);
 		if(event_found) {
@@ -107,11 +126,13 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 						   nqiv_image_load_wand(event.options.image_load.image, &event.options.image_load.image->thumbnail)
 						   ) {
 								nqiv_unload_image_form_wand(&event.options.image_load.image->thumbnail);
+								nqiv_unload_image_form_file(&event.options.image_load.image->thumbnail);
 						} else {
 							if(event.options.image_load.image->image.wand == NULL) {
 								if( nqiv_image_load_wand(event.options.image_load.image, &event.options.image_load.image->image) ) {
 									nqiv_thumbnail_create(event.options.image_load.image);
 									nqiv_unload_image_form_wand(&event.options.image_load.image->image);
+									nqiv_unload_image_form_file(&event.options.image_load.image->image);
 								}
 							} else {
 								nqiv_thumbnail_create(event.options.image_load.image);
@@ -124,14 +145,17 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
 					break;
 			}
+		} else {
+			SDL_Event tell_finished = {0};
+			tell_finished.type = SDL_USEREVENT;
+			tell_finished.user.code = (Sint32)event_code;
+			tell_finished.user.data1 = lock;
+			SDL_PushEvent(&tell_finished);
+			last_event_found = false;
+			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocking thread %d.\n", omp_get_thread_num() );
+			omp_unset_lock(lock);
+			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocked thread %d.\n", omp_get_thread_num() );
+			SDL_Delay(2); /* XXX: Sleep for a short time so the master thread can sync faster. Strictly speaking, it should *not* be necessary. */
 		}
-		nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocking thread %d.\n", omp_get_thread_num() );
-		omp_unset_lock(lock);
-		nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocked thread %d.\n", omp_get_thread_num() );
-		SDL_Event tell_finished = {0};
-		tell_finished.type = SDL_USEREVENT;
-		tell_finished.user.code = (Sint32)event_code;
-		tell_finished.user.data1 = lock;
-		SDL_PushEvent(&tell_finished);
 	}
 }
