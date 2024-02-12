@@ -535,7 +535,9 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 			}
 		}
 	} else {
-		if(form->surface != NULL) {
+		if(form->texture != NULL) {
+			/* NOOP */
+		} else if(form->surface != NULL) {
 			form->texture = SDL_CreateTextureFromSurface(state->renderer, form->surface);
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loaded texture for image %s.\n", image->image.path);
 			if(form->texture == NULL) {
