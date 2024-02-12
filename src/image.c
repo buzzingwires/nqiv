@@ -33,7 +33,7 @@ void nqiv_unload_image_form_texture(nqiv_image_form* form)
 {
 	assert(form != NULL);
 	if(form->texture != NULL) {
-		SDL_DestroyTexture( (SDL_Texture *)form->data );
+		SDL_DestroyTexture(form->texture);
 		form->texture = NULL;
 	}
 }
