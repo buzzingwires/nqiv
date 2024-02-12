@@ -756,7 +756,7 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 		return false;
 	}
 	nqiv_image* image;
-	if( nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &image) ) {
+	if( !nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &image) ) {
 		return false;
 	}
 	SDL_Rect srcrect;
