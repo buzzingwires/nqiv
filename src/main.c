@@ -130,6 +130,7 @@ void nqiv_state_clear(nqiv_state* state)
 		free(state->thread_locks);
 	}
 	memset( state, 0, sizeof(nqiv_state) );
+	MagickWandTerminus();
 }
 
 bool nqiv_parse_args(char *argv[], nqiv_state* state)
@@ -261,7 +262,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			}
 		}
 	}
-	state->images.thumbnail.interpolation = BilinearInterpolatePixel;
+	state->images.thumbnail.interpolation = LanczosFilter;
 	/* TODO: STDIN */
 	return true;
 } /* parse_args */
@@ -789,8 +790,8 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 
 bool nqiv_master_thread(nqiv_state* state)
 {
-	nqiv_array* keybind_pairs = nqiv_array_create(STARTING_QUEUE_LENGTH);
-	if(keybind_pairs == NULL) {
+	nqiv_array* keybind_actions = nqiv_array_create(STARTING_QUEUE_LENGTH);
+	if(keybind_actions == NULL) {
 		return false;
 	}
 	bool result = true;
@@ -852,7 +853,7 @@ bool nqiv_master_thread(nqiv_state* state)
 				*/
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received key up event.\n");
 				{
-					const nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, &input_event.key.keysym, keybind_pairs);
+					const nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, &input_event.key.keysym, keybind_actions);
 					if(lookup_summary == NQIV_KEY_LOOKUP_FAILURE) {
 						running = false;
 						result = false;
@@ -863,76 +864,76 @@ bool nqiv_master_thread(nqiv_state* state)
 						bool nqiv_array_push_bytes(nqiv_array* array, void* ptr, const int count);
 						bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, void* ptr);
 						*/
-						nqiv_keybind_pair pair;
-						while( nqiv_array_get_bytes(keybind_pairs, 0, sizeof(nqiv_keybind_pair), &pair) ) {
+						nqiv_key_action action;
+						while( nqiv_array_get_bytes(keybind_actions, 0, sizeof(nqiv_key_action), &action) ) {
 							/*
 	NQIV_KEY_ACT	ION_TOGGLE_STRETCH,
 	NQIV_KEY_ACT	ION_STRETCH,
 	NQIV_KEY_ACT	ION_KEEP_ASPECT_RATIO,
 	NQIV_KEY_ACT	ION_RELOAD,
 	*/
-							if(pair.action == NQIV_KEY_ACTION_QUIT) {
+							if(action == NQIV_KEY_ACTION_QUIT) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action quit.\n");
 								running = false;
-							} else if(pair.action == NQIV_KEY_ACTION_NEXT) {
+							} else if(action == NQIV_KEY_ACTION_NEXT) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action next.\n");
 								state->montage.positions.selection = state->montage.positions.selection == state->montage.positions.end + 1 ? state->montage.positions.selection : state->montage.positions.selection + 1;
 								render_and_update(state, &running, &result, false, false);
-							} else if(pair.action == NQIV_KEY_ACTION_PREVIOUS) {
+							} else if(action == NQIV_KEY_ACTION_PREVIOUS) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action previous.\n");
 								state->montage.positions.selection = state->montage.positions.selection == 0 ? state->montage.positions.selection : state->montage.positions.selection - 1;
 								render_and_update(state, &running, &result, false, false);
-							} else if(pair.action == NQIV_KEY_ACTION_PAGE_UP) {
+							} else if(action == NQIV_KEY_ACTION_PAGE_UP) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action page up.\n");
 								const int new_selection = state->montage.positions.selection - state->montage.dimensions.count_per_row;
 								state->montage.positions.selection = new_selection < 0 ? 0 : new_selection;
 								render_and_update(state, &running, &result, false, false);
-							} else if(pair.action == NQIV_KEY_ACTION_PAGE_DOWN) {
+							} else if(action == NQIV_KEY_ACTION_PAGE_DOWN) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action page down.\n");
 								const int new_selection = state->montage.positions.selection + state->montage.dimensions.count_per_row;
 								state->montage.positions.selection = new_selection >= state->montage.positions.end ? state->montage.positions.end - 1 : new_selection;
 								render_and_update(state, &running, &result, false, false);
-							} else if(pair.action == NQIV_KEY_ACTION_TOGGLE_MONTAGE) {
+							} else if(action == NQIV_KEY_ACTION_TOGGLE_MONTAGE) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage toggle.\n");
 								state->in_montage = !state->in_montage;
 								render_and_update(state, &running, &result, false, false);
-							} else if(pair.action == NQIV_KEY_ACTION_SET_MONTAGE) {
+							} else if(action == NQIV_KEY_ACTION_SET_MONTAGE) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv montage set.\n");
 								state->in_montage = true;
 								render_and_update(state, &running, &result, false, false);
-							} else if(pair.action == NQIV_KEY_ACTION_SET_VIEWING) {
+							} else if(action == NQIV_KEY_ACTION_SET_VIEWING) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action viewing set.\n");
 								state->in_montage = false;
 								render_and_update(state, &running, &result, false, false);
-							} else if(pair.action == NQIV_KEY_ACTION_ZOOM_IN) {
+							} else if(action == NQIV_KEY_ACTION_ZOOM_IN) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom in.\n");
 								state->images.zoom.image_to_viewport_ratio += 0.05;
 								render_and_update(state, &running, &result, false, false);
-							} else if(pair.action == NQIV_KEY_ACTION_ZOOM_OUT) {
+							} else if(action == NQIV_KEY_ACTION_ZOOM_OUT) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom out.\n");
 								state->images.zoom.image_to_viewport_ratio -= 0.05;
 								render_and_update(state, &running, &result, false, false);
-							} else if(pair.action == NQIV_KEY_ACTION_LEFT) {
+							} else if(action == NQIV_KEY_ACTION_LEFT) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan left.\n");
 								state->images.zoom.viewport_horizontal_shift -= 0.05;
 								render_and_update(state, &running, &result, false, false);
-							} else if(pair.action == NQIV_KEY_ACTION_RIGHT) {
+							} else if(action == NQIV_KEY_ACTION_RIGHT) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan right.\n");
 								state->images.zoom.viewport_horizontal_shift += 0.05;
 								render_and_update(state, &running, &result, false, false);
-							} else if(pair.action == NQIV_KEY_ACTION_UP) {
+							} else if(action == NQIV_KEY_ACTION_UP) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan up.\n");
 								state->images.zoom.viewport_vertical_shift -= 0.05;
 								render_and_update(state, &running, &result, false, false);
-							} else if(pair.action == NQIV_KEY_ACTION_DOWN) {
+							} else if(action == NQIV_KEY_ACTION_DOWN) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan down.\n");
 								state->images.zoom.viewport_vertical_shift += 0.05;
 								render_and_update(state, &running, &result, false, false);
-							} else if(pair.action == NQIV_KEY_ACTION_RELOAD) {
+							} else if(action == NQIV_KEY_ACTION_RELOAD) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action reload.\n");
 								render_and_update(state, &running, &result, false, true);
 							}
-							nqiv_array_remove_bytes( keybind_pairs, 0, sizeof(nqiv_keybind_pair) );
+							nqiv_array_remove_bytes( keybind_actions, 0, sizeof(nqiv_key_action) );
 						}
 					}
 				}
@@ -940,7 +941,7 @@ bool nqiv_master_thread(nqiv_state* state)
 		}
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Finished waiting on events.\n");
-	nqiv_array_destroy(keybind_pairs);
+	nqiv_array_destroy(keybind_actions);
 	nqiv_event output_event = {0};
 	output_event.type = NQIV_EVENT_WORKER_STOP;
 	if( !nqiv_send_thread_event(state, &output_event) ) {
@@ -985,6 +986,8 @@ int main(int argc, char *argv[])
 	memset( &state, 0, sizeof(nqiv_state) );
 
 	state.in_montage = true;
+
+	MagickWandGenesis();
 
 	if( !nqiv_parse_args(argv, &state) ) {
 		nqiv_state_clear(&state);

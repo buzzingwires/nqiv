@@ -87,7 +87,7 @@ typedef struct nqiv_image_manager_thumbnail_settings
 	bool save;
 	int height;
 	int width;
-	PixelInterpolateMethod interpolation;
+	FilterType interpolation;
 } nqiv_image_manager_thumbnail_settings;
 
 typedef struct nqiv_image_manager_zoom_settings

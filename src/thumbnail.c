@@ -4,6 +4,9 @@
 #include <assert.h>
 #include <limits.h>
 
+#include <MagickCore/MagickCore.h>
+#include <MagickWand/MagickWand.h>
+
 #include "image.h"
 #include "md5.h"
 #include "thumbnail.h"
@@ -57,13 +60,13 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 		return false;
 	}
 
-	size_t path_len = rootlen + thumblen + typelen + md5len + pnglen;
+	size_t path_len = rootlen + thumblen + typelen + md5len + pnglen + 1;
 	char* pathptr = calloc(1, path_len);
-	char* pathptr_base = pathptr;
 	if(pathptr == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to allocate memory for path data %s.", image->image.path);
 		return false;
 	}
+	char* pathptr_base = pathptr;
 	strncpy(pathptr, image->parent->thumbnail.root, rootlen);
 	pathptr += rootlen;
 	memcpy(pathptr, thumbspart, thumblen);
@@ -82,13 +85,6 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 	return true;
 }
 
-void nqiv_log_magick_exception(nqiv_log_ctx* logger, const char* path, ExceptionInfo* exception)
-{
-	char* description = GetExceptionMessage(exception->error_number);
-	nqiv_log_write(logger, NQIV_LOG_ERROR, "ImageMagick exception for path %s: %s %s\n", path, GetMagickModule(), description);
-	MagickRelinquishMemory(description);
-}
-
 bool nqiv_thumbnail_create(nqiv_image* image)
 {
 	assert(image != NULL);
@@ -102,52 +98,23 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	if(image->thumbnail.path == NULL) {
 		return false;
 	}
-	Image* image_object = GetImageFromMagickWand(image->image.wand); /* TODO NEED TO FREE */
-	if(image_object == NULL) {
+	MagickWand* thumbnail_wand = CloneMagickWand(image->image.wand);
+	if(thumbnail_wand == NULL) {
 		nqiv_log_magick_wand_exception(image->parent->logger, image->image.wand, image->image.path);
 		return false;
 	}
-	ExceptionInfo* exception_info = AcquireExceptionInfo(); /* TODO LOG ME AND FREE WHEN NEEDED WHAT NEEDS TO BE FREED */
-	if(exception_info == NULL) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to create exception info for new thumbnail of path %s", image->image.path);
+	MagickResetIterator(thumbnail_wand);
+	if( !MagickResizeImage(thumbnail_wand, image->parent->thumbnail.width, image->parent->thumbnail.height, image->parent->thumbnail.interpolation) ) {
+		nqiv_log_magick_wand_exception(image->parent->logger, image->image.wand, image->image.path);
+		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
 		return false;
 	}
-	image_object = CloneImage(image_object, 0, 0, 0, exception_info);
-	CatchException(exception_info);
-	if(exception_info->error_number != 0) {
-		nqiv_log_magick_exception(image->parent->logger, image->image.path, exception_info);
-		DestroyExceptionInfo(exception_info);
+	if( !MagickWriteImage(thumbnail_wand, image->thumbnail.path) ) {
+		nqiv_log_magick_wand_exception(image->parent->logger, image->image.wand, image->image.path);
+		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
 		return false;
 	}
-	ImageInfo* image_info = CloneImageInfo(NULL);
-	if(image_info == NULL) {
-		DestroyExceptionInfo(exception_info);
-		DestroyImage(image_object);
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to create image info for new thumbnail of path %s", image->image.path);
-		return false;
-	}
-	strcpy(image_info->filename, image->thumbnail.path);
-	InterpolativeResizeImage(image_object, image->parent->thumbnail.width, image->parent->thumbnail.height, image->parent->thumbnail.interpolation, exception_info);
-	CatchException(exception_info);
-	if(exception_info->error_number != 0) {
-		nqiv_log_magick_exception(image->parent->logger, image->image.path, exception_info);
-		DestroyExceptionInfo(exception_info);
-		DestroyImage(image_object);
-		DestroyImageInfo(image_info);
-		return false;
-	}
-	WriteImage(image_info, image_object, exception_info);
-	CatchException(exception_info);
-	if(exception_info->error_number != 0) {
-		nqiv_log_magick_exception(image->parent->logger, image->image.path, exception_info);
-		DestroyExceptionInfo(exception_info);
-		DestroyImage(image_object);
-		DestroyImageInfo(image_info);
-		return false;
-	}
-	DestroyExceptionInfo(exception_info);
-	DestroyImage(image_object);
-	DestroyImageInfo(image_info);
+	DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Created thumbnail at path '%s' for image at path '%s'.\n", image->thumbnail.path, image->image.path);
 	return true;
 }

@@ -133,6 +133,12 @@ bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form)
 	assert(image != NULL);
 	assert(form != NULL);
 	assert( (form->file == NULL && form->wand == NULL) );
+	if(form->path == NULL) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "No path for form in image %s.\n", image->image.path);
+		/*nqiv_set_invalid_image_form(form);*/
+		form->error = true;
+		return false;
+	}
 	form->file = fopen(form->path, "r");
 	if(form->file == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to open image file at path %s.\n", form->path);
@@ -164,14 +170,14 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	assert(image != NULL);
 	assert(form != NULL);
 	assert( (form->file != NULL && form->wand != NULL && form->data == NULL) );
-	form->data = calloc( 1, strlen("ABGR") * form->height * form->width );
+	form->data = calloc( 1, strlen("RGBA") * form->height * form->width );
 	if(form->data == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to allocate memory for raw image data at path %s.", form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
-	if(MagickExportImagePixels(form->wand, 0, 0, form->width, form->height, "ABGR", CharPixel, form->data) == MagickFalse) {
+	if(MagickExportImagePixels(form->wand, 0, 0, form->width, form->height, "RGBA", CharPixel, form->data) == MagickFalse) {
 		nqiv_log_magick_wand_exception(image->parent->logger, form->wand, form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
