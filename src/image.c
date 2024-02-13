@@ -274,6 +274,7 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, 
 	manager->logger = logger;
 	manager->images = images;
 	manager->extensions = extensions;
+	manager->zoom.image_to_viewport_ratio = 1.0;
 	nqiv_log_write(logger, NQIV_LOG_INFO, "Successfully made image manager with starting length of: %d", starting_length);
 	return true;
 }
@@ -373,36 +374,30 @@ bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, char* extensi
 	return outcome;
 }
 
-void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nqiv_image_form* form, SDL_Window* window, SDL_Rect* rect)
+void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nqiv_image_form* form, SDL_Rect* rect)
 {
-	int window_width;
-	int window_height;
-	SDL_GetWindowSizeInPixels(window, &window_width, &window_height);
 	assert(manager != NULL);
 	assert(form != NULL);
 	assert(rect != NULL);
 	assert(form->height >= 1);
 	assert(form->width >= 1);
-	assert(window_width > 0);
-	assert(window_height > 0);
 	assert(manager->zoom.image_to_viewport_ratio > 0.0);
 	assert(manager->zoom.image_to_viewport_ratio <= 1.0);
-	assert( isnormal(manager->zoom.viewport_vertical_shift) );
-	assert( isnormal(manager->zoom.viewport_horizontal_shift) );
-	const double height_diff = ( (double)form->height - ( (double)form->height * manager->zoom.image_to_viewport_ratio ) ) / 2;
-	const double width_diff = ( (double)form->width - ( (double)form->width * manager->zoom.image_to_viewport_ratio ) ) / 2;
-	const double vertical_shift_amount = (double)window_height * manager->zoom.viewport_vertical_shift;
-	const double horizontal_shift_amount = (double)window_width * manager->zoom.viewport_horizontal_shift;
-	rect->y = (int)(height_diff + vertical_shift_amount);
-	rect->x = (int)(width_diff + horizontal_shift_amount);
-	rect->y = rect->y >= 0 ? rect->y : 0;
-	rect->x = rect->x >= 0 ? rect->x : 0;
-	rect->h = (int)(form->height - height_diff * 2 + vertical_shift_amount);
-	rect->w = (int)(form->width - width_diff * 2 + horizontal_shift_amount);
-	rect->h = rect->h <= form->height ? rect->y : form->height;
-	rect->w = rect->w <= form->width ? rect->w : form->width;
-	assert(rect->h > rect->y);
-	assert(rect->w > rect->x);
+	assert(manager->zoom.viewport_horizontal_shift >= -1.0);
+	assert(manager->zoom.viewport_horizontal_shift <= 1.0);
+	assert(manager->zoom.viewport_vertical_shift >= -1.0);
+	assert(manager->zoom.viewport_vertical_shift <= 1.0);
+	const double zoom_ratio_inverse = 1.0 - manager->zoom.image_to_viewport_ratio;
+	const double width_constrict = (double)form->width * zoom_ratio_inverse;
+	const double height_constrict = (double)form->height * zoom_ratio_inverse;
+	const double width_constrict_side = width_constrict * 0.5;
+	const double height_constrict_side = height_constrict * 0.5;
+	rect->w = (int)( (double)form->width - width_constrict );
+	rect->x = (int)( width_constrict_side + width_constrict_side * manager->zoom.viewport_horizontal_shift );
+	rect->h = (int)( (double)form->height - height_constrict );
+	rect->y = (int)( height_constrict_side + height_constrict_side * manager->zoom.viewport_vertical_shift );
+	assert(rect->w + rect->x <= form->width);
+	assert(rect->h + rect->y <= form->height);
 }
 
 bool nqiv_image_form_first_frame(nqiv_image_form* form)

@@ -463,7 +463,7 @@ bool nqiv_send_thread_event(nqiv_state* state, nqiv_event* event)
 
 /* TODO STEP FRAME? */
 /* TODO Reset frame */
-bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_background, const SDL_Rect* srcrect, const SDL_Rect* dstrect, const bool is_thumbnail, const bool first_frame, const bool next_frame, const bool selected, const bool hard, const bool lock)
+bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_background, const bool do_zoom, const SDL_Rect* dstrect, const bool is_thumbnail, const bool first_frame, const bool next_frame, const bool selected, const bool hard, const bool lock)
 {
 	/* TODO Srcrect easily can make this work for both views DONE */
 	/* TODO Merge load/save thumbnail, or have an short load to check for the thumbnail before saving  DONE*/
@@ -525,7 +525,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				/* TODO Signal to create thumbnail from main image, set thumbnail attempted after */
 				/* TODO UNSET ERROR */
 			} else {
-				if( !render_from_form(state, image, alpha_background, srcrect, dstrect, false, true, false, selected, hard, false) ) {
+				if( !render_from_form(state, image, alpha_background, do_zoom, dstrect, false, true, false, selected, hard, false) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -635,7 +635,9 @@ state->images.thumbnail.load
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
 			}
-			if( SDL_RenderCopy(state->renderer, form->texture, srcrect, dstrect) != 0 ) {
+			SDL_Rect srcrect;
+			nqiv_image_manager_calculate_zoomrect(&state->images, form, &srcrect); /* TODO aspect ratio */
+			if( SDL_RenderCopy(state->renderer, form->texture, &srcrect, dstrect) != 0 ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -739,7 +741,7 @@ bool render_montage(nqiv_state* state, const bool hard)
 			return false;
 		}
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n", image->image.path, idx);
-		if( !render_from_form(state, image, state->texture_montage_alpha_background, NULL, &dstrect, state->images.thumbnail.save, true, false, state->montage.positions.selection == idx, hard, true) ) {
+		if( !render_from_form(state, image, state->texture_montage_alpha_background, false, &dstrect, state->images.thumbnail.save, true, false, state->montage.positions.selection == idx, hard, true) ) {
 			return false;
 		}
 	}
@@ -759,12 +761,10 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	if( !nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &image) ) {
 		return false;
 	}
-	SDL_Rect srcrect;
-	nqiv_image_manager_calculate_zoomrect(&state->images, &image->image, state->window, &srcrect); /* TODO aspect ratio */
 	SDL_Rect dstrect = {0};
 	/* TODO RECT DONE BUT ASPECT RATIO */
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
-	if( !render_from_form(state, image, state->texture_alpha_background, &srcrect, &dstrect, false, start, true, false, hard, true) ) {
+	if( !render_from_form(state, image, state->texture_alpha_background, true, &dstrect, false, start, true, false, hard, true) ) {
 		return false;
 	}
 	return true;

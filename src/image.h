@@ -116,7 +116,7 @@ bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path);
 bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, char* extension);
 bool nqiv_image_manager_has_path_extension(nqiv_image_manager* manager, const char* path);
 
-void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nqiv_image_form* form, SDL_Window* window, SDL_Rect* rect);
+void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nqiv_image_form* form, SDL_Rect* rect);
 /* REMOVE? */
 /* Dynamic array? */
 /* convert to dynamic */
