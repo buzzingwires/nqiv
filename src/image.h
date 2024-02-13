@@ -95,6 +95,12 @@ typedef struct nqiv_image_manager_zoom_settings
 	double image_to_viewport_ratio;
 	double viewport_horizontal_shift;
 	double viewport_vertical_shift;
+	double pan_left_amount;
+	double pan_right_amount;
+	double pan_up_amount;
+	double pan_down_amount;
+	double zoom_in_amount;
+	double zoom_out_amount;
 } nqiv_image_manager_zoom_settings;
 
 struct nqiv_image_manager
@@ -116,6 +122,12 @@ bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path);
 bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, char* extension);
 bool nqiv_image_manager_has_path_extension(nqiv_image_manager* manager, const char* path);
 
+void nqiv_image_manager_pan_left(nqiv_image_manager* manager);
+void nqiv_image_manager_pan_right(nqiv_image_manager* manager);
+void nqiv_image_manager_pan_up(nqiv_image_manager* manager);
+void nqiv_image_manager_pan_down(nqiv_image_manager* manager);
+void nqiv_image_manager_zoom_in(nqiv_image_manager* manager);
+void nqiv_image_manager_zoom_out(nqiv_image_manager* manager);
 void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nqiv_image_form* form, SDL_Rect* rect);
 /* REMOVE? */
 /* Dynamic array? */

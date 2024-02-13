@@ -275,6 +275,13 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, 
 	manager->images = images;
 	manager->extensions = extensions;
 	manager->zoom.image_to_viewport_ratio = 1.0;
+
+	manager->zoom.pan_left_amount = -0.05;
+	manager->zoom.pan_right_amount = 0.05;
+	manager->zoom.pan_up_amount = -0.05;
+	manager->zoom.pan_down_amount = 0.05;
+	manager->zoom.zoom_in_amount = -0.05;
+	manager->zoom.zoom_out_amount = 0.05;
 	nqiv_log_write(logger, NQIV_LOG_INFO, "Successfully made image manager with starting length of: %d", starting_length);
 	return true;
 }
@@ -372,6 +379,52 @@ bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, char* extensi
 	const bool outcome = nqiv_array_push_char_ptr(manager->extensions, extension);
 	nqiv_log_write(manager->logger, outcome?NQIV_LOG_INFO:NQIV_LOG_ERROR, "Adding extension '%s' to image manager. Success: %s\n", extension, outcome?"true":"false");
 	return outcome;
+}
+
+void nqiv_image_calculate_zoom_dimension(const double least, const bool inclusive_least, const double most, const bool inclusive_most, double* target, const double amount)
+{
+	double new_target = *target + amount;
+	if(inclusive_least) {
+		new_target = new_target < least ? *target : new_target;
+	} else {
+		new_target = new_target <= least ? *target : new_target;
+	}
+	if(inclusive_most) {
+		new_target = new_target > most ? *target : new_target;
+	} else {
+		new_target = new_target >= most ? *target : new_target;
+	}
+	*target = new_target;
+}
+
+void nqiv_image_manager_pan_left(nqiv_image_manager* manager)
+{
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 1.0, true, &manager->zoom.viewport_horizontal_shift, manager->zoom.pan_left_amount);
+}
+
+void nqiv_image_manager_pan_right(nqiv_image_manager* manager)
+{
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 1.0, true, &manager->zoom.viewport_horizontal_shift, manager->zoom.pan_right_amount);
+}
+
+void nqiv_image_manager_pan_up(nqiv_image_manager* manager)
+{
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 1.0, true, &manager->zoom.viewport_vertical_shift, manager->zoom.pan_up_amount);
+}
+
+void nqiv_image_manager_pan_down(nqiv_image_manager* manager)
+{
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 1.0, true, &manager->zoom.viewport_vertical_shift, manager->zoom.pan_down_amount);
+}
+
+void nqiv_image_manager_zoom_in(nqiv_image_manager* manager)
+{
+	nqiv_image_calculate_zoom_dimension(0.0, false, 1.0, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount);
+}
+
+void nqiv_image_manager_zoom_out(nqiv_image_manager* manager)
+{
+	nqiv_image_calculate_zoom_dimension(0.0, false, 1.0, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount);
 }
 
 void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nqiv_image_form* form, SDL_Rect* rect)

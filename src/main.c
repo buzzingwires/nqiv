@@ -909,27 +909,27 @@ bool nqiv_master_thread(nqiv_state* state)
 								render_and_update(state, &running, &result, false, false);
 							} else if(action == NQIV_KEY_ACTION_ZOOM_IN) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom in.\n");
-								state->images.zoom.image_to_viewport_ratio += 0.05;
+								nqiv_image_manager_zoom_in(&state->images);
 								render_and_update(state, &running, &result, false, false);
 							} else if(action == NQIV_KEY_ACTION_ZOOM_OUT) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom out.\n");
-								state->images.zoom.image_to_viewport_ratio -= 0.05;
+								nqiv_image_manager_zoom_out(&state->images);
 								render_and_update(state, &running, &result, false, false);
 							} else if(action == NQIV_KEY_ACTION_LEFT) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan left.\n");
-								state->images.zoom.viewport_horizontal_shift -= 0.05;
+								nqiv_image_manager_pan_left(&state->images);
 								render_and_update(state, &running, &result, false, false);
 							} else if(action == NQIV_KEY_ACTION_RIGHT) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan right.\n");
-								state->images.zoom.viewport_horizontal_shift += 0.05;
+								nqiv_image_manager_pan_right(&state->images);
 								render_and_update(state, &running, &result, false, false);
 							} else if(action == NQIV_KEY_ACTION_UP) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan up.\n");
-								state->images.zoom.viewport_vertical_shift -= 0.05;
+								nqiv_image_manager_pan_up(&state->images);
 								render_and_update(state, &running, &result, false, false);
 							} else if(action == NQIV_KEY_ACTION_DOWN) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan down.\n");
-								state->images.zoom.viewport_vertical_shift += 0.05;
+								nqiv_image_manager_pan_down(&state->images);
 								render_and_update(state, &running, &result, false, false);
 							} else if(action == NQIV_KEY_ACTION_RELOAD) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action reload.\n");
