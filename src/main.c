@@ -1025,5 +1025,5 @@ int main(int argc, char *argv[])
 
 	const bool result = nqiv_run(&state);
 	nqiv_state_clear(&state);
-	return result;
+	return result ? 0 : 1;
 }
