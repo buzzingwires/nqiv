@@ -36,18 +36,22 @@ typedef struct nqiv_montage_state
 } nqiv_montage_state;
 */
 
-void nqiv_montage_calculate_axis(int* counter, const double margin, const double space, const double ratio)
+double nqiv_montage_calculate_axis(int* counter, const double ratio)
 {
 	*counter = 0;
 	double fill = 0;
-	fill += margin;
-	fill += margin;
 	fill += ratio;
 	while(fill < 1.0) {
 		*counter += 1;
-		fill += space;
 		fill += ratio;
 	}
+	if(*counter == 0) {
+		*counter = 1;
+	}
+	if(fill > 1.0) {
+		fill -= ratio;
+	}
+	return 1.0 - fill;
 }
 
 void nqiv_montage_calculate_dimensions(nqiv_montage_state* state)
@@ -66,15 +70,9 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state)
 	*/
 	const double width_ratio = (double)(state->images->thumbnail.width) / (double)(state->dimensions.window_width);
 	const double height_ratio = (double)(state->images->thumbnail.height) / (double)(state->dimensions.window_height);
-	const double width_times = (double)(state->dimensions.window_width) / (double)(state->images->thumbnail.width);
-	const double height_times = (double)(state->dimensions.window_height) / (double)(state->images->thumbnail.height);
-	state->dimensions.horizontal_margin = ( width_times - floor(width_times) ) * 0.1;
-	state->dimensions.vertical_margin = ( height_times - floor(height_times) ) * 0.1;
-	state->dimensions.row_space = state->dimensions.vertical_margin * 0.5;
-	state->dimensions.column_space = state->dimensions.horizontal_margin * 0.5;
 	int count_per_column;
-	nqiv_montage_calculate_axis(&count_per_column, state->dimensions.vertical_margin, state->dimensions.row_space, height_ratio);
-	nqiv_montage_calculate_axis(&state->dimensions.count_per_row, state->dimensions.horizontal_margin, state->dimensions.column_space, width_ratio);
+	const double row_leftover = nqiv_montage_calculate_axis(&count_per_column, height_ratio);
+	const double column_leftover = nqiv_montage_calculate_axis(&state->dimensions.count_per_row, width_ratio);
 	state->dimensions.count = count_per_column * state->dimensions.count_per_row;
 	state->positions.end = state->positions.start + state->dimensions.count;
 	const int images_len = state->images->images->position / sizeof(nqiv_image*);
@@ -84,8 +82,10 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state)
 	if(state->positions.selection >= state->positions.end) {
 		state->positions.selection = state->positions.end - 1;
 	}
-	state->dimensions.horizontal_margin *= 0.5;
-	state->dimensions.vertical_margin *= 0.5;
+	state->dimensions.row_space = row_leftover / ( (double)count_per_column + 3.0 );
+	state->dimensions.column_space = column_leftover / ( (double)state->dimensions.count_per_row + 3.0 );
+	state->dimensions.vertical_margin = state->dimensions.row_space * 2.0;
+	state->dimensions.horizontal_margin = state->dimensions.column_space * 2.0;
 }
 
 void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
@@ -187,8 +187,8 @@ void nqiv_montage_get_image_rect(nqiv_montage_state* state, const int idx, SDL_R
 	const int native_position = idx - state->positions.start;
 	const int row = native_position / state->dimensions.count_per_row;
 	const int column = native_position % state->dimensions.count_per_row;
-	rect->x = vertical_margin_pixels + (column_space_pixels + state->images->thumbnail.width) * column;
-	rect->y = horizontal_margin_pixels + (row_space_pixels + state->images->thumbnail.height) * row;
+	rect->x = horizontal_margin_pixels + (column_space_pixels + state->images->thumbnail.width) * column;
+	rect->y = vertical_margin_pixels + (row_space_pixels + state->images->thumbnail.height) * row;
 	rect->w = state->images->thumbnail.width;
 	rect->h = state->images->thumbnail.height;
 }
