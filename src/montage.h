@@ -7,6 +7,8 @@
 
 typedef struct nqiv_montage_dimensions
 {
+	int window_width;
+	int window_height;
 	double horizontal_margin;
 	double vertical_margin;
 	double column_space;
@@ -41,5 +43,9 @@ void nqiv_montage_jump_selection_row(nqiv_montage_state* state, const int offset
 void nqiv_montage_next_selection_row(nqiv_montage_state* state);
 void nqiv_montage_previous_selection_row(nqiv_montage_state* state);
 void nqiv_montage_get_image_rect(nqiv_montage_state* state, const int idx, SDL_Rect* rect);
+void nqiv_montage_next_selection_page(nqiv_montage_state* state);
+void nqiv_montage_previous_selection_page(nqiv_montage_state* state);
+void nqiv_montage_jump_selection_start(nqiv_montage_state* state);
+void nqiv_montage_jump_selection_end(nqiv_montage_state* state);
 
 #endif /* NQIV_MONTAGE_H */

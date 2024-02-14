@@ -70,10 +70,6 @@ nqiv_key_action nqiv_text_to_key_action(const char* text, const int length)
 {
 	if(strncmp(text, "quit", length) == 0 ) {
 		return NQIV_KEY_ACTION_QUIT;
-	} else if(strncmp(text, "next", length) == 0) {
-		return NQIV_KEY_ACTION_NEXT;
-	} else if(strncmp(text, "previous", length) == 0) {
-		return NQIV_KEY_ACTION_PREVIOUS;
 	} else if(strncmp(text, "page_up", length) == 0) {
 		return NQIV_KEY_ACTION_PAGE_UP;
 	} else if(strncmp(text, "page_down", length) == 0) {
@@ -88,14 +84,26 @@ nqiv_key_action nqiv_text_to_key_action(const char* text, const int length)
 		return NQIV_KEY_ACTION_ZOOM_IN;
 	} else if(strncmp(text, "zoom_out", length) == 0) {
 		return NQIV_KEY_ACTION_ZOOM_OUT;
-	} else if(strncmp(text, "left", length) == 0) {
-		return NQIV_KEY_ACTION_LEFT;
-	} else if(strncmp(text, "right", length) == 0) {
-		return NQIV_KEY_ACTION_RIGHT;
-	} else if(strncmp(text, "up", length) == 0) {
-		return NQIV_KEY_ACTION_UP;
-	} else if(strncmp(text, "down", length) == 0) {
-		return NQIV_KEY_ACTION_DOWN;
+	} else if(strncmp(text, "pan_left", length) == 0) {
+		return NQIV_KEY_ACTION_PAN_LEFT;
+	} else if(strncmp(text, "pan_right", length) == 0) {
+		return NQIV_KEY_ACTION_PAN_RIGHT;
+	} else if(strncmp(text, "pan_up", length) == 0) {
+		return NQIV_KEY_ACTION_PAN_UP;
+	} else if(strncmp(text, "pan_down", length) == 0) {
+		return NQIV_KEY_ACTION_PAN_DOWN;
+	} else if(strncmp(text, "montage_left", length) == 0) {
+		return NQIV_KEY_ACTION_MONTAGE_LEFT;
+	} else if(strncmp(text, "montage_right", length) == 0) {
+		return NQIV_KEY_ACTION_MONTAGE_RIGHT;
+	} else if(strncmp(text, "montage_up", length) == 0) {
+		return NQIV_KEY_ACTION_MONTAGE_UP;
+	} else if(strncmp(text, "montage_down", length) == 0) {
+		return NQIV_KEY_ACTION_MONTAGE_DOWN;
+	} else if(strncmp(text, "montage_start", length) == 0) {
+		return NQIV_KEY_ACTION_MONTAGE_START;
+	} else if(strncmp(text, "montage_end", length) == 0) {
+		return NQIV_KEY_ACTION_MONTAGE_END;
 	} else if(strncmp(text, "toggle_stretch", length) == 0) {
 		return NQIV_KEY_ACTION_TOGGLE_STRETCH;
 	} else if(strncmp(text, "stretch", length) == 0) {
@@ -136,8 +144,6 @@ bool nqiv_text_to_keysym(char* text, const int length, SDL_Keysym* key)
 		key->mod |= KMOD_MODE;
 	} else if( strncmp(text, "scroll", length) == 0 ) {
 		key->mod |= KMOD_SCROLL;
-	} else if( strncmp(text, "lctrl", length) == 0 ) {
-		key->mod |= KMOD_LCTRL;
 	} else if( strncmp(text, "ctrl", length) == 0 ) {
 		key->mod |= KMOD_CTRL;
 	} else if( strncmp(text, "shift", length) == 0 ) {
@@ -248,15 +254,14 @@ bool nqiv_compare_mod(const Uint16 a, const Uint16 b)
 {
 	const Uint16 ac = a & ~KMOD_GUI & ~KMOD_SCROLL & ~KMOD_NUM;
 	const Uint16 bc = b & ~KMOD_GUI & ~KMOD_SCROLL & ~KMOD_NUM;
-	return (ac & KMOD_SHIFT && bc & KMOD_SHIFT) ||
-		(ac & KMOD_CTRL && bc & KMOD_CTRL) ||
-		(ac & KMOD_ALT && bc & KMOD_ALT) ||
-		(ac & KMOD_GUI && bc & KMOD_GUI) ||
-		(ac & KMOD_NUM && bc & KMOD_NUM) ||
-		(ac & KMOD_CAPS && bc & KMOD_CAPS) ||
-		(ac & KMOD_MODE && bc & KMOD_MODE) ||
-		(ac & KMOD_SCROLL && bc & KMOD_SCROLL) ||
-		(ac == 0 && bc == 0);
+	return ( (bool)(ac & KMOD_SHIFT)  == (bool)(bc & KMOD_SHIFT)  ) &&
+		   ( (bool)(ac & KMOD_CTRL)   == (bool)(bc & KMOD_CTRL)   ) &&
+		   ( (bool)(ac & KMOD_ALT)    == (bool)(bc & KMOD_ALT)    ) &&
+		   ( (bool)(ac & KMOD_GUI)    == (bool)(bc & KMOD_GUI)    ) &&
+		   ( (bool)(ac & KMOD_NUM)    == (bool)(bc & KMOD_NUM)    ) &&
+		   ( (bool)(ac & KMOD_CAPS)   == (bool)(bc & KMOD_CAPS)   ) &&
+		   ( (bool)(ac & KMOD_MODE)   == (bool)(bc & KMOD_MODE)   ) &&
+		   ( (bool)(ac & KMOD_SCROLL) == (bool)(bc & KMOD_SCROLL) );
 }
 
 nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manager* manager, const SDL_Keysym* key, nqiv_array* output)
