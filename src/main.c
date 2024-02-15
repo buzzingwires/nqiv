@@ -43,6 +43,8 @@ typedef struct nqiv_state
 	int thread_count;
 	omp_lock_t* thread_locks;
 	bool in_montage;
+	char* window_title;
+	size_t window_title_size;
 } nqiv_state;
 
 bool nqiv_check_and_print_logger_error(nqiv_log_ctx* logger)
@@ -128,6 +130,9 @@ void nqiv_state_clear(nqiv_state* state)
 			omp_destroy_lock(&state->thread_locks[idx]);
 		}
 		free(state->thread_locks);
+	}
+	if(state->window_title != NULL) {
+		free(state->window_title);
 	}
 	memset( state, 0, sizeof(nqiv_state) );
 	MagickWandTerminus();
@@ -699,6 +704,64 @@ bool render_montage_item(nqiv_state* state, nqiv_image* image, const SDL_Rect* d
 }
 */
 
+/*2305843009213693951\0*/
+#define INT_MAX_STRLEN 20
+bool set_title(nqiv_state* state, nqiv_image* image)
+{
+	char idx_string[INT_MAX_STRLEN] = {0};
+	char count_string[INT_MAX_STRLEN] = {0};
+	snprintf(idx_string, INT_MAX_STRLEN, "%d", state->montage.positions.selection + 1);
+	snprintf(count_string, INT_MAX_STRLEN, "%lu", state->images.images->position / sizeof(nqiv_image*) - 1);
+	const char* path_components[] =
+	{
+		"nqiv - (",
+		idx_string,
+		"/",
+		count_string,
+		") - ",
+		image->image.path,
+		NULL
+	};
+	size_t title_len = 0;
+	int idx = 0;
+	while(path_components[idx] != NULL) {
+		title_len += strlen(path_components[idx]);
+		++idx;
+	}
+	title_len += 1; /* For the NUL */
+	if(state->window_title == NULL) {
+		state->window_title = (char*)calloc(1, title_len);
+		if(state->window_title == NULL) {
+			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to allocate %d bytes for new window title.\n", title_len);
+			return false;
+		}
+		state->window_title_size = title_len;
+	} else if(title_len > state->window_title_size) {
+		char* new_title = (char*)realloc(state->window_title, title_len);
+		if(new_title == NULL) {
+			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to reallocate %d bytes for window title.\n", title_len);
+			return false;
+		}
+		state->window_title = new_title;
+		state->window_title_size = title_len;
+		memset(state->window_title, 0, state->window_title_size);
+	} else {
+		memset(state->window_title, 0, state->window_title_size);
+	}
+	char* title_ptr = state->window_title;
+	idx = 0;
+	while(path_components[idx] != NULL) {
+		const char* item = path_components[idx];
+		const size_t item_len = strlen(item);
+		memcpy(title_ptr, item, item_len);
+		title_ptr += item_len;
+		++idx;
+	}
+	SDL_SetWindowTitle(state->window, state->window_title);
+	return true;
+}
+#undef INT_MAX_STRLEN
+
 bool render_montage(nqiv_state* state, const bool hard)
 {
 	/*
@@ -744,6 +807,9 @@ bool render_montage(nqiv_state* state, const bool hard)
 		if( !render_from_form(state, image, state->texture_montage_alpha_background, false, &dstrect, state->images.thumbnail.save, true, false, state->montage.positions.selection == idx, hard, true) ) {
 			return false;
 		}
+		if( idx == state->montage.positions.selection && !set_title(state, image) ) {
+			return false;
+		}
 	}
 	return true;
 }
@@ -765,6 +831,9 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	/* TODO RECT DONE BUT ASPECT RATIO */
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
 	if( !render_from_form(state, image, state->texture_alpha_background, true, &dstrect, false, start, true, false, hard, true) ) {
+		return false;
+	}
+	if( !set_title(state, image) ) {
 		return false;
 	}
 	return true;
