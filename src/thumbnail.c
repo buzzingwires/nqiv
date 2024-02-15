@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdbool.h>
 #include <assert.h>
@@ -10,6 +9,7 @@
 #include "image.h"
 #include "md5.h"
 #include "thumbnail.h"
+#include "platform.h"
 
 void nqiv_thumbnail_digest_to_string(char* output, const unsigned char* md5raw)
 {
@@ -55,7 +55,7 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 	char actualpath[PATH_MAX + strlen(uristart)];
 	memset( actualpath, 0, PATH_MAX + strlen(uristart) );
 	memcpy( actualpath, uristart, strlen(uristart) );
-	if(realpath( image->image.path, actualpath + strlen(uristart) ) == NULL) {
+	if(nqiv_realpath( image->image.path, actualpath + strlen(uristart) ) == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to calculate absolute path of %s.", image->image.path);
 		return false;
 	}
