@@ -101,13 +101,19 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 	if(new_idx == state->positions.selection) {
 		return;
 	}
+	if(new_idx >= state->positions.start && new_idx < state->positions.end) {
+		state->positions.selection = new_idx;
+		return;
+	}
+	const int placement = state->positions.selection - state->positions.start;
+	state->positions.start = new_idx - placement;
 	state->positions.selection = new_idx;
-	if(new_idx < state->positions.start) {
-		state->positions.end -= (state->positions.start - new_idx);
-		state->positions.start = new_idx;
-	} else if(new_idx >= state->positions.end) {
-		state->positions.start += (new_idx - state->positions.end);
-		state->positions.end = new_idx;
+	state->positions.end = state->positions.start + state->dimensions.count;
+	if(state->positions.start < 0) {
+		state->positions.start = 0;
+	}
+	if(state->positions.end >= images_len) {
+		state->positions.end = images_len - 1;
 	}
 	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Setting montage selection to %d.\n", state->positions.selection);
 }
