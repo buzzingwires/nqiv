@@ -36,33 +36,82 @@ bool nqiv_thumbnail_render_uri(nqiv_image* image, char* uri)
 	return true;
 }
 
-bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, const bool failed)
+void nqiv_thumbnail_get_type(nqiv_image_manager* images, const bool failed, char* typeseg, size_t* typelen_ptr)
 {
-	assert(image != NULL);
-	assert(image->parent != NULL);
-	assert(image->parent->thumbnail.height > 0);
-	assert(image->parent->thumbnail.width > 0);
-
-	const char* thumbspart = "/thumbnails/";
 	const char* typefail = "fail/";
 	const char* typelarge = "large/";
 	const char* typenormal = "normal/";
-	const char* pngext = ".png";
 
-	const size_t rootlen = strlen(image->parent->thumbnail.root);
-	const size_t thumblen = strlen(thumbspart);
-	size_t typelen;
-	const char* typeptr;
+	const char* typeptr = NULL;
+	size_t typelen = 0;
 	if(failed) {
 		typeptr = typefail;
 		typelen = strlen(typefail);
-	} else if(image->parent->thumbnail.height >= 256 || image->parent->thumbnail.width >= 256) {
+	} else if(images->thumbnail.height >= 256 || images->thumbnail.width >= 256) {
 		typeptr = typelarge;
 		typelen = strlen(typelarge);
 	} else {
 		typeptr = typenormal;
 		typelen = strlen(typenormal);
 	}
+	assert(typeptr != NULL);
+	assert(typelen != 0);
+
+	memcpy(typeseg, typeptr, typelen);
+	if(typelen_ptr != NULL) {
+		*typelen_ptr = typelen;
+	}
+}
+
+bool nqiv_thumbnail_create_dirs(nqiv_image_manager* images, const bool failed)
+{
+	assert(images != NULL);
+	assert(images->thumbnail.height > 0);
+	assert(images->thumbnail.width > 0);
+	assert(images->thumbnail.root != NULL);
+
+	const char* thumbspart = "/thumbnails/";
+
+	char fullpath[PATH_MAX] = {0};
+	char* fullpath_ptr = fullpath;
+
+	memcpy( fullpath_ptr, images->thumbnail.root, strlen(images->thumbnail.root) );
+	fullpath_ptr += strlen(images->thumbnail.root);
+
+	memcpy( fullpath_ptr, thumbspart, strlen(thumbspart) );
+	if( !nqiv_mkdir(fullpath) ) {
+		return false;
+	}
+	fullpath_ptr += strlen(thumbspart);
+
+	nqiv_thumbnail_get_type(images, failed, fullpath_ptr, NULL);
+	if( !nqiv_mkdir(fullpath) ) {
+		return false;
+	}
+	return true;
+}
+
+bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, const bool failed)
+{
+	assert(image != NULL);
+	assert(image->parent != NULL);
+	assert(image->parent->thumbnail.height > 0);
+	assert(image->parent->thumbnail.width > 0);
+	assert(image->parent->thumbnail.root != NULL);
+
+	if( !nqiv_thumbnail_create_dirs(image->parent, failed) ) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed create thumbnail dirs under %s.", image->parent->thumbnail.root);
+		return false;
+	}
+
+	const char* thumbspart = "/thumbnails/";
+	const char* pngext = ".png";
+
+	const size_t rootlen = strlen(image->parent->thumbnail.root);
+	const size_t thumblen = strlen(thumbspart);
+	size_t typelen;
+	char typeseg[PATH_MAX];
+	nqiv_thumbnail_get_type(image->parent, failed, typeseg, &typelen);
 	const size_t md5len = 32; /* Length of MD5 digest in text form */
 	const size_t pnglen = strlen(pngext); /* Length of .png */
 
@@ -84,7 +133,7 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 	pathptr += rootlen;
 	memcpy(pathptr, thumbspart, thumblen);
 	pathptr += thumblen;
-	memcpy(pathptr, typeptr, typelen);
+	memcpy(pathptr, typeseg, typelen);
 	pathptr += typelen;
 	/* strncpy(pathptr, typeptr, md5len); */
 	MD5_Update( &md5state, actualpath, strlen(actualpath) );

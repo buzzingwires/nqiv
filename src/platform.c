@@ -6,6 +6,7 @@
 	#include <stdbool.h>
 	#include <time.h>
 	#include <assert.h>
+	#include <errno.h>
 	#include <sys/types.h>
 	#include <sys/stat.h>
 	#include "platform.h"
@@ -27,6 +28,11 @@
 		data->size = (size_t)(s.st_size);
 		data->mtime = s.st_mtime;
 		return true;
+	}
+	bool nqiv_mkdir(char* path)
+	{
+		const int result = mkdir(path, 0777);
+		return result == 0 || errno == EEXIST ? true : false;
 	}
 #else
 	#error "Currently, only Unix and Linux systems are supported."
