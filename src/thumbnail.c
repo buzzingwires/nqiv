@@ -1,5 +1,7 @@
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 #include <assert.h>
 #include <limits.h>
 
@@ -17,6 +19,21 @@ void nqiv_thumbnail_digest_to_string(char* output, const unsigned char* md5raw)
 	for(idx = 0; idx < 16; ++idx) {
 	    sprintf(&output[idx*2], "%02x", (unsigned int)md5raw[idx]);
 	}
+}
+
+/*file://
+ */
+#define NQIV_URI_LEN PATH_MAX + 7
+bool nqiv_thumbnail_render_uri(nqiv_image* image, char* uri)
+{
+	const char* uristart = "file://";
+	memset(uri, 0, NQIV_URI_LEN);
+	memcpy( uri, uristart, strlen(uristart) );
+	if(nqiv_realpath( image->image.path, uri + strlen(uristart) ) == NULL) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to calculate absolute path of %s.", image->image.path);
+		return false;
+	}
+	return true;
 }
 
 bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, const bool failed)
@@ -51,12 +68,8 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 
 	MD5_CTX md5state;
 	MD5_Init(&md5state);
-	const char* uristart = "file://";
-	char actualpath[PATH_MAX + strlen(uristart)];
-	memset( actualpath, 0, PATH_MAX + strlen(uristart) );
-	memcpy( actualpath, uristart, strlen(uristart) );
-	if(nqiv_realpath( image->image.path, actualpath + strlen(uristart) ) == NULL) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to calculate absolute path of %s.", image->image.path);
+	char actualpath[NQIV_URI_LEN];
+	if( !nqiv_thumbnail_render_uri(image, actualpath) ) {
 		return false;
 	}
 
@@ -85,11 +98,18 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 	return true;
 }
 
+/*18446744073709551615\0*/
+#define NQIV_MTIME_STRLEN 21
+/*18446744073709551615\0*/
+#define NQIV_SIZE_STRLEN 21
+/*2147483647\0*/
+#define NQIV_DIMENSION_STRLEN 11
 bool nqiv_thumbnail_create(nqiv_image* image)
 {
 	assert(image != NULL);
 	assert(image->parent != NULL);
 	assert(image->image.path != NULL);
+	assert(image->image.file != NULL);
 	assert(image->image.wand != NULL);
 	assert(image->parent->thumbnail.height > 0);
 	assert(image->parent->thumbnail.width > 0);
@@ -109,6 +129,34 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
 		return false;
 	}
+	char actualpath[NQIV_URI_LEN];
+	if( !nqiv_thumbnail_render_uri(image, actualpath) ) {
+		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
+		return false;
+	}
+	nqiv_stat_data stat_data;
+	if( !nqiv_fstat(image->image.file, &stat_data) ) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.", image->image.path);
+		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
+		return false;
+	}
+	char mtime_string[NQIV_MTIME_STRLEN] = {0};
+	snprintf(mtime_string, NQIV_MTIME_STRLEN, "%" PRIuMAX, stat_data.mtime);
+	char size_string[NQIV_SIZE_STRLEN] = {0};
+	snprintf(size_string, NQIV_SIZE_STRLEN, "%zu", stat_data.size);
+	char width_string[NQIV_DIMENSION_STRLEN] = {0};
+	snprintf(width_string, NQIV_DIMENSION_STRLEN, "%d", image->image.width);
+	char height_string[NQIV_DIMENSION_STRLEN] = {0};
+	snprintf(height_string, NQIV_DIMENSION_STRLEN, "%d", image->image.height);
+	if( !MagickSetImageProperty(thumbnail_wand, "Thumb::URI", actualpath) ||
+		!MagickSetImageProperty(thumbnail_wand, "Thumb::MTime", mtime_string) ||
+		!MagickSetImageProperty(thumbnail_wand, "Thumb::Size", size_string) ||
+		!MagickSetImageProperty(thumbnail_wand, "Thumb::Image::Width", width_string) ||
+		!MagickSetImageProperty(thumbnail_wand, "Thumb::Image::Height", height_string) ) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.", image->image.path);
+		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
+		return false;
+	}
 	if( !MagickWriteImage(thumbnail_wand, image->thumbnail.path) ) {
 		nqiv_log_magick_wand_exception(image->parent->logger, image->image.wand, image->image.path);
 		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
@@ -118,3 +166,7 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Created thumbnail at path '%s' for image at path '%s'.\n", image->thumbnail.path, image->image.path);
 	return true;
 }
+#undef NQIV_URI_LEN
+#undef NQIV_MTIME_STRLEN
+#undef NQIV_SIZE_STRLEN
+#undef NQIV_DIMENSIONS_STRLEN
