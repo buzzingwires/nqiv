@@ -31,7 +31,7 @@ bool nqiv_thumbnail_render_uri(nqiv_image* image, char* uri)
 	memset(uri, 0, NQIV_URI_LEN);
 	memcpy( uri, uristart, strlen(uristart) );
 	if(nqiv_realpath( image->image.path, uri + strlen(uristart) ) == NULL) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to calculate absolute path of %s.", image->image.path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to calculate absolute path of %s.\n", image->image.path);
 		return false;
 	}
 	return true;
@@ -121,7 +121,7 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 	size_t path_len = rootlen + thumblen + typelen + md5len + pnglen + 1;
 	char* pathptr = calloc(1, path_len);
 	if(pathptr == NULL) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to allocate memory for path data %s.", image->image.path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to allocate memory for path data %s.\n", image->image.path);
 		return false;
 	}
 	char* pathptr_base = pathptr;
@@ -181,7 +181,7 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	}
 	nqiv_stat_data stat_data;
 	if( !nqiv_fstat(image->image.file, &stat_data) ) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.", image->image.path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.\n", image->image.path);
 		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
 		return false;
 	}
@@ -198,12 +198,12 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 		!MagickSetImageProperty(thumbnail_wand, "Thumb::Size", size_string) ||
 		!MagickSetImageProperty(thumbnail_wand, "Thumb::Image::Width", width_string) ||
 		!MagickSetImageProperty(thumbnail_wand, "Thumb::Image::Height", height_string) ) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.", image->image.path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.\n", image->image.path);
 		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
 		return false;
 	}
 	if( !nqiv_thumbnail_create_dirs(image->parent, false) ) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed create thumbnail dirs under %s.", image->parent->thumbnail.root);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed create thumbnail dirs under %s.\n", image->parent->thumbnail.root);
 		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
 		return false;
 	}
@@ -234,7 +234,7 @@ bool nqiv_thumbnail_matches_image(nqiv_image* image)
 
 	nqiv_stat_data stat_data;
 	if( !nqiv_fstat(image->image.file, &stat_data) ) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.", image->image.path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.\n", image->image.path);
 		return false;
 	}
 
@@ -245,7 +245,7 @@ bool nqiv_thumbnail_matches_image(nqiv_image* image)
 	}
 	const uintmax_t thumbnail_mtime_value = strtoumax(thumbnail_mtime, NULL, 10);
 	if(thumbnail_mtime_value == 0 || errno == ERANGE) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid MTime for thumbnail of '%s' at '%s'.", image->image.path, image->thumbnail.path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid MTime for thumbnail of '%s' at '%s'.\n", image->image.path, image->thumbnail.path);
 		return false;
 	}
 	MagickRelinquishMemory(thumbnail_mtime);
