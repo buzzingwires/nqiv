@@ -222,6 +222,38 @@ bool nqiv_image_load_sdl_texture(nqiv_image* image, nqiv_image_form* form, SDL_R
 	return true;
 }
 
+void nqiv_image_rect_to_aspect_ratio(const nqiv_image* image, SDL_Rect* rect)
+{
+	assert(image != NULL);
+	assert(rect != NULL);
+	if(image->image.width == 0 || image->image.height == 0) {
+		return;
+	}
+	int* rect_dimension;
+	int* rect_position;
+	double bigger_dimension;
+	double smaller_dimension;
+	if(image->image.width > image->image.height) {
+		bigger_dimension = (double)(image->image.width);
+		smaller_dimension = (double)(image->image.height);
+		rect_dimension = &rect->h;
+		rect_position = &rect->y;
+	} else {
+		bigger_dimension = (double)(image->image.height);
+		smaller_dimension = (double)(image->image.width);
+		rect_dimension = &rect->w;
+		rect_position = &rect->x;
+	}
+	const double ratio = smaller_dimension / bigger_dimension;
+	assert(ratio > 0.0);
+	assert(ratio <= 1.0);
+	const double new_rect_smaller_dimension = (double)(*rect_dimension) * ratio;
+	assert( (double)(*rect_dimension) >= new_rect_smaller_dimension );
+	const double rect_position_add = ( (double)(*rect_dimension) - new_rect_smaller_dimension) / 2.0;
+	*rect_dimension = (int)new_rect_smaller_dimension;
+	*rect_position += (int)rect_position_add;
+}
+
 /* Image manager */
 void nqiv_image_manager_destroy(nqiv_image_manager* manager)
 {

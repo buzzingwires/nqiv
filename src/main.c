@@ -43,6 +43,7 @@ typedef struct nqiv_state
 	int thread_count;
 	omp_lock_t* thread_locks;
 	bool in_montage;
+	bool stretch_images;
 	char* window_title;
 	size_t window_title_size;
 } nqiv_state;
@@ -762,6 +763,13 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 }
 #undef INT_MAX_STRLEN
 
+void adjust_image_stretch(nqiv_state* state, nqiv_image* image, SDL_Rect* rect)
+{
+	if(!state->stretch_images) {
+		nqiv_image_rect_to_aspect_ratio(image, rect);
+	}
+}
+
 bool render_montage(nqiv_state* state, const bool hard)
 {
 	/*
@@ -803,6 +811,7 @@ bool render_montage(nqiv_state* state, const bool hard)
 		if( !nqiv_array_get_bytes(state->images.images, idx, sizeof(nqiv_image*), &image) ) {
 			return false;
 		}
+		adjust_image_stretch(state, image, &dstrect);
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n", image->image.path, idx);
 		if( !render_from_form(state, image, state->texture_montage_alpha_background, false, &dstrect, state->images.thumbnail.save, true, false, state->montage.positions.selection == idx, hard, true) ) {
 			return false;
@@ -830,6 +839,7 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	SDL_Rect dstrect = {0};
 	/* TODO RECT DONE BUT ASPECT RATIO */
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
+	adjust_image_stretch(state, image, &dstrect);
 	if( !render_from_form(state, image, state->texture_alpha_background, true, &dstrect, false, start, true, false, hard, true) ) {
 		return false;
 	}
@@ -1042,6 +1052,18 @@ bool nqiv_master_thread(nqiv_state* state)
 									nqiv_image_manager_pan_down(&state->images);
 									render_and_update(state, &running, &result, false, false);
 								}
+							} else if(action == NQIV_KEY_ACTION_TOGGLE_STRETCH) {
+								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action toggle stretch.\n");
+								state->stretch_images = !state->stretch_images;
+								render_and_update(state, &running, &result, false, false);
+							} else if(action == NQIV_KEY_ACTION_STRETCH) {
+								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action stretch.\n");
+								state->stretch_images = true;
+								render_and_update(state, &running, &result, false, false);
+							} else if(action == NQIV_KEY_ACTION_KEEP_ASPECT_RATIO) {
+								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action keep aspect ratio.\n");
+								state->stretch_images = false;
+								render_and_update(state, &running, &result, false, false);
 							} else if(action == NQIV_KEY_ACTION_RELOAD) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action reload.\n");
 								render_and_update(state, &running, &result, false, true);
