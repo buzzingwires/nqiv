@@ -103,6 +103,7 @@ typedef struct nqiv_image_manager_zoom_settings
 	double pan_down_amount;
 	double zoom_in_amount;
 	double zoom_out_amount;
+	int thumbnail_adjust;
 } nqiv_image_manager_zoom_settings;
 
 struct nqiv_image_manager
@@ -131,6 +132,9 @@ void nqiv_image_manager_pan_down(nqiv_image_manager* manager);
 void nqiv_image_manager_zoom_in(nqiv_image_manager* manager);
 void nqiv_image_manager_zoom_out(nqiv_image_manager* manager);
 void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nqiv_image_form* form, SDL_Rect* rect);
+
+void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager);
+void nqiv_image_manager_decrement_thumbnail_size(nqiv_image_manager* manager);
 /* REMOVE? */
 /* Dynamic array? */
 /* convert to dynamic */

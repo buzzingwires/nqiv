@@ -325,6 +325,7 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, 
 	manager->zoom.pan_down_amount = 0.05;
 	manager->zoom.zoom_in_amount = -0.05;
 	manager->zoom.zoom_out_amount = 0.05;
+	manager->zoom.thumbnail_adjust = 10;
 	nqiv_log_write(logger, NQIV_LOG_INFO, "Successfully made image manager with starting length of: %d", starting_length);
 	return true;
 }
@@ -494,6 +495,24 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nq
 	rect->y = (int)( height_constrict_side + height_constrict_side * manager->zoom.viewport_vertical_shift );
 	assert(rect->w + rect->x <= form->width);
 	assert(rect->h + rect->y <= form->height);
+}
+
+void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager)
+{
+	manager->thumbnail.height += manager->zoom.thumbnail_adjust;
+	manager->thumbnail.width += manager->zoom.thumbnail_adjust;
+}
+
+void nqiv_image_manager_decrement_thumbnail_size(nqiv_image_manager* manager)
+{
+	manager->thumbnail.height -= manager->zoom.thumbnail_adjust;
+	manager->thumbnail.width -= manager->zoom.thumbnail_adjust;
+	if(manager->thumbnail.height <= 0) {
+		manager->thumbnail.height = manager->zoom.thumbnail_adjust;
+	}
+	if(manager->thumbnail.width <= 0) {
+		manager->thumbnail.width = manager->zoom.thumbnail_adjust;
+	}
 }
 
 bool nqiv_image_form_first_frame(nqiv_image_form* form)

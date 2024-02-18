@@ -1021,11 +1021,17 @@ bool nqiv_master_thread(nqiv_state* state)
 								if(!state->in_montage) {
 									nqiv_image_manager_zoom_in(&state->images);
 									render_and_update(state, &running, &result, false, false);
+								} else {
+									nqiv_image_manager_increment_thumbnail_size(&state->images);
+									render_and_update(state, &running, &result, false, false);
 								}
 							} else if(action == NQIV_KEY_ACTION_ZOOM_OUT) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom out.\n");
 								if(!state->in_montage) {
 									nqiv_image_manager_zoom_out(&state->images);
+									render_and_update(state, &running, &result, false, false);
+								} else {
+									nqiv_image_manager_decrement_thumbnail_size(&state->images);
 									render_and_update(state, &running, &result, false, false);
 								}
 							} else if(action == NQIV_KEY_ACTION_PAN_LEFT) {
