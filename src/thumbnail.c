@@ -47,7 +47,7 @@ void nqiv_thumbnail_get_type(nqiv_image_manager* images, const bool failed, char
 	if(failed) {
 		typeptr = typefail;
 		typelen = strlen(typefail);
-	} else if(images->thumbnail.height >= 256 || images->thumbnail.width >= 256) {
+	} else if(images->thumbnail.height >= 128 || images->thumbnail.width >= 128) {
 		typeptr = typelarge;
 		typelen = strlen(typelarge);
 	} else {
