@@ -100,11 +100,6 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 	assert(image->parent->thumbnail.width > 0);
 	assert(image->parent->thumbnail.root != NULL);
 
-	if( !nqiv_thumbnail_create_dirs(image->parent, failed) ) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed create thumbnail dirs under %s.", image->parent->thumbnail.root);
-		return false;
-	}
-
 	const char* thumbspart = "/thumbnails/";
 	const char* pngext = ".png";
 
@@ -204,6 +199,11 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 		!MagickSetImageProperty(thumbnail_wand, "Thumb::Image::Width", width_string) ||
 		!MagickSetImageProperty(thumbnail_wand, "Thumb::Image::Height", height_string) ) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.", image->image.path);
+		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
+		return false;
+	}
+	if( !nqiv_thumbnail_create_dirs(image->parent, false) ) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed create thumbnail dirs under %s.", image->parent->thumbnail.root);
 		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
 		return false;
 	}
