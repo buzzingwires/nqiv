@@ -253,7 +253,7 @@ void nqiv_image_rect_to_aspect_ratio(const nqiv_image* image, SDL_Rect* rect)
 	assert(ratio + ratio_readded <= 1.0);
 	const double new_rect_smaller_dimension = (double)(*rect_dimension) * (ratio + ratio_readded);
 	assert( (double)(*rect_dimension) >= new_rect_smaller_dimension );
-	const double rect_position_add = ( (double)(*rect_dimension) - new_rect_smaller_dimension) / 2.0;
+	const double rect_position_add = ( (double)(*rect_dimension) - new_rect_smaller_dimension) * 0.5;
 	*rect_dimension = (int)new_rect_smaller_dimension;
 	*rect_position += (int)rect_position_add;
 }
