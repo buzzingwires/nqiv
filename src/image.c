@@ -244,6 +244,13 @@ void nqiv_image_rect_to_aspect_ratio(const nqiv_image* image, SDL_Rect* rect)
 		rect_dimension = &rect->w;
 		rect_position = &rect->x;
 	}
+	if(rect->w > rect->h) {
+		rect->x += (rect->w - rect->h) / 2;
+		rect->w = rect->h;
+	} else {
+		rect->y += (rect->h - rect->w) / 2;
+		rect->h = rect->w;
+	}
 	const double zoom_ratio_inverse = 1.0 - image->parent->zoom.image_to_viewport_ratio;
 	const double ratio = smaller_dimension / bigger_dimension;
 	assert(ratio > 0.0);
