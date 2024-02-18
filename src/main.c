@@ -635,7 +635,7 @@ state->images.thumbnail.load
 			*/
 		}
 		if(form->texture != NULL) {
-			if( SDL_RenderCopy(state->renderer, alpha_background, NULL, dstrect) != 0 ) {
+			if( SDL_RenderCopy(state->renderer, alpha_background, dstrect, dstrect) != 0 ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
