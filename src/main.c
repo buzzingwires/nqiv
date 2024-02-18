@@ -711,7 +711,7 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 	char idx_string[INT_MAX_STRLEN] = {0};
 	char count_string[INT_MAX_STRLEN] = {0};
 	snprintf(idx_string, INT_MAX_STRLEN, "%d", state->montage.positions.selection + 1);
-	snprintf(count_string, INT_MAX_STRLEN, "%lu", state->images.images->position / sizeof(nqiv_image*) - 1);
+	snprintf( count_string, INT_MAX_STRLEN, "%lu", state->images.images->position / sizeof(nqiv_image*) );
 	const char* path_components[] =
 	{
 		"nqiv - (",
