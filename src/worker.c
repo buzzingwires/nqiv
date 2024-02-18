@@ -125,6 +125,17 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 						   event.options.image_load.image->thumbnail.wand == NULL &&
 						   nqiv_image_load_wand(event.options.image_load.image, &event.options.image_load.image->thumbnail)
 						   ) {
+								if(event.options.image_load.image->image.wand == NULL) {
+									if( nqiv_image_load_wand(event.options.image_load.image, &event.options.image_load.image->image) ) {
+										if( !nqiv_thumbnail_matches_image(event.options.image_load.image) ) {
+											nqiv_thumbnail_create(event.options.image_load.image);
+										}
+										nqiv_unload_image_form_wand(&event.options.image_load.image->image);
+										nqiv_unload_image_form_file(&event.options.image_load.image->image);
+									}
+								} else if( !nqiv_thumbnail_matches_image(event.options.image_load.image) ) {
+									nqiv_thumbnail_create(event.options.image_load.image);
+								}
 								nqiv_unload_image_form_wand(&event.options.image_load.image->thumbnail);
 								nqiv_unload_image_form_file(&event.options.image_load.image->thumbnail);
 						} else {

@@ -4,6 +4,7 @@
 #include <time.h>
 #include <assert.h>
 #include <limits.h>
+#include <errno.h>
 
 #include <MagickCore/MagickCore.h>
 #include <MagickWand/MagickWand.h>
@@ -219,3 +220,35 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 #undef NQIV_MTIME_STRLEN
 #undef NQIV_SIZE_STRLEN
 #undef NQIV_DIMENSIONS_STRLEN
+
+bool nqiv_thumbnail_matches_image(nqiv_image* image)
+{
+	assert(image != NULL);
+	assert(image->parent != NULL);
+	assert(image->image.file != NULL);
+	assert(image->image.file != NULL);
+	assert(image->image.wand != NULL);
+	assert(image->thumbnail.path != NULL);
+	assert(image->thumbnail.file != NULL);
+	assert(image->thumbnail.wand != NULL);
+
+	nqiv_stat_data stat_data;
+	if( !nqiv_fstat(image->image.file, &stat_data) ) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.", image->image.path);
+		return false;
+	}
+
+	char* thumbnail_mtime = MagickGetImageProperty(image->thumbnail.wand, "Thumb::MTime");
+	if(thumbnail_mtime == NULL) {
+		nqiv_log_magick_wand_exception(image->parent->logger, image->image.wand, image->image.path);
+		return false;
+	}
+	const uintmax_t thumbnail_mtime_value = strtoumax(thumbnail_mtime, NULL, 10);
+	if(thumbnail_mtime_value == 0 || errno == ERANGE) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid MTime for thumbnail of '%s' at '%s'.", image->image.path, image->thumbnail.path);
+		return false;
+	}
+	MagickRelinquishMemory(thumbnail_mtime);
+
+	return thumbnail_mtime_value == (uintmax_t)(stat_data.mtime);
+}
