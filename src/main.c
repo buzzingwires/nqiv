@@ -385,18 +385,23 @@ bool nqiv_setup_sdl(nqiv_state* state)
 	thumbnail_rect.y = 0;
 	thumbnail_rect.w = state->images.thumbnail.width;
 	thumbnail_rect.h = state->images.thumbnail.height;
+	SDL_Rect pixel_rect;
+	pixel_rect.x = 0;
+	pixel_rect.y = 0;
+	pixel_rect.w = 1;
+	pixel_rect.h = 1;
 	color.g = 255;
 	color.b = 255;
 	if( !nqiv_create_border_rect_texture(&state->logger, state->renderer, &thumbnail_rect, &color, &state->texture_montage_selection) ) {
 		return false;
 	}
 	color.g = 0;
-	if( !nqiv_create_solid_rect_texture(&state->logger, state->renderer, &thumbnail_rect, &color, &state->texture_montage_unloaded_background) ) {
+	if( !nqiv_create_solid_rect_texture(&state->logger, state->renderer, &pixel_rect, &color, &state->texture_montage_unloaded_background) ) {
 		return false;
 	}
 	color.r = 255;
 	color.b = 0;
-	if( !nqiv_create_solid_rect_texture(&state->logger, state->renderer, &thumbnail_rect, &color, &state->texture_montage_error_background) ) {
+	if( !nqiv_create_solid_rect_texture(&state->logger, state->renderer, &pixel_rect, &color, &state->texture_montage_error_background) ) {
 		return false;
 	}
 	if( !nqiv_create_alpha_background_texture(&state->logger, state->renderer, &thumbnail_rect, &state->texture_montage_alpha_background) ) {
