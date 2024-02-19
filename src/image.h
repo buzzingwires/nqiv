@@ -75,7 +75,9 @@ void nqiv_unload_image_form_texture(nqiv_image_form* form);
 void nqiv_unload_image_form_surface(nqiv_image_form* form);
 void nqiv_unload_image_form_raw(nqiv_image_form* form);
 
+bool nqiv_image_ping_wand(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form);
+bool nqiv_image_upgrade_wand(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_texture(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form);

@@ -128,7 +128,7 @@ void nqiv_log_magick_wand_exception(nqiv_log_ctx* logger, const MagickWand* magi
 /* TODO Add twice */
 /* TODO Detect change */
 
-bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form)
+bool nqiv_image_handle_wand(nqiv_image* image, nqiv_image_form* form, const bool full_load)
 {
 	assert(image != NULL);
 	assert(form != NULL);
@@ -148,7 +148,13 @@ bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form)
 	}
 	rewind(form->file);
 	form->wand = NewMagickWand();
-	if(MagickReadImageFile(form->wand, form->file) == MagickFalse) {
+	MagickBooleanType read_result;
+	if(full_load) {
+		read_result = MagickReadImageFile(form->wand, form->file);
+	} else {
+		read_result = MagickPingImageFile(form->wand, form->file);
+	}
+	if(read_result == MagickFalse) {
 		nqiv_log_magick_wand_exception(image->parent->logger, form->wand, form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
@@ -160,8 +166,34 @@ bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form)
 	}
 	form->height = MagickGetImageHeight(form->wand);
 	form->width = MagickGetImageWidth(form->wand);
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded wand for image %s.\n", image->image.path);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "%s wand for image %s.\n", full_load ? "Loaded" : "Pinged", image->image.path);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
+	return true;
+}
+
+bool nqiv_image_ping_wand(nqiv_image* image, nqiv_image_form* form)
+{
+	return nqiv_image_handle_wand(image, form, false);
+}
+
+bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form)
+{
+	return nqiv_image_handle_wand(image, form, true);
+}
+
+bool nqiv_image_upgrade_wand(nqiv_image* image, nqiv_image_form* form)
+{
+	assert(image != NULL);
+	assert(form != NULL);
+	assert( (form->file != NULL && form->wand != NULL) );
+
+	if(MagickReadImageFile(form->wand, form->file) == MagickFalse) {
+		nqiv_log_magick_wand_exception(image->parent->logger, form->wand, form->path);
+		nqiv_unload_image_form(form);
+		form->error = true;
+		return false;
+	}
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Upgraded wand to read state for image %s.\n", image->image.path);
 	return true;
 }
 

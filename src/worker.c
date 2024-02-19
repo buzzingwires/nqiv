@@ -126,8 +126,9 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 						   nqiv_image_load_wand(event.options.image_load.image, &event.options.image_load.image->thumbnail)
 						   ) {
 								if(event.options.image_load.image->image.wand == NULL) {
-									if( nqiv_image_load_wand(event.options.image_load.image, &event.options.image_load.image->image) ) {
+									if( nqiv_image_ping_wand(event.options.image_load.image, &event.options.image_load.image->image) ) {
 										if( !nqiv_thumbnail_matches_image(event.options.image_load.image) ) {
+											nqiv_image_upgrade_wand(event.options.image_load.image, &event.options.image_load.image->image);
 											nqiv_thumbnail_create(event.options.image_load.image);
 										}
 										nqiv_unload_image_form_wand(&event.options.image_load.image->image);
