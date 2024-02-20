@@ -511,12 +511,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 	}
 	*/
 	if(form->error) {
-		if( SDL_RenderCopy(state->renderer, state->texture_montage_error_background, NULL, dstrect) != 0 ) {
-			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-			omp_unset_lock(&image->lock);
-			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-			return false;
-		}
 		/* TODO We check this because we try to load a non-existent thumbnail */
 		if(is_thumbnail && !image->image.error) {
 			if(!image->thumbnail_attempted && state->images.thumbnail.save) {
@@ -543,6 +537,13 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					return false;
 				}
 				/* TODO Use main image for the thumbnail */
+			}
+		} else {
+			if( SDL_RenderCopy(state->renderer, state->texture_montage_error_background, NULL, dstrect) != 0 ) {
+				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+				omp_unset_lock(&image->lock);
+				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+				return false;
 			}
 		}
 	} else {
