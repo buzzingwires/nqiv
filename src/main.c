@@ -648,8 +648,12 @@ state->images.thumbnail.load
 				return false;
 			}
 			SDL_Rect srcrect;
-			nqiv_image_manager_calculate_zoomrect(&state->images, form, &srcrect); /* TODO aspect ratio */
-			if( SDL_RenderCopy(state->renderer, form->texture, &srcrect, dstrect) != 0 ) {
+			SDL_Rect* srcrect_ptr = NULL;
+			if(do_zoom) {
+				nqiv_image_manager_calculate_zoomrect(&state->images, form, &srcrect); /* TODO aspect ratio */
+				srcrect_ptr = &srcrect;
+			}
+			if( SDL_RenderCopy(state->renderer, form->texture, srcrect_ptr, dstrect) != 0 ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
