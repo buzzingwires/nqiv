@@ -1038,7 +1038,7 @@ bool nqiv_master_thread(nqiv_state* state)
 								if(!state->in_montage) {
 									nqiv_image_manager_zoom_in(&state->images);
 									render_and_update(state, &running, &result, false, false);
-								} else {
+								} else if(state->montage.dimensions.count > 1) {
 									nqiv_image_manager_increment_thumbnail_size(&state->images);
 									render_and_update(state, &running, &result, false, false);
 								}
