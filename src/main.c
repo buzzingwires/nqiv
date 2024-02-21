@@ -829,7 +829,7 @@ bool render_montage(nqiv_state* state, const bool hard)
 		}
 		adjust_image_stretch(state, image, &dstrect, false);
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n", image->image.path, idx);
-		if( !render_from_form(state, image, state->texture_montage_alpha_background, false, &dstrect, state->images.thumbnail.save, true, false, state->montage.positions.selection == idx, hard, true) ) {
+		if( !render_from_form(state, image, state->texture_montage_alpha_background, false, &dstrect, state->images.thumbnail.load, true, false, state->montage.positions.selection == idx, hard, true) ) {
 			return false;
 		}
 		if( idx == state->montage.positions.selection && !set_title(state, image) ) {
