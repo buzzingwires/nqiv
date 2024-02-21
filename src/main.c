@@ -205,6 +205,10 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			state->read_from_stdin = true;
 			break;
         case 'P':
+			if(strlen(options.optarg) < 1) {
+				fprintf(stderr, "Thumbnail root must be at least one character long.\n");
+				return false;
+			}
 			state->images.thumbnail.root = options.optarg;
 			break;
         case 'H':
