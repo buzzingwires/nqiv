@@ -103,7 +103,10 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 	const char* thumbspart = "/thumbnails/";
 	const char* pngext = ".png";
 
-	const size_t rootlen = strlen(image->parent->thumbnail.root);
+	const size_t raw_rootlen = strlen(image->parent->thumbnail.root);
+	assert(raw_rootlen >= 1);
+	const size_t rootlen = image->parent->thumbnail.root[raw_rootlen - 1] == '/' ? raw_rootlen - 1 : raw_rootlen;
+
 	const size_t thumblen = strlen(thumbspart);
 	size_t typelen;
 	char typeseg[PATH_MAX];
@@ -250,5 +253,8 @@ bool nqiv_thumbnail_matches_image(nqiv_image* image)
 	}
 	MagickRelinquishMemory(thumbnail_mtime);
 
-	return thumbnail_mtime_value == (uintmax_t)(stat_data.mtime);
+	const bool matches = thumbnail_mtime_value == (uintmax_t)(stat_data.mtime);
+
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "'%s' %s '%s'.\n", image->image.path, matches ? "matches" : "does not match", image->thumbnail.path);
+	return matches;
 }
