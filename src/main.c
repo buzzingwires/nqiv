@@ -323,7 +323,7 @@ bool nqiv_create_border_rect_texture(nqiv_log_ctx* logger, SDL_Renderer* rendere
 }
 
 
-bool nqiv_create_alpha_background_texture(nqiv_log_ctx* logger, SDL_Renderer* renderer, const SDL_Rect* rect, SDL_Texture** texture)
+bool nqiv_create_alpha_background_texture(nqiv_log_ctx* logger, SDL_Renderer* renderer, const SDL_Rect* rect, const int thickness, SDL_Texture** texture)
 {
 	SDL_Surface* surface;
 	if( !nqiv_create_sdl_drawing_surface(logger, rect->w, rect->h, &surface) ) {
@@ -339,7 +339,7 @@ bool nqiv_create_alpha_background_texture(nqiv_log_ctx* logger, SDL_Renderer* re
 	color_two.g = 60;
 	color_two.b = 60;
 	color_two.a = 255;
-	nqiv_draw_alpha_background(surface, rect, ( (rect->w + rect->h) / 2 ) / 64, &color_one, &color_two);
+	nqiv_draw_alpha_background(surface, rect, thickness, &color_one, &color_two);
 	if( !nqiv_sdl_surface_to_texture(logger, renderer, surface, texture) ) {
 		return false;
 	}
@@ -404,10 +404,12 @@ bool nqiv_setup_sdl(nqiv_state* state)
 	if( !nqiv_create_solid_rect_texture(&state->logger, state->renderer, &pixel_rect, &color, &state->texture_montage_error_background) ) {
 		return false;
 	}
-	if( !nqiv_create_alpha_background_texture(&state->logger, state->renderer, &thumbnail_rect, &state->texture_montage_alpha_background) ) {
+	const int thumbnail_thickness = ( (thumbnail_rect.x + thumbnail_rect.h) / 2 ) / 32;
+	if( !nqiv_create_alpha_background_texture(&state->logger, state->renderer, &window_rect, thumbnail_thickness, &state->texture_montage_alpha_background) ) {
 		return false;
 	}
-	if( !nqiv_create_alpha_background_texture(&state->logger, state->renderer, &window_rect, &state->texture_alpha_background) ) {
+	const int window_thickness = ( (window_rect.x + window_rect.h) / 2 ) / 32;
+	if( !nqiv_create_alpha_background_texture(&state->logger, state->renderer, &window_rect, window_thickness, &state->texture_alpha_background) ) {
 		return false;
 	}
 	return true;
