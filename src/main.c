@@ -775,10 +775,10 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 }
 #undef INT_MAX_STRLEN
 
-void adjust_image_stretch(nqiv_state* state, nqiv_image* image, SDL_Rect* rect)
+void adjust_image_stretch(nqiv_state* state, nqiv_image* image, SDL_Rect* rect, const bool readd_zoom)
 {
 	if(!state->stretch_images) {
-		nqiv_image_rect_to_aspect_ratio(image, rect);
+		nqiv_image_rect_to_aspect_ratio(image, rect, readd_zoom);
 	}
 }
 
@@ -823,7 +823,7 @@ bool render_montage(nqiv_state* state, const bool hard)
 		if( !nqiv_array_get_bytes(state->images.images, idx, sizeof(nqiv_image*), &image) ) {
 			return false;
 		}
-		adjust_image_stretch(state, image, &dstrect);
+		adjust_image_stretch(state, image, &dstrect, false);
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n", image->image.path, idx);
 		if( !render_from_form(state, image, state->texture_montage_alpha_background, false, &dstrect, state->images.thumbnail.save, true, false, state->montage.positions.selection == idx, hard, true) ) {
 			return false;
@@ -851,7 +851,7 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	SDL_Rect dstrect = {0};
 	/* TODO RECT DONE BUT ASPECT RATIO */
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
-	adjust_image_stretch(state, image, &dstrect);
+	adjust_image_stretch(state, image, &dstrect, true);
 	if( !render_from_form(state, image, state->texture_alpha_background, true, &dstrect, false, start, true, false, hard, true) ) {
 		return false;
 	}

@@ -254,7 +254,7 @@ bool nqiv_image_load_sdl_texture(nqiv_image* image, nqiv_image_form* form, SDL_R
 	return true;
 }
 
-void nqiv_image_rect_to_aspect_ratio(const nqiv_image* image, SDL_Rect* rect)
+void nqiv_image_rect_to_aspect_ratio(const nqiv_image* image, SDL_Rect* rect, const bool readd_zoom)
 {
 	assert(image != NULL);
 	assert(rect != NULL);
@@ -283,7 +283,7 @@ void nqiv_image_rect_to_aspect_ratio(const nqiv_image* image, SDL_Rect* rect)
 		rect->y += (rect->h - rect->w) / 2;
 		rect->h = rect->w;
 	}
-	const double zoom_ratio_inverse = 1.0 - image->parent->zoom.image_to_viewport_ratio;
+	const double zoom_ratio_inverse = readd_zoom ? 1.0 - image->parent->zoom.image_to_viewport_ratio : 0.0;
 	const double ratio = smaller_dimension / bigger_dimension;
 	assert(ratio > 0.0);
 	assert(ratio <= 1.0);
