@@ -111,8 +111,6 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
 					omp_set_lock(&event.options.image_load.image->lock);
 					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
-					nqiv_worker_handle_image_load_form(&event.options.image_load.image_options, event.options.image_load.image, &event.options.image_load.image->image);
-					nqiv_worker_handle_image_load_form(&event.options.image_load.thumbnail_options, event.options.image_load.image, &event.options.image_load.image->thumbnail);
 					if(event.options.image_load.set_thumbnail_path) {
 						if(event.options.image_load.image->thumbnail.path == NULL) {
 							if( !nqiv_thumbnail_calculate_path(event.options.image_load.image, &event.options.image_load.image->thumbnail.path, false) ) {
@@ -120,6 +118,8 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 							}
 						}
 					}
+					nqiv_worker_handle_image_load_form(&event.options.image_load.image_options, event.options.image_load.image, &event.options.image_load.image->image);
+					nqiv_worker_handle_image_load_form(&event.options.image_load.thumbnail_options, event.options.image_load.image, &event.options.image_load.image->thumbnail);
 					if(!event.options.image_load.image->thumbnail_attempted && event.options.image_load.create_thumbnail) {
 						if(event.options.image_load.image->parent->thumbnail.load && 
 						   event.options.image_load.image->thumbnail.wand == NULL &&

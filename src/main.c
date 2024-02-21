@@ -577,6 +577,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				/* TODO SOFTEN EVENTS */
 				event.type = NQIV_EVENT_IMAGE_LOAD;
 				event.options.image_load.image = image;
+				event.options.image_load.set_thumbnail_path = true;
 				if(hard) {
 					event.options.image_load.thumbnail_options.file = true;
 					event.options.image_load.thumbnail_options.wand = true;
