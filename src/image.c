@@ -258,43 +258,59 @@ void nqiv_image_rect_to_aspect_ratio(const nqiv_image* image, SDL_Rect* rect, co
 {
 	assert(image != NULL);
 	assert(rect != NULL);
+	/*fprintf(stderr, "Start - Image: %dx%d Rect: %dx%d+%dx%d\n", image->image.width, image->image.height, rect->w, rect->h, rect->x, rect->y);*/
 	if(image->image.width == 0 || image->image.height == 0) {
 		return;
 	}
-	int* rect_dimension;
-	int* rect_position;
+	int* rect_smaller_dimension;
+	int* rect_smaller_position;
+	int* rect_bigger_dimension;
+	int* rect_bigger_position;
 	double bigger_dimension;
 	double smaller_dimension;
 	if(image->image.width > image->image.height) {
 		bigger_dimension = (double)(image->image.width);
 		smaller_dimension = (double)(image->image.height);
-		rect_dimension = &rect->h;
-		rect_position = &rect->y;
+		rect_smaller_dimension = &rect->h;
+		rect_smaller_position = &rect->y;
+		rect_bigger_dimension = &rect->w;
+		rect_bigger_position = &rect->x;
 	} else {
 		bigger_dimension = (double)(image->image.height);
 		smaller_dimension = (double)(image->image.width);
-		rect_dimension = &rect->w;
-		rect_position = &rect->x;
+		rect_smaller_dimension = &rect->w;
+		rect_smaller_position = &rect->x;
+		rect_bigger_dimension = &rect->h;
+		rect_bigger_position = &rect->y;
 	}
+	double square_diff;
 	if(rect->w > rect->h) {
 		rect->x += (rect->w - rect->h) / 2;
+		square_diff = (double)(rect->w) - (double)(rect->h);
 		rect->w = rect->h;
 	} else {
 		rect->y += (rect->h - rect->w) / 2;
+		square_diff = (double)(rect->h) - (double)(rect->w);
 		rect->h = rect->w;
 	}
 	const double zoom_ratio_inverse = readd_zoom ? 1.0 - image->parent->zoom.image_to_viewport_ratio : 0.0;
 	const double ratio = smaller_dimension / bigger_dimension;
 	assert(ratio > 0.0);
 	assert(ratio <= 1.0);
-	const double ratio_readded = (1.0 - ratio) * zoom_ratio_inverse;
-	assert(ratio + ratio_readded > 0.0);
+	const double ratio_readded = 0.0;
+	assert(ratio + ratio_readded >= 0.0);
 	assert(ratio + ratio_readded <= 1.0);
-	const double new_rect_smaller_dimension = (double)(*rect_dimension) * (ratio + ratio_readded);
-	assert( (double)(*rect_dimension) >= new_rect_smaller_dimension );
-	const double rect_position_add = ( (double)(*rect_dimension) - new_rect_smaller_dimension) * 0.5;
-	*rect_dimension = (int)new_rect_smaller_dimension;
-	*rect_position += (int)rect_position_add;
+	const double new_rect_smaller_dimension = (double)(*rect_smaller_dimension) * (ratio + ratio_readded);
+	assert( (double)(*rect_smaller_dimension) >= new_rect_smaller_dimension );
+	const double rect_smaller_position_add = ( (double)(*rect_smaller_dimension) - new_rect_smaller_dimension) * 0.5;
+	assert(*rect_smaller_dimension == *rect_bigger_dimension);
+	const double square_fill = square_diff * zoom_ratio_inverse;
+	*rect_smaller_dimension = (int)(new_rect_smaller_dimension + square_fill * ratio);
+	*rect_smaller_position += (int)(rect_smaller_position_add - square_fill * 0.5 * ratio);
+	/*fprintf(stderr, "Before Zoom Adjusted - Image: %dx%d Rect: %dx%d+%dx%d\n", image->image.width, image->image.height, rect->w, rect->h, rect->x, rect->y);*/
+	*rect_bigger_dimension += (int)(square_fill);
+	*rect_bigger_position -= (int)(square_fill * 0.5);
+	/*fprintf(stderr, "End - Image: %dx%d Rect: %dx%d+%dx%d\n", image->image.width, image->image.height, rect->w, rect->h, rect->x, rect->y);*/
 }
 
 /* Image manager */
