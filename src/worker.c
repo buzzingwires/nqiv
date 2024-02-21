@@ -120,7 +120,7 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 							}
 						}
 					}
-					if(event.options.image_load.create_thumbnail) {
+					if(!event.options.image_load.image->thumbnail_attempted && event.options.image_load.create_thumbnail) {
 						if(event.options.image_load.image->parent->thumbnail.load && 
 						   event.options.image_load.image->thumbnail.wand == NULL &&
 						   nqiv_image_load_wand(event.options.image_load.image, &event.options.image_load.image->thumbnail)
