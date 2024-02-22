@@ -248,6 +248,7 @@ bool nqiv_thumbnail_matches_image(nqiv_image* image)
 	}
 	const uintmax_t thumbnail_mtime_value = strtoumax(thumbnail_mtime, NULL, 10);
 	if(thumbnail_mtime_value == 0 || errno == ERANGE) {
+		MagickRelinquishMemory(thumbnail_mtime);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid MTime for thumbnail of '%s' at '%s'.\n", image->image.path, image->thumbnail.path);
 		return false;
 	}
