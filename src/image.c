@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
+#include <errno.h>
 #include <assert.h>
 
 #include <SDL2/SDL.h>
@@ -251,6 +253,50 @@ bool nqiv_image_load_sdl_texture(nqiv_image* image, nqiv_image_form* form, SDL_R
 		return false;
 	}
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded texture for image %s.\n", image->image.path);
+	return true;
+}
+
+bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
+{
+	assert(image != NULL);
+	if(image->thumbnail.wand == NULL) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Not borrowing dimension metadata from thumbnail because the wand is unavailable for image %s.\n", image->image.path);
+		return true;
+	}
+	if(image->image.width != 0 || image->image.height != 0) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Not borrowing dimension metadata from thumbnail because it's already set for image %s.\n", image->image.path);
+		return true;
+	}
+	char* width_string = MagickGetImageProperty(image->thumbnail.wand, "Thumb::Image::Width");
+	if(width_string == NULL) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Failed to get width metadata from thumbnail for %s.\n", image->image.path);
+		return false;
+	}
+	char* height_string = MagickGetImageProperty(image->thumbnail.wand, "Thumb::Image::Height");
+	if(height_string == NULL) {
+		MagickRelinquishMemory(width_string);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Failed to get height metadata from thumbnail for %s.\n", image->image.path);
+		return false;
+	}
+	const int width_value = strtol(width_string, NULL, 10);
+	if(width_value == 0 || errno == ERANGE) {
+		MagickRelinquishMemory(width_string);
+		MagickRelinquishMemory(height_string);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid width for thumbnail of '%s'.\n", image->image.path);
+		return false;
+	}
+	const int height_value = strtol(height_string, NULL, 10);
+	if(height_value == 0 || errno == ERANGE) {
+		MagickRelinquishMemory(width_string);
+		MagickRelinquishMemory(height_string);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid height for thumbnail of '%s'.\n", image->image.path);
+		return false;
+	}
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Borrowing dimension metadata from thumbnail set for image %s.\n", image->image.path);
+	image->image.width = width_value;
+	image->image.height = height_value;
+	MagickRelinquishMemory(width_string);
+	MagickRelinquishMemory(height_string);
 	return true;
 }
 

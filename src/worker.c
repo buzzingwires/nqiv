@@ -120,6 +120,9 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 					}
 					nqiv_worker_handle_image_load_form(&event.options.image_load.image_options, event.options.image_load.image, &event.options.image_load.image->image);
 					nqiv_worker_handle_image_load_form(&event.options.image_load.thumbnail_options, event.options.image_load.image, &event.options.image_load.image->thumbnail);
+					if(event.options.image_load.borrow_thumbnail_dimension_metadata) {
+						nqiv_image_borrow_thumbnail_dimensions(event.options.image_load.image);
+					}
 					if(!event.options.image_load.image->thumbnail_attempted && event.options.image_load.create_thumbnail) {
 						if(event.options.image_load.image->parent->thumbnail.load && 
 						   event.options.image_load.image->thumbnail.wand == NULL &&

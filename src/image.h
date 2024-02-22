@@ -81,6 +81,7 @@ bool nqiv_image_load_texture(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form);
 
+bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image);
 void nqiv_image_rect_to_aspect_ratio(const nqiv_image* image, SDL_Rect* rect, const bool readd_zoom);
 
 typedef struct nqiv_image_manager_thumbnail_settings

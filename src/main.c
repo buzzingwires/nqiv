@@ -581,9 +581,11 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				if(hard) {
 					event.options.image_load.thumbnail_options.file = true;
 					event.options.image_load.thumbnail_options.wand = true;
+					event.options.image_load.borrow_thumbnail_dimension_metadata = true;
 				} else {
 					event.options.image_load.thumbnail_options.file_soft = true;
 					event.options.image_load.thumbnail_options.wand_soft = true;
+					event.options.image_load.borrow_thumbnail_dimension_metadata = true;
 				}
 				if( hard || next_frame || (first_frame && image->thumbnail.wand != NULL && MagickGetIteratorIndex(image->thumbnail.wand) != 0) ) {
 					event.options.image_load.thumbnail_options.raw = true;
