@@ -650,19 +650,27 @@ state->images.thumbnail.load
 			*/
 		}
 		if(form->texture != NULL) {
-			if( SDL_RenderCopy(state->renderer, alpha_background, dstrect, dstrect) != 0 ) {
+			SDL_Rect srcrect = {0};
+			if(is_thumbnail) {
+				srcrect.w = image->image.width;
+				srcrect.h = image->image.height;
+			} else {
+				srcrect.w = form->width;
+				srcrect.h = form->height;
+			}
+			SDL_Rect dstrect_zoom = {0};
+			dstrect_zoom.w = dstrect->w;
+			dstrect_zoom.h = dstrect->h;
+			dstrect_zoom.x = dstrect->x;
+			dstrect_zoom.y = dstrect->y;
+			nqiv_image_manager_calculate_zoomrect(&state->images, do_zoom, state->stretch_images, &srcrect, &dstrect_zoom); /* TODO aspect ratio */
+			if( SDL_RenderCopy(state->renderer, alpha_background, &dstrect_zoom, &dstrect_zoom) != 0 ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
 			}
-			SDL_Rect srcrect;
-			SDL_Rect* srcrect_ptr = NULL;
-			if(do_zoom) {
-				nqiv_image_manager_calculate_zoomrect(&state->images, form, &srcrect); /* TODO aspect ratio */
-				srcrect_ptr = &srcrect;
-			}
-			if( SDL_RenderCopy(state->renderer, form->texture, srcrect_ptr, dstrect) != 0 ) {
+			if( SDL_RenderCopy(state->renderer, form->texture, &srcrect, &dstrect_zoom) != 0 ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -782,13 +790,6 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 }
 #undef INT_MAX_STRLEN
 
-void adjust_image_stretch(nqiv_state* state, nqiv_image* image, SDL_Rect* rect, const bool readd_zoom)
-{
-	if(!state->stretch_images) {
-		nqiv_image_rect_to_aspect_ratio(image, rect, readd_zoom);
-	}
-}
-
 bool render_montage(nqiv_state* state, const bool hard)
 {
 	/*
@@ -830,7 +831,6 @@ bool render_montage(nqiv_state* state, const bool hard)
 		if( !nqiv_array_get_bytes(state->images.images, idx, sizeof(nqiv_image*), &image) ) {
 			return false;
 		}
-		adjust_image_stretch(state, image, &dstrect, false);
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n", image->image.path, idx);
 		if( !render_from_form(state, image, state->texture_montage_alpha_background, false, &dstrect, state->images.thumbnail.load, true, false, state->montage.positions.selection == idx, hard, true) ) {
 			return false;
@@ -858,7 +858,6 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	SDL_Rect dstrect = {0};
 	/* TODO RECT DONE BUT ASPECT RATIO */
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
-	adjust_image_stretch(state, image, &dstrect, true);
 	if( !render_from_form(state, image, state->texture_alpha_background, true, &dstrect, false, start, true, false, hard, true) ) {
 		return false;
 	}

@@ -82,7 +82,6 @@ bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form);
 
 bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image);
-void nqiv_image_rect_to_aspect_ratio(const nqiv_image* image, SDL_Rect* rect, const bool readd_zoom);
 
 typedef struct nqiv_image_manager_thumbnail_settings
 {
@@ -133,7 +132,7 @@ void nqiv_image_manager_pan_up(nqiv_image_manager* manager);
 void nqiv_image_manager_pan_down(nqiv_image_manager* manager);
 void nqiv_image_manager_zoom_in(nqiv_image_manager* manager);
 void nqiv_image_manager_zoom_out(nqiv_image_manager* manager);
-void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nqiv_image_form* form, SDL_Rect* rect);
+void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bool do_zoom, const bool do_stretch, SDL_Rect* srcrect, SDL_Rect* dstrect);
 
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager);
 void nqiv_image_manager_decrement_thumbnail_size(nqiv_image_manager* manager);

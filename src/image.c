@@ -300,62 +300,6 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 	return true;
 }
 
-void nqiv_image_rect_to_aspect_ratio(const nqiv_image* image, SDL_Rect* rect, const bool readd_zoom)
-{
-	assert(image != NULL);
-	assert(rect != NULL);
-	/*fprintf(stderr, "Start - Image: %dx%d Rect: %dx%d+%dx%d\n", image->image.width, image->image.height, rect->w, rect->h, rect->x, rect->y);*/
-	if(image->image.width == 0 || image->image.height == 0) {
-		return;
-	}
-	int* rect_smaller_dimension;
-	int* rect_smaller_position;
-	int* rect_bigger_dimension;
-	int* rect_bigger_position;
-	double bigger_dimension;
-	double smaller_dimension;
-	if(image->image.width > image->image.height) {
-		bigger_dimension = (double)(image->image.width);
-		smaller_dimension = (double)(image->image.height);
-		rect_smaller_dimension = &rect->h;
-		rect_smaller_position = &rect->y;
-		rect_bigger_dimension = &rect->w;
-		rect_bigger_position = &rect->x;
-	} else {
-		bigger_dimension = (double)(image->image.height);
-		smaller_dimension = (double)(image->image.width);
-		rect_smaller_dimension = &rect->w;
-		rect_smaller_position = &rect->x;
-		rect_bigger_dimension = &rect->h;
-		rect_bigger_position = &rect->y;
-	}
-	double square_diff;
-	if(rect->w > rect->h) {
-		rect->x += (rect->w - rect->h) / 2;
-		square_diff = (double)(rect->w) - (double)(rect->h);
-		rect->w = rect->h;
-	} else {
-		rect->y += (rect->h - rect->w) / 2;
-		square_diff = (double)(rect->h) - (double)(rect->w);
-		rect->h = rect->w;
-	}
-	const double zoom_ratio_inverse = readd_zoom ? 1.0 - image->parent->zoom.image_to_viewport_ratio : 0.0;
-	const double ratio = smaller_dimension / bigger_dimension;
-	assert(ratio > 0.0);
-	assert(ratio <= 1.0);
-	const double new_rect_smaller_dimension = (double)(*rect_smaller_dimension) * ratio;
-	assert( (double)(*rect_smaller_dimension) >= new_rect_smaller_dimension );
-	const double rect_smaller_position_add = ( (double)(*rect_smaller_dimension) - new_rect_smaller_dimension) * 0.5;
-	assert(*rect_smaller_dimension == *rect_bigger_dimension);
-	const double square_fill = square_diff * zoom_ratio_inverse;
-	*rect_smaller_dimension = (int)(new_rect_smaller_dimension + square_fill * ratio);
-	*rect_smaller_position += (int)(rect_smaller_position_add - square_fill * 0.5 * ratio);
-	/*fprintf(stderr, "Before Zoom Adjusted - Image: %dx%d Rect: %dx%d+%dx%d\n", image->image.width, image->image.height, rect->w, rect->h, rect->x, rect->y);*/
-	*rect_bigger_dimension += (int)(square_fill);
-	*rect_bigger_position -= (int)(square_fill * 0.5);
-	/*fprintf(stderr, "End - Image: %dx%d Rect: %dx%d+%dx%d\n", image->image.width, image->image.height, rect->w, rect->h, rect->x, rect->y);*/
-}
-
 /* Image manager */
 void nqiv_image_manager_destroy(nqiv_image_manager* manager)
 {
@@ -562,30 +506,108 @@ void nqiv_image_manager_zoom_out(nqiv_image_manager* manager)
 	nqiv_image_calculate_zoom_dimension(0.0, false, 1.0, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount);
 }
 
-void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const nqiv_image_form* form, SDL_Rect* rect)
+/*
+ *
+	When zoomed all the way out, we have a rect called the 'canvas rect'.
+	We imagine this rect has the same aspect ratio as the screen,
+	but is big enough to accomodate the entirety of the image.
+	Pick the biggest side of the image and set the corresponding side of the rect to that.
+	Use that to calculate the other side of the source rect, based on aspect ratio.
+	The position should be zero, since this rect corresponds to the entire screen.
+
+	To zoom in, shrink this rect proportionally to the aspect ratio and center accordingly.
+
+	To calculate the actual source rect of the image,
+	find the center point of the image and the center point of the canvas rect.
+	Move the image in the canvas rect such that it is aligned.
+	Any edges of the image that overflow the canvas rect will be clipped to the size of the canvas rect.
+	Take them where they are clipped, and any non-overflowing edges, as is.
+
+	To calculate the actual destination rect, divide the height and width of the canvas rect with the screen size.
+	Use these to scale the dimensions of the source rect into the screen size.
+ */
+void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bool do_zoom, const bool do_stretch, SDL_Rect* srcrect, SDL_Rect* dstrect)
 {
 	assert(manager != NULL);
-	assert(form != NULL);
-	assert(rect != NULL);
-	assert(form->height >= 1);
-	assert(form->width >= 1);
+	assert(srcrect != NULL);
+	assert(dstrect != NULL);
 	assert(manager->zoom.image_to_viewport_ratio > 0.0);
 	assert(manager->zoom.image_to_viewport_ratio <= 1.0);
 	assert(manager->zoom.viewport_horizontal_shift >= -1.0);
 	assert(manager->zoom.viewport_horizontal_shift <= 1.0);
 	assert(manager->zoom.viewport_vertical_shift >= -1.0);
 	assert(manager->zoom.viewport_vertical_shift <= 1.0);
-	const double zoom_ratio_inverse = 1.0 - manager->zoom.image_to_viewport_ratio;
-	const double width_constrict = (double)form->width * zoom_ratio_inverse;
-	const double height_constrict = (double)form->height * zoom_ratio_inverse;
-	const double width_constrict_side = width_constrict * 0.5;
-	const double height_constrict_side = height_constrict * 0.5;
-	rect->w = (int)( (double)form->width - width_constrict );
-	rect->x = (int)( width_constrict_side + width_constrict_side * manager->zoom.viewport_horizontal_shift );
-	rect->h = (int)( (double)form->height - height_constrict );
-	rect->y = (int)( height_constrict_side + height_constrict_side * manager->zoom.viewport_vertical_shift );
-	assert(rect->w + rect->x <= form->width);
-	assert(rect->h + rect->y <= form->height);
+	assert(srcrect->w > 0);
+	assert(srcrect->h > 0);
+	assert(srcrect->x == 0);
+	assert(srcrect->y == 0);
+	assert(dstrect->w > 0);
+	assert(dstrect->h > 0);
+	assert(dstrect->x >= 0);
+	assert(dstrect->y >= 0);
+
+	SDL_Rect canvas_rect;
+	canvas_rect.x = 0;
+	canvas_rect.y = 0;
+	if(srcrect->w > srcrect->h) {
+		const double screen_aspect = (double)dstrect->h / (double)dstrect->w;
+		canvas_rect.w = srcrect->w;
+		canvas_rect.h = (int)( (double)srcrect->w * screen_aspect );
+	} else {
+		const double screen_aspect = (double)dstrect->w / (double)dstrect->h;
+		canvas_rect.w = (int)( (double)srcrect->h * screen_aspect );
+		canvas_rect.h = srcrect->h;
+	}
+	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Canvas - CanvasRect: %dx%d+%dx%d SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n", canvas_rect.w, canvas_rect.h, canvas_rect.x, canvas_rect.y, srcrect->w, srcrect->h, srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x, dstrect->y);
+
+	if(do_zoom) {
+		canvas_rect.w = (int)( (double)canvas_rect.w * manager->zoom.image_to_viewport_ratio );
+		canvas_rect.h = (int)( (double)canvas_rect.h * manager->zoom.image_to_viewport_ratio );
+		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Zoom - CanvasRect: %dx%d+%dx%d SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n", canvas_rect.w, canvas_rect.h, canvas_rect.x, canvas_rect.y, srcrect->w, srcrect->h, srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x, dstrect->y);
+	}
+
+	if(srcrect->w > canvas_rect.w) {
+		const int diff = (srcrect->w - canvas_rect.w);
+		srcrect->w -= diff;
+		srcrect->x += diff / 2;
+	}
+	if(srcrect->h > canvas_rect.h) {
+		const int diff = (srcrect->h - canvas_rect.h);
+		srcrect->h -= diff;
+		srcrect->y += diff / 2;
+	}
+	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Adjust - CanvasRect: %dx%d+%dx%d SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n", canvas_rect.w, canvas_rect.h, canvas_rect.x, canvas_rect.y, srcrect->w, srcrect->h, srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x, dstrect->y);
+
+	if(do_zoom) {
+		srcrect->x += (int)( (double)srcrect->x * manager->zoom.viewport_horizontal_shift );
+		srcrect->y += (int)( (double)srcrect->y * manager->zoom.viewport_vertical_shift );
+		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Move - Horizontal Shift: %f Vertical Shift: %f\n", manager->zoom.viewport_horizontal_shift, manager->zoom.viewport_vertical_shift);
+		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Move - CanvasRect: %dx%d+%dx%d SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n", canvas_rect.w, canvas_rect.h, canvas_rect.x, canvas_rect.y, srcrect->w, srcrect->h, srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x, dstrect->y);
+	}
+
+	if(!do_stretch) {
+		const int display_width = dstrect->w;
+		const int display_height = dstrect->h;
+		const double canvas_dst_w_ratio = (double)dstrect->w / (double)canvas_rect.w;
+		const double canvas_dst_h_ratio = (double)dstrect->h / (double)canvas_rect.h;
+		const int new_src_w = (int)( (double)srcrect->w * canvas_dst_w_ratio );
+		const int new_src_h = (int)( (double)srcrect->h * canvas_dst_h_ratio );
+		dstrect->w = new_src_w;
+		dstrect->h = new_src_h;
+		if(dstrect->w < display_width) {
+			const int diff = display_width - dstrect->w;
+			dstrect->x += diff / 2;
+		}
+		if(dstrect->h < display_height) {
+			const int diff = display_height - dstrect->h;
+			dstrect->y += diff / 2;
+		}
+		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Fit - CanvasRect: %dx%d+%dx%d SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n", canvas_rect.w, canvas_rect.h, canvas_rect.x, canvas_rect.y, srcrect->w, srcrect->h, srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x, dstrect->y);
+	}
+	assert(dstrect->x >= 0);
+	assert(dstrect->y >= 0);
+	assert(dstrect->w > 0);
+	assert(dstrect->h > 0);
 }
 
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager)
