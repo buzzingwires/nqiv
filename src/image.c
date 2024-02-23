@@ -464,12 +464,12 @@ void nqiv_image_calculate_zoom_dimension(const double least, const bool inclusiv
 {
 	double new_target = *target + amount;
 	if(inclusive_least) {
-		new_target = new_target < least ? *target : new_target;
+		new_target = new_target < least ? least : new_target;
 	} else {
 		new_target = new_target <= least ? *target : new_target;
 	}
 	if(inclusive_most) {
-		new_target = new_target > most ? *target : new_target;
+		new_target = new_target > most ? most : new_target;
 	} else {
 		new_target = new_target >= most ? *target : new_target;
 	}
