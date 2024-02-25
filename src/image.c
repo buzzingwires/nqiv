@@ -643,7 +643,7 @@ void nqiv_image_manager_decrement_thumbnail_size(nqiv_image_manager* manager)
 void nqiv_image_form_delay_frame(nqiv_image_form* form)
 {
 	const clock_t new_frame_time = clock();
-	const clock_t frame_diff = ( (new_frame_time - form->animation.last_frame_time) / CLOCKS_PER_SEC ) * (clock_t)1000;
+	const clock_t frame_diff = (new_frame_time - form->animation.last_frame_time) / ( (clock_t)CLOCKS_PER_SEC / (clock_t)1000 );
 	if(frame_diff < (clock_t)2 << (clock_t)30 && (Uint32)frame_diff <= form->animation.delay) {
 		SDL_Delay(form->animation.delay - (Uint32)frame_diff);
 	}
