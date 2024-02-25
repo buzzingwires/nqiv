@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <stdbool.h>
 #include <errno.h>
 #include <assert.h>
@@ -162,9 +163,20 @@ bool nqiv_image_handle_wand(nqiv_image* image, nqiv_image_form* form, const bool
 		form->error = true;
 		return false;
 	}
+	MagickResetIterator(form->wand);
 	if( MagickHasNextImage(form->wand) ) {
-		form->animated = true;
-		form->frame_delta = 0.0;
+		form->animation.exists = true;
+		form->animation.delay = 100; /* 100 ms - 10 FPS */
+		MagickWand* final_wand = MagickCoalesceImages(form->wand);
+		if(final_wand == NULL) {
+			nqiv_unload_image_form(form);
+			nqiv_log_magick_wand_exception(image->parent->logger, form->wand, form->path);
+			form->error = true;
+			return false;
+		} else {
+			nqiv_unload_image_form_wand(form);
+		}
+		form->wand = final_wand;
 	}
 	form->height = MagickGetImageHeight(form->wand);
 	form->width = MagickGetImageWidth(form->wand);
@@ -628,16 +640,29 @@ void nqiv_image_manager_decrement_thumbnail_size(nqiv_image_manager* manager)
 	}
 }
 
+void nqiv_image_form_delay_frame(nqiv_image_form* form)
+{
+	const clock_t new_frame_time = clock();
+	const clock_t frame_diff = ( (new_frame_time - form->animation.last_frame_time) / CLOCKS_PER_SEC ) * (clock_t)1000;
+	if(frame_diff < (clock_t)2 << (clock_t)30 && (Uint32)frame_diff <= form->animation.delay) {
+		SDL_Delay(form->animation.delay - (Uint32)frame_diff);
+	}
+	form->animation.last_frame_time = new_frame_time;
+}
+
 bool nqiv_image_form_first_frame(nqiv_image_form* form)
 {
 	assert(form != NULL);
 	assert(form->file != NULL);
 	assert(form->wand != NULL);
-	if(!form->animated) {
+	if(!form->animation.exists) {
 		return true;
 	}
 	MagickResetIterator(form->wand);
 	MagickNextImage(form->wand);
+	form->animation.frame_rendered = false;
+	form->animation.last_frame_time = clock();
+	nqiv_image_form_delay_frame(form);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
 }
@@ -647,13 +672,15 @@ bool nqiv_image_form_next_frame(nqiv_image_form* form)
 	assert(form != NULL);
 	assert(form->file != NULL);
 	assert(form->wand != NULL);
-	if(!form->animated) {
+	if(!form->animation.exists) {
 		return true;
 	}
 	if( !MagickHasNextImage(form->wand) ) {
 		MagickResetIterator(form->wand);
 	}
 	MagickNextImage(form->wand);
+	form->animation.frame_rendered = false;
+	nqiv_image_form_delay_frame(form);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
 }

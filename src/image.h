@@ -23,10 +23,17 @@
  * instead of size readahead and behind like vimiv?
  */
 
+typedef struct nqiv_image_form_animation
+{
+	bool exists;
+	bool frame_rendered;
+	clock_t last_frame_time;
+	Uint32 delay;
+} nqiv_image_form_animation;
+
 typedef struct nqiv_image_form
 {
-	bool animated;
-	double frame_delta;
+	nqiv_image_form_animation animation;
 	bool error;
 	char* path;
 	FILE* file;

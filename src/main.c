@@ -553,9 +553,12 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 			}
 		}
 	} else {
-		if(form->texture != NULL) {
+		if(form->texture != NULL && !is_thumbnail && first_frame && form->animation.exists) {
+			nqiv_unload_image_form_texture(form);
+		}
+		if( form->texture != NULL && (!next_frame || !form->animation.frame_rendered) ) {
 			/* NOOP */
-		} else if(form->surface != NULL) {
+		} else if( form->surface != NULL && (is_thumbnail || !first_frame || !form->animation.exists) ) {
 			form->texture = SDL_CreateTextureFromSurface(state->renderer, form->surface);
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loaded texture for image %s.\n", image->image.path);
 			if(form->texture == NULL) {
@@ -565,11 +568,13 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				return false;
 			}
 		} else {
-			if( SDL_RenderCopy(state->renderer, state->texture_montage_unloaded_background, NULL, dstrect) != 0 ) {
-				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-				omp_unset_lock(&image->lock);
-				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-				return false;
+			if(first_frame || hard) {
+				if( SDL_RenderCopy(state->renderer, state->texture_montage_unloaded_background, NULL, dstrect) != 0 ) {
+					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+					omp_unset_lock(&image->lock);
+					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+					return false;
+				}
 			}
 			if(is_thumbnail) {
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading thumbnail.\n");
@@ -595,7 +600,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					event.options.image_load.thumbnail_options.surface_soft = true;
 				}
 				event.options.image_load.thumbnail_options.first_frame = first_frame;
-				event.options.image_load.thumbnail_options.next_frame = next_frame;
+				event.options.image_load.thumbnail_options.next_frame = next_frame && !first_frame;
 				if( !nqiv_send_thread_event(state, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
@@ -623,7 +628,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					event.options.image_load.image_options.surface_soft = true;
 				}
 				event.options.image_load.image_options.first_frame = first_frame;
-				event.options.image_load.image_options.next_frame = next_frame;
+				event.options.image_load.image_options.next_frame = next_frame && !first_frame;;
 				if( !nqiv_send_thread_event(state, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
@@ -675,6 +680,35 @@ state->images.thumbnail.load
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
+			}
+			if(form->animation.exists && next_frame && !is_thumbnail) {
+				nqiv_unload_image_form_texture(form);
+				form->animation.frame_rendered = true;
+				nqiv_event event = {0};
+				event.type = NQIV_EVENT_IMAGE_LOAD;
+				event.options.image_load.image = image;
+				if(hard) {
+					event.options.image_load.image_options.file = true;
+					event.options.image_load.image_options.wand = true;
+				} else {
+					event.options.image_load.image_options.file_soft = true;
+					event.options.image_load.image_options.wand_soft = true;
+				}
+				if( hard || next_frame || (first_frame && image->thumbnail.wand != NULL && MagickGetIteratorIndex(image->thumbnail.wand) != 0) ) {
+					event.options.image_load.image_options.raw = true;
+					event.options.image_load.image_options.surface = true;
+				} else {
+					event.options.image_load.image_options.raw_soft = true;
+					event.options.image_load.image_options.surface_soft = true;
+				}
+				event.options.image_load.image_options.first_frame = first_frame;
+				event.options.image_load.image_options.next_frame = next_frame && !first_frame;
+				if( !nqiv_send_thread_event(state, &event) ) {
+					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+					omp_unset_lock(&image->lock);
+					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+					return false;
+				}
 			}
 		}
 	}
@@ -1025,15 +1059,19 @@ bool nqiv_master_thread(nqiv_state* state)
 							} else if(action == NQIV_KEY_ACTION_TOGGLE_MONTAGE) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage toggle.\n");
 								state->in_montage = !state->in_montage;
-								render_and_update(state, &running, &result, false, false);
+								render_and_update(state, &running, &result, true, false);
 							} else if(action == NQIV_KEY_ACTION_SET_MONTAGE) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv montage set.\n");
-								state->in_montage = true;
-								render_and_update(state, &running, &result, false, false);
+								if(!state->in_montage) {
+									state->in_montage = true;
+									render_and_update(state, &running, &result, true, false);
+								}
 							} else if(action == NQIV_KEY_ACTION_SET_VIEWING) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action viewing set.\n");
-								state->in_montage = false;
-								render_and_update(state, &running, &result, false, false);
+								if(state->in_montage) {
+									state->in_montage = false;
+									render_and_update(state, &running, &result, true, false);
+								}
 							} else if(action == NQIV_KEY_ACTION_ZOOM_IN) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom in.\n");
 								if(!state->in_montage) {
@@ -1090,7 +1128,7 @@ bool nqiv_master_thread(nqiv_state* state)
 								render_and_update(state, &running, &result, false, false);
 							} else if(action == NQIV_KEY_ACTION_RELOAD) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action reload.\n");
-								render_and_update(state, &running, &result, false, true);
+								render_and_update(state, &running, &result, true, true);
 							}
 							nqiv_array_remove_bytes( keybind_actions, 0, sizeof(nqiv_key_action) );
 						}
