@@ -166,7 +166,7 @@ bool nqiv_image_handle_wand(nqiv_image* image, nqiv_image_form* form, const bool
 	MagickResetIterator(form->wand);
 	if( MagickHasNextImage(form->wand) ) {
 		form->animation.exists = true;
-		form->animation.delay = 100; /* 100 ms - 10 FPS */
+		form->animation.delay = (Uint32)(MagickGetImageDelay(form->wand) * 10); /* Delay is in centiseconds */
 		MagickWand* final_wand = MagickCoalesceImages(form->wand);
 		if(final_wand == NULL) {
 			nqiv_unload_image_form(form);
