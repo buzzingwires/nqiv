@@ -103,6 +103,9 @@ typedef struct nqiv_image_manager_thumbnail_settings
 typedef struct nqiv_image_manager_zoom_settings
 {
 	double image_to_viewport_ratio;
+	double image_to_viewport_ratio_max;
+	double fit_level;
+	double actual_size_level;
 	double viewport_horizontal_shift;
 	double viewport_vertical_shift;
 	double pan_left_amount;
@@ -140,6 +143,7 @@ void nqiv_image_manager_pan_down(nqiv_image_manager* manager);
 void nqiv_image_manager_zoom_in(nqiv_image_manager* manager);
 void nqiv_image_manager_zoom_out(nqiv_image_manager* manager);
 void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bool do_zoom, const bool do_stretch, SDL_Rect* srcrect, SDL_Rect* dstrect);
+void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, SDL_Rect* srcrect, SDL_Rect* dstrect);
 
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager);
 void nqiv_image_manager_decrement_thumbnail_size(nqiv_image_manager* manager);

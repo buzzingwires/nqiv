@@ -668,6 +668,7 @@ state->images.thumbnail.load
 			dstrect_zoom.h = dstrect->h;
 			dstrect_zoom.x = dstrect->x;
 			dstrect_zoom.y = dstrect->y;
+			nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, &dstrect_zoom);
 			nqiv_image_manager_calculate_zoomrect(&state->images, do_zoom, state->stretch_images, &srcrect, &dstrect_zoom); /* TODO aspect ratio */
 			if( SDL_RenderCopy(state->renderer, alpha_background, &dstrect_zoom, &dstrect_zoom) != 0 ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );

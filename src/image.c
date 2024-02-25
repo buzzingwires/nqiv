@@ -364,7 +364,10 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, 
 	manager->logger = logger;
 	manager->images = images;
 	manager->extensions = extensions;
+	manager->zoom.image_to_viewport_ratio_max = 1.0;
 	manager->zoom.image_to_viewport_ratio = 1.0;
+	manager->zoom.fit_level = 1.0;
+	manager->zoom.actual_size_level = 1.0;
 
 	manager->zoom.pan_left_amount = -0.05;
 	manager->zoom.pan_right_amount = 0.05;
@@ -510,12 +513,12 @@ void nqiv_image_manager_pan_down(nqiv_image_manager* manager)
 
 void nqiv_image_manager_zoom_in(nqiv_image_manager* manager)
 {
-	nqiv_image_calculate_zoom_dimension(0.0, false, 1.0, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount);
+	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount);
 }
 
 void nqiv_image_manager_zoom_out(nqiv_image_manager* manager)
 {
-	nqiv_image_calculate_zoom_dimension(0.0, false, 1.0, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount);
+	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount);
 }
 
 /*
@@ -544,7 +547,7 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bo
 	assert(srcrect != NULL);
 	assert(dstrect != NULL);
 	assert(manager->zoom.image_to_viewport_ratio > 0.0);
-	assert(manager->zoom.image_to_viewport_ratio <= 1.0);
+	assert(manager->zoom.image_to_viewport_ratio <= manager->zoom.image_to_viewport_ratio_max);
 	assert(manager->zoom.viewport_horizontal_shift >= -1.0);
 	assert(manager->zoom.viewport_horizontal_shift <= 1.0);
 	assert(manager->zoom.viewport_vertical_shift >= -1.0);
@@ -575,6 +578,7 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bo
 	if(do_zoom) {
 		canvas_rect.w = (int)( (double)canvas_rect.w * manager->zoom.image_to_viewport_ratio );
 		canvas_rect.h = (int)( (double)canvas_rect.h * manager->zoom.image_to_viewport_ratio );
+		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Zoom - Zoom Ratio: %f\n", manager->zoom.image_to_viewport_ratio);
 		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Zoom - CanvasRect: %dx%d+%dx%d SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n", canvas_rect.w, canvas_rect.h, canvas_rect.x, canvas_rect.y, srcrect->w, srcrect->h, srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 	}
 
@@ -620,6 +624,33 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bo
 	assert(dstrect->y >= 0);
 	assert(dstrect->w > 0);
 	assert(dstrect->h > 0);
+}
+
+void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, SDL_Rect* srcrect, SDL_Rect* dstrect)
+{
+	assert(manager != NULL);
+	assert(srcrect != NULL);
+	assert(dstrect != NULL);
+	assert(srcrect->w > 0);
+	assert(srcrect->h > 0);
+	assert(dstrect->w > 0);
+	assert(dstrect->h > 0);
+	if(srcrect->w > srcrect->h) {
+		manager->zoom.fit_level = (double)dstrect->w / (double)srcrect->w;
+	} else {
+		manager->zoom.fit_level = (double)dstrect->w / (double)srcrect->h;
+	}
+	manager->zoom.actual_size_level = manager->zoom.fit_level;
+	if(manager->zoom.fit_level > 1.0) {
+		manager->zoom.image_to_viewport_ratio_max = manager->zoom.fit_level;
+	} else {
+		manager->zoom.image_to_viewport_ratio_max = 1.0;
+		manager->zoom.fit_level = 1.0;
+	}
+	if(manager->zoom.image_to_viewport_ratio > manager->zoom.image_to_viewport_ratio_max) {
+		manager->zoom.image_to_viewport_ratio = manager->zoom.image_to_viewport_ratio_max;
+	}
+	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Zoom parameters - Viewport ratio: %f/%f Fit level: %f Actual Size Level: %f\n", manager->zoom.image_to_viewport_ratio, manager->zoom.image_to_viewport_ratio_max, manager->zoom.actual_size_level);
 }
 
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager)
