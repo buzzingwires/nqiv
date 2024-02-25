@@ -475,9 +475,13 @@ bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, char* extensi
 	return outcome;
 }
 
-void nqiv_image_calculate_zoom_dimension(const double least, const bool inclusive_least, const double most, const bool inclusive_most, double* target, const double amount)
+void nqiv_image_calculate_zoom_dimension(const double least, const bool inclusive_least, const double catch_point, const double most, const bool inclusive_most, double* target, const double amount)
 {
 	double new_target = *target + amount;
+	if( (*target < catch_point && new_target > catch_point) ||
+		(*target > catch_point && new_target < catch_point) ) {
+		new_target = catch_point;
+	}
 	if(inclusive_least) {
 		new_target = new_target < least ? least : new_target;
 	} else {
@@ -493,32 +497,32 @@ void nqiv_image_calculate_zoom_dimension(const double least, const bool inclusiv
 
 void nqiv_image_manager_pan_left(nqiv_image_manager* manager)
 {
-	nqiv_image_calculate_zoom_dimension(-1.0, true, 1.0, true, &manager->zoom.viewport_horizontal_shift, manager->zoom.pan_left_amount);
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_horizontal_shift, manager->zoom.pan_left_amount);
 }
 
 void nqiv_image_manager_pan_right(nqiv_image_manager* manager)
 {
-	nqiv_image_calculate_zoom_dimension(-1.0, true, 1.0, true, &manager->zoom.viewport_horizontal_shift, manager->zoom.pan_right_amount);
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_horizontal_shift, manager->zoom.pan_right_amount);
 }
 
 void nqiv_image_manager_pan_up(nqiv_image_manager* manager)
 {
-	nqiv_image_calculate_zoom_dimension(-1.0, true, 1.0, true, &manager->zoom.viewport_vertical_shift, manager->zoom.pan_up_amount);
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_vertical_shift, manager->zoom.pan_up_amount);
 }
 
 void nqiv_image_manager_pan_down(nqiv_image_manager* manager)
 {
-	nqiv_image_calculate_zoom_dimension(-1.0, true, 1.0, true, &manager->zoom.viewport_vertical_shift, manager->zoom.pan_down_amount);
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_vertical_shift, manager->zoom.pan_down_amount);
 }
 
 void nqiv_image_manager_zoom_in(nqiv_image_manager* manager)
 {
-	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount);
+	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount);
 }
 
 void nqiv_image_manager_zoom_out(nqiv_image_manager* manager)
 {
-	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount);
+	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount);
 }
 
 /*
@@ -650,7 +654,7 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, S
 	if(manager->zoom.image_to_viewport_ratio > manager->zoom.image_to_viewport_ratio_max) {
 		manager->zoom.image_to_viewport_ratio = manager->zoom.image_to_viewport_ratio_max;
 	}
-	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Zoom parameters - Viewport ratio: %f/%f Fit level: %f Actual Size Level: %f\n", manager->zoom.image_to_viewport_ratio, manager->zoom.image_to_viewport_ratio_max, manager->zoom.actual_size_level);
+	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Zoom parameters - Viewport ratio: %f/%f Fit level: %f Actual Size Level: %f\n", manager->zoom.image_to_viewport_ratio, manager->zoom.image_to_viewport_ratio_max, manager->zoom.actual_size_level, manager->zoom.actual_size_level);
 }
 
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager)
