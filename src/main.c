@@ -659,6 +659,16 @@ state->images.thumbnail.load
 			if(is_thumbnail) {
 				srcrect.w = image->image.width;
 				srcrect.h = image->image.height;
+				if(form->width > srcrect.w) {
+					const double multiplier = (double)form->width / (double)srcrect.w;
+					srcrect.w = (int)( (double)srcrect.w * multiplier );
+					srcrect.h = (int)( (double)srcrect.h * multiplier );
+				}
+				if(form->height > srcrect.h) {
+					const double multiplier = (double)form->height / (double)srcrect.h;
+					srcrect.w = (int)( (double)srcrect.w * multiplier );
+					srcrect.h = (int)( (double)srcrect.h * multiplier );
+				}
 			} else {
 				srcrect.w = form->width;
 				srcrect.h = form->height;
