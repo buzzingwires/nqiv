@@ -105,8 +105,10 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 		state->positions.selection = new_idx;
 		return;
 	}
-	const int placement = state->positions.selection - state->positions.start;
-	state->positions.start = new_idx - placement;
+	const int page = new_idx / state->dimensions.count;
+	const int page_start = state->dimensions.count * page;
+
+	state->positions.start = page_start;
 	state->positions.selection = new_idx;
 	state->positions.end = state->positions.start + state->dimensions.count;
 	if(state->positions.start < 0) {
