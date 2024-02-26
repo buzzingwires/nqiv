@@ -654,7 +654,7 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, S
 	if(manager->zoom.image_to_viewport_ratio > manager->zoom.image_to_viewport_ratio_max) {
 		manager->zoom.image_to_viewport_ratio = manager->zoom.image_to_viewport_ratio_max;
 	}
-	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Zoom parameters - Viewport ratio: %f/%f Fit level: %f Actual Size Level: %f\n", manager->zoom.image_to_viewport_ratio, manager->zoom.image_to_viewport_ratio_max, manager->zoom.actual_size_level, manager->zoom.actual_size_level);
+	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Zoom parameters - Viewport ratio: %f/%f Fit level: %f Actual Size Level: %f\n", manager->zoom.image_to_viewport_ratio, manager->zoom.image_to_viewport_ratio_max, manager->zoom.fit_level, manager->zoom.actual_size_level);
 }
 
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager)
