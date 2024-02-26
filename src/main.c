@@ -980,8 +980,15 @@ bool nqiv_master_thread(nqiv_state* state)
 				render_and_update(state, &running, &result, false, false);
 				break;
 			case SDL_WINDOWEVENT:
-				if(input_event.window.event == SDL_WINDOWEVENT_RESIZED || input_event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-					nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received window resize event.\n");
+				if(input_event.window.event == SDL_WINDOWEVENT_RESIZED ||
+				   input_event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED ||
+				   input_event.window.event == SDL_WINDOWEVENT_EXPOSED ||
+				   input_event.window.event == SDL_WINDOWEVENT_MAXIMIZED ||
+				   input_event.window.event == SDL_WINDOWEVENT_RESTORED ||
+				   input_event.window.event == SDL_WINDOWEVENT_SHOWN ||
+				   input_event.window.event == SDL_WINDOWEVENT_ICCPROF_CHANGED ||
+				   input_event.window.event == SDL_WINDOWEVENT_DISPLAY_CHANGED) {
+					nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received window event for redrawing.\n");
 					render_and_update(state, &running, &result, false, false);
 				}
 				break;
