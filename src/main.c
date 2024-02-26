@@ -628,7 +628,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					event.options.image_load.image_options.surface_soft = true;
 				}
 				event.options.image_load.image_options.first_frame = first_frame;
-				event.options.image_load.image_options.next_frame = next_frame && !first_frame;;
+				event.options.image_load.image_options.next_frame = next_frame && !first_frame;
 				if( !nqiv_send_thread_event(state, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
