@@ -15,6 +15,7 @@
 #include "montage.h"
 #include "drawing.h"
 #include "keybinds.h"
+#include "keyrate.h"
 
 #define OPTPARSE_IMPLEMENTATION
 #define OPTPARSE_API static
@@ -28,6 +29,7 @@ typedef struct nqiv_state
 	nqiv_log_ctx logger;
 	nqiv_image_manager images;
 	nqiv_keybind_manager keybinds;
+	nqiv_keyrate_manager keystates;
 	nqiv_montage_state montage;
 	nqiv_queue thread_queue;
 	bool SDL_inited;
@@ -139,6 +141,39 @@ void nqiv_state_clear(nqiv_state* state)
 	MagickWandTerminus();
 }
 
+void nqiv_set_keyrate_defaults(nqiv_keyrate_manager* manager)
+{
+	manager->settings.start_delay = 0;
+	manager->settings.consecutive_delay = 35;
+	manager->settings.delay_accel = 10;
+	manager->settings.minimum_delay = 5;
+	manager->send_on_up = true;
+	manager->send_on_down = false;
+	nqiv_key_action down_actions[] = {
+		NQIV_KEY_ACTION_ZOOM_IN,
+		NQIV_KEY_ACTION_ZOOM_OUT,
+		NQIV_KEY_ACTION_PAN_LEFT,
+		NQIV_KEY_ACTION_PAN_RIGHT,
+		NQIV_KEY_ACTION_PAN_UP,
+		NQIV_KEY_ACTION_PAN_DOWN,
+		NQIV_KEY_ACTION_PAGE_UP,
+		NQIV_KEY_ACTION_PAGE_DOWN,
+		NQIV_KEY_ACTION_MONTAGE_LEFT,
+		NQIV_KEY_ACTION_MONTAGE_RIGHT,
+		NQIV_KEY_ACTION_MONTAGE_UP,
+		NQIV_KEY_ACTION_MONTAGE_DOWN,
+		NQIV_KEY_ACTION_MONTAGE_START,
+		NQIV_KEY_ACTION_MONTAGE_END,
+	};
+	const int down_actions_len = sizeof(down_actions) / sizeof(nqiv_key_action);
+	int idx;
+	for(idx = 0; idx < down_actions_len; ++idx) {
+		nqiv_keyrate_keystate* state = &manager->states[ down_actions[idx] ];
+		state->send_on_up = NQIV_KEYRATE_DENY;
+		state->send_on_down = NQIV_KEYRATE_ALLOW;
+	}
+}
+
 bool nqiv_parse_args(char *argv[], nqiv_state* state)
 {
 	/*
@@ -158,6 +193,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 		fputs("Failed to initialize image manager.\n", stderr);
 		return false;
 	}
+	nqiv_set_keyrate_defaults(&state->keystates);
 	if( !nqiv_queue_init(&state->thread_queue, &state->logger, STARTING_QUEUE_LENGTH) ) {
 		fputs("Failed to initialize thread queue.\n", stderr);
 		return false;
@@ -416,6 +452,7 @@ bool nqiv_setup_sdl(nqiv_state* state)
 	if( !nqiv_create_alpha_background_texture(&state->logger, state->renderer, &window_rect, window_thickness, &state->texture_alpha_background) ) {
 		return false;
 	}
+	SDL_Delay(1); /* So that we are completely guaranteed to have at least one ticks passed for SDL. */
 	return true;
 }
 
@@ -996,7 +1033,9 @@ bool nqiv_master_thread(nqiv_state* state)
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received window quit event.\n");
 				running = false;
 				break;
+			case SDL_KEYDOWN:
 			case SDL_KEYUP:
+				assert(input_event.type == SDL_KEYDOWN || input_event.type == SDL_KEYUP);
 				/*
 				 * TODO
 				SDL_Keysym
@@ -1023,7 +1062,9 @@ bool nqiv_master_thread(nqiv_state* state)
 	NQIV_KEY_ACT	ION_KEEP_ASPECT_RATIO,
 	NQIV_KEY_ACT	ION_RELOAD,
 	*/
-							if(action == NQIV_KEY_ACTION_QUIT) {
+							if( !nqiv_keyrate_filter_action(&state->keystates, action, input_event.type == SDL_KEYUP) ) {
+								/* NOOP */
+							} else if(action == NQIV_KEY_ACTION_QUIT) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action quit.\n");
 								running = false;
 							} else if(action == NQIV_KEY_ACTION_MONTAGE_RIGHT) {

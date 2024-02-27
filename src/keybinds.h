@@ -33,6 +33,7 @@ typedef enum nqiv_key_action
 	NQIV_KEY_ACTION_STRETCH,
 	NQIV_KEY_ACTION_KEEP_ASPECT_RATIO,
 	NQIV_KEY_ACTION_RELOAD,
+	NQIV_KEY_ACTION_MAX = NQIV_KEY_ACTION_RELOAD,
 } nqiv_key_action;
 
 typedef enum nqiv_key_lookup_summary
