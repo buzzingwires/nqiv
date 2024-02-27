@@ -134,7 +134,8 @@ bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form)
 {
 	assert(image != NULL);
 	assert(form != NULL);
-	assert( (form->file == NULL && form->wand == NULL) );
+	assert(form->file == NULL);
+	assert(form->wand == NULL);
 	if(form->path == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "No path for form in image %s.\n", image->image.path);
 		/*nqiv_set_invalid_image_form(form);*/
@@ -185,7 +186,9 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 {
 	assert(image != NULL);
 	assert(form != NULL);
-	assert( (form->file != NULL && form->wand != NULL && form->data == NULL) );
+	assert(form->file != NULL);
+	assert(form->wand != NULL);
+	assert(form->data == NULL);
 	form->data = calloc( 1, strlen("RGBA") * form->height * form->width );
 	if(form->data == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to allocate memory for raw image data at path %s.", form->path);
