@@ -6,8 +6,7 @@
 #include <assert.h>
 
 #include <SDL2/SDL.h>
-#include <MagickCore/MagickCore.h>
-#include <MagickWand/MagickWand.h>
+#include <wand/magick_wand.h>
 #include <omp.h>
 
 #include "array.h"
@@ -120,7 +119,7 @@ void nqiv_log_magick_wand_exception(nqiv_log_ctx* logger, const MagickWand* magi
 	assert(path != NULL);
 	ExceptionType severity;
 	char* description = MagickGetException(magick_wand, &severity);
-	nqiv_log_write(logger, NQIV_LOG_ERROR, "ImageMagick exception for path %s: %s %s\n", path, GetMagickModule(), description);
+	nqiv_log_write(logger, NQIV_LOG_ERROR, "ImageMagick exception for path %s: %s\n", path, description);
 	MagickRelinquishMemory(description);
 }
 
@@ -131,7 +130,7 @@ void nqiv_log_magick_wand_exception(nqiv_log_ctx* logger, const MagickWand* magi
 /* TODO Add twice */
 /* TODO Detect change */
 
-bool nqiv_image_handle_wand(nqiv_image* image, nqiv_image_form* form, const bool full_load)
+bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form)
 {
 	assert(image != NULL);
 	assert(form != NULL);
@@ -151,13 +150,10 @@ bool nqiv_image_handle_wand(nqiv_image* image, nqiv_image_form* form, const bool
 	}
 	rewind(form->file);
 	form->wand = NewMagickWand();
-	MagickBooleanType read_result;
-	if(full_load) {
-		read_result = MagickReadImageFile(form->wand, form->file);
-	} else {
-		read_result = MagickPingImageFile(form->wand, form->file);
-	}
-	if(read_result == MagickFalse) {
+	MagickPassFail read_result;
+	read_result = MagickReadImageFile(form->wand, form->file);
+
+	if(read_result == MagickFail) {
 		nqiv_log_magick_wand_exception(image->parent->logger, form->wand, form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
@@ -180,34 +176,8 @@ bool nqiv_image_handle_wand(nqiv_image* image, nqiv_image_form* form, const bool
 	}
 	form->height = MagickGetImageHeight(form->wand);
 	form->width = MagickGetImageWidth(form->wand);
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "%s wand for image %s.\n", full_load ? "Loaded" : "Pinged", image->image.path);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "%s wand for image loaded.\n", image->image.path);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
-	return true;
-}
-
-bool nqiv_image_ping_wand(nqiv_image* image, nqiv_image_form* form)
-{
-	return nqiv_image_handle_wand(image, form, false);
-}
-
-bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form)
-{
-	return nqiv_image_handle_wand(image, form, true);
-}
-
-bool nqiv_image_upgrade_wand(nqiv_image* image, nqiv_image_form* form)
-{
-	assert(image != NULL);
-	assert(form != NULL);
-	assert( (form->file != NULL && form->wand != NULL) );
-
-	if(MagickReadImageFile(form->wand, form->file) == MagickFalse) {
-		nqiv_log_magick_wand_exception(image->parent->logger, form->wand, form->path);
-		nqiv_unload_image_form(form);
-		form->error = true;
-		return false;
-	}
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Upgraded wand to read state for image %s.\n", image->image.path);
 	return true;
 }
 
@@ -223,7 +193,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		form->error = true;
 		return false;
 	}
-	if(MagickExportImagePixels(form->wand, 0, 0, form->width, form->height, "RGBA", CharPixel, form->data) == MagickFalse) {
+	if(MagickGetImagePixels(form->wand, 0, 0, form->width, form->height, "RGBA", CharPixel, form->data) == MagickFail) {
 		nqiv_log_magick_wand_exception(image->parent->logger, form->wand, form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
@@ -279,12 +249,12 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Not borrowing dimension metadata from thumbnail because it's already set for image %s.\n", image->image.path);
 		return true;
 	}
-	char* width_string = MagickGetImageProperty(image->thumbnail.wand, "Thumb::Image::Width");
+	char* width_string = MagickGetImageAttribute(image->thumbnail.wand, "Thumb::Image::Width");
 	if(width_string == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Failed to get width metadata from thumbnail for %s.\n", image->image.path);
 		return false;
 	}
-	char* height_string = MagickGetImageProperty(image->thumbnail.wand, "Thumb::Image::Height");
+	char* height_string = MagickGetImageAttribute(image->thumbnail.wand, "Thumb::Image::Height");
 	if(height_string == NULL) {
 		MagickRelinquishMemory(width_string);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Failed to get height metadata from thumbnail for %s.\n", image->image.path);

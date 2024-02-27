@@ -6,8 +6,7 @@
 #include <limits.h>
 #include <errno.h>
 
-#include <MagickCore/MagickCore.h>
-#include <MagickWand/MagickWand.h>
+#include <wand/magick_wand.h>
 
 #include "image.h"
 #include "md5.h"
@@ -172,7 +171,7 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 		return false;
 	}
 	MagickResetIterator(thumbnail_wand);
-	if( !MagickResizeImage(thumbnail_wand, image->parent->thumbnail.width, image->parent->thumbnail.height, image->parent->thumbnail.interpolation) ) {
+	if( !MagickResizeImage(thumbnail_wand, image->parent->thumbnail.width, image->parent->thumbnail.height, image->parent->thumbnail.interpolation, 1.0) ) {
 		nqiv_log_magick_wand_exception(image->parent->logger, image->image.wand, image->image.path);
 		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
 		return false;
@@ -196,11 +195,11 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	snprintf(width_string, NQIV_DIMENSION_STRLEN, "%d", image->image.width);
 	char height_string[NQIV_DIMENSION_STRLEN] = {0};
 	snprintf(height_string, NQIV_DIMENSION_STRLEN, "%d", image->image.height);
-	if( !MagickSetImageProperty(thumbnail_wand, "Thumb::URI", actualpath) ||
-		!MagickSetImageProperty(thumbnail_wand, "Thumb::MTime", mtime_string) ||
-		!MagickSetImageProperty(thumbnail_wand, "Thumb::Size", size_string) ||
-		!MagickSetImageProperty(thumbnail_wand, "Thumb::Image::Width", width_string) ||
-		!MagickSetImageProperty(thumbnail_wand, "Thumb::Image::Height", height_string) ) {
+	if( !MagickSetImageAttribute(thumbnail_wand, "Thumb::URI", actualpath) ||
+		!MagickSetImageAttribute(thumbnail_wand, "Thumb::MTime", mtime_string) ||
+		!MagickSetImageAttribute(thumbnail_wand, "Thumb::Size", size_string) ||
+		!MagickSetImageAttribute(thumbnail_wand, "Thumb::Image::Width", width_string) ||
+		!MagickSetImageAttribute(thumbnail_wand, "Thumb::Image::Height", height_string) ) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.\n", image->image.path);
 		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
 		return false;
@@ -241,7 +240,7 @@ bool nqiv_thumbnail_matches_image(nqiv_image* image)
 		return false;
 	}
 
-	char* thumbnail_mtime = MagickGetImageProperty(image->thumbnail.wand, "Thumb::MTime");
+	char* thumbnail_mtime = MagickGetImageAttribute(image->thumbnail.wand, "Thumb::MTime");
 	if(thumbnail_mtime == NULL) {
 		nqiv_log_magick_wand_exception(image->parent->logger, image->image.wand, image->image.path);
 		return false;

@@ -1,8 +1,8 @@
 #include <stdio.h>
+#include <errno.h>
 #include <assert.h>
 
-#include <MagickCore/MagickCore.h>
-#include <MagickWand/MagickWand.h>
+#include <wand/magick_wand.h>
 #include <SDL2/SDL.h>
 #include <omp.h>
 
@@ -138,7 +138,7 @@ void nqiv_state_clear(nqiv_state* state)
 		free(state->window_title);
 	}
 	memset( state, 0, sizeof(nqiv_state) );
-	MagickWandTerminus();
+	DestroyMagick();
 }
 
 void nqiv_set_keyrate_defaults(nqiv_keyrate_manager* manager)
@@ -629,7 +629,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					event.options.image_load.thumbnail_options.wand_soft = true;
 					event.options.image_load.borrow_thumbnail_dimension_metadata = true;
 				}
-				if( hard || next_frame || (first_frame && image->thumbnail.wand != NULL && MagickGetIteratorIndex(image->thumbnail.wand) != 0) ) {
+				if( hard || next_frame || (first_frame && image->thumbnail.wand != NULL && MagickGetImageIndex(image->thumbnail.wand) != 0) ) {
 					event.options.image_load.thumbnail_options.raw = true;
 					event.options.image_load.thumbnail_options.surface = true;
 				} else {
@@ -657,7 +657,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					event.options.image_load.image_options.file_soft = true;
 					event.options.image_load.image_options.wand_soft = true;
 				}
-				if( hard || next_frame || (first_frame && image->thumbnail.wand != NULL && MagickGetIteratorIndex(image->thumbnail.wand) != 0) ) {
+				if( hard || next_frame || (first_frame && image->thumbnail.wand != NULL && MagickGetImageIndex(image->thumbnail.wand) != 0) ) {
 					event.options.image_load.image_options.raw = true;
 					event.options.image_load.image_options.surface = true;
 				} else {
@@ -742,7 +742,7 @@ state->images.thumbnail.load
 					event.options.image_load.image_options.file_soft = true;
 					event.options.image_load.image_options.wand_soft = true;
 				}
-				if( hard || next_frame || (first_frame && image->thumbnail.wand != NULL && MagickGetIteratorIndex(image->thumbnail.wand) != 0) ) {
+				if( hard || next_frame || (first_frame && image->thumbnail.wand != NULL && MagickGetImageIndex(image->thumbnail.wand) != 0) ) {
 					event.options.image_load.image_options.raw = true;
 					event.options.image_load.image_options.surface = true;
 				} else {
@@ -1243,7 +1243,7 @@ int main(int argc, char *argv[])
 
 	state.in_montage = true;
 
-	MagickWandGenesis();
+	InitializeMagick(*argv);
 
 	if( !nqiv_parse_args(argv, &state) ) {
 		nqiv_state_clear(&state);

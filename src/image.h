@@ -1,11 +1,11 @@
 #ifndef NQIV_IMAGE_H
 #define NQIV_IMAGE_H
 
+#include <time.h>
 #include <stdbool.h>
 
 #include <SDL2/SDL.h>
-#include <MagickCore/MagickCore.h>
-#include <MagickWand/MagickWand.h>
+#include <wand/magick_wand.h>
 
 #include "array.h"
 #include "logging.h"
@@ -81,9 +81,7 @@ void nqiv_unload_image_form_texture(nqiv_image_form* form);
 void nqiv_unload_image_form_surface(nqiv_image_form* form);
 void nqiv_unload_image_form_raw(nqiv_image_form* form);
 
-bool nqiv_image_ping_wand(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form);
-bool nqiv_image_upgrade_wand(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_texture(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form);
@@ -97,7 +95,7 @@ typedef struct nqiv_image_manager_thumbnail_settings
 	bool save;
 	int height;
 	int width;
-	FilterType interpolation;
+	FilterTypes interpolation;
 } nqiv_image_manager_thumbnail_settings;
 
 typedef struct nqiv_image_manager_zoom_settings
