@@ -119,13 +119,8 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 						}
 					}
 					nqiv_worker_handle_image_load_form(&event.options.image_load.image_options, event.options.image_load.image, &event.options.image_load.image->image);
-					nqiv_worker_handle_image_load_form(&event.options.image_load.thumbnail_options, event.options.image_load.image, &event.options.image_load.image->thumbnail);
-					if(event.options.image_load.borrow_thumbnail_dimension_metadata) {
-						nqiv_image_borrow_thumbnail_dimensions(event.options.image_load.image);
-					}
 					if(!event.options.image_load.image->thumbnail_attempted && event.options.image_load.create_thumbnail) {
-						if(event.options.image_load.image->parent->thumbnail.load && 
-						   event.options.image_load.image->thumbnail.wand == NULL &&
+						if(event.options.image_load.image->thumbnail.wand == NULL &&
 						   nqiv_image_load_wand(event.options.image_load.image, &event.options.image_load.image->thumbnail)
 						   ) {
 								if(event.options.image_load.image->image.wand == NULL) {
@@ -139,8 +134,10 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 								} else if( !nqiv_thumbnail_matches_image(event.options.image_load.image) ) {
 									nqiv_thumbnail_create(event.options.image_load.image);
 								}
-								nqiv_unload_image_form_wand(&event.options.image_load.image->thumbnail);
-								nqiv_unload_image_form_file(&event.options.image_load.image->thumbnail);
+								if(!event.options.image_load.image->parent->thumbnail.load) {
+									nqiv_unload_image_form_wand(&event.options.image_load.image->thumbnail);
+									nqiv_unload_image_form_file(&event.options.image_load.image->thumbnail);
+								}
 						} else {
 							if(event.options.image_load.image->image.wand == NULL) {
 								if( nqiv_image_load_wand(event.options.image_load.image, &event.options.image_load.image->image) ) {
@@ -153,6 +150,10 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 							}
 						}
 						event.options.image_load.image->thumbnail_attempted = true;
+					}
+					nqiv_worker_handle_image_load_form(&event.options.image_load.thumbnail_options, event.options.image_load.image, &event.options.image_load.image->thumbnail);
+					if(event.options.image_load.borrow_thumbnail_dimension_metadata) {
+						nqiv_image_borrow_thumbnail_dimensions(event.options.image_load.image);
 					}
 					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&event.options.image_load.image->lock);
