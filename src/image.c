@@ -6,28 +6,19 @@
 #include <assert.h>
 
 #include <SDL2/SDL.h>
-#include <wand/magick_wand.h>
+#include <vips/vips.h>
 #include <omp.h>
 
 #include "array.h"
 #include "image.h"
 
 /* Image */
-void nqiv_unload_image_form_wand(nqiv_image_form* form)
+void nqiv_unload_image_form_vips(nqiv_image_form* form)
 {
 	assert(form != NULL);
-	if(form->wand != NULL) {
-		DestroyMagickWand(form->wand); /* TODO: Where should this be? */
-		form->wand = NULL;
-	}
-}
-
-void nqiv_unload_image_form_file(nqiv_image_form* form)
-{
-	assert(form != NULL);
-	if(form->file != NULL) {
-		fclose(form->file);
-		form->file = NULL;
+	if(form->vips != NULL) {
+		g_object_unref(form->vips);
+		form->vips = NULL;
 	}
 }
 
@@ -53,7 +44,7 @@ void nqiv_unload_image_form_raw(nqiv_image_form* form)
 {
 	assert(form != NULL);
 	if(form->data != NULL) {
-		free(form->data);
+		g_free(form->data);
 		form->data = NULL;
 	}
 }
@@ -61,8 +52,7 @@ void nqiv_unload_image_form_raw(nqiv_image_form* form)
 void nqiv_unload_image_form(nqiv_image_form* form)
 {
 	assert(form != NULL);
-	nqiv_unload_image_form_wand(form);
-	nqiv_unload_image_form_file(form);
+	nqiv_unload_image_form_vips(form);
 	nqiv_unload_image_form_texture(form);
 	nqiv_unload_image_form_surface(form);
 	nqiv_unload_image_form_raw(form);
@@ -112,15 +102,13 @@ nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* path)
 	return image;
 }
 
-void nqiv_log_magick_wand_exception(nqiv_log_ctx* logger, const MagickWand* magick_wand, const char* path)
+void nqiv_log_vips_exception(nqiv_log_ctx* logger,  const char* path)
 {
 	assert(logger != NULL);
-	assert(magick_wand != NULL);
 	assert(path != NULL);
-	ExceptionType severity;
-	char* description = MagickGetException(magick_wand, &severity);
-	nqiv_log_write(logger, NQIV_LOG_ERROR, "ImageMagick exception for path %s: %s\n", path, description);
-	MagickRelinquishMemory(description);
+	char* error = vips_error_buffer_copy();
+	nqiv_log_write(logger, NQIV_LOG_ERROR, "Vips exception for path %s: %s\n", path, error);
+	g_free(error);
 }
 
 /* TODO to thumbnail */
@@ -130,54 +118,126 @@ void nqiv_log_magick_wand_exception(nqiv_log_ctx* logger, const MagickWand* magi
 /* TODO Add twice */
 /* TODO Detect change */
 
-bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form)
+int nqiv_find_space_delimted_idx(const char* string, const int wanted_idx)
+{
+	const int len = strlen(string);
+	int i_idx = -1;
+	int c_idx;
+	bool in_section = false;
+	bool found = false;
+	for(c_idx = 0; c_idx < len; ++c_idx) {
+		const char c = string[c_idx];
+		if(!in_section) {
+			if(c != ' ') {
+				in_section = true;
+				++i_idx;
+				if(i_idx == wanted_idx) {
+					found = true;
+					break;
+				}
+			}
+		} else if(c == ' ') {
+			in_section = false;
+		}
+	}
+	return found ? c_idx : -1;
+}
+
+bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
+{
+	const char* delay_string;
+	if(vips_image_get_string(form->vips, "delay", &delay_string) == -1) {
+		nqiv_log_vips_exception(image->parent->logger, image->image.path);
+		nqiv_unload_image_form(form);
+		form->error = true;
+		return false;
+	}
+	const int idx = nqiv_find_space_delimted_idx(delay_string, form->animation.frame);
+	if(idx == -1) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Unable to find delay for frame %d of '%s'.\n", form->animation.frame, image->image.path);
+		nqiv_unload_image_form(form);
+		form->error = true;
+		return false;
+	}
+	const int delay_value = strtol(delay_string + idx, NULL, 10);
+	if(delay_value == 0 || errno == ERANGE) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Delay for frame %d of '%s' is not a valid integer.\n", form->animation.frame, image->image.path);
+		nqiv_unload_image_form(form);
+		form->error = true;
+		return false;
+	}
+	if(delay_value < 0) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid delay of %d for frame %d of '%s'.\n", delay_value, form->animation.frame, image->image.path);
+		nqiv_unload_image_form(form);
+		form->error = true;
+		return false;
+	}
+	form->animation.delay = delay_value * 10; /* Delay is in centiseconds */
+	return true;
+}
+
+bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 {
 	assert(image != NULL);
 	assert(form != NULL);
-	assert(form->file == NULL);
-	assert(form->wand == NULL);
+	assert(form->vips == NULL);
 	if(form->path == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "No path for form in image %s.\n", image->image.path);
 		/*nqiv_set_invalid_image_form(form);*/
 		form->error = true;
 		return false;
 	}
-	form->file = fopen(form->path, "r");
-	if(form->file == NULL) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to open image file at path %s.\n", form->path);
-		/*nqiv_set_invalid_image_form(form);*/
-		form->error = true;
-		return false;
-	}
-	rewind(form->file);
-	form->wand = NewMagickWand();
-	MagickPassFail read_result;
-	read_result = MagickReadImageFile(form->wand, form->file);
-
-	if(read_result == MagickFail) {
-		nqiv_log_magick_wand_exception(image->parent->logger, form->wand, form->path);
+	form->vips = vips_image_new_from_file( form->path, NULL );
+	if(form->vips == NULL) {
+		nqiv_log_vips_exception(image->parent->logger, form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
-	MagickResetIterator(form->wand);
-	if( MagickHasNextImage(form->wand) ) {
+
+	form->width = vips_image_get_width(form->vips);
+	form->height = vips_image_get_height(form->vips);
+	form->animation.frame_count = vips_image_get_n_pages(form->vips);
+	form->animation.frame = 0;
+	if(form->animation.frame_count > 0) {
 		form->animation.exists = true;
-		form->animation.delay = (Uint32)(MagickGetImageDelay(form->wand) * 10); /* Delay is in centiseconds */
-		MagickWand* final_wand = MagickCoalesceImages(form->wand);
-		if(final_wand == NULL) {
+		if( !nqiv_image_form_set_frame_delay(image, form) ) {
+			nqiv_log_vips_exception(image->parent->logger, form->path);
 			nqiv_unload_image_form(form);
-			nqiv_log_magick_wand_exception(image->parent->logger, form->wand, form->path);
 			form->error = true;
 			return false;
-		} else {
-			nqiv_unload_image_form_wand(form);
 		}
-		form->wand = final_wand;
 	}
-	form->height = MagickGetImageHeight(form->wand);
-	form->width = MagickGetImageWidth(form->wand);
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "%s wand for image loaded.\n", image->image.path);
+
+	VipsImage* old_vips = form->vips;
+	form->vips = vips_image_new_from_file( form->path, "n", form->animation.frame_count, NULL );
+	g_object_unref(old_vips);
+	if(form->vips == NULL) {
+		nqiv_log_vips_exception(image->parent->logger, form->path);
+		nqiv_unload_image_form(form);
+		form->error = true;
+		return false;
+	}
+
+	old_vips = form->vips;
+	if( vips_copy(old_vips, &form->vips, "format", VIPS_FORMAT_UCHAR, "coding", VIPS_CODING_NONE, "interpretation", VIPS_INTERPRETATION_RGB, NULL) == -1 ) {
+		nqiv_log_vips_exception(image->parent->logger, form->path);
+		nqiv_unload_image_form(form);
+		form->error = true;
+		return false;
+	}
+
+	if( !vips_image_hasalpha(form->vips) ) {
+		old_vips = form->vips;
+		if(vips_addalpha(old_vips, &form->vips, NULL) == -1) {
+			nqiv_log_vips_exception(image->parent->logger, form->path);
+			nqiv_unload_image_form(form);
+			form->error = true;
+			return false;
+		}
+		g_object_unref(old_vips);
+	}
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "%s vips for image loaded.\n", image->image.path);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
 }
@@ -186,22 +246,35 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 {
 	assert(image != NULL);
 	assert(form != NULL);
-	assert(form->file != NULL);
-	assert(form->wand != NULL);
+	assert(form->vips != NULL);
 	assert(form->data == NULL);
-	form->data = calloc( 1, strlen("RGBA") * form->height * form->width );
-	if(form->data == NULL) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to allocate memory for raw image data at path %s.", form->path);
+
+	VipsRect rect;
+	rect.left = 0;
+	rect.top = form->height * (form->animation.exists ? form->animation.frame : 0);
+	rect.width = form->width;
+	rect.height = form->height;
+
+	VipsRegion* region = vips_region_new(form->vips);
+	if(vips_region_prepare(region, &rect) == -1) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to prepare vips region raw image data at path %s.", form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
-	if(MagickGetImagePixels(form->wand, 0, 0, form->width, form->height, "RGBA", CharPixel, form->data) == MagickFail) {
-		nqiv_log_magick_wand_exception(image->parent->logger, form->wand, form->path);
+
+	size_t data_size;
+	VipsPel* extracted = vips_region_fetch(region, 0, 0, form->width, form->height, &data_size);
+	if(extracted == NULL) {
+		g_object_unref(region);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to extract raw image data at path %s.", form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
+
+	g_object_unref(region);
+	form->data = extracted;
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded raw for image %s.\n", image->image.path);
 	return true;
 }
@@ -244,44 +317,37 @@ bool nqiv_image_load_sdl_texture(nqiv_image* image, nqiv_image_form* form, SDL_R
 bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 {
 	assert(image != NULL);
-	if(image->thumbnail.wand == NULL) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Not borrowing dimension metadata from thumbnail because the wand is unavailable for image %s.\n", image->image.path);
+	if(image->thumbnail.vips == NULL) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Not borrowing dimension metadata from thumbnail because the vips image is unavailable for image %s.\n", image->image.path);
 		return true;
 	}
 	if(image->image.width != 0 || image->image.height != 0) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Not borrowing dimension metadata from thumbnail because it's already set for image %s.\n", image->image.path);
 		return true;
 	}
-	char* width_string = MagickGetImageAttribute(image->thumbnail.wand, "Thumb::Image::Width");
-	if(width_string == NULL) {
+	const char* width_string;
+	if(vips_image_get_string(image->thumbnail.vips, "Thumb::Image::Width", &width_string) == -1) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Failed to get width metadata from thumbnail for %s.\n", image->image.path);
 		return false;
 	}
-	char* height_string = MagickGetImageAttribute(image->thumbnail.wand, "Thumb::Image::Height");
-	if(height_string == NULL) {
-		MagickRelinquishMemory(width_string);
+	const char* height_string;
+	if(vips_image_get_string(image->thumbnail.vips, "Thumb::Image::Height", &height_string) == -1) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Failed to get height metadata from thumbnail for %s.\n", image->image.path);
 		return false;
 	}
 	const int width_value = strtol(width_string, NULL, 10);
 	if(width_value == 0 || errno == ERANGE) {
-		MagickRelinquishMemory(width_string);
-		MagickRelinquishMemory(height_string);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid width for thumbnail of '%s'.\n", image->image.path);
 		return false;
 	}
 	const int height_value = strtol(height_string, NULL, 10);
 	if(height_value == 0 || errno == ERANGE) {
-		MagickRelinquishMemory(width_string);
-		MagickRelinquishMemory(height_string);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid height for thumbnail of '%s'.\n", image->image.path);
 		return false;
 	}
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Borrowing dimension metadata from thumbnail set for image %s.\n", image->image.path);
 	image->image.width = width_value;
 	image->image.height = height_value;
-	MagickRelinquishMemory(width_string);
-	MagickRelinquishMemory(height_string);
 	return true;
 }
 
@@ -632,19 +698,14 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, S
 
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager)
 {
-	manager->thumbnail.height += manager->zoom.thumbnail_adjust;
-	manager->thumbnail.width += manager->zoom.thumbnail_adjust;
+	manager->thumbnail.size += manager->zoom.thumbnail_adjust;
 }
 
 void nqiv_image_manager_decrement_thumbnail_size(nqiv_image_manager* manager)
 {
-	manager->thumbnail.height -= manager->zoom.thumbnail_adjust;
-	manager->thumbnail.width -= manager->zoom.thumbnail_adjust;
-	if(manager->thumbnail.height <= 0) {
-		manager->thumbnail.height = manager->zoom.thumbnail_adjust;
-	}
-	if(manager->thumbnail.width <= 0) {
-		manager->thumbnail.width = manager->zoom.thumbnail_adjust;
+	manager->thumbnail.size -= manager->zoom.thumbnail_adjust;
+	if(manager->thumbnail.size <= 0) {
+		manager->thumbnail.size = manager->zoom.thumbnail_adjust;
 	}
 }
 
@@ -658,36 +719,39 @@ void nqiv_image_form_delay_frame(nqiv_image_form* form)
 	form->animation.last_frame_time = new_frame_time;
 }
 
-bool nqiv_image_form_first_frame(nqiv_image_form* form)
+bool nqiv_image_form_first_frame(nqiv_image* image, nqiv_image_form* form)
 {
 	assert(form != NULL);
-	assert(form->file != NULL);
-	assert(form->wand != NULL);
+	assert(form->vips != NULL);
 	if(!form->animation.exists) {
 		return true;
 	}
-	MagickResetIterator(form->wand);
-	MagickNextImage(form->wand);
+	form->animation.frame = 0;
 	form->animation.frame_rendered = false;
 	form->animation.last_frame_time = clock();
+	if( !nqiv_image_form_set_frame_delay(image, form) ) {
+		return false;
+	}
 	nqiv_image_form_delay_frame(form);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
 }
 
-bool nqiv_image_form_next_frame(nqiv_image_form* form)
+bool nqiv_image_form_next_frame(nqiv_image* image, nqiv_image_form* form)
 {
 	assert(form != NULL);
-	assert(form->file != NULL);
-	assert(form->wand != NULL);
+	assert(form->vips != NULL);
 	if(!form->animation.exists) {
 		return true;
 	}
-	if( !MagickHasNextImage(form->wand) ) {
-		MagickResetIterator(form->wand);
+	form->animation.frame += 1;
+	if( form->animation.frame >= form->animation.frame_count ) {
+			form->animation.frame = 0;
 	}
-	MagickNextImage(form->wand);
 	form->animation.frame_rendered = false;
+	if( !nqiv_image_form_set_frame_delay(image, form) ) {
+		return false;
+	}
 	nqiv_image_form_delay_frame(form);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;

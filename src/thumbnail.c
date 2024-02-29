@@ -6,7 +6,7 @@
 #include <limits.h>
 #include <errno.h>
 
-#include <wand/magick_wand.h>
+#include <vips/vips.h>
 
 #include "image.h"
 #include "md5.h"
@@ -47,7 +47,7 @@ void nqiv_thumbnail_get_type(nqiv_image_manager* images, const bool failed, char
 	if(failed) {
 		typeptr = typefail;
 		typelen = strlen(typefail);
-	} else if(images->thumbnail.height >= 128 || images->thumbnail.width >= 128) {
+	} else if(images->thumbnail.size >= 128 || images->thumbnail.size >= 128) {
 		typeptr = typelarge;
 		typelen = strlen(typelarge);
 	} else {
@@ -66,8 +66,7 @@ void nqiv_thumbnail_get_type(nqiv_image_manager* images, const bool failed, char
 bool nqiv_thumbnail_create_dirs(nqiv_image_manager* images, const bool failed)
 {
 	assert(images != NULL);
-	assert(images->thumbnail.height > 0);
-	assert(images->thumbnail.width > 0);
+	assert(images->thumbnail.size > 0);
 	assert(images->thumbnail.root != NULL);
 
 	const char* thumbspart = "/thumbnails/";
@@ -95,8 +94,7 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 {
 	assert(image != NULL);
 	assert(image->parent != NULL);
-	assert(image->parent->thumbnail.height > 0);
-	assert(image->parent->thumbnail.width > 0);
+	assert(image->parent->thumbnail.size > 0);
 	assert(image->parent->thumbnail.root != NULL);
 
 	const char* thumbspart = "/thumbnails/";
@@ -156,35 +154,44 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	assert(image != NULL);
 	assert(image->parent != NULL);
 	assert(image->image.path != NULL);
-	assert(image->image.file != NULL);
-	assert(image->image.wand != NULL);
-	assert(image->parent->thumbnail.height > 0);
-	assert(image->parent->thumbnail.width > 0);
+	assert(image->image.vips != NULL);
+	assert(image->parent->thumbnail.size > 0);
 	/* assert(image->thumbnail.path == NULL); */
 
 	if(image->thumbnail.path == NULL) {
 		return false;
 	}
-	MagickWand* thumbnail_wand = CloneMagickWand(image->image.wand);
-	if(thumbnail_wand == NULL) {
-		nqiv_log_magick_wand_exception(image->parent->logger, image->image.wand, image->image.path);
+	VipsImage* old_vips;
+	VipsImage* thumbnail_vips;
+	if(vips_copy(image->image.vips, &thumbnail_vips, NULL) == -1) {
+		nqiv_log_vips_exception(image->parent->logger,  image->image.path);
 		return false;
 	}
-	MagickResetIterator(thumbnail_wand);
-	if( !MagickResizeImage(thumbnail_wand, image->parent->thumbnail.width, image->parent->thumbnail.height, image->parent->thumbnail.interpolation, 1.0) ) {
-		nqiv_log_magick_wand_exception(image->parent->logger, image->image.wand, image->image.path);
-		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
+	old_vips = thumbnail_vips;
+	if(vips_crop(old_vips, &thumbnail_vips, 0, 0, image->image.width, image->image.height, NULL) == -1) {
+		g_object_unref(old_vips);
+		nqiv_log_vips_exception(image->parent->logger,  image->image.path);
 		return false;
 	}
+	g_object_unref(old_vips);
+
+	image->thumbnail.animation.frame = 0;
+	old_vips = thumbnail_vips;
+	if(vips_thumbnail_image(old_vips, &thumbnail_vips, image->parent->thumbnail.size, NULL) == -1) {
+		g_object_unref(old_vips);
+		nqiv_log_vips_exception(image->parent->logger,  image->image.path);
+		return false;
+	}
+	g_object_unref(old_vips);
 	char actualpath[NQIV_URI_LEN];
 	if( !nqiv_thumbnail_render_uri(image, actualpath) ) {
-		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
+		g_object_unref(thumbnail_vips);
 		return false;
 	}
 	nqiv_stat_data stat_data;
-	if( !nqiv_fstat(image->image.file, &stat_data) ) {
+	if( !nqiv_stat(image->image.path, &stat_data) ) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.\n", image->image.path);
-		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
+		g_object_unref(thumbnail_vips); /* TODO: Where should this be? */
 		return false;
 	}
 	char mtime_string[NQIV_MTIME_STRLEN] = {0};
@@ -195,26 +202,24 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	snprintf(width_string, NQIV_DIMENSION_STRLEN, "%d", image->image.width);
 	char height_string[NQIV_DIMENSION_STRLEN] = {0};
 	snprintf(height_string, NQIV_DIMENSION_STRLEN, "%d", image->image.height);
-	if( !MagickSetImageAttribute(thumbnail_wand, "Thumb::URI", actualpath) ||
-		!MagickSetImageAttribute(thumbnail_wand, "Thumb::MTime", mtime_string) ||
-		!MagickSetImageAttribute(thumbnail_wand, "Thumb::Size", size_string) ||
-		!MagickSetImageAttribute(thumbnail_wand, "Thumb::Image::Width", width_string) ||
-		!MagickSetImageAttribute(thumbnail_wand, "Thumb::Image::Height", height_string) ) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.\n", image->image.path);
-		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
-		return false;
-	}
+
+	vips_image_set_string(thumbnail_vips, "Thumb::URI", actualpath);
+	vips_image_set_string(thumbnail_vips, "Thumb::MTime", mtime_string);
+	vips_image_set_string(thumbnail_vips, "Thumb::Size", size_string);
+	vips_image_set_string(thumbnail_vips, "Thumb::Image::Width", width_string);
+	vips_image_set_string(thumbnail_vips, "Thumb::Image::Height", height_string);
+
 	if( !nqiv_thumbnail_create_dirs(image->parent, false) ) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed create thumbnail dirs under %s.\n", image->parent->thumbnail.root);
-		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
+		g_object_unref(thumbnail_vips); /* TODO: Where should this be? */
 		return false;
 	}
-	if( !MagickWriteImage(thumbnail_wand, image->thumbnail.path) ) {
-		nqiv_log_magick_wand_exception(image->parent->logger, image->image.wand, image->image.path);
-		DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
+	if( vips_image_write_to_file(thumbnail_vips, image->thumbnail.path,NULL) == -1 ) {
+		nqiv_log_vips_exception(image->parent->logger, image->image.path);
+		g_object_unref(thumbnail_vips); /* TODO: Where should this be? */
 		return false;
 	}
-	DestroyMagickWand(thumbnail_wand); /* TODO: Where should this be? */
+	g_object_unref(thumbnail_vips); /* TODO: Where should this be? */
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Created thumbnail at path '%s' for image at path '%s'.\n", image->thumbnail.path, image->image.path);
 	return true;
 }
@@ -227,31 +232,27 @@ bool nqiv_thumbnail_matches_image(nqiv_image* image)
 {
 	assert(image != NULL);
 	assert(image->parent != NULL);
-	assert(image->image.file != NULL);
-	assert(image->image.file != NULL);
-	assert(image->image.wand != NULL);
+	assert(image->image.vips != NULL);
 	assert(image->thumbnail.path != NULL);
-	assert(image->thumbnail.file != NULL);
-	assert(image->thumbnail.wand != NULL);
+	assert(image->thumbnail.vips != NULL);
 
 	nqiv_stat_data stat_data;
-	if( !nqiv_fstat(image->image.file, &stat_data) ) {
+	if( !nqiv_stat(image->image.path, &stat_data) ) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.\n", image->image.path);
 		return false;
 	}
 
-	char* thumbnail_mtime = MagickGetImageAttribute(image->thumbnail.wand, "Thumb::MTime");
-	if(thumbnail_mtime == NULL) {
-		nqiv_log_magick_wand_exception(image->parent->logger, image->image.wand, image->image.path);
+	const char* thumbnail_mtime;
+	if(vips_image_get_string(image->thumbnail.vips, "Thumb::MTime", &thumbnail_mtime) == -1) {
+		nqiv_log_vips_exception(image->parent->logger, image->image.path);
 		return false;
 	}
+
 	const uintmax_t thumbnail_mtime_value = strtoumax(thumbnail_mtime, NULL, 10);
 	if(thumbnail_mtime_value == 0 || errno == ERANGE) {
-		MagickRelinquishMemory(thumbnail_mtime);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid MTime for thumbnail of '%s' at '%s'.\n", image->image.path, image->thumbnail.path);
 		return false;
 	}
-	MagickRelinquishMemory(thumbnail_mtime);
 
 	const bool matches = thumbnail_mtime_value == (uintmax_t)(stat_data.mtime);
 

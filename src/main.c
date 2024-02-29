@@ -2,7 +2,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include <wand/magick_wand.h>
+#include <vips/vips.h>
 #include <SDL2/SDL.h>
 #include <omp.h>
 
@@ -138,7 +138,7 @@ void nqiv_state_clear(nqiv_state* state)
 		free(state->window_title);
 	}
 	memset( state, 0, sizeof(nqiv_state) );
-	DestroyMagick();
+	vips_shutdown();
 }
 
 void nqiv_set_keyrate_defaults(nqiv_keyrate_manager* manager)
@@ -204,10 +204,9 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 		{"log-prefix", 'L', OPTPARSE_REQUIRED},
 		{"read-from-stdin", 'r', OPTPARSE_NONE},
 		{"thumbnail-root", 'P', OPTPARSE_REQUIRED},
-		{"thumbnail-height", 'H', OPTPARSE_REQUIRED},
-		{"thumbnail-width", 'W', OPTPARSE_REQUIRED},
 		{"thumbnail-load", 't', OPTPARSE_NONE},
 		{"thumbnail-save", 'T', OPTPARSE_NONE},
+		{"thumbnail-size", 'S', OPTPARSE_REQUIRED},
 		{"accepted-extension", 'e', OPTPARSE_REQUIRED},
 		{"keybind", 'k', OPTPARSE_REQUIRED},
 		{"queue-length", 'q', OPTPARSE_REQUIRED},
@@ -247,21 +246,13 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			}
 			state->images.thumbnail.root = options.optarg;
 			break;
-        case 'H':
+        case 'S':
             tmpint = strtol(options.optarg, NULL, 10);
 			if(tmpint <= 0 || errno == ERANGE) {
-				fprintf(stderr, "Thumbnail height of %s must be a valid base-ten integer and greater than or equal to %d\n", options.optarg, 1);
+				fprintf(stderr, "Thumbnail size of %s must be a valid base-ten integer and greater than or equal to %d\n", options.optarg, 1);
 				return false;
 			}
-			state->images.thumbnail.height = tmpint;
-            break;
-        case 'W':
-            tmpint = strtol(options.optarg, NULL, 10);
-			if(tmpint <= 0 || errno == ERANGE) {
-				fprintf(stderr, "Thumbnail width of %s must be a valid base-ten integer and greater than or equal to %d\n", options.optarg, 1);
-				return false;
-			}
-			state->images.thumbnail.width = tmpint;
+			state->images.thumbnail.size = tmpint;
             break;
 		case 't':
 			state->images.thumbnail.load = true;
@@ -308,7 +299,6 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			}
 		}
 	}
-	state->images.thumbnail.interpolation = LanczosFilter;
 	/* TODO: STDIN */
 	return true;
 } /* parse_args */
@@ -423,8 +413,8 @@ bool nqiv_setup_sdl(nqiv_state* state)
 	SDL_Rect thumbnail_rect;
 	thumbnail_rect.x = 0;
 	thumbnail_rect.y = 0;
-	thumbnail_rect.w = state->images.thumbnail.width;
-	thumbnail_rect.h = state->images.thumbnail.height;
+	thumbnail_rect.w = state->images.thumbnail.size;
+	thumbnail_rect.h = state->images.thumbnail.size;
 	SDL_Rect pixel_rect;
 	pixel_rect.x = 0;
 	pixel_rect.y = 0;
@@ -623,14 +613,14 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				event.options.image_load.create_thumbnail = state->images.thumbnail.save;
 				if(hard) {
 					event.options.image_load.thumbnail_options.file = true;
-					event.options.image_load.thumbnail_options.wand = true;
+					event.options.image_load.thumbnail_options.vips = true;
 					event.options.image_load.borrow_thumbnail_dimension_metadata = true;
 				} else {
 					event.options.image_load.thumbnail_options.file_soft = true;
-					event.options.image_load.thumbnail_options.wand_soft = true;
+					event.options.image_load.thumbnail_options.vips_soft = true;
 					event.options.image_load.borrow_thumbnail_dimension_metadata = true;
 				}
-				if( hard || next_frame || (first_frame && image->thumbnail.wand != NULL && MagickGetImageIndex(image->thumbnail.wand) != 0) ) {
+				if( hard || next_frame || (first_frame && image->thumbnail.vips != NULL && image->thumbnail.animation.frame != 0) ) {
 					event.options.image_load.thumbnail_options.raw = true;
 					event.options.image_load.thumbnail_options.surface = true;
 				} else {
@@ -653,12 +643,12 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				event.options.image_load.image = image;
 				if(hard) {
 					event.options.image_load.image_options.file = true;
-					event.options.image_load.image_options.wand = true;
+					event.options.image_load.image_options.vips = true;
 				} else {
 					event.options.image_load.image_options.file_soft = true;
-					event.options.image_load.image_options.wand_soft = true;
+					event.options.image_load.image_options.vips_soft = true;
 				}
-				if( hard || next_frame || (first_frame && image->thumbnail.wand != NULL && MagickGetImageIndex(image->thumbnail.wand) != 0) ) {
+				if( hard || next_frame || (first_frame && image->image.vips != NULL && image->image.animation.frame != 0) ) {
 					event.options.image_load.image_options.raw = true;
 					event.options.image_load.image_options.surface = true;
 				} else {
@@ -738,12 +728,12 @@ state->images.thumbnail.load
 				event.options.image_load.image = image;
 				if(hard) {
 					event.options.image_load.image_options.file = true;
-					event.options.image_load.image_options.wand = true;
+					event.options.image_load.image_options.vips = true;
 				} else {
 					event.options.image_load.image_options.file_soft = true;
-					event.options.image_load.image_options.wand_soft = true;
+					event.options.image_load.image_options.vips_soft = true;
 				}
-				if( hard || next_frame || (first_frame && image->thumbnail.wand != NULL && MagickGetImageIndex(image->thumbnail.wand) != 0) ) {
+				if( hard || next_frame || (first_frame && image->thumbnail.vips != NULL && image->thumbnail.animation.frame != 0) ) {
 					event.options.image_load.image_options.raw = true;
 					event.options.image_load.image_options.surface = true;
 				} else {
@@ -1244,7 +1234,9 @@ int main(int argc, char *argv[])
 
 	state.in_montage = true;
 
-	InitializeMagick(*argv);
+	if(VIPS_INIT(argv[0]) != 0) {
+		fputs("Failed to initialize vips.\n", stderr);
+	}
 
 	if( !nqiv_parse_args(argv, &state) ) {
 		nqiv_state_clear(&state);

@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 #include <SDL2/SDL.h>
-#include <wand/magick_wand.h>
+#include <vips/vips.h>
 
 #include "array.h"
 #include "logging.h"
@@ -27,6 +27,8 @@ typedef struct nqiv_image_form_animation
 {
 	bool exists;
 	bool frame_rendered;
+	int frame;
+	int frame_count;
 	clock_t last_frame_time;
 	Uint32 delay;
 } nqiv_image_form_animation;
@@ -36,8 +38,7 @@ typedef struct nqiv_image_form
 	nqiv_image_form_animation animation;
 	bool error;
 	char* path;
-	FILE* file;
-	MagickWand* wand;
+	VipsImage* vips;
 	void* data;
 	SDL_Surface* surface;
 	SDL_Texture* texture;
@@ -72,16 +73,15 @@ void nqiv_image_destroy(nqiv_image* image);
 */
 
 
-bool nqiv_image_form_first_frame(nqiv_image_form* form);
-bool nqiv_image_form_next_frame(nqiv_image_form* form);
+bool nqiv_image_form_first_frame(nqiv_image* image, nqiv_image_form* form);
+bool nqiv_image_form_next_frame(nqiv_image* image, nqiv_image_form* form);
 
-void nqiv_unload_image_form_wand(nqiv_image_form* form);
-void nqiv_unload_image_form_file(nqiv_image_form* form);
+void nqiv_unload_image_form_vips(nqiv_image_form* form);
 void nqiv_unload_image_form_texture(nqiv_image_form* form);
 void nqiv_unload_image_form_surface(nqiv_image_form* form);
 void nqiv_unload_image_form_raw(nqiv_image_form* form);
 
-bool nqiv_image_load_wand(nqiv_image* image, nqiv_image_form* form);
+bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_texture(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form);
@@ -93,9 +93,7 @@ typedef struct nqiv_image_manager_thumbnail_settings
 	char* root;
 	bool load;
 	bool save;
-	int height;
-	int width;
-	FilterTypes interpolation;
+	int size;
 } nqiv_image_manager_thumbnail_settings;
 
 typedef struct nqiv_image_manager_zoom_settings
@@ -124,7 +122,7 @@ struct nqiv_image_manager
 	nqiv_array* extensions;
 };
 
-void nqiv_log_magick_wand_exception(nqiv_log_ctx* logger, const MagickWand* magick_wand, const char* path);
+void nqiv_log_vips_exception(nqiv_log_ctx* logger, const char* path);
 
 void nqiv_image_manager_destroy(nqiv_image_manager* manager);
 bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, const int starting_length);

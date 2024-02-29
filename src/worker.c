@@ -38,31 +38,26 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 		if(options->raw) {
 			nqiv_unload_image_form_raw(form);
 		}
-		if(options->wand) {
-			nqiv_unload_image_form_wand(form);
-		}
-		if(options->file) {
-			nqiv_unload_image_form_file(form);
+		if(options->vips) {
+			nqiv_unload_image_form_vips(form);
 		}
 	} else {
 		bool success = true;
-		if(options->wand || options->wand_soft) {
-			if(form->wand != NULL) {
-				assert(form->file != NULL);
-				if(options->wand) {
-					nqiv_unload_image_form_wand(form);
-					nqiv_unload_image_form_file(form);
-					success = nqiv_image_load_wand(image, form);
+		if(options->vips || options->vips_soft) {
+			if(form->vips != NULL) {
+				if(options->vips) {
+					nqiv_unload_image_form_vips(form);
+					success = nqiv_image_load_vips(image, form);
 				}
 			} else {
-				success = nqiv_image_load_wand(image, form);
+				success = nqiv_image_load_vips(image, form);
 			}
 		}
 		if(success && options->first_frame) {
-			success = nqiv_image_form_first_frame(form);
+			success = nqiv_image_form_first_frame(image, form);
 		}
 		if(success && options->next_frame) {
-			success = nqiv_image_form_next_frame(form);
+			success = nqiv_image_form_next_frame(image, form);
 		}
 		if( success && (options->raw || options->raw_soft) ) {
 			if(form->data != NULL) {
@@ -120,30 +115,27 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 					}
 					nqiv_worker_handle_image_load_form(&event.options.image_load.image_options, event.options.image_load.image, &event.options.image_load.image->image);
 					if(!event.options.image_load.image->thumbnail_attempted && event.options.image_load.create_thumbnail) {
-						if(event.options.image_load.image->thumbnail.wand == NULL &&
-						   nqiv_image_load_wand(event.options.image_load.image, &event.options.image_load.image->thumbnail)
+						if(event.options.image_load.image->thumbnail.vips == NULL &&
+						   nqiv_image_load_vips(event.options.image_load.image, &event.options.image_load.image->thumbnail)
 						   ) {
-								if(event.options.image_load.image->image.wand == NULL) {
-									if( nqiv_image_load_wand(event.options.image_load.image, &event.options.image_load.image->image) ) {
+								if(event.options.image_load.image->image.vips == NULL) {
+									if( nqiv_image_load_vips(event.options.image_load.image, &event.options.image_load.image->image) ) {
 										if( !nqiv_thumbnail_matches_image(event.options.image_load.image) ) {
 											nqiv_thumbnail_create(event.options.image_load.image);
 										}
-										nqiv_unload_image_form_wand(&event.options.image_load.image->image);
-										nqiv_unload_image_form_file(&event.options.image_load.image->image);
+										nqiv_unload_image_form_vips(&event.options.image_load.image->image);
 									}
 								} else if( !nqiv_thumbnail_matches_image(event.options.image_load.image) ) {
 									nqiv_thumbnail_create(event.options.image_load.image);
 								}
 								if(!event.options.image_load.image->parent->thumbnail.load) {
-									nqiv_unload_image_form_wand(&event.options.image_load.image->thumbnail);
-									nqiv_unload_image_form_file(&event.options.image_load.image->thumbnail);
+									nqiv_unload_image_form_vips(&event.options.image_load.image->thumbnail);
 								}
 						} else {
-							if(event.options.image_load.image->image.wand == NULL) {
-								if( nqiv_image_load_wand(event.options.image_load.image, &event.options.image_load.image->image) ) {
+							if(event.options.image_load.image->image.vips == NULL) {
+								if( nqiv_image_load_vips(event.options.image_load.image, &event.options.image_load.image->image) ) {
 									nqiv_thumbnail_create(event.options.image_load.image);
-									nqiv_unload_image_form_wand(&event.options.image_load.image->image);
-									nqiv_unload_image_form_file(&event.options.image_load.image->image);
+									nqiv_unload_image_form_vips(&event.options.image_load.image->image);
 								}
 							} else {
 								nqiv_thumbnail_create(event.options.image_load.image);

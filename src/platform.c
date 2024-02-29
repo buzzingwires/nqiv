@@ -14,15 +14,11 @@
 	{
 		return realpath(path, resolved_path);
 	}
-	bool nqiv_fstat(FILE* f, nqiv_stat_data* data)
+	bool nqiv_stat(const char* path, nqiv_stat_data* data)
 	{
 		assert(data != NULL);
 		struct stat s;
-		const int fd = fileno(f);
-		if(fd == -1) {
-			return false;
-		}
-		if(fstat(fd, &s) != 0) {
+		if(stat(path, &s) != 0) {
 			return false;
 		}
 		data->size = (size_t)(s.st_size);
