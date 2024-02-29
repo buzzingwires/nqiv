@@ -86,6 +86,7 @@ bool nqiv_image_load_texture(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form);
 
+int nqiv_lookup_vips_png_comment(gchar** values, const char* key);
 bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image);
 
 typedef struct nqiv_image_manager_thumbnail_settings

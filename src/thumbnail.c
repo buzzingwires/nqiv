@@ -203,18 +203,18 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	char height_string[NQIV_DIMENSION_STRLEN] = {0};
 	snprintf(height_string, NQIV_DIMENSION_STRLEN, "%d", image->image.height);
 
-	vips_image_set_string(thumbnail_vips, "Thumb::URI", actualpath);
-	vips_image_set_string(thumbnail_vips, "Thumb::MTime", mtime_string);
-	vips_image_set_string(thumbnail_vips, "Thumb::Size", size_string);
-	vips_image_set_string(thumbnail_vips, "Thumb::Image::Width", width_string);
-	vips_image_set_string(thumbnail_vips, "Thumb::Image::Height", height_string);
+	vips_image_set_string(thumbnail_vips, "png-comment-0-Thumb::URI", actualpath);
+	vips_image_set_string(thumbnail_vips, "png-comment-1-Thumb::MTime", mtime_string);
+	vips_image_set_string(thumbnail_vips, "png-comment-2-Thumb::Size", size_string);
+	vips_image_set_string(thumbnail_vips, "png-comment-3-Thumb::Image::Width", width_string);
+	vips_image_set_string(thumbnail_vips, "png-comment-4-Thumb::Image::Height", height_string);
 
 	if( !nqiv_thumbnail_create_dirs(image->parent, false) ) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed create thumbnail dirs under %s.\n", image->parent->thumbnail.root);
 		g_object_unref(thumbnail_vips); /* TODO: Where should this be? */
 		return false;
 	}
-	if( vips_image_write_to_file(thumbnail_vips, image->thumbnail.path,NULL) == -1 ) {
+	if( vips_image_write_to_file(thumbnail_vips, image->thumbnail.path, NULL) == -1 ) {
 		nqiv_log_vips_exception(image->parent->logger, image->image.path);
 		g_object_unref(thumbnail_vips); /* TODO: Where should this be? */
 		return false;
@@ -242,11 +242,25 @@ bool nqiv_thumbnail_matches_image(nqiv_image* image)
 		return false;
 	}
 
+	gchar** header_field_names = vips_image_get_fields(image->thumbnail.vips);
+	if(header_field_names == NULL) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Failed to get vips header field names for image %s.\n", image->image.path);
+		return false;
+	}
+	const int mtime_string_idx = nqiv_lookup_vips_png_comment(header_field_names, "Thumb::MTime");
+	if(mtime_string_idx == -1) {
+		g_strfreev(header_field_names);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Failed to lookup mtime metadata from thumbnail for %s.\n", image->image.path);
+		return false;
+	}
+
 	const char* thumbnail_mtime;
-	if(vips_image_get_string(image->thumbnail.vips, "Thumb::MTime", &thumbnail_mtime) == -1) {
+	if(vips_image_get_string(image->thumbnail.vips, header_field_names[mtime_string_idx], &thumbnail_mtime) == -1) {
+		g_strfreev(header_field_names);
 		nqiv_log_vips_exception(image->parent->logger, image->image.path);
 		return false;
 	}
+	g_strfreev(header_field_names);
 
 	const uintmax_t thumbnail_mtime_value = strtoumax(thumbnail_mtime, NULL, 10);
 	if(thumbnail_mtime_value == 0 || errno == ERANGE) {

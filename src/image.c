@@ -145,8 +145,8 @@ int nqiv_find_space_delimted_idx(const char* string, const int wanted_idx)
 
 bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 {
-	const char* delay_string;
-	if(vips_image_get_string(form->vips, "delay", &delay_string) == -1) {
+	char* delay_string;
+	if(vips_image_get_as_string(form->vips, "delay", &delay_string) == -1) {
 		nqiv_log_vips_exception(image->parent->logger, image->image.path);
 		nqiv_unload_image_form(form);
 		form->error = true;
@@ -154,12 +154,14 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 	}
 	const int idx = nqiv_find_space_delimted_idx(delay_string, form->animation.frame);
 	if(idx == -1) {
+		g_free(delay_string);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Unable to find delay for frame %d of '%s'.\n", form->animation.frame, image->image.path);
 		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
 	const int delay_value = strtol(delay_string + idx, NULL, 10);
+	g_free(delay_string);
 	if(delay_value == 0 || errno == ERANGE) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Delay for frame %d of '%s' is not a valid integer.\n", form->animation.frame, image->image.path);
 		nqiv_unload_image_form(form);
@@ -172,7 +174,7 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 		form->error = true;
 		return false;
 	}
-	form->animation.delay = delay_value * 10; /* Delay is in centiseconds */
+	form->animation.delay = delay_value; /* Delay is in milliseconds for vips */
 	return true;
 }
 
@@ -199,7 +201,11 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 	form->height = vips_image_get_height(form->vips);
 	form->animation.frame_count = vips_image_get_n_pages(form->vips);
 	form->animation.frame = 0;
-	if(form->animation.frame_count > 0) {
+	form->animation.exists = false;
+
+	VipsImage* old_vips;
+
+	if(form->animation.frame_count > 1) {
 		form->animation.exists = true;
 		if( !nqiv_image_form_set_frame_delay(image, form) ) {
 			nqiv_log_vips_exception(image->parent->logger, form->path);
@@ -207,16 +213,15 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 			form->error = true;
 			return false;
 		}
-	}
-
-	VipsImage* old_vips = form->vips;
-	form->vips = vips_image_new_from_file( form->path, "n", form->animation.frame_count, NULL );
-	g_object_unref(old_vips);
-	if(form->vips == NULL) {
-		nqiv_log_vips_exception(image->parent->logger, form->path);
-		nqiv_unload_image_form(form);
-		form->error = true;
-		return false;
+		old_vips = form->vips;
+		form->vips = vips_image_new_from_file( form->path, "n", form->animation.frame_count, NULL );
+		g_object_unref(old_vips);
+		if(form->vips == NULL) {
+			nqiv_log_vips_exception(image->parent->logger, form->path);
+			nqiv_unload_image_form(form);
+			form->error = true;
+			return false;
+		}
 	}
 
 	old_vips = form->vips;
@@ -226,6 +231,7 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 		form->error = true;
 		return false;
 	}
+	g_object_unref(old_vips);
 
 	if( !vips_image_hasalpha(form->vips) ) {
 		old_vips = form->vips;
@@ -251,7 +257,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 
 	VipsRect rect;
 	rect.left = 0;
-	rect.top = form->height * (form->animation.exists ? form->animation.frame : 0);
+	rect.top = 0;
 	rect.width = form->width;
 	rect.height = form->height;
 
@@ -264,7 +270,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	}
 
 	size_t data_size;
-	VipsPel* extracted = vips_region_fetch(region, 0, 0, form->width, form->height, &data_size);
+	VipsPel* extracted = vips_region_fetch(region, 0, form->height * (form->animation.exists ? form->animation.frame : 0), form->width, form->height, &data_size);
 	if(extracted == NULL) {
 		g_object_unref(region);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to extract raw image data at path %s.", form->path);
@@ -275,7 +281,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 
 	g_object_unref(region);
 	form->data = extracted;
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded raw for image %s.\n", image->image.path);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded raw for image %s frame %d with pixel offset %d at delay of %d.\n", image->image.path, form->animation.frame, rect.top, form->animation.delay);
 	return true;
 }
 
@@ -314,6 +320,24 @@ bool nqiv_image_load_sdl_texture(nqiv_image* image, nqiv_image_form* form, SDL_R
 	return true;
 }
 
+int nqiv_lookup_vips_png_comment(gchar** values, const char* key)
+{
+	const size_t keylen = strlen(key);
+	int result = -1;
+	int idx = 0;
+	while(values[idx] != NULL) {
+		const size_t valuelen = strlen(values[idx]);
+		if(keylen > valuelen) {
+			/* NOOP */
+		} else if(strncmp(values[idx] + valuelen - keylen, key, keylen) == 0) {
+			result = idx;
+			break;
+		}
+		++idx;
+	}
+	return result;
+}
+
 bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 {
 	assert(image != NULL);
@@ -325,16 +349,36 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Not borrowing dimension metadata from thumbnail because it's already set for image %s.\n", image->image.path);
 		return true;
 	}
+	gchar** header_field_names = vips_image_get_fields(image->thumbnail.vips);
+	if(header_field_names == NULL) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Failed to get vips header field names for image %s.\n", image->image.path);
+		return false;
+	}
+	const int width_string_idx = nqiv_lookup_vips_png_comment(header_field_names, "Thumb::Image::Width");
+	if(width_string_idx == -1) {
+		g_strfreev(header_field_names);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Failed to lookup width metadata from thumbnail for %s.\n", image->image.path);
+		return false;
+	}
+	const int height_string_idx = nqiv_lookup_vips_png_comment(header_field_names, "Thumb::Image::Height");
+	if(height_string_idx == -1) {
+		g_strfreev(header_field_names);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Failed to lookup height metadata from thumbnail for %s.\n", image->image.path);
+		return false;
+	}
 	const char* width_string;
-	if(vips_image_get_string(image->thumbnail.vips, "Thumb::Image::Width", &width_string) == -1) {
+	if(vips_image_get_string(image->thumbnail.vips, header_field_names[width_string_idx], &width_string) == -1) {
+		g_strfreev(header_field_names);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Failed to get width metadata from thumbnail for %s.\n", image->image.path);
 		return false;
 	}
 	const char* height_string;
-	if(vips_image_get_string(image->thumbnail.vips, "Thumb::Image::Height", &height_string) == -1) {
+	if(vips_image_get_string(image->thumbnail.vips, header_field_names[height_string_idx], &height_string) == -1) {
+		g_strfreev(header_field_names);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Failed to get height metadata from thumbnail for %s.\n", image->image.path);
 		return false;
 	}
+	g_strfreev(header_field_names);
 	const int width_value = strtol(width_string, NULL, 10);
 	if(width_value == 0 || errno == ERANGE) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid width for thumbnail of '%s'.\n", image->image.path);
@@ -716,6 +760,7 @@ void nqiv_image_form_delay_frame(nqiv_image_form* form)
 	if(frame_diff < (clock_t)2 << (clock_t)30 && (Uint32)frame_diff <= form->animation.delay) {
 		SDL_Delay(form->animation.delay - (Uint32)frame_diff);
 	}
+	fprintf(stderr, "Actual wait %u Frame diff %lu New frame time %lu Last frame time %lu Clocks per sec: %lu\n", form->animation.delay - (Uint32)frame_diff, frame_diff, new_frame_time, form->animation.last_frame_time, CLOCKS_PER_SEC);
 	form->animation.last_frame_time = new_frame_time;
 }
 
@@ -753,6 +798,5 @@ bool nqiv_image_form_next_frame(nqiv_image* image, nqiv_image_form* form)
 		return false;
 	}
 	nqiv_image_form_delay_frame(form);
-	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
 }
