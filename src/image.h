@@ -44,6 +44,9 @@ typedef struct nqiv_image_form
 	SDL_Texture* texture;
 	int height;
 	int width;
+	SDL_Rect srcrect;
+	int effective_height;
+	int effective_width;
 } nqiv_image_form;
 
 typedef struct nqiv_image nqiv_image;

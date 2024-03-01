@@ -199,6 +199,10 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 
 	form->width = vips_image_get_width(form->vips);
 	form->height = vips_image_get_height(form->vips);
+	form->srcrect.x = 0;
+	form->srcrect.y = 0;
+	form->srcrect.w = form->width;
+	form->srcrect.h = form->height;
 	form->animation.frame_count = vips_image_get_n_pages(form->vips);
 	form->animation.frame = 0;
 	form->animation.exists = false;
@@ -255,14 +259,53 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	assert(form->vips != NULL);
 	assert(form->data == NULL);
 
-	VipsRect rect;
-	rect.left = 0;
-	rect.top = 0;
-	rect.width = form->width;
-	rect.height = form->height;
+	const int frame_offset = form->height * (form->animation.exists ? form->animation.frame : 0);
 
-	VipsRegion* region = vips_region_new(form->vips);
-	if(vips_region_prepare(region, &rect) == -1) {
+	VipsRect region_rect;
+	region_rect.left = 0;
+	region_rect.top = 0;
+	region_rect.width = form->srcrect.w;
+	region_rect.height = form->srcrect.h;
+
+	VipsRect fetch_rect;
+	fetch_rect.left = form->srcrect.x;
+	fetch_rect.top = form->srcrect.y + frame_offset;
+	fetch_rect.width = form->srcrect.w;
+	fetch_rect.height = form->srcrect.h;
+
+	VipsImage* used_vips = form->vips;
+	if(form->srcrect.w > 16000 || form->srcrect.h > 16000) {
+		const int largest_dimension = form->srcrect.w > form->srcrect.h ? form->srcrect.w : form->srcrect.h;
+		const double resize_ratio = 16000.0 / (double)largest_dimension;
+		VipsImage* new_vips;
+		if(vips_crop(used_vips, &new_vips, form->srcrect.x, form->srcrect.y + frame_offset, form->srcrect.w, form->srcrect.h, NULL) == -1) {
+			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to crop out oversized vips region to resize for %s.", form->path);
+			nqiv_unload_image_form(form);
+			form->error = true;
+			return false;
+		}
+		used_vips = new_vips;
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Cropped oversized selection from %dx%d+%dx%d to %dx%d for %s.\n", form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y, vips_image_get_width(used_vips), vips_image_get_height(used_vips), image->image.path);
+		if(vips_resize(used_vips, &new_vips, resize_ratio, NULL) == -1) {
+			g_object_unref(used_vips);
+			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to resize oversized vips region for %s.", form->path);
+			nqiv_unload_image_form(form);
+			form->error = true;
+			return false;
+		}
+		g_object_unref(used_vips);
+		used_vips = new_vips;
+		region_rect.width = vips_image_get_width(used_vips);
+		region_rect.height = vips_image_get_height(used_vips);
+		fetch_rect.left = 0;
+		fetch_rect.top = 0;
+		fetch_rect.width = region_rect.width;
+		fetch_rect.height = region_rect.height;
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Resized oversized selection %dx%d+%dx%d to %dx%d+%dx%d for %s.\n", form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y, fetch_rect.width, fetch_rect.height, fetch_rect.left, fetch_rect.top, image->image.path);
+	}
+
+	VipsRegion* region = vips_region_new(used_vips);
+	if(vips_region_prepare(region, &region_rect) == -1) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to prepare vips region raw image data at path %s.", form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
@@ -270,7 +313,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	}
 
 	size_t data_size;
-	VipsPel* extracted = vips_region_fetch(region, 0, form->height * (form->animation.exists ? form->animation.frame : 0), form->width, form->height, &data_size);
+	VipsPel* extracted = vips_region_fetch(region, fetch_rect.left, fetch_rect.top, fetch_rect.width, fetch_rect.height, &data_size);
 	if(extracted == NULL) {
 		g_object_unref(region);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to extract raw image data at path %s.", form->path);
@@ -279,9 +322,14 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		return false;
 	}
 
+	if(used_vips != form->vips) {
+		g_object_unref(used_vips);
+	}
 	g_object_unref(region);
 	form->data = extracted;
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded raw for image %s frame %d with pixel offset %d at delay of %d.\n", image->image.path, form->animation.frame, rect.top, form->animation.delay);
+	form->effective_width = fetch_rect.width;
+	form->effective_height = fetch_rect.height;
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded raw for image %s frame %d with pixel offset %d at delay of %d.\n", image->image.path, form->animation.frame, frame_offset, form->animation.delay);
 	return true;
 }
 
@@ -290,9 +338,9 @@ bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form)
 	assert(image != NULL);
 	assert(form != NULL);
 	assert( (form->data != NULL) );
-	assert(form->width > 0);
-	assert(form->height > 0);
-	form->surface = SDL_CreateRGBSurfaceWithFormatFrom(form->data, form->width, form->height, 4 * 8, 4 * form->width, SDL_PIXELFORMAT_ABGR8888);
+	assert(form->effective_width > 0);
+	assert(form->effective_height > 0);
+	form->surface = SDL_CreateRGBSurfaceWithFormatFrom(form->data, form->effective_width, form->effective_height, 4 * 8, 4 * form->effective_width, SDL_PIXELFORMAT_ABGR8888);
 	if(form->surface == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to create SDL surface for path %s (%s).", form->path, SDL_GetError() );
 		nqiv_unload_image_form(form);

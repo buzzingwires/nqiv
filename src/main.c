@@ -586,9 +586,10 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 		if( form->texture != NULL && (!next_frame || !form->animation.frame_rendered) ) {
 			/* NOOP */
 		} else if( form->surface != NULL && (is_montage || !first_frame || !form->animation.exists) ) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading texture for image %s.\n", image->image.path);
 			form->texture = SDL_CreateTextureFromSurface(state->renderer, form->surface);
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loaded texture for image %s.\n", image->image.path);
 			if(form->texture == NULL) {
+				nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to load texture for image.\n");
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -687,19 +688,19 @@ state->images.thumbnail.load
 			if(is_thumbnail) {
 				srcrect.w = image->image.width;
 				srcrect.h = image->image.height;
-				if(form->width > srcrect.w) {
-					const double multiplier = (double)form->width / (double)srcrect.w;
+				if(form->effective_width > srcrect.w) {
+					const double multiplier = (double)form->effective_width / (double)srcrect.w;
 					srcrect.w = (int)( (double)srcrect.w * multiplier );
 					srcrect.h = (int)( (double)srcrect.h * multiplier );
 				}
-				if(form->height > srcrect.h) {
-					const double multiplier = (double)form->height / (double)srcrect.h;
+				if(form->effective_height > srcrect.h) {
+					const double multiplier = (double)form->effective_height / (double)srcrect.h;
 					srcrect.w = (int)( (double)srcrect.w * multiplier );
 					srcrect.h = (int)( (double)srcrect.h * multiplier );
 				}
 			} else {
-				srcrect.w = form->width;
-				srcrect.h = form->height;
+				srcrect.w = form->effective_width;
+				srcrect.h = form->effective_height;
 			}
 			SDL_Rect dstrect_zoom = {0};
 			dstrect_zoom.w = dstrect->w;
@@ -709,12 +710,14 @@ state->images.thumbnail.load
 			nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, &dstrect_zoom);
 			nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, &dstrect_zoom); /* TODO aspect ratio */
 			if( SDL_RenderCopy(state->renderer, alpha_background, &dstrect_zoom, &dstrect_zoom) != 0 ) {
+				nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to draw image alpha background.\n");
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
 			}
 			if( SDL_RenderCopy(state->renderer, form->texture, &srcrect, &dstrect_zoom) != 0 ) {
+				nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to draw image texture.\n");
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
