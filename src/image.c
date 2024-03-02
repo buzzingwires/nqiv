@@ -199,6 +199,10 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 
 	form->width = vips_image_get_width(form->vips);
 	form->height = vips_image_get_height(form->vips);
+	form->srcrect.x = 0;
+	form->srcrect.y = 0;
+	form->srcrect.w = form->width;
+	form->srcrect.h = form->height;
 	form->animation.frame_count = vips_image_get_n_pages(form->vips);
 	form->animation.frame = 0;
 	form->animation.exists = false;
@@ -260,28 +264,28 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	VipsRect region_rect;
 	region_rect.left = 0;
 	region_rect.top = 0;
-	region_rect.width = form->width;
-	region_rect.height = form->height;
+	region_rect.width = form->srcrect.w;
+	region_rect.height = form->srcrect.h;
 
 	VipsRect fetch_rect;
-	fetch_rect.left = 0;
-	fetch_rect.top = frame_offset;
-	fetch_rect.width = form->width;
-	fetch_rect.height = form->height;
+	fetch_rect.left = form->srcrect.x;
+	fetch_rect.top = form->srcrect.y + frame_offset;
+	fetch_rect.width = form->srcrect.w;
+	fetch_rect.height = form->srcrect.h;
 
 	VipsImage* used_vips = form->vips;
-	if(form->width > 16000 || form->height > 16000) {
-		const int largest_dimension = form->width > form->height ? form->width : form->height;
+	if(form->srcrect.w > 16000 || form->srcrect.h > 16000) {
+		const int largest_dimension = form->srcrect.w > form->srcrect.h ? form->srcrect.w : form->srcrect.h;
 		const double resize_ratio = 16000.0 / (double)largest_dimension;
 		VipsImage* new_vips;
-		if(vips_crop(used_vips, &new_vips, 0, frame_offset, form->width, form->height, NULL) == -1) {
+		if(vips_crop(used_vips, &new_vips, form->srcrect.x, form->srcrect.y + frame_offset, form->srcrect.w, form->srcrect.h, NULL) == -1) {
 			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to crop out oversized vips region to resize for %s.", form->path);
 			nqiv_unload_image_form(form);
 			form->error = true;
 			return false;
 		}
 		used_vips = new_vips;
-		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Cropped oversized selection from %dx%d to %dx%d for %s.\n", form->width, form->height, vips_image_get_width(used_vips), vips_image_get_height(used_vips), image->image.path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Cropped oversized selection from %dx%d+%dx%d to %dx%d for %s.\n", form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y, vips_image_get_width(used_vips), vips_image_get_height(used_vips), image->image.path);
 		if(vips_resize(used_vips, &new_vips, resize_ratio, NULL) == -1) {
 			g_object_unref(used_vips);
 			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to resize oversized vips region for %s.", form->path);
@@ -297,7 +301,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		fetch_rect.top = 0;
 		fetch_rect.width = region_rect.width;
 		fetch_rect.height = region_rect.height;
-		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Resized oversized selection %dx%d to %dx%d+%dx%d for %s.\n", form->width, form->height, fetch_rect.width, fetch_rect.height, fetch_rect.left, fetch_rect.top, image->image.path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Resized oversized selection %dx%d+%dx%d to %dx%d+%dx%d for %s.\n", form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y, fetch_rect.width, fetch_rect.height, fetch_rect.left, fetch_rect.top, image->image.path);
 	}
 
 	VipsRegion* region = vips_region_new(used_vips);
