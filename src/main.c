@@ -48,6 +48,7 @@ typedef struct nqiv_state
 	bool stretch_images;
 	char* window_title;
 	size_t window_title_size;
+	bool no_resample_oversized;
 } nqiv_state;
 
 bool nqiv_check_and_print_logger_error(nqiv_log_ctx* logger)
@@ -512,12 +513,73 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 	/* TODO Srcrect easily can make this work for both views DONE */
 	/* TODO Merge load/save thumbnail, or have an short load to check for the thumbnail before saving  DONE*/
 	/* TODO Use load thumbnail for is_thumbnail? */
+
 	if(lock) {
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 		omp_set_lock(&image->lock);
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 	}
 	nqiv_image_form* form = is_thumbnail ? &image->thumbnail : &image->image;
+	SDL_Rect srcrect = {0};
+	SDL_Rect* srcrect_ptr = &srcrect;
+	SDL_Rect dstrect_zoom = {0};
+	bool resample_zoom = false;
+	if(form->width > 0 && form->height > 0 && image->image.width > 0 && image->image.height > 0) {
+		if(is_thumbnail) {
+			srcrect.w = image->image.width;
+			srcrect.h = image->image.height;
+			if(form->width > srcrect.w) {
+				const double multiplier = (double)form->width / (double)srcrect.w;
+				srcrect.w = (int)( (double)srcrect.w * multiplier );
+				srcrect.h = (int)( (double)srcrect.h * multiplier );
+			}
+			if(form->height > srcrect.h) {
+				const double multiplier = (double)form->height / (double)srcrect.h;
+				srcrect.w = (int)( (double)srcrect.w * multiplier );
+				srcrect.h = (int)( (double)srcrect.h * multiplier );
+			}
+		} else {
+			srcrect.w = form->width;
+			srcrect.h = form->height;
+		}
+		dstrect_zoom.w = dstrect->w;
+		dstrect_zoom.h = dstrect->h;
+		dstrect_zoom.x = dstrect->x;
+		dstrect_zoom.y = dstrect->y;
+		nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, &dstrect_zoom);
+		nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, &dstrect_zoom); /* TODO aspect ratio */
+		if(!state->no_resample_oversized && ( srcrect.h > 16000 || srcrect.w > 16000 || ( (form->height > 16000 || form->width > 16000) && ( srcrect.x == 0 || srcrect.x + srcrect.w >= form->width || srcrect.y == 0 || srcrect.y + srcrect.h >= form->height ) ) ) ) {
+			if(form->srcrect.x != srcrect.x || form->srcrect.y != srcrect.y || form->srcrect.w != srcrect.w || form->srcrect.h != srcrect.h) {
+				resample_zoom = true;
+				nqiv_unload_image_form_texture(form);
+				form->srcrect.x = srcrect.x;
+				form->srcrect.y = srcrect.y;
+				form->srcrect.w = srcrect.w;
+				form->srcrect.h = srcrect.h;
+			}
+			srcrect_ptr = NULL;
+		} else {
+			if((form->srcrect.x != 0 || form->srcrect.y != 0 || form->srcrect.w != form->width || form->srcrect.h != form->height) || form->effective_height == 0 || form->effective_width == 0) {
+				resample_zoom = true;
+				nqiv_unload_image_form_texture(form);
+				form->srcrect.x = 0;
+				form->srcrect.y = 0;
+				form->srcrect.w = form->width;
+				form->srcrect.h = form->height;
+			} else {
+				srcrect.x = 0;
+				srcrect.y = 0;
+				srcrect.w = form->effective_width;
+				srcrect.h = form->effective_height;
+				dstrect_zoom.w = dstrect->w;
+				dstrect_zoom.h = dstrect->h;
+				dstrect_zoom.x = dstrect->x;
+				dstrect_zoom.y = dstrect->y;
+				nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, &dstrect_zoom);
+				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, &dstrect_zoom); /* TODO aspect ratio */
+			}
+		}
+	}
 	if(!is_thumbnail && state->images.thumbnail.save) {
 		if(!image->thumbnail_attempted) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Creating thumbnail for instance that won't load it.\n");
@@ -585,7 +647,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 		}
 		if( form->texture != NULL && (!next_frame || !form->animation.frame_rendered) ) {
 			/* NOOP */
-		} else if( form->surface != NULL && (is_montage || !first_frame || !form->animation.exists) ) {
+		} else if( form->surface != NULL && !resample_zoom && (is_montage || !first_frame || !form->animation.exists) ) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading texture for image %s.\n", image->image.path);
 			form->texture = SDL_CreateTextureFromSurface(state->renderer, form->surface);
 			if(form->texture == NULL) {
@@ -649,7 +711,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					event.options.image_load.image_options.file_soft = true;
 					event.options.image_load.image_options.vips_soft = true;
 				}
-				if( hard || next_frame || (first_frame && image->image.vips != NULL && image->image.animation.frame != 0) ) {
+				if( hard || next_frame || resample_zoom || (first_frame && image->image.vips != NULL && image->image.animation.frame != 0) ) {
 					event.options.image_load.image_options.raw = true;
 					event.options.image_load.image_options.surface = true;
 				} else {
@@ -684,31 +746,6 @@ state->images.thumbnail.load
 			*/
 		}
 		if(form->texture != NULL) {
-			SDL_Rect srcrect = {0};
-			if(is_thumbnail) {
-				srcrect.w = image->image.width;
-				srcrect.h = image->image.height;
-				if(form->effective_width > srcrect.w) {
-					const double multiplier = (double)form->effective_width / (double)srcrect.w;
-					srcrect.w = (int)( (double)srcrect.w * multiplier );
-					srcrect.h = (int)( (double)srcrect.h * multiplier );
-				}
-				if(form->effective_height > srcrect.h) {
-					const double multiplier = (double)form->effective_height / (double)srcrect.h;
-					srcrect.w = (int)( (double)srcrect.w * multiplier );
-					srcrect.h = (int)( (double)srcrect.h * multiplier );
-				}
-			} else {
-				srcrect.w = form->effective_width;
-				srcrect.h = form->effective_height;
-			}
-			SDL_Rect dstrect_zoom = {0};
-			dstrect_zoom.w = dstrect->w;
-			dstrect_zoom.h = dstrect->h;
-			dstrect_zoom.x = dstrect->x;
-			dstrect_zoom.y = dstrect->y;
-			nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, &dstrect_zoom);
-			nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, &dstrect_zoom); /* TODO aspect ratio */
 			if( SDL_RenderCopy(state->renderer, alpha_background, &dstrect_zoom, &dstrect_zoom) != 0 ) {
 				nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to draw image alpha background.\n");
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -716,7 +753,7 @@ state->images.thumbnail.load
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
 			}
-			if( SDL_RenderCopy(state->renderer, form->texture, &srcrect, &dstrect_zoom) != 0 ) {
+			if( SDL_RenderCopy(state->renderer, form->texture, srcrect_ptr, &dstrect_zoom) != 0 ) {
 				nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to draw image texture.\n");
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
@@ -736,7 +773,7 @@ state->images.thumbnail.load
 					event.options.image_load.image_options.file_soft = true;
 					event.options.image_load.image_options.vips_soft = true;
 				}
-				if( hard || next_frame || (first_frame && image->thumbnail.vips != NULL && image->thumbnail.animation.frame != 0) ) {
+				if( hard || next_frame || resample_zoom || (first_frame && image->thumbnail.vips != NULL && image->thumbnail.animation.frame != 0) ) {
 					event.options.image_load.image_options.raw = true;
 					event.options.image_load.image_options.surface = true;
 				} else {

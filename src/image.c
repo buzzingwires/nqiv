@@ -237,16 +237,6 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 	}
 	g_object_unref(old_vips);
 
-	if( !vips_image_hasalpha(form->vips) ) {
-		old_vips = form->vips;
-		if(vips_addalpha(old_vips, &form->vips, NULL) == -1) {
-			nqiv_log_vips_exception(image->parent->logger, form->path);
-			nqiv_unload_image_form(form);
-			form->error = true;
-			return false;
-		}
-		g_object_unref(old_vips);
-	}
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "%s vips for image loaded.\n", image->image.path);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
@@ -274,10 +264,10 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	fetch_rect.height = form->srcrect.h;
 
 	VipsImage* used_vips = form->vips;
+	VipsImage* new_vips;
 	if(form->srcrect.w > 16000 || form->srcrect.h > 16000) {
 		const int largest_dimension = form->srcrect.w > form->srcrect.h ? form->srcrect.w : form->srcrect.h;
 		const double resize_ratio = 16000.0 / (double)largest_dimension;
-		VipsImage* new_vips;
 		if(vips_crop(used_vips, &new_vips, form->srcrect.x, form->srcrect.y + frame_offset, form->srcrect.w, form->srcrect.h, NULL) == -1) {
 			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to crop out oversized vips region to resize for %s.", form->path);
 			nqiv_unload_image_form(form);
@@ -303,7 +293,19 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		fetch_rect.height = region_rect.height;
 		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Resized oversized selection %dx%d+%dx%d to %dx%d+%dx%d for %s.\n", form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y, fetch_rect.width, fetch_rect.height, fetch_rect.left, fetch_rect.top, image->image.path);
 	}
+	if( !vips_image_hasalpha(used_vips) ) {
+		if(vips_addalpha(used_vips, &new_vips, NULL) == -1) {
+			g_object_unref(used_vips);
+			nqiv_log_vips_exception(image->parent->logger, form->path);
+			nqiv_unload_image_form(form);
+			form->error = true;
+			return false;
+		}
+		g_object_unref(used_vips);
+		used_vips = new_vips;
+	}
 
+	/*nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Time start: %u.\n", SDL_GetTicks64());*/
 	VipsRegion* region = vips_region_new(used_vips);
 	if(vips_region_prepare(region, &region_rect) == -1) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to prepare vips region raw image data at path %s.", form->path);
@@ -311,6 +313,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		form->error = true;
 		return false;
 	}
+	/*nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Time End: %u.\n", SDL_GetTicks64());*/
 
 	size_t data_size;
 	VipsPel* extracted = vips_region_fetch(region, fetch_rect.left, fetch_rect.top, fetch_rect.width, fetch_rect.height, &data_size);
