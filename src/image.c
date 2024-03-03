@@ -190,7 +190,7 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 		return false;
 	}
 	form->vips = vips_image_new_from_file( form->path, NULL );
-	if(form->vips == NULL) {
+	if( form->vips == NULL || !vips_colourspace_issupported (form->vips) ) {
 		nqiv_log_vips_exception(image->parent->logger, form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
@@ -227,15 +227,6 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 			return false;
 		}
 	}
-
-	old_vips = form->vips;
-	if( vips_copy(old_vips, &form->vips, "format", VIPS_FORMAT_UCHAR, "coding", VIPS_CODING_NONE, "interpretation", VIPS_INTERPRETATION_RGB, NULL) == -1 ) {
-		nqiv_log_vips_exception(image->parent->logger, form->path);
-		nqiv_unload_image_form(form);
-		form->error = true;
-		return false;
-	}
-	g_object_unref(old_vips);
 
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "%s vips for image loaded.\n", image->image.path);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
@@ -293,6 +284,45 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		fetch_rect.height = region_rect.height;
 		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Resized oversized selection %dx%d+%dx%d to %dx%d+%dx%d for %s.\n", form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y, fetch_rect.width, fetch_rect.height, fetch_rect.left, fetch_rect.top, image->image.path);
 	}
+	const VipsBandFormat band_format = vips_image_get_format(used_vips);
+	if(band_format == VIPS_FORMAT_NOTSET) {
+		g_object_unref(used_vips);
+		nqiv_log_vips_exception(image->parent->logger, form->path);
+		nqiv_unload_image_form(form);
+		form->error = true;
+		return false;
+	}
+	if(band_format != VIPS_FORMAT_UCHAR) {
+		if( vips_cast(used_vips, &new_vips, VIPS_FORMAT_UCHAR, "shift", TRUE, NULL) == -1 ) {
+			g_object_unref(used_vips);
+			nqiv_log_vips_exception(image->parent->logger, form->path);
+			nqiv_unload_image_form(form);
+			form->error = true;
+			return false;
+		}
+		g_object_unref(used_vips);
+		used_vips = new_vips;
+	}
+
+	const VipsInterpretation interpretation = vips_image_get_interpretation(used_vips);
+	if(interpretation == VIPS_INTERPRETATION_ERROR) {
+		g_object_unref(used_vips);
+		nqiv_log_vips_exception(image->parent->logger, form->path);
+		nqiv_unload_image_form(form);
+		form->error = true;
+		return false;
+	}
+	if(interpretation != VIPS_INTERPRETATION_RGB && interpretation != VIPS_INTERPRETATION_sRGB) {
+		if( vips_colourspace(used_vips, &new_vips, VIPS_INTERPRETATION_sRGB, NULL) == -1 ) {
+			g_object_unref(used_vips);
+			nqiv_log_vips_exception(image->parent->logger, form->path);
+			nqiv_unload_image_form(form);
+			form->error = true;
+			return false;
+		}
+		g_object_unref(used_vips);
+		used_vips = new_vips;
+	}
 	if( !vips_image_hasalpha(used_vips) ) {
 		if(vips_addalpha(used_vips, &new_vips, NULL) == -1) {
 			g_object_unref(used_vips);
@@ -332,7 +362,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	form->data = extracted;
 	form->effective_width = fetch_rect.width;
 	form->effective_height = fetch_rect.height;
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded raw for image %s frame %d with pixel offset %d at delay of %d.\n", image->image.path, form->animation.frame, frame_offset, form->animation.delay);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded raw of size %zu for image %s frame %d with pixel offset %d at delay of %d.\n", data_size, image->image.path, form->animation.frame, frame_offset, form->animation.delay);
 	return true;
 }
 
