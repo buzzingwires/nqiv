@@ -566,7 +566,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 		dstrect_zoom.y = dstrect->y;
 		nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, &dstrect_zoom);
 		nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, &dstrect_zoom); /* TODO aspect ratio */
-		if(!state->no_resample_oversized && ( srcrect.h > 16000 || srcrect.w > 16000 || ( (form->height > 16000 || form->width > 16000) && ( srcrect.x == 0 || srcrect.x + srcrect.w >= form->width || srcrect.y == 0 || srcrect.y + srcrect.h >= form->height ) ) ) ) {
+		if(!state->no_resample_oversized && (form->height > 16000 || form->width > 16000) )  {
 			if(form->srcrect.x != srcrect.x || form->srcrect.y != srcrect.y || form->srcrect.w != srcrect.w || form->srcrect.h != srcrect.h) {
 				resample_zoom = true;
 				nqiv_unload_image_form_texture(form);
