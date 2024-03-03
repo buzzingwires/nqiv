@@ -44,7 +44,7 @@ void nqiv_unload_image_form_raw(nqiv_image_form* form)
 {
 	assert(form != NULL);
 	if(form->data != NULL) {
-		g_free(form->data);
+		free(form->data);
 		form->data = NULL;
 	}
 }
@@ -242,23 +242,9 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 
 	const int frame_offset = form->height * (form->animation.exists ? form->animation.frame : 0);
 
-	VipsRect region_rect;
-	region_rect.left = 0;
-	region_rect.top = 0;
-	region_rect.width = form->srcrect.w;
-	region_rect.height = form->srcrect.h;
-
-	VipsRect fetch_rect;
-	fetch_rect.left = form->srcrect.x;
-	fetch_rect.top = form->srcrect.y + frame_offset;
-	fetch_rect.width = form->srcrect.w;
-	fetch_rect.height = form->srcrect.h;
-
 	VipsImage* used_vips = form->vips;
 	VipsImage* new_vips;
-	if(form->srcrect.w > 16000 || form->srcrect.h > 16000) {
-		const int largest_dimension = form->srcrect.w > form->srcrect.h ? form->srcrect.w : form->srcrect.h;
-		const double resize_ratio = 16000.0 / (double)largest_dimension;
+	if( form->srcrect.x != 0 || form->srcrect.y + frame_offset != 0 || form->srcrect.w != vips_image_get_width(used_vips) || form->srcrect.h != vips_image_get_height(used_vips) ) {
 		if(vips_crop(used_vips, &new_vips, form->srcrect.x, form->srcrect.y + frame_offset, form->srcrect.w, form->srcrect.h, NULL) == -1) {
 			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to crop out oversized vips region to resize for %s.", form->path);
 			nqiv_unload_image_form(form);
@@ -266,27 +252,33 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 			return false;
 		}
 		used_vips = new_vips;
-		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Cropped oversized selection from %dx%d+%dx%d to %dx%d for %s.\n", form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y, vips_image_get_width(used_vips), vips_image_get_height(used_vips), image->image.path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Cropped selection from %dx%d+%dx%d to %dx%d for %s.\n", form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y, vips_image_get_width(used_vips), vips_image_get_height(used_vips), image->image.path);
+	}
+
+	if(form->srcrect.w > 16000 || form->srcrect.h > 16000) {
+		const int largest_dimension = form->srcrect.w > form->srcrect.h ? form->srcrect.w : form->srcrect.h;
+		const double resize_ratio = 16000.0 / (double)largest_dimension;
 		if(vips_resize(used_vips, &new_vips, resize_ratio, NULL) == -1) {
-			g_object_unref(used_vips);
+			if(used_vips != form->vips) {
+				g_object_unref(used_vips);
+			}
 			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to resize oversized vips region for %s.", form->path);
 			nqiv_unload_image_form(form);
 			form->error = true;
 			return false;
 		}
-		g_object_unref(used_vips);
+		if(used_vips != form->vips) {
+			g_object_unref(used_vips);
+		}
 		used_vips = new_vips;
-		region_rect.width = vips_image_get_width(used_vips);
-		region_rect.height = vips_image_get_height(used_vips);
-		fetch_rect.left = 0;
-		fetch_rect.top = 0;
-		fetch_rect.width = region_rect.width;
-		fetch_rect.height = region_rect.height;
-		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Resized oversized selection %dx%d+%dx%d to %dx%d+%dx%d for %s.\n", form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y, fetch_rect.width, fetch_rect.height, fetch_rect.left, fetch_rect.top, image->image.path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Resized oversized selection %dx%d+%dx%d to %dx%d for %s.\n", form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y, vips_image_get_width(used_vips), vips_image_get_height(used_vips), image->image.path);
 	}
+
 	const VipsBandFormat band_format = vips_image_get_format(used_vips);
 	if(band_format == VIPS_FORMAT_NOTSET) {
-		g_object_unref(used_vips);
+		if(used_vips != form->vips) {
+			g_object_unref(used_vips);
+		}
 		nqiv_log_vips_exception(image->parent->logger, form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
@@ -294,19 +286,25 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	}
 	if(band_format != VIPS_FORMAT_UCHAR) {
 		if( vips_cast(used_vips, &new_vips, VIPS_FORMAT_UCHAR, "shift", TRUE, NULL) == -1 ) {
-			g_object_unref(used_vips);
+			if(used_vips != form->vips) {
+				g_object_unref(used_vips);
+			}
 			nqiv_log_vips_exception(image->parent->logger, form->path);
 			nqiv_unload_image_form(form);
 			form->error = true;
 			return false;
 		}
-		g_object_unref(used_vips);
+		if(used_vips != form->vips) {
+			g_object_unref(used_vips);
+		}
 		used_vips = new_vips;
 	}
 
 	const VipsInterpretation interpretation = vips_image_get_interpretation(used_vips);
 	if(interpretation == VIPS_INTERPRETATION_ERROR) {
-		g_object_unref(used_vips);
+		if(used_vips != form->vips) {
+			g_object_unref(used_vips);
+		}
 		nqiv_log_vips_exception(image->parent->logger, form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
@@ -314,48 +312,66 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	}
 	if(interpretation != VIPS_INTERPRETATION_RGB && interpretation != VIPS_INTERPRETATION_sRGB) {
 		if( vips_colourspace(used_vips, &new_vips, VIPS_INTERPRETATION_sRGB, NULL) == -1 ) {
-			g_object_unref(used_vips);
+			if(used_vips != form->vips) {
+				g_object_unref(used_vips);
+			}
 			nqiv_log_vips_exception(image->parent->logger, form->path);
 			nqiv_unload_image_form(form);
 			form->error = true;
 			return false;
 		}
-		g_object_unref(used_vips);
+		if(used_vips != form->vips) {
+			g_object_unref(used_vips);
+		}
 		used_vips = new_vips;
 	}
+
 	if( !vips_image_hasalpha(used_vips) ) {
 		if(vips_addalpha(used_vips, &new_vips, NULL) == -1) {
-			g_object_unref(used_vips);
+			if(used_vips != form->vips) {
+				g_object_unref(used_vips);
+			}
 			nqiv_log_vips_exception(image->parent->logger, form->path);
 			nqiv_unload_image_form(form);
 			form->error = true;
 			return false;
 		}
-		g_object_unref(used_vips);
+		if(used_vips != form->vips) {
+			g_object_unref(used_vips);
+		}
 		used_vips = new_vips;
 	}
 
-	/*nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Time start: %u.\n", SDL_GetTicks64());*/
-	VipsRegion* region = vips_region_new(used_vips);
-	/*nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Time End: %u.\n", SDL_GetTicks64());*/
-
-	size_t data_size;
-	VipsPel* extracted = vips_region_fetch(region, fetch_rect.left, fetch_rect.top, fetch_rect.width, fetch_rect.height, &data_size);
+	const void* extracted = vips_image_get_data(used_vips);
 	if(extracted == NULL) {
-		g_object_unref(region);
+		if(used_vips != form->vips) {
+			g_object_unref(used_vips);
+		}
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to extract raw image data at path %s.", form->path);
 		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
 
+	const size_t data_size = VIPS_IMAGE_SIZEOF_PEL(used_vips) * VIPS_IMAGE_N_PELS(used_vips);
+
+	form->data = calloc(1, data_size);
+	if(form->data == NULL) {
+		if(used_vips != form->vips) {
+			g_object_unref(used_vips);
+		}
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to extract raw image data at path %s.", form->path);
+		nqiv_unload_image_form(form);
+		form->error = true;
+		return false;
+	}
+
+	memcpy( form->data, extracted, data_size);
+	form->effective_width = vips_image_get_width(used_vips);
+	form->effective_height = vips_image_get_height(used_vips);
 	if(used_vips != form->vips) {
 		g_object_unref(used_vips);
 	}
-	g_object_unref(region);
-	form->data = extracted;
-	form->effective_width = fetch_rect.width;
-	form->effective_height = fetch_rect.height;
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded raw of size %zu for image %s frame %d with pixel offset %d at delay of %d.\n", data_size, image->image.path, form->animation.frame, frame_offset, form->animation.delay);
 	return true;
 }
