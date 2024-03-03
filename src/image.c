@@ -337,12 +337,6 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 
 	/*nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Time start: %u.\n", SDL_GetTicks64());*/
 	VipsRegion* region = vips_region_new(used_vips);
-	if(vips_region_prepare(region, &region_rect) == -1) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to prepare vips region raw image data at path %s.", form->path);
-		nqiv_unload_image_form(form);
-		form->error = true;
-		return false;
-	}
 	/*nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Time End: %u.\n", SDL_GetTicks64());*/
 
 	size_t data_size;
