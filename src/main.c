@@ -358,7 +358,7 @@ bool nqiv_setup_sdl(nqiv_state* state)
 		return false;
 	}
 	state->SDL_inited = true;
-	state->window = SDL_CreateWindow("nqiv", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_SHOWN);
+	state->window = SDL_CreateWindow("nqiv", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
 	if(state->window == NULL) {
 		nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL Window. SDL Error: %s\n", SDL_GetError() );
 		return false;
