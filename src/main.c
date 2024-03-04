@@ -504,7 +504,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 	/* TODO Merge load/save thumbnail, or have an short load to check for the thumbnail before saving  DONE*/
 	/* TODO Use load thumbnail for is_thumbnail? */
 
-	bool cleared = false;
+	bool cleared = is_montage;
 	if(lock) {
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 		omp_set_lock(&image->lock);
@@ -921,6 +921,12 @@ bool render_montage(nqiv_state* state, const bool hard)
 	if there's an error set, set error indicator, then quit
 	*/
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage.\n");
+	if(SDL_RenderClear(state->renderer) != 0) {
+		return false;
+	}
+	if(SDL_RenderCopy(state->renderer, state->texture_background, NULL, NULL) != 0) {
+		return false;
+	}
 	int idx;
 	for(idx = state->montage.positions.start; idx < state->montage.positions.end; ++idx) {
 		SDL_Rect dstrect;
