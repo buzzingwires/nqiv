@@ -14,6 +14,8 @@
 #include <SDL2/SDL.h>
 #include <omp.h>
 
+#define STARTING_QUEUE_LENGTH 1024
+
 typedef struct nqiv_state
 {
 	bool read_from_stdin;
@@ -22,7 +24,9 @@ typedef struct nqiv_state
 	nqiv_keybind_manager keybinds;
 	nqiv_keyrate_manager keystates;
 	nqiv_montage_state montage;
+	int queue_length;
 	nqiv_queue thread_queue;
+	nqiv_queue key_actions;
 	bool SDL_inited;
 	SDL_Window* window;
 	SDL_Renderer* renderer;
@@ -33,6 +37,7 @@ typedef struct nqiv_state
 	SDL_Texture* texture_montage_error_background;
 	SDL_Texture* texture_alpha_background;
 	Uint32 thread_event_number;
+	Uint32 cfg_event_number;
 	int thread_count;
 	omp_lock_t* thread_locks;
 	bool in_montage;
@@ -40,6 +45,23 @@ typedef struct nqiv_state
 	char* window_title;
 	size_t window_title_size;
 	bool no_resample_oversized;
+	SDL_Color background_color;
+	SDL_Color error_color;
+	SDL_Color loading_color;
+	SDL_Color selection_color;
+	SDL_Color alpha_checker_color_one;
+	SDL_Color alpha_checker_color_two;
 } nqiv_state;
+
+
+bool nqiv_check_and_print_logger_error(nqiv_log_ctx* logger);
+bool nqiv_add_logger_path(nqiv_log_ctx* logger, const char* path);
+void nqiv_state_set_default_colors(nqiv_state* state);
+bool nqiv_create_alpha_background_texture(nqiv_state* state, const SDL_Rect* rect, const int thickness, SDL_Texture** texture);
+bool nqiv_state_create_thumbnail_selection_texture(nqiv_state* state);
+bool nqiv_state_create_montage_alpha_background_texture(nqiv_state* state);
+bool nqiv_state_create_alpha_background_texture(nqiv_state* state);
+bool nqiv_state_create_single_color_texture(nqiv_state* state, const SDL_Color* color, SDL_Texture** texture);
+bool nqiv_state_expand_queues(nqiv_state* state);
 
 #endif /* NQIV_STATE_H */

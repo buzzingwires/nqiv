@@ -13,7 +13,6 @@
 #include "queue.h"
 #include "event.h"
 #include "montage.h"
-#include "drawing.h"
 #include "keybinds.h"
 #include "keyrate.h"
 #include "state.h"
@@ -21,37 +20,6 @@
 #define OPTPARSE_IMPLEMENTATION
 #define OPTPARSE_API static
 #include "optparse.h"
-
-#define STARTING_QUEUE_LENGTH 1024
-
-bool nqiv_check_and_print_logger_error(nqiv_log_ctx* logger)
-{
-	if( nqiv_log_has_error(logger) ) {
-		fputs(logger->error_message, stderr);
-		return false;
-	}
-	return true;
-}
-
-bool nqiv_add_logger_path(nqiv_log_ctx* logger, const char* path)
-{
-	FILE* stream = NULL;
-	if( strcmp(path, "stdout") == 0 ) {
-		stream = stdout;
-	} else if( strcmp(path, "stderr") == 0 ) {
-		stream = stderr;
-	} else {
-		stream = fopen(path, "r");
-	}
-	if(stream == NULL) {
-		return false;
-	}
-	nqiv_log_add_stream(logger, stream);
-	if( !nqiv_check_and_print_logger_error(logger) ) {
-		return false;
-	}
-	return true;
-}
 
 void nqiv_close_log_streams(nqiv_log_ctx* logger)
 {
@@ -155,6 +123,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	char* arg_log_prefix = "#time:%Y-%m-%d_%H:%M:%S%z# #level#: ";
 	*/
 	state->read_from_stdin = false;
+	state->queue_length = STARTING_QUEUE_LENGTH;
 	nqiv_log_init(&state->logger);
 	if( !nqiv_check_and_print_logger_error(&state->logger) ) {
 		return false;
@@ -218,7 +187,10 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 				fprintf(stderr, "Thumbnail root must be at least one character long.\n");
 				return false;
 			}
-			state->images.thumbnail.root = options.optarg;
+			if( !nqiv_image_manager_set_thumbnail_root(&state->images, options.optarg) ) {
+				fprintf(stderr, "Failed to set thumbnail root.\n");
+				return false;
+			}
 			break;
         case 'S':
             tmpint = strtol(options.optarg, NULL, 10);
@@ -252,10 +224,8 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 				fprintf(stderr, "Queue length of %s must be a valid base-ten integer and greater than or equal to %d\n", options.optarg, STARTING_QUEUE_LENGTH);
 				return false;
 			}
-			if( !nqiv_array_grow(state->keybinds.lookup, tmpint) ||
-				!nqiv_array_grow(state->images.images, tmpint) ||
-				!nqiv_array_grow(state->images.extensions, tmpint) ||
-				!nqiv_array_grow(state->thread_queue.array, tmpint) ) {
+			state->queue_length = tmpint;
+			if( !nqiv_state_expand_queues(state) ) {
 				fprintf(stderr, "Failed to grow to queue length of %s\n", options.optarg);
 				return false;
 			}
@@ -276,79 +246,6 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	/* TODO: STDIN */
 	return true;
 } /* parse_args */
-
-bool nqiv_create_sdl_drawing_surface(nqiv_log_ctx* logger, const int width, const int height, SDL_Surface** surface)
-{
-	*surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 4 * 8, SDL_PIXELFORMAT_ABGR8888);
-	if(*surface == NULL) {
-		nqiv_log_write( logger, NQIV_LOG_ERROR, "Failed to create SDL Surface. SDL Error: %s\n", SDL_GetError() );
-		return false;
-	}
-	return true;
-}
-
-bool nqiv_sdl_surface_to_texture(nqiv_log_ctx* logger, SDL_Renderer* renderer, SDL_Surface* surface, SDL_Texture** texture)
-{
-	*texture = SDL_CreateTextureFromSurface(renderer, surface);
-	if(*texture == NULL) {
-		nqiv_log_write( logger, NQIV_LOG_ERROR, "Failed to create SDL Texture. SDL Error: %s\n", SDL_GetError() );
-		return false;
-	}
-	SDL_FreeSurface(surface);
-	return true;
-}
-
-bool nqiv_create_solid_rect_texture(nqiv_log_ctx* logger, SDL_Renderer* renderer, const SDL_Rect* rect, const SDL_Color* color, SDL_Texture** texture)
-{
-	SDL_Surface* surface;
-	if( !nqiv_create_sdl_drawing_surface(logger, rect->w, rect->h, &surface) ) {
-		return false;
-	}
-	nqiv_fill_rect(surface, rect, color);
-	if( !nqiv_sdl_surface_to_texture(logger, renderer, surface, texture) ) {
-		return false;
-	}
-	return true;
-}
-
-bool nqiv_create_border_rect_texture(nqiv_log_ctx* logger, SDL_Renderer* renderer, const SDL_Rect* rect, const SDL_Color* color, SDL_Texture** texture)
-{
-	SDL_Surface* surface;
-	if( !nqiv_create_sdl_drawing_surface(logger, rect->w, rect->h, &surface) ) {
-		return false;
-	}
-	int pixel_size = ( (rect->w + rect->h) / 2 ) / 64;
-	pixel_size = pixel_size > 0 ? pixel_size : 1;
-	nqiv_draw_rect(surface, rect, color, pixel_size);
-	if( !nqiv_sdl_surface_to_texture(logger, renderer, surface, texture) ) {
-		return false;
-	}
-	return true;
-}
-
-
-bool nqiv_create_alpha_background_texture(nqiv_log_ctx* logger, SDL_Renderer* renderer, const SDL_Rect* rect, const int thickness, SDL_Texture** texture)
-{
-	SDL_Surface* surface;
-	if( !nqiv_create_sdl_drawing_surface(logger, rect->w, rect->h, &surface) ) {
-		return false;
-	}
-	SDL_Color color_one;
-	color_one.r = 40;
-	color_one.g = 40;
-	color_one.b = 40;
-	color_one.a = 255;
-	SDL_Color color_two;
-	color_two.r = 60;
-	color_two.g = 60;
-	color_two.b = 60;
-	color_two.a = 255;
-	nqiv_draw_alpha_background(surface, rect, thickness, &color_one, &color_two);
-	if( !nqiv_sdl_surface_to_texture(logger, renderer, surface, texture) ) {
-		return false;
-	}
-	return true;
-}
 
 bool nqiv_setup_sdl(nqiv_state* state)
 {
@@ -372,50 +269,28 @@ bool nqiv_setup_sdl(nqiv_state* state)
 		nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to set SDL Renderer draw color. SDL Error: %s\n", SDL_GetError() );
 		return false;
 	}
-	SDL_Color color;
-	color.r = 0;
-	color.g = 0;
-	color.b = 0;
-	color.a = 255;
-	SDL_Rect window_rect;
-	window_rect.x = 0;
-	window_rect.y = 0;
-	SDL_GetWindowSizeInPixels(state->window, &window_rect.w, &window_rect.h);
-	if( !nqiv_create_solid_rect_texture(&state->logger, state->renderer, &window_rect, &color, &state->texture_background) ) {
+
+	if( !nqiv_state_create_single_color_texture(state, &state->background_color, &state->texture_background) ) {
 		return false;
 	}
-	SDL_Rect thumbnail_rect;
-	thumbnail_rect.x = 0;
-	thumbnail_rect.y = 0;
-	thumbnail_rect.w = state->images.thumbnail.size;
-	thumbnail_rect.h = state->images.thumbnail.size;
-	SDL_Rect pixel_rect;
-	pixel_rect.x = 0;
-	pixel_rect.y = 0;
-	pixel_rect.w = 1;
-	pixel_rect.h = 1;
-	color.g = 255;
-	color.b = 255;
-	if( !nqiv_create_border_rect_texture(&state->logger, state->renderer, &thumbnail_rect, &color, &state->texture_montage_selection) ) {
+	if( !nqiv_state_create_single_color_texture(state, &state->loading_color, &state->texture_montage_unloaded_background) ) {
 		return false;
 	}
-	color.g = 0;
-	if( !nqiv_create_solid_rect_texture(&state->logger, state->renderer, &pixel_rect, &color, &state->texture_montage_unloaded_background) ) {
+	if( !nqiv_state_create_single_color_texture(state, &state->error_color, &state->texture_montage_error_background) ) {
 		return false;
 	}
-	color.r = 255;
-	color.b = 0;
-	if( !nqiv_create_solid_rect_texture(&state->logger, state->renderer, &pixel_rect, &color, &state->texture_montage_error_background) ) {
+	if( !nqiv_state_create_thumbnail_selection_texture(state) ) {
 		return false;
 	}
-	const int thumbnail_thickness = ( (thumbnail_rect.x + thumbnail_rect.h) / 2 ) / 32;
-	if( !nqiv_create_alpha_background_texture(&state->logger, state->renderer, &window_rect, thumbnail_thickness, &state->texture_montage_alpha_background) ) {
+
+	if( !nqiv_state_create_montage_alpha_background_texture(state) ) {
 		return false;
 	}
-	const int window_thickness = ( (window_rect.x + window_rect.h) / 2 ) / 32;
-	if( !nqiv_create_alpha_background_texture(&state->logger, state->renderer, &window_rect, window_thickness, &state->texture_alpha_background) ) {
+
+	if( !nqiv_state_create_alpha_background_texture(state) ) {
 		return false;
 	}
+
 	SDL_Delay(1); /* So that we are completely guaranteed to have at least one ticks passed for SDL. */
 	return true;
 }
@@ -441,6 +316,11 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 {
 	state->thread_event_number = SDL_RegisterEvents(1);
 	if(state->thread_event_number == 0xFFFFFFFF) {
+		nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL event for messages from threads. SDL Error: %s\n", SDL_GetError() );
+		return false;
+	}
+	state->cfg_event_number = SDL_RegisterEvents(1);
+	if(state->cfg_event_number == 0xFFFFFFFF) {
 		nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL event for messages from threads. SDL Error: %s\n", SDL_GetError() );
 		return false;
 	}
@@ -985,10 +865,144 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 	}
 }
 
+void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, const bool simulated, const bool key_up)
+{
+	nqiv_key_action action;
+	while( nqiv_queue_pop_front(&state->key_actions, sizeof(nqiv_key_action), &action) ) {
+		if( !simulated && !nqiv_keyrate_filter_action(&state->keystates, action, key_up) ) {
+			/* NOOP */
+		} else if(action == NQIV_KEY_ACTION_QUIT) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action quit.\n");
+			*running = false;
+		} else if(action == NQIV_KEY_ACTION_MONTAGE_RIGHT) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage right.\n");
+			if(state->in_montage) {
+				nqiv_montage_next_selection(&state->montage);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_MONTAGE_LEFT) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage left.\n");
+			if(state->in_montage) {
+				nqiv_montage_previous_selection(&state->montage);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_MONTAGE_UP) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage up.\n");
+			if(state->in_montage) {
+				nqiv_montage_previous_selection_row(&state->montage);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_MONTAGE_DOWN) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage down.\n");
+			if(state->in_montage) {
+				nqiv_montage_next_selection_row(&state->montage);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_PAGE_UP) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action page up.\n");
+			if(state->in_montage) {
+				nqiv_montage_previous_selection_page(&state->montage);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_PAGE_DOWN) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action page down.\n");
+			if(state->in_montage) {
+				nqiv_montage_next_selection_page(&state->montage);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_MONTAGE_START) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage start.\n");
+			if(state->in_montage) {
+				nqiv_montage_jump_selection_start(&state->montage);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_MONTAGE_END) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage end.\n");
+			if(state->in_montage) {
+				nqiv_montage_jump_selection_end(&state->montage);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_TOGGLE_MONTAGE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage toggle.\n");
+			state->in_montage = !state->in_montage;
+			render_and_update(state, running, result, true, false);
+		} else if(action == NQIV_KEY_ACTION_SET_MONTAGE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv montage set.\n");
+			if(!state->in_montage) {
+				state->in_montage = true;
+				render_and_update(state, running, result, true, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_SET_VIEWING) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action viewing set.\n");
+			if(state->in_montage) {
+				state->in_montage = false;
+				render_and_update(state, running, result, true, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_ZOOM_IN) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom in.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_zoom_in(&state->images);
+				render_and_update(state, running, result, false, false);
+			} else if(state->montage.dimensions.count > 1) {
+				nqiv_image_manager_increment_thumbnail_size(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_ZOOM_OUT) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom out.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_zoom_out(&state->images);
+				render_and_update(state, running, result, false, false);
+			} else {
+				nqiv_image_manager_decrement_thumbnail_size(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_PAN_LEFT) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan left.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_pan_left(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_PAN_RIGHT) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan right.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_pan_right(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_PAN_UP) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan up.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_pan_up(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_PAN_DOWN) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan down.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_pan_down(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_TOGGLE_STRETCH) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action toggle stretch.\n");
+			state->stretch_images = !state->stretch_images;
+			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_STRETCH) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action stretch.\n");
+			state->stretch_images = true;
+			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_KEEP_ASPECT_RATIO) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action keep aspect ratio.\n");
+			state->stretch_images = false;
+			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_RELOAD) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action reload.\n");
+			render_and_update(state, running, result, true, true);
+		}
+	}
+}
+
+
 bool nqiv_master_thread(nqiv_state* state)
 {
-	nqiv_array* keybind_actions = nqiv_array_create(STARTING_QUEUE_LENGTH);
-	if(keybind_actions == NULL) {
+	if( !nqiv_queue_init(&state->key_actions, &state->logger, STARTING_QUEUE_LENGTH) ) {
 		return false;
 	}
 	bool result = true;
@@ -1011,26 +1025,31 @@ bool nqiv_master_thread(nqiv_state* state)
 		switch(input_event.type) {
 			case SDL_USEREVENT:
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received response from worker thread.\n");
-				if(input_event.user.code >= 0 && (Uint32)input_event.user.code == state->thread_event_number) {
-					/*
-					nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locking thread from master.\n");
-					omp_set_lock(input_event.user.data1);
-					nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locked thread from master.\n");
-					*/
-					omp_set_lock(&state->thread_queue.lock);
-					const int queue_length = state->thread_queue.array->position / sizeof(nqiv_event*);
-					if(queue_length == 0) {
-						if( omp_test_lock(input_event.user.data1) ) {
-							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locked thread from master.\n");
+				if(input_event.user.code >= 0) {
+					if( (Uint32)input_event.user.code == state->thread_event_number ) {
+						/*
+						nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locking thread from master.\n");
+						omp_set_lock(input_event.user.data1);
+						nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locked thread from master.\n");
+						*/
+						omp_set_lock(&state->thread_queue.lock);
+						const int queue_length = state->thread_queue.array->position / sizeof(nqiv_event*);
+						if(queue_length == 0) {
+							if( omp_test_lock(input_event.user.data1) ) {
+								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locked thread from master.\n");
+							} else {
+								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Thread already locked from master.\n");
+							}
 						} else {
-							nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Thread already locked from master.\n");
+							nqiv_unlock_threads(state);
 						}
-					} else {
-						nqiv_unlock_threads(state);
+						omp_unset_lock(&state->thread_queue.lock);
+						render_and_update(state, &running, &result, false, false);
+					} else if( ( Uint32)input_event.user.code == state->cfg_event_number ) {
+						nqiv_handle_keyactions(state, &running, &result, true, false);
+						render_and_update(state, &running, &result, false, false);
 					}
-					omp_unset_lock(&state->thread_queue.lock);
 				}
-				render_and_update(state, &running, &result, false, false);
 				break;
 			case SDL_WINDOWEVENT:
 				if(input_event.window.event == SDL_WINDOWEVENT_RESIZED ||
@@ -1059,7 +1078,7 @@ bool nqiv_master_thread(nqiv_state* state)
 				*/
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received key up event.\n");
 				{
-					const nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, &input_event.key.keysym, keybind_actions);
+					const nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, &input_event.key.keysym, &state->key_actions);
 					if(lookup_summary == NQIV_KEY_LOOKUP_FAILURE) {
 						running = false;
 						result = false;
@@ -1070,150 +1089,15 @@ bool nqiv_master_thread(nqiv_state* state)
 						bool nqiv_array_push_bytes(nqiv_array* array, void* ptr, const int count);
 						bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, void* ptr);
 						*/
-						nqiv_key_action action;
-						while( nqiv_array_get_bytes(keybind_actions, 0, sizeof(nqiv_key_action), &action) ) {
-							/*
-	NQIV_KEY_ACT	ION_TOGGLE_STRETCH,
-	NQIV_KEY_ACT	ION_STRETCH,
-	NQIV_KEY_ACT	ION_KEEP_ASPECT_RATIO,
-	NQIV_KEY_ACT	ION_RELOAD,
-	*/
-							if( !nqiv_keyrate_filter_action(&state->keystates, action, input_event.type == SDL_KEYUP) ) {
-								/* NOOP */
-							} else if(action == NQIV_KEY_ACTION_QUIT) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action quit.\n");
-								running = false;
-							} else if(action == NQIV_KEY_ACTION_MONTAGE_RIGHT) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage right.\n");
-								if(state->in_montage) {
-									nqiv_montage_next_selection(&state->montage);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_MONTAGE_LEFT) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage left.\n");
-								if(state->in_montage) {
-									nqiv_montage_previous_selection(&state->montage);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_MONTAGE_UP) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage up.\n");
-								if(state->in_montage) {
-									nqiv_montage_previous_selection_row(&state->montage);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_MONTAGE_DOWN) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage down.\n");
-								if(state->in_montage) {
-									nqiv_montage_next_selection_row(&state->montage);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_PAGE_UP) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action page up.\n");
-								if(state->in_montage) {
-									nqiv_montage_previous_selection_page(&state->montage);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_PAGE_DOWN) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action page down.\n");
-								if(state->in_montage) {
-									nqiv_montage_next_selection_page(&state->montage);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_MONTAGE_START) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage start.\n");
-								if(state->in_montage) {
-									nqiv_montage_jump_selection_start(&state->montage);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_MONTAGE_END) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage end.\n");
-								if(state->in_montage) {
-									nqiv_montage_jump_selection_end(&state->montage);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_TOGGLE_MONTAGE) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage toggle.\n");
-								state->in_montage = !state->in_montage;
-								render_and_update(state, &running, &result, true, false);
-							} else if(action == NQIV_KEY_ACTION_SET_MONTAGE) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv montage set.\n");
-								if(!state->in_montage) {
-									state->in_montage = true;
-									render_and_update(state, &running, &result, true, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_SET_VIEWING) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action viewing set.\n");
-								if(state->in_montage) {
-									state->in_montage = false;
-									render_and_update(state, &running, &result, true, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_ZOOM_IN) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom in.\n");
-								if(!state->in_montage) {
-									nqiv_image_manager_zoom_in(&state->images);
-									render_and_update(state, &running, &result, false, false);
-								} else if(state->montage.dimensions.count > 1) {
-									nqiv_image_manager_increment_thumbnail_size(&state->images);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_ZOOM_OUT) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom out.\n");
-								if(!state->in_montage) {
-									nqiv_image_manager_zoom_out(&state->images);
-									render_and_update(state, &running, &result, false, false);
-								} else {
-									nqiv_image_manager_decrement_thumbnail_size(&state->images);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_PAN_LEFT) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan left.\n");
-								if(!state->in_montage) {
-									nqiv_image_manager_pan_left(&state->images);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_PAN_RIGHT) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan right.\n");
-								if(!state->in_montage) {
-									nqiv_image_manager_pan_right(&state->images);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_PAN_UP) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan up.\n");
-								if(!state->in_montage) {
-									nqiv_image_manager_pan_up(&state->images);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_PAN_DOWN) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan down.\n");
-								if(!state->in_montage) {
-									nqiv_image_manager_pan_down(&state->images);
-									render_and_update(state, &running, &result, false, false);
-								}
-							} else if(action == NQIV_KEY_ACTION_TOGGLE_STRETCH) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action toggle stretch.\n");
-								state->stretch_images = !state->stretch_images;
-								render_and_update(state, &running, &result, false, false);
-							} else if(action == NQIV_KEY_ACTION_STRETCH) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action stretch.\n");
-								state->stretch_images = true;
-								render_and_update(state, &running, &result, false, false);
-							} else if(action == NQIV_KEY_ACTION_KEEP_ASPECT_RATIO) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action keep aspect ratio.\n");
-								state->stretch_images = false;
-								render_and_update(state, &running, &result, false, false);
-							} else if(action == NQIV_KEY_ACTION_RELOAD) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action reload.\n");
-								render_and_update(state, &running, &result, true, true);
-							}
-							nqiv_array_remove_bytes( keybind_actions, 0, sizeof(nqiv_key_action) );
-						}
+						nqiv_handle_keyactions(state, &running, &result, false, input_event.type == SDL_KEYUP ? true : false);
+						render_and_update(state, &running, &result, false, false);
 					}
 				}
 				break;
 		}
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Finished waiting on events.\n");
-	nqiv_array_destroy(keybind_actions);
+	nqiv_queue_destroy(&state->key_actions);
 	nqiv_event output_event = {0};
 	output_event.type = NQIV_EVENT_WORKER_STOP;
 	if( !nqiv_send_thread_event(state, &output_event) ) {
@@ -1267,6 +1151,7 @@ int main(int argc, char *argv[])
 		nqiv_state_clear(&state);
 		return 1;
 	}
+	nqiv_state_set_default_colors(&state);
 	if( !nqiv_setup_sdl(&state) ) {
 		nqiv_state_clear(&state);
 		return 1;
