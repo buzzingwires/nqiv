@@ -509,6 +509,9 @@ void nqiv_image_manager_destroy(nqiv_image_manager* manager)
 	if(manager->extensions != NULL) {
 		nqiv_array_destroy(manager->extensions);
 	}
+	if(manager->thumbnail.root != NULL) {
+		free(manager->thumbnail.root);
+	}
 	memset( manager, 0, sizeof(nqiv_image_manager) );
 }
 
@@ -639,6 +642,19 @@ bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path)
 	// nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Generated image at path '%s'.", path);
 	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Added image at path '%s' to image manager.\n", path);
 	image->parent = manager;
+	return true;
+}
+
+bool nqiv_image_manager_set_thumbnail_root(nqiv_image_manager* manager, const char* path)
+{
+	const size_t path_len = strlen(path);
+	char* path_ptr = (char*)calloc(1, path_len);
+	if(path_ptr == NULL) {
+		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Failed to create buffer to store thumbnail root of %s.", path);
+		return false;
+	}
+	manager->thumbnail.root = path_ptr;
+	memcpy(manager->thumbnail.root, path, path_len);
 	return true;
 }
 

@@ -133,6 +133,7 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, 
 bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, const int index);
 void nqiv_image_manager_remove(nqiv_image_manager* manager, const int index);
 bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path);
+bool nqiv_image_manager_set_thumbnail_root(nqiv_image_manager* manager, const char* path);
 bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, char* extension);
 bool nqiv_image_manager_has_path_extension(nqiv_image_manager* manager, const char* path);
 
