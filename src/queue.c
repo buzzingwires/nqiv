@@ -85,3 +85,21 @@ bool nqiv_queue_pop(nqiv_queue* queue, const int count, void* entry)
 	omp_unset_lock(&queue->lock);
 	return result;
 }
+
+bool nqiv_queue_pop_front(nqiv_queue* queue, const int count, void* entry)
+{
+	assert(entry != NULL);
+	assert(queue != NULL);
+	assert(queue->array != NULL);
+	bool result = false;
+	omp_set_lock(&queue->lock);
+	if( nqiv_array_get_bytes(queue->array, 0, count, entry) ) {
+		nqiv_array_remove_bytes(queue->array, 0, count);
+		nqiv_log_write(queue->logger, NQIV_LOG_DEBUG, "Popped from queue at position 0.\n");
+		result = true;
+	} else {
+		nqiv_log_write(queue->logger, NQIV_LOG_DEBUG, "Queue is already empty. Nothing to pop.\n");
+	}
+	omp_unset_lock(&queue->lock);
+	return result;
+}

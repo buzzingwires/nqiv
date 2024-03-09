@@ -18,5 +18,6 @@ void nqiv_queue_destroy(nqiv_queue* queue);
 bool nqiv_queue_init(nqiv_queue* queue, nqiv_log_ctx* logger, const int starting_length);
 bool nqiv_queue_push(nqiv_queue* queue, const int count, void* entry);
 bool nqiv_queue_pop(nqiv_queue* queue, const int count, void* entry);
+bool nqiv_queue_pop_front(nqiv_queue* queue, const int count, void* entry);
 
 #endif /* NQIV_QUEUE_H */
