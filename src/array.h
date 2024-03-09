@@ -34,6 +34,7 @@ void nqiv_array_remove_FILE_ptr(nqiv_array* array, const int idx);
 bool nqiv_array_push_FILE_ptr(nqiv_array* array, FILE* ptr);
 FILE* nqiv_array_get_FILE_ptr(nqiv_array* array, const int idx);
 FILE* nqiv_array_pop_FILE_ptr(nqiv_array* array);
+void nqiv_array_clear(nqiv_array* array);
 void nqiv_array_destroy(nqiv_array* array);
 
 #endif /* NQIV_ARRAY_H */

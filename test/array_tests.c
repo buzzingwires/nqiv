@@ -28,6 +28,12 @@ void array_test_bytes(void)
 		nqiv_array_remove_bytes( array, idx, sizeof(int) );
 		assert( !nqiv_array_pop_bytes(array, sizeof(int), &popped) );
 	}
+	nqiv_array_clear(array);
+	assert(array->position == 0);
+	int idx;
+	for(idx = 0; idx < array->data_length; ++idx) {
+		assert( ( (char*)(array->data) )[idx] == 0 );
+	}
 	nqiv_array_destroy(array);
 }
 

@@ -220,6 +220,19 @@ FILE* nqiv_array_pop_FILE_ptr(nqiv_array* array)
 	return (FILE*)nqiv_array_pop_ptr(array);
 }
 
+void nqiv_array_clear(nqiv_array* array)
+{
+	if(array == NULL) {
+		return;
+	}
+	if(array->data == NULL) {
+		return;
+	}
+	assert( sizeof(void*) == sizeof(char*) );
+	memset( (char*)array->data, 0, array->position );
+	array->position = 0;
+}
+
 void nqiv_array_destroy(nqiv_array* array)
 {
 	if(array == NULL) {
