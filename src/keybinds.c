@@ -5,6 +5,7 @@
 
 #include "logging.h"
 #include "array.h"
+#include "queue.h"
 #include "keybinds.h"
 
 /*
@@ -64,6 +65,32 @@ int nqiv_findchar(const char* text, const char query, const int start, const int
 		idx += step;
 	}
 	return -1;
+}
+
+void nqiv_key_print_actions(FILE* stream)
+{
+	fprintf(stream, "page_up\n");
+	fprintf(stream, "page_down\n");
+	fprintf(stream, "toggle_montage\n");
+	fprintf(stream, "set_montage\n");
+	fprintf(stream, "set_viewing\n");
+	fprintf(stream, "zoom_in\n");
+	fprintf(stream, "zoom_out\n");
+	fprintf(stream, "pan_left\n");
+	fprintf(stream, "pan_right\n");
+	fprintf(stream, "pan_up\n");
+	fprintf(stream, "pan_down\n");
+	fprintf(stream, "montage_left\n");
+	fprintf(stream, "montage_right\n");
+	fprintf(stream, "montage_up\n");
+	fprintf(stream, "montage_down\n");
+	fprintf(stream, "montage_start\n");
+	fprintf(stream, "montage_end\n");
+	fprintf(stream, "toggle_stretch\n");
+	fprintf(stream, "stretch\n");
+	fprintf(stream, "keep_aspect_ratio\n");
+	fprintf(stream, "reload\n");
+
 }
 
 nqiv_key_action nqiv_text_to_key_action(const char* text, const int length)
@@ -264,7 +291,7 @@ bool nqiv_compare_mod(const Uint16 a, const Uint16 b)
 		   ( (bool)(ac & KMOD_SCROLL) == (bool)(bc & KMOD_SCROLL) );
 }
 
-nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manager* manager, const SDL_Keysym* key, nqiv_array* output)
+nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manager* manager, const SDL_Keysym* key, nqiv_queue* output)
 {
 	assert(manager != NULL);
 	assert(manager->lookup != NULL);
@@ -277,7 +304,7 @@ nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manager* manager, const
 		nqiv_keybind_pair pair;
 		if( nqiv_array_get_bytes(manager->lookup, idx, sizeof(nqiv_keybind_pair), &pair) &&
 			pair.key.scancode == key->scancode && nqiv_compare_mod(pair.key.mod, key->mod) ) {
-			if( output == NULL || !nqiv_array_push_bytes( output, &pair.action, sizeof(nqiv_key_action) ) ) {
+			if( output == NULL || !nqiv_queue_push(output, sizeof(nqiv_key_action), &pair.action) ) {
 				result |= NQIV_KEY_LOOKUP_FAILURE;
 			} else {
 				result |= NQIV_KEY_LOOKUP_FOUND;
