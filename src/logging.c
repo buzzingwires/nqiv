@@ -27,6 +27,15 @@ nqiv_log_level nqiv_log_level_from_string(const char* text)
 	}
 }
 
+void nqiv_log_print_levels(FILE* stream)
+{
+	fprintf(stream, "any\n");
+	fprintf(stream, "debug\n");
+	fprintf(stream, "info\n");
+	fprintf(stream, "warning\n");
+	fprintf(stream, "error\n");
+}
+
 void nqiv_log_clear_error(nqiv_log_ctx* ctx)
 {
 	if(ctx == NULL) {

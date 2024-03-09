@@ -32,6 +32,7 @@ typedef struct nqiv_log_ctx
 } nqiv_log_ctx;
 
 nqiv_log_level nqiv_log_level_from_string(const char* text);
+void nqiv_log_print_levels(FILE* stream);
 void nqiv_log_clear_error(nqiv_log_ctx* ctx);
 bool nqiv_log_has_error(nqiv_log_ctx* ctx);
 void nqiv_log_set_prefix_format(nqiv_log_ctx* ctx, const char* fmt);
