@@ -24,6 +24,7 @@ typedef struct nqiv_state
 	nqiv_keybind_manager keybinds;
 	nqiv_keyrate_manager keystates;
 	nqiv_montage_state montage;
+	nqiv_cmd_manager cmds;
 	int queue_length;
 	nqiv_queue thread_queue;
 	nqiv_queue key_actions;
