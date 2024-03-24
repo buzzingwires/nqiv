@@ -10,8 +10,10 @@
 typedef enum nqiv_keyrate_press_action
 {
 	NQIV_KEYRATE_ON_MANAGER = 0,
+	NQIV_KEYRATE_START = NQIV_KEYRATE_ON_MANAGER,
 	NQIV_KEYRATE_ALLOW,
 	NQIV_KEYRATE_DENY,
+	NQIV_KEYRATE_END = NQIV_KEYRATE_DENY,
 } nqiv_keyrate_press_action;
 
 typedef struct nqiv_keyrate_keystate_ephemeral

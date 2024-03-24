@@ -18,7 +18,6 @@
 
 typedef struct nqiv_state
 {
-	bool read_from_stdin;
 	nqiv_log_ctx logger;
 	nqiv_image_manager images;
 	nqiv_keybind_manager keybinds;
@@ -52,6 +51,8 @@ typedef struct nqiv_state
 	SDL_Color selection_color;
 	SDL_Color alpha_checker_color_one;
 	SDL_Color alpha_checker_color_two;
+	bool cmd_parse_error_quit;
+	bool cmd_apply_error_quit;
 } nqiv_state;
 
 
@@ -60,9 +61,15 @@ bool nqiv_add_logger_path(nqiv_log_ctx* logger, const char* path);
 void nqiv_state_set_default_colors(nqiv_state* state);
 bool nqiv_create_alpha_background_texture(nqiv_state* state, const SDL_Rect* rect, const int thickness, SDL_Texture** texture);
 bool nqiv_state_create_thumbnail_selection_texture(nqiv_state* state);
+bool nqiv_state_recreate_thumbnail_selection_texture(nqiv_state* state);
 bool nqiv_state_create_montage_alpha_background_texture(nqiv_state* state);
 bool nqiv_state_create_alpha_background_texture(nqiv_state* state);
+bool nqiv_state_recreate_all_alpha_background_textures(nqiv_state* state);
 bool nqiv_state_create_single_color_texture(nqiv_state* state, const SDL_Color* color, SDL_Texture** texture);
+bool nqiv_state_recreate_single_color_texture(nqiv_state* state, const SDL_Color* color, SDL_Texture** texture);
+bool nqiv_state_recreate_background_texture(nqiv_state* state);
+bool nqiv_state_recreate_error_texture(nqiv_state* state);
+bool nqiv_state_recreate_loading_texture(nqiv_state* state);
 bool nqiv_state_expand_queues(nqiv_state* state);
 
 #endif /* NQIV_STATE_H */

@@ -609,6 +609,11 @@ bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, co
 		// nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Failed to generate image at path '%s'. Success: %s", path, "false");
 		return false;
 	}
+	const int images_length = state->images->images->position / sizeof(nqiv_image*);
+	if(index > images_length) {
+		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Cannot insert image from path '%s' at index %d, greater than the length of the current images array %d.\n", path, index, images_length);
+		return false;
+	}
 	if(!nqiv_array_insert_nqiv_image_ptr(manager->images, image, index)) {
 		nqiv_image_destroy(image);
 		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Failed to add image at path '%s' to image manager at index %d.\n", path, index);
@@ -620,11 +625,17 @@ bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, co
 	return true;
 }
 
-void nqiv_image_manager_remove(nqiv_image_manager* manager, const int index)
+bool nqiv_image_manager_remove(nqiv_image_manager* manager, const int index)
 {
-	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Adding image at index %d from image manager.\n", index);
+	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Removing image from index %d from image manager.\n", index);
+	const int images_length = state->images->images->position / sizeof(nqiv_image*);
+	if(index > images_length) {
+		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Cannot remove image at index %d, greater than the length of the current images array %d.\n", index, images_length);
+		return false;
+	}
 	nqiv_image_destroy( nqiv_array_get_nqiv_image_ptr(manager->images, index) );
 	nqiv_array_remove_nqiv_image_ptr(manager->images, index);
+	return true;
 }
 
 bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path)
@@ -847,17 +858,36 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, S
 	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Zoom parameters - Viewport ratio: %f/%f Fit level: %f Actual Size Level: %f\n", manager->zoom.image_to_viewport_ratio, manager->zoom.image_to_viewport_ratio_max, manager->zoom.fit_level, manager->zoom.actual_size_level);
 }
 
+void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size)
+{
+	if(old_size > 128 || manager->thumbnail.size <= 128) {
+		return
+	}
+	const int num_images = manager->images->position / sizeof(nqiv_image*);
+	int idx;
+	for(idx = 0; idx < num_images; ++idx) {
+		nqiv_image* image;
+		if( nqiv_array_get_bytes(manager->images, idx, sizeof(image*), &image) ) {
+			image->thumbnail_attempted = false;
+		}
+	}
+}
+
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager)
 {
+	const int old_size = manager->thumbnail.size;
 	manager->thumbnail.size += manager->zoom.thumbnail_adjust;
+	nqiv_image_manager_reattempt_thumbnails(manager, old_size);
 }
 
 void nqiv_image_manager_decrement_thumbnail_size(nqiv_image_manager* manager)
 {
+	const int old_size = manager->thumbnail.size;
 	manager->thumbnail.size -= manager->zoom.thumbnail_adjust;
 	if(manager->thumbnail.size <= 0) {
 		manager->thumbnail.size = manager->zoom.thumbnail_adjust;
 	}
+	nqiv_image_manager_reattempt_thumbnails(manager, old_size);
 }
 
 void nqiv_image_form_delay_frame(nqiv_image_form* form)

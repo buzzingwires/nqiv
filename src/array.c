@@ -61,6 +61,7 @@ bool nqiv_array_make_room(nqiv_array* array, const int size)
 bool nqiv_array_insert_bytes(nqiv_array* array, void* ptr, const int count, const int idx)
 {
 	assert(idx >= 0);
+	assert(count > 0);
 	if( !nqiv_array_make_room(array, count) ) {
 		return false;
 	}
@@ -78,6 +79,7 @@ bool nqiv_array_insert_bytes(nqiv_array* array, void* ptr, const int count, cons
 
 void nqiv_array_remove_bytes(nqiv_array* array, const int idx, const int count)
 {
+	assert(count > 0);
 	if(idx < 0) {
 		return;
 	}
@@ -103,6 +105,7 @@ bool nqiv_array_push_bytes(nqiv_array* array, void* ptr, const int count)
 
 bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, void* ptr)
 {
+	assert(count != 0);
 	if(array == NULL) {
 		return false;
 	}

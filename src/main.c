@@ -38,6 +38,12 @@ void nqiv_state_clear(nqiv_state* state)
 	if(state->thread_queue.array != NULL) {
 		nqiv_queue_destroy(&state->thread_queue);
 	}
+	if(state->key_actions.array != NULL) {
+		nqiv_queue_destroy(&state->key_actions);
+	}
+	if(state->cmd.array != NULL) {
+		nqiv_cmd_manager_destroy(&state->cmds);
+	}
 	if(state->keybinds.lookup != NULL) {
 		nqiv_keybind_destroy_manager(&state->keybinds);
 	}
@@ -122,9 +128,11 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	nqiv_log_level arg_log_level = NQIV_LOG_WARNING;
 	char* arg_log_prefix = "#time:%Y-%m-%d_%H:%M:%S%z# #level#: ";
 	*/
-	state->read_from_stdin = false;
 	state->queue_length = STARTING_QUEUE_LENGTH;
 	nqiv_log_init(&state->logger);
+	if( !nqiv_cmd_manager_init(&state->cmds, state) ) {
+		return false;
+	}
 	if( !nqiv_check_and_print_logger_error(&state->logger) ) {
 		return false;
 	}
@@ -142,17 +150,11 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 		return false;
 	}
 	struct optparse_long longopts[] = {
-		{"log-level", 'v', OPTPARSE_REQUIRED},
-		{"log-stream", 'l', OPTPARSE_REQUIRED},
-		{"log-prefix", 'L', OPTPARSE_REQUIRED},
-		{"read-from-stdin", 'r', OPTPARSE_NONE},
-		{"thumbnail-root", 'P', OPTPARSE_REQUIRED},
-		{"thumbnail-load", 't', OPTPARSE_NONE},
-		{"thumbnail-save", 'T', OPTPARSE_NONE},
-		{"thumbnail-size", 'S', OPTPARSE_REQUIRED},
-		{"accepted-extension", 'e', OPTPARSE_REQUIRED},
-		{"keybind", 'k', OPTPARSE_REQUIRED},
-		{"queue-length", 'q', OPTPARSE_REQUIRED},
+		{"cmd-from-stdin", 's', OPTPARSE_NONE},
+		{"cmd", 'c', OPTPARSE_REQUIRED},
+		{"cfg", 'C', OPTPARSE_REQUIRED},
+		{"thread-count", 't', OPTPARSE_REQUIRED},
+		{"help", 'h', OPTPARSE_NONE},
 		{0}
 	};
 	struct optparse options;
@@ -161,75 +163,36 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	int tmpint = 0;
     while ((option = optparse_long(&options, longopts, NULL)) != -1) {
         switch (option) {
-        case 'v':
-			state->logger.level = nqiv_log_level_from_string(options.optarg);
-			if(state->logger.level == NQIV_LOG_UNKNOWN) {
-				fprintf(stderr, "Unknown log level %s", options.optarg);
-				return false;
-			}
-            break;
-        case 'l':
-			if( !nqiv_add_logger_path(&state->logger, options.optarg) ) {
-				return false;
-			}
-            break;
-        case 'L':
-			nqiv_log_set_prefix_format(&state->logger, options.optarg);
-			if( !nqiv_check_and_print_logger_error(&state->logger) ) {
-				return false;
-			}
-            break;
-		case 'r':
-			state->read_from_stdin = true;
-			break;
-        case 'P':
-			if(strlen(options.optarg) < 1) {
-				fprintf(stderr, "Thumbnail root must be at least one character long.\n");
-				return false;
-			}
-			if( !nqiv_image_manager_set_thumbnail_root(&state->images, options.optarg) ) {
-				fprintf(stderr, "Failed to set thumbnail root.\n");
+		case 's':
+			if( !nqiv_cmd_consume_stream(&state->cmds, stdin) ) {
 				return false;
 			}
 			break;
-        case 'S':
+		case 'c':
+			if( !nqiv_cmd_add_line_and_parse(&state->cmds, options.optarg) ) {
+				return false;
+			}
+			break;
+		case 'C':
+			if( !nqiv_cmd_consume_stream_from_path(&state->cmds, options.optarg) ) {
+				return false;
+			}
+			break;
+		case 't':
             tmpint = strtol(options.optarg, NULL, 10);
 			if(tmpint <= 0 || errno == ERANGE) {
-				fprintf(stderr, "Thumbnail size of %s must be a valid base-ten integer and greater than or equal to %d\n", options.optarg, 1);
+				fprintf(stderr, "Number of threads %d must be greater than 0\n", options.optarg);
 				return false;
 			}
-			state->images.thumbnail.size = tmpint;
-            break;
-		case 't':
-			state->images.thumbnail.load = true;
+			state->thread_count = tmpint;
 			break;
-		case 'T':
-			state->images.thumbnail.save = true;
+		case 'h':
+			fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.");
+			fprintf(stderr, "-c/--cmd <path> Issue a single command to the image viewer's command processor. Also pass help to get information about commands.");
+			fprintf(stderr, "-C/--cfg <cmd> Specify a config file to be read by the image viewer's command processor.");
+			fprintf(stderr, "-t/--thread-count <positive> Number of worker threads.");
+			fprintf(stderr, "-h/--help Print this help message.");
 			break;
-		case 'e':
-			if( !nqiv_image_manager_add_extension(&state->images, options.optarg) ) {
-				fprintf(stderr, "Failed to add allowed extension of %s\n", options.optarg);
-				return false;
-			}
-			break;
-        case 'k':
-			if( !nqiv_keybind_add_from_text(&state->keybinds, options.optarg) ) {
-				fprintf(stderr, "Failed to add keybind of %s\n", options.optarg);
-				return false;
-			}
-			break;
-        case 'q':
-            tmpint = strtol(options.optarg, NULL, 10);
-			if(tmpint < STARTING_QUEUE_LENGTH || errno == ERANGE) {
-				fprintf(stderr, "Queue length of %s must be a valid base-ten integer and greater than or equal to %d\n", options.optarg, STARTING_QUEUE_LENGTH);
-				return false;
-			}
-			state->queue_length = tmpint;
-			if( !nqiv_state_expand_queues(state) ) {
-				fprintf(stderr, "Failed to grow to queue length of %s\n", options.optarg);
-				return false;
-			}
-            break;
         case '?':
             fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
 			return false;
@@ -243,13 +206,11 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			}
 		}
 	}
-	/* TODO: STDIN */
 	return true;
 } /* parse_args */
 
 bool nqiv_setup_sdl(nqiv_state* state)
 {
-	/* TODO Starting size? */
 	if( SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0 ) {
 		nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to init SDL. SDL Error: %s\n", SDL_GetError() );
 		return false;
@@ -324,7 +285,6 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 		nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL event for messages from threads. SDL Error: %s\n", SDL_GetError() );
 		return false;
 	}
-	state->thread_count = omp_get_num_threads();
 	state->thread_locks = (omp_lock_t*)calloc( state->thread_count, sizeof(omp_lock_t) );
 	if(state->thread_locks == NULL) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to allocate memory for %d thread locks.\n", state->thread_count);
@@ -340,10 +300,16 @@ void nqiv_unlock_threads(nqiv_state* state)
 	nqiv_act_on_thread_locks(state, omp_unset_lock);
 }
 
-bool nqiv_send_thread_event(nqiv_state* state, nqiv_event* event)
+bool nqiv_send_thread_event_base(nqiv_state* state, nqiv_event* event, const bool force)
 {
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Sending event.\n");
-		const bool event_sent = nqiv_queue_push(&state->thread_queue, sizeof(nqiv_event), event);
+		bool event_sent;
+		if(force) {
+			nqiv_queue_push_force(&state->thread_queue, sizeof(nqiv_event), event);
+			event_sent = true;
+		} else {
+			event_sent = nqiv_queue_push(&state->thread_queue, sizeof(nqiv_event), event);
+		}
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent attempted, status: %s.\n", event_sent ? "Success" : "Failure");
 		if(!event_sent) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Failed to send event.\n");
@@ -357,6 +323,16 @@ bool nqiv_send_thread_event(nqiv_state* state, nqiv_event* event)
 		nqiv_unlock_threads(state);
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for event.\n");
 		return true;
+}
+
+bool nqiv_send_thread_event(nqiv_state* state, nqiv_event* event)
+{
+	return nqiv_send_thread_event_base(state, event, false);
+}
+
+bool nqiv_send_thread_event_force(nqiv_state* state, nqiv_event* event)
+{
+	return nqiv_send_thread_event_base(state, event, true);
 }
 
 bool render_texture(bool* cleared, nqiv_state* state, SDL_Texture* texture, SDL_Rect* srcrect, const SDL_Rect* dstrect)
@@ -865,6 +841,7 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 	}
 }
 
+/* TODO Won't running simulated just also run the events on non-simulated events? */
 void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, const bool simulated, const bool key_up)
 {
 	nqiv_key_action action;
@@ -1046,7 +1023,7 @@ bool nqiv_master_thread(nqiv_state* state)
 						omp_unset_lock(&state->thread_queue.lock);
 						render_and_update(state, &running, &result, false, false);
 					} else if( ( Uint32)input_event.user.code == state->cfg_event_number ) {
-						nqiv_handle_keyactions(state, &running, &result, true, false);
+						nqiv_handle_keyactions(state, &running, &result, false, false); /* TODO No simulated actions for now. */
 						render_and_update(state, &running, &result, false, false);
 					}
 				}
@@ -1100,10 +1077,7 @@ bool nqiv_master_thread(nqiv_state* state)
 	nqiv_queue_destroy(&state->key_actions);
 	nqiv_event output_event = {0};
 	output_event.type = NQIV_EVENT_WORKER_STOP;
-	if( !nqiv_send_thread_event(state, &output_event) ) {
-		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to send shutdown signal to threads. Aborting.\n");
-		abort();
-	}
+	nqiv_send_thread_event_force(state, &output_event);
 	return result;
 }
 

@@ -137,6 +137,17 @@ bool nqiv_state_create_thumbnail_selection_texture(nqiv_state* state)
 	return true;
 }
 
+bool nqiv_state_recreate_thumbnail_selection_texture(nqiv_state* state)
+{
+	SDL_Texture* old_texture = state->texture_montage_selection;
+	if( !nqiv_state_create_thumbnail_selection_texture(state) ) {
+		state->texture_montage_selection = old_texture;
+		return false;
+	}
+	SDL_DestroyTexture(old_texture);
+	return true;
+}
+
 bool nqiv_state_create_montage_alpha_background_texture(nqiv_state* state)
 {
 	SDL_Rect thumbnail_rect;
@@ -179,13 +190,66 @@ bool nqiv_state_create_single_color_texture(nqiv_state* state, const SDL_Color* 
 	return true;
 }
 
+bool nqiv_state_recreate_single_color_texture(nqiv_state* state, const SDL_Color* color, SDL_Texture** texture)
+{
+	SDL_Texture* old_texture = *texture;
+	if( !nqiv_state_create_single_color_texture(state, color, texture) ) {
+		*texture = old_texture;
+		return false;
+	}
+	SDL_DestroyTexture(old_texture);
+	return true;
+}
+
+bool nqiv_state_recreate_background_texture(nqiv_state* state)
+{
+	return nqiv_state_recreate_single_color_texture(state, &state->background_color, &texture_background);
+}
+
+bool nqiv_state_recreate_error_texture(nqiv_state* state)
+{
+	return nqiv_state_recreate_single_color_texture(state, &state->error_color, &texture_montage_error_background);
+}
+
+bool nqiv_state_recreate_loading_texture(nqiv_state* state)
+{
+	return nqiv_state_recreate_single_color_texture(state, &state->loading_color, &texture_montage_unloaded_background);
+}
+
 bool nqiv_state_expand_queues(nqiv_state* state)
 {
 	if(!nqiv_array_grow(state->keybinds.lookup, state->queue_length) ||
 	   !nqiv_array_grow(state->images.images, state->queue_length) ||
 	   !nqiv_array_grow(state->images.extensions, state->queue_length) ||
-	   !nqiv_array_grow(state->thread_queue.array, state->queue_length) ) {
+	   !nqiv_array_grow(state->thread_queue.array, state->queue_length) ||
+	   !nqiv_array_grow(state->key_actions.array, state->queue_length) ||
+	   !nqiv_array_grow(state->buffer, state->queue_length) ) {
 		return false;
 	}
+	return true;
+}
+
+
+bool nqiv_state_recreate_all_alpha_background_textures(nqiv_state* state)
+{
+	SDL_Texture* old_alpha_background = state->texture_alpha_background;
+	SDL_Texture* old_montage_alpha_background = state->texture_montage_alpha_background;
+	state->texture_alpha_background = NULL;
+	state->texture_montage_alpha_background = NULL;
+	nqiv_state_create_alpha_background_texture(state);
+	if( state->texture_alpha_background == NULL ) {
+		state->texture_alpha_background = old_alpha_background;
+		state->texture_montage_alpha_background = old_montage_alpha_background;
+		return false;
+	}
+	nqiv_state_create_montage_alpha_background_texture(state);
+	if( state->texture_montage_alpha_background == NULL ) {
+		SDL_DestroyTexture(state->texture_alpha_background);
+		state->texture_alpha_background = old_alpha_background;
+		state->texture_montage_alpha_background = old_montage_alpha_background;
+		return false;
+	}
+	SDL_DestroyTexture(old_alpha_background);
+	SDL_DestroyTexture(old_montage_alpha_background);
 	return true;
 }

@@ -67,81 +67,41 @@ int nqiv_findchar(const char* text, const char query, const int start, const int
 	return -1;
 }
 
-void nqiv_key_print_actions(FILE* stream)
+const char* nqiv_keybind_action_names[] =
 {
-	fprintf(stream, "page_up\n");
-	fprintf(stream, "page_down\n");
-	fprintf(stream, "toggle_montage\n");
-	fprintf(stream, "set_montage\n");
-	fprintf(stream, "set_viewing\n");
-	fprintf(stream, "zoom_in\n");
-	fprintf(stream, "zoom_out\n");
-	fprintf(stream, "pan_left\n");
-	fprintf(stream, "pan_right\n");
-	fprintf(stream, "pan_up\n");
-	fprintf(stream, "pan_down\n");
-	fprintf(stream, "montage_left\n");
-	fprintf(stream, "montage_right\n");
-	fprintf(stream, "montage_up\n");
-	fprintf(stream, "montage_down\n");
-	fprintf(stream, "montage_start\n");
-	fprintf(stream, "montage_end\n");
-	fprintf(stream, "toggle_stretch\n");
-	fprintf(stream, "stretch\n");
-	fprintf(stream, "keep_aspect_ratio\n");
-	fprintf(stream, "reload\n");
-
-}
+	"quit",
+	"page_up",
+	"page_down",
+	"toggle_montage",
+	"set_montage",
+	"set_viewing",
+	"zoom_in",
+	"zoom_out",
+	"pan_left",
+	"pan_right",
+	"pan_up",
+	"pan_down",
+	"montage_left",
+	"montage_right",
+	"montage_up",
+	"montage_down",
+	"montage_start",
+	"montage_end",
+	"toggle_stretch",
+	"stretch",
+	"keep_aspect_ratio",
+	"reload"
+};
 
 nqiv_key_action nqiv_text_to_key_action(const char* text, const int length)
 {
-	if(strncmp(text, "quit", length) == 0 ) {
-		return NQIV_KEY_ACTION_QUIT;
-	} else if(strncmp(text, "page_up", length) == 0) {
-		return NQIV_KEY_ACTION_PAGE_UP;
-	} else if(strncmp(text, "page_down", length) == 0) {
-		return NQIV_KEY_ACTION_PAGE_DOWN;
-	} else if(strncmp(text, "toggle_montage", length) == 0) {
-		return NQIV_KEY_ACTION_TOGGLE_MONTAGE;
-	} else if(strncmp(text, "set_montage", length) == 0) {
-		return NQIV_KEY_ACTION_SET_MONTAGE;
-	} else if(strncmp(text, "set_viewing", length) == 0) {
-		return NQIV_KEY_ACTION_SET_VIEWING;
-	} else if(strncmp(text, "zoom_in", length) == 0) {
-		return NQIV_KEY_ACTION_ZOOM_IN;
-	} else if(strncmp(text, "zoom_out", length) == 0) {
-		return NQIV_KEY_ACTION_ZOOM_OUT;
-	} else if(strncmp(text, "pan_left", length) == 0) {
-		return NQIV_KEY_ACTION_PAN_LEFT;
-	} else if(strncmp(text, "pan_right", length) == 0) {
-		return NQIV_KEY_ACTION_PAN_RIGHT;
-	} else if(strncmp(text, "pan_up", length) == 0) {
-		return NQIV_KEY_ACTION_PAN_UP;
-	} else if(strncmp(text, "pan_down", length) == 0) {
-		return NQIV_KEY_ACTION_PAN_DOWN;
-	} else if(strncmp(text, "montage_left", length) == 0) {
-		return NQIV_KEY_ACTION_MONTAGE_LEFT;
-	} else if(strncmp(text, "montage_right", length) == 0) {
-		return NQIV_KEY_ACTION_MONTAGE_RIGHT;
-	} else if(strncmp(text, "montage_up", length) == 0) {
-		return NQIV_KEY_ACTION_MONTAGE_UP;
-	} else if(strncmp(text, "montage_down", length) == 0) {
-		return NQIV_KEY_ACTION_MONTAGE_DOWN;
-	} else if(strncmp(text, "montage_start", length) == 0) {
-		return NQIV_KEY_ACTION_MONTAGE_START;
-	} else if(strncmp(text, "montage_end", length) == 0) {
-		return NQIV_KEY_ACTION_MONTAGE_END;
-	} else if(strncmp(text, "toggle_stretch", length) == 0) {
-		return NQIV_KEY_ACTION_TOGGLE_STRETCH;
-	} else if(strncmp(text, "stretch", length) == 0) {
-		return NQIV_KEY_ACTION_STRETCH;
-	} else if(strncmp(text, "keep_aspect_ratio", length) == 0) {
-		return NQIV_KEY_ACTION_KEEP_ASPECT_RATIO;
-	} else if(strncmp(text, "reload", length) == 0) {
-		return NQIV_KEY_ACTION_RELOAD;
-	} else {
-		return NQIV_KEY_ACTION_NONE;
+	nqiv_key_action action = NQIV_KEY_ACTION_NONE;
+	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
+		if(strncmp(text, nqiv_keybind_action_names[action], length) == 0) {
+			break;
+		}
 	}
+	return action;
 }
 
 bool nqiv_text_to_keysym(char* text, const int length, SDL_Keysym* key)
@@ -195,19 +155,19 @@ bool nqiv_text_to_keysym(char* text, const int length, SDL_Keysym* key)
 	return success;
 }
 
-bool nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair)
+int nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair)
 {
 	const size_t textlen = strlen(text);
 	if(textlen == 0) {
-		return false;
+		return -1;
 	}
 	const int equal_start = nqiv_findchar(text, '=', textlen - 1, -1);
 	if( equal_start == -1 || textlen <= (size_t)equal_start + 1 ) {
-		return false;
+		return -1;
 	}
 	const nqiv_key_action action = nqiv_text_to_key_action(text + equal_start + 1, textlen - equal_start - 1);
 	if(action == NQIV_KEY_ACTION_NONE) {
-		return false;
+		return -1;
 	}
 	int idx;
 	int section_start;
@@ -238,7 +198,7 @@ bool nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair)
 		memcpy( &pair->key, &tmpkey, sizeof(SDL_Keysym) );
 		pair->action = action;
 	}
-	return success;
+	return equal_start + strlen(nqiv_keybind_action_names[action]) + 1;
 }
 
 bool nqiv_keybind_create_manager(nqiv_keybind_manager* manager, nqiv_log_ctx* logger, const int starting_array_length)
@@ -263,18 +223,6 @@ bool nqiv_keybind_add(nqiv_keybind_manager* manager, const SDL_Keysym* key, cons
 	memcpy( &pair.key, key, sizeof(SDL_Keysym) );
 	pair.action = action;
 	return nqiv_array_push_bytes( manager->lookup, &pair, sizeof(nqiv_keybind_pair) );
-}
-
-bool nqiv_keybind_add_from_text(nqiv_keybind_manager* manager, char* text)
-{
-	bool success = false;
-	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Adding keybind %s.\n", text);
-	nqiv_keybind_pair pair = {0};
-	if( nqiv_keybind_text_to_keybind(text, &pair) ) {
-		nqiv_keybind_add(manager, &pair.key, pair.action);
-		success = true;
-	}
-	return success;
 }
 
 bool nqiv_compare_mod(const Uint16 a, const Uint16 b)

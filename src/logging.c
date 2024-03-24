@@ -10,30 +10,24 @@
 #include "array.h"
 #include "logging.h"
 
+const char* nqiv_log_level_names[] =
+{
+	"any",
+	"debug",
+	"info",
+	"warning",
+	"error",
+};
+
 nqiv_log_level nqiv_log_level_from_string(const char* text)
 {
-	if(strcmp(text, "any") == 0) {
-		return NQIV_LOG_ANY;
-	} else if(strcmp(text, "debug") == 0) {
-		return NQIV_LOG_DEBUG;
-	} else if(strcmp(text, "info") == 0) {
-		return NQIV_LOG_INFO;
-	} else if(strcmp(text, "warning") == 0) {
-		return NQIV_LOG_WARNING;
-	} else if(strcmp(text, "error") == 0) {
-		return NQIV_LOG_ERROR;
-	} else {
-		return NQIV_LOG_UNKNOWN;
+	nqiv_log_level level = NQIV_LOG_LEVEL_UNKNOWN;
+	for(level = NQIV_LOG_LEVEL_ANY; level <= NQIV_LOG_FINAL; level += 10) {
+		if(strcmp(text, nqiv_log_level_names[level / 10]) == 0) {
+			break;
+		}
 	}
-}
-
-void nqiv_log_print_levels(FILE* stream)
-{
-	fprintf(stream, "any\n");
-	fprintf(stream, "debug\n");
-	fprintf(stream, "info\n");
-	fprintf(stream, "warning\n");
-	fprintf(stream, "error\n");
+	return level;
 }
 
 void nqiv_log_clear_error(nqiv_log_ctx* ctx)

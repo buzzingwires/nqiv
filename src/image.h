@@ -131,7 +131,7 @@ void nqiv_log_vips_exception(nqiv_log_ctx* logger, const char* path);
 void nqiv_image_manager_destroy(nqiv_image_manager* manager);
 bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, const int starting_length);
 bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, const int index);
-void nqiv_image_manager_remove(nqiv_image_manager* manager, const int index);
+bool nqiv_image_manager_remove(nqiv_image_manager* manager, const int index);
 bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path);
 bool nqiv_image_manager_set_thumbnail_root(nqiv_image_manager* manager, const char* path);
 bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, char* extension);
@@ -146,6 +146,7 @@ void nqiv_image_manager_zoom_out(nqiv_image_manager* manager);
 void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bool do_zoom, const bool do_stretch, SDL_Rect* srcrect, SDL_Rect* dstrect);
 void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, SDL_Rect* srcrect, SDL_Rect* dstrect);
 
+void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size);
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager);
 void nqiv_image_manager_decrement_thumbnail_size(nqiv_image_manager* manager);
 /* REMOVE? */
