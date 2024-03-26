@@ -93,15 +93,15 @@ const char* nqiv_keybind_action_names[] =
 	"reload"
 };
 
-nqiv_key_action nqiv_text_to_key_action(const char* text, const int length)
+nqiv_key_action nqiv_text_to_key_action(const char* text)
 {
 	nqiv_key_action action = NQIV_KEY_ACTION_NONE;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		if(strncmp(text, nqiv_keybind_action_names[action], length) == 0) {
-			break;
+		if(strncmp(text, nqiv_keybind_action_names[action], strlen(nqiv_keybind_action_names[action])) == 0) {
+			return action;
 		}
 	}
-	return action;
+	return NQIV_KEY_ACTION_NONE;
 }
 
 bool nqiv_text_to_keysym(char* text, const int length, SDL_Keysym* key)
@@ -165,7 +165,7 @@ int nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair)
 	if( equal_start == -1 || textlen <= (size_t)equal_start + 1 ) {
 		return -1;
 	}
-	const nqiv_key_action action = nqiv_text_to_key_action(text + equal_start + 1, textlen - equal_start - 1);
+	const nqiv_key_action action = nqiv_text_to_key_action(text + equal_start + 1);
 	if(action == NQIV_KEY_ACTION_NONE) {
 		return -1;
 	}

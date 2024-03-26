@@ -61,7 +61,7 @@ typedef struct nqiv_keybind_manager
 bool nqiv_keybind_create_manager(nqiv_keybind_manager* manager, nqiv_log_ctx* logger, const int starting_array_length);
 /*void nqiv_keybind_remove(nqiv_keybind_manager manager, const SDL_Keysym* key, const nqiv_key_action action);*/
 void nqiv_key_print_actions(FILE* stream);
-nqiv_key_action nqiv_text_to_key_action(const char* text, const int length);
+nqiv_key_action nqiv_text_to_key_action(const char* text);
 int nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair);
 bool nqiv_keybind_add(nqiv_keybind_manager* manager, const SDL_Keysym* key, const nqiv_key_action action);
 nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manager* manager, const SDL_Keysym* key, nqiv_queue* output);

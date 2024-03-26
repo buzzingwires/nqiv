@@ -292,7 +292,10 @@ bool nqiv_cmd_parser_append_extension(nqiv_cmd_manager* manager, nqiv_cmd_arg_to
 bool nqiv_cmd_parser_append_image(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	const char data_end = nqiv_cmd_tmpterm(tokens[0]->raw, tokens[0]->length);
-	const bool output = nqiv_image_manager_append(&manager->state->images, tokens[0]->raw);
+	bool output = false;
+	if( nqiv_image_manager_has_path_extension(&manager->state->images, tokens[0]->raw) ) {
+		output = nqiv_image_manager_append(&manager->state->images, tokens[0]->raw);
+	}
 	nqiv_cmd_tmpret(tokens[0]->raw, tokens[0]->length, data_end);
 	return output;
 }
@@ -406,7 +409,7 @@ void nqiv_cmd_parser_print_thumbnail_path(nqiv_cmd_manager* manager)
 {
 	if(manager->state->images.thumbnail.root != NULL) {
 		fprintf(stdout, "%s", manager->state->images.thumbnail.root);
-	} else {
+	} else if(!manager->print_settings.dumpcfg) {
 		fprintf(stdout, "UNSET");
 	}
 }
@@ -418,21 +421,31 @@ void nqiv_cmd_parser_print_no_resample_oversized(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "\n");
-	nqiv_cmd_print_indent(manager);
-	fprintf(stdout, "%d\n", manager->state->queue_length);
-	nqiv_cmd_print_indent(manager);
-	fprintf(stdout, "Keybinds: %d\n", manager->state->keybinds.lookup->data_length);
-	nqiv_cmd_print_indent(manager);
-	fprintf(stdout, "Images: %d\n", manager->state->images.images->data_length);
-	nqiv_cmd_print_indent(manager);
-	fprintf(stdout, "Image extensions: %d\n", manager->state->images.extensions->data_length);
-	nqiv_cmd_print_indent(manager);
-	fprintf(stdout, "Thread Queue: %d\n", manager->state->thread_queue.array->data_length);
-	nqiv_cmd_print_indent(manager);
-	fprintf(stdout, "Key Actions: %d\n", manager->state->key_actions.array->data_length);
-	nqiv_cmd_print_indent(manager);
-	fprintf(stdout, "Cmd Buffer: %d\n", manager->state->cmds.buffer->data_length);
+	if(!manager->print_settings.dumpcfg) {
+		fprintf(stdout, "\n");
+		nqiv_cmd_print_indent(manager);
+		fprintf(stdout, "%d\n", manager->state->queue_length);
+		nqiv_cmd_print_indent(manager);
+		fprintf(stdout, "Keybinds: %d\n", manager->state->keybinds.lookup->data_length);
+		nqiv_cmd_print_indent(manager);
+		fprintf(stdout, "Images: %d\n", manager->state->images.images->data_length);
+		nqiv_cmd_print_indent(manager);
+		fprintf(stdout, "Image extensions: %d\n", manager->state->images.extensions->data_length);
+		nqiv_cmd_print_indent(manager);
+		fprintf(stdout, "Thread Queue: %d\n", manager->state->thread_queue.array->data_length);
+		nqiv_cmd_print_indent(manager);
+		fprintf(stdout, "Key Actions: %d\n", manager->state->key_actions.array->data_length);
+		nqiv_cmd_print_indent(manager);
+		fprintf(stdout, "Cmd Buffer: %d\n", manager->state->cmds.buffer->data_length);
+	} else {
+		fprintf(stdout, "%d\n", manager->state->queue_length);
+		fprintf(stdout, "#Keybinds: %d\n", manager->state->keybinds.lookup->data_length);
+		fprintf(stdout, "#Images: %d\n", manager->state->images.images->data_length);
+		fprintf(stdout, "#Image extensions: %d\n", manager->state->images.extensions->data_length);
+		fprintf(stdout, "#Thread Queue: %d\n", manager->state->thread_queue.array->data_length);
+		fprintf(stdout, "#Key Actions: %d\n", manager->state->key_actions.array->data_length);
+		fprintf(stdout, "#Cmd Buffer: %d", manager->state->cmds.buffer->data_length);
+	}
 }
 
 void nqiv_cmd_parser_print_log_level(nqiv_cmd_manager* manager)
@@ -442,7 +455,11 @@ void nqiv_cmd_parser_print_log_level(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_log_prefix(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%s", manager->state->logger.prefix_format);
+	if( strlen(manager->state->logger.prefix_format) == 0 && !manager->print_settings.dumpcfg ) {
+		fprintf(stdout, "UNSET");
+	} else {
+		fprintf(stdout, "%s", manager->state->logger.prefix_format);
+	}
 }
 
 void nqiv_cmd_parser_print_parse_error_quit(nqiv_cmd_manager* manager)
@@ -503,11 +520,18 @@ void nqiv_cmd_parser_print_window_width(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_delay_accel(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "\n");
 	nqiv_key_action action;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		nqiv_cmd_print_indent(manager);
-		fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
+		if(!manager->print_settings.dumpcfg) {
+			nqiv_cmd_print_indent(manager);
+			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
+		} else if(action == NQIV_KEY_ACTION_QUIT) {
+			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
+		} else if(action != NQIV_KEY_ACTION_MAX) {
+			fprintf(stdout, "%s%s %lu\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
+		} else {
+			fprintf(stdout, "%s%s %lu", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
+		}
 	}
 }
 
@@ -518,11 +542,18 @@ void nqiv_cmd_parser_print_delay_accel_default(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_minimum_delay(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "\n");
 	nqiv_key_action action;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		nqiv_cmd_print_indent(manager);
-		fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
+		if(!manager->print_settings.dumpcfg) {
+			nqiv_cmd_print_indent(manager);
+			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
+		} else if(action == NQIV_KEY_ACTION_QUIT) {
+			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
+		} else if(action != NQIV_KEY_ACTION_MAX) {
+			fprintf(stdout, "%s%s %lu\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
+		} else {
+			fprintf(stdout, "%s%s %lu", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
+		}
 	}
 }
 
@@ -533,11 +564,18 @@ void nqiv_cmd_parser_print_minimum_delay_default(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_repeat_delay(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "\n");
 	nqiv_key_action action;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		nqiv_cmd_print_indent(manager);
-		fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
+		if(!manager->print_settings.dumpcfg) {
+			nqiv_cmd_print_indent(manager);
+			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
+		} else if(action == NQIV_KEY_ACTION_QUIT) {
+			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
+		} else if(action != NQIV_KEY_ACTION_MAX) {
+			fprintf(stdout, "%s%s %lu\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
+		} else {
+			fprintf(stdout, "%s%s %lu", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
+		}
 	}
 }
 
@@ -548,11 +586,18 @@ void nqiv_cmd_parser_print_repeat_delay_default(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_start_delay(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "\n");
 	nqiv_key_action action;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		nqiv_cmd_print_indent(manager);
-		fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
+		if(!manager->print_settings.dumpcfg) {
+			nqiv_cmd_print_indent(manager);
+			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
+		} else if(action == NQIV_KEY_ACTION_QUIT) {
+			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
+		} else if(action != NQIV_KEY_ACTION_MAX) {
+			fprintf(stdout, "%s%s %lu\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
+		} else {
+			fprintf(stdout, "%s%s %lu", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
+		}
 	}
 }
 
@@ -570,11 +615,18 @@ const char* nqiv_press_action_names[] =
 
 void nqiv_cmd_parser_print_send_on_down(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "\n");
 	nqiv_key_action action;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		nqiv_cmd_print_indent(manager);
-		fprintf(stdout, "%s %s\n", nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_down]);
+		if(!manager->print_settings.dumpcfg) {
+			nqiv_cmd_print_indent(manager);
+			fprintf(stdout, "%s %s\n", nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_down]);
+		} else if(action == NQIV_KEY_ACTION_QUIT) {
+			fprintf(stdout, "%s %s\n", nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_down]);
+		} else if(action != NQIV_KEY_ACTION_MAX) {
+			fprintf(stdout, "%s%s %s\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_down]);
+		} else {
+			fprintf(stdout, "%s%s %s", manager->print_settings.prefix, nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_down]);
+		}
 	}
 }
 
@@ -585,11 +637,18 @@ void nqiv_cmd_parser_print_send_on_down_default(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_send_on_up(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "\n");
 	nqiv_key_action action;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		nqiv_cmd_print_indent(manager);
-		fprintf(stdout, "%s %s\n", nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_up]);
+		if(!manager->print_settings.dumpcfg) {
+			nqiv_cmd_print_indent(manager);
+			fprintf(stdout, "%s %s\n", nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_up]);
+		} else if(action == NQIV_KEY_ACTION_QUIT) {
+			fprintf(stdout, "%s %s\n", nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_up]);
+		} else if(action != NQIV_KEY_ACTION_MAX) {
+			fprintf(stdout, "%s%s %s\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_up]);
+		} else {
+			fprintf(stdout, "%s%s %s", manager->print_settings.prefix, nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_up]);
+		}
 	}
 }
 
@@ -1432,6 +1491,7 @@ void nqiv_cmd_print_help(nqiv_cmd_manager* manager, const nqiv_cmd_node* current
 		fprintf(stdout, " - ");
 		current_node->print_value(manager);
 	}
+	fprintf(stdout, " - ");
 	nqiv_cmd_print_args( manager, (const nqiv_cmd_arg_desc* const*)(current_node->args) );
 	fprintf(stdout, "\n");
 	if(!recurse) {
@@ -1456,141 +1516,141 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager* manager, const nqiv_cmd_node* cur
 	switch(desc->type){
 	case NQIV_CMD_ARG_INT:
 		{
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking int arg at %d for token %s for input %s.\n", tidx, current_node->name, data);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking int arg at %d for token %s for input %s\n", tidx, current_node->name, data);
 			char* end = NULL;
 			const int tmp = strtol(data, &end, 10);
 			if(errno != ERANGE && end != NULL && tmp >= desc->setting.of_int.min && tmp <= desc->setting.of_int.max) {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd int arg at %d for token %s is %d for input %s.\n", tidx, current_node->name, tmp, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd int arg at %d for token %s is %d for input %s\n", tidx, current_node->name, tmp, data);
 				token->value.as_int = tmp;
 				output = end - data;
 			} else {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing int arg at %d for token %s with input %s.\n", tidx, current_node->name, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing int arg at %d for token %s with input %s\n", tidx, current_node->name, data);
 			}
 		}
 		break;
 	case NQIV_CMD_ARG_DOUBLE:
 		{
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking double arg at %d for token %s for input %s.\n", tidx, current_node->name, data);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking double arg at %d for token %s for input %s\n", tidx, current_node->name, data);
 			char* end = NULL;
-			const int tmp = strtod(data, &end);
+			const double tmp = strtod(data, &end);
 			if(errno != ERANGE && end != NULL && tmp >= desc->setting.of_double.min && tmp <= desc->setting.of_double.max) {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd double at %d for token %s is %f for input %s.\n", tidx, current_node->name, tmp, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd double at %d for token %s is %f for input %s\n", tidx, current_node->name, tmp, data);
 				token->value.as_double = tmp;
 				output = end - data;
 			} else {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing double arg at %d for token %s with input %s.\n", tidx, current_node->name, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing double arg at %d for token %s with input %s\n", tidx, current_node->name, data);
 			}
 		}
 		break;
 	case NQIV_CMD_ARG_UINT64:
 		{
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking uint64 arg at %d for token %s for input %s.\n", tidx, current_node->name, data);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking uint64 arg at %d for token %s for input %s\n", tidx, current_node->name, data);
 			char* end = NULL;
 			const int tmp = strtol(data, &end, 10);
 			if(errno != ERANGE && end != NULL && (Uint64)tmp >= desc->setting.of_Uint64.min && (Uint64)tmp <= desc->setting.of_Uint64.max) {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd uint64 arg at %d for token %s is %d for input %s.\n", tidx, current_node->name, tmp, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd uint64 arg at %d for token %s is %d for input %s\n", tidx, current_node->name, tmp, data);
 				token->value.as_Uint64 = (Uint64)tmp;
 				output = end - data;
 			} else {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing uint64 arg at %d for token %s with input %s.\n", tidx, current_node->name, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing uint64 arg at %d for token %s with input %s\n", tidx, current_node->name, data);
 			}
 		}
 		break;
 	case NQIV_CMD_ARG_UINT8:
 		{
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking uint8 arg at %d for token %s for input %s.\n", tidx, current_node->name, data);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking uint8 arg at %d for token %s for input %s\n", tidx, current_node->name, data);
 			char* end = NULL;
 			const int tmp = strtol(data, &end, 10);
 			if(errno != ERANGE && end != NULL && tmp >= 0 && tmp <= 255) {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd uint8 arg at %d for token %s is %d for input %s.\n", tidx, current_node->name, tmp, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd uint8 arg at %d for token %s is %d for input %s\n", tidx, current_node->name, tmp, data);
 				token->value.as_Uint8 = (Uint8)tmp;
 				output = end - data;
 			} else {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing uint8 arg at %d for token %s with input %s.\n", tidx, current_node->name, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing uint8 arg at %d for token %s with input %s\n", tidx, current_node->name, data);
 			}
 		}
 		break;
 	case NQIV_CMD_ARG_BOOL:
 		{
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking bool arg at %d for token %s for input %s.\n", tidx, current_node->name, data);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking bool arg at %d for token %s for input %s\n", tidx, current_node->name, data);
 			if(strcmp(data, "true") == 0) {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd bool arg at %d for token %s is true for input %s.\n", tidx, current_node->name, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd bool arg at %d for token %s is true for input %s\n", tidx, current_node->name, data);
 				token->value.as_bool = true;
 				output = strlen("true");
 			} else if(strcmp(data, "false") == 0) {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd bool arg at %d for token %s is false for input %s.\n", tidx, current_node->name, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd bool arg at %d for token %s is false for input %s\n", tidx, current_node->name, data);
 				token->value.as_bool = false;
 				output = strlen("false");
 			} else {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing bool arg at %d for token %s with input %s.\n", tidx, current_node->name, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing bool arg at %d for token %s with input %s\n", tidx, current_node->name, data);
 			}
 		}
 		break;
 	case NQIV_CMD_ARG_LOG_LEVEL:
 		{
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking log level arg at %d for token %s for input %s.\n", tidx, current_node->name, data);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking log level arg at %d for token %s for input %s\n", tidx, current_node->name, data);
 			const nqiv_log_level tmp = nqiv_log_level_from_string(data);
 			if(tmp != NQIV_LOG_UNKNOWN) {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd log level arg at %d for token %s is %s for input %s.\n", tidx, current_node->name, nqiv_log_level_names[tmp / 10], data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd log level arg at %d for token %s is %s for input %s\n", tidx, current_node->name, nqiv_log_level_names[tmp / 10], data);
 				token->value.as_log_level = tmp;
 				output = strlen(nqiv_log_level_names[tmp / 10]);
 			} else {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing log level arg at %d for token %s with input %s.\n", tidx, current_node->name, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing log level arg at %d for token %s with input %s\n", tidx, current_node->name, data);
 			}
 		}
 		break;
 	case NQIV_CMD_ARG_PRESS_ACTION:
 		{
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking press action arg at %d for token %s for input %s.\n", tidx, current_node->name, data);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking press action arg at %d for token %s for input %s\n", tidx, current_node->name, data);
 			nqiv_keyrate_press_action tmp;
 			if( nqiv_keyrate_press_action_from_string(data, &tmp) ) {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd press action arg at %d for token %s is %s for input %s.\n", tidx, current_node->name, nqiv_press_action_names[tmp], data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd press action arg at %d for token %s is %s for input %s\n", tidx, current_node->name, nqiv_press_action_names[tmp], data);
 				token->value.as_press_action = tmp;
 				output = strlen(nqiv_press_action_names[tmp]);
 			} else {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing press action arg at %d for token %s with input %s.\n", tidx, current_node->name, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing press action arg at %d for token %s with input %s\n", tidx, current_node->name, data);
 			}
 		}
 		break;
 	case NQIV_CMD_ARG_KEY_ACTION:
 		{
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking key action arg at %d for token %s for input %s.\n", tidx, current_node->name, data);
-			const nqiv_key_action tmp = nqiv_text_to_key_action(data, eolpos - start_idx);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking key action arg at %d for token %s for input %s\n", tidx, current_node->name, data);
+			const nqiv_key_action tmp = nqiv_text_to_key_action(data);
 			if(tmp != NQIV_KEY_ACTION_NONE) {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd key action arg at %d for token %s is %s for input %s.\n", tidx, current_node->name, nqiv_keybind_action_names[tmp], data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd key action arg at %d for token %s is %s for input %s\n", tidx, current_node->name, nqiv_keybind_action_names[tmp], data);
 				token->value.as_key_action = tmp;
 				output = strlen(nqiv_keybind_action_names[tmp]);
 			} else {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing key action arg at %d for token %s with input %s.\n", tidx, current_node->name, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing key action arg at %d for token %s with input %s\n", tidx, current_node->name, data);
 			}
 		}
 		break;
 	case NQIV_CMD_ARG_KEYBIND:
 		{
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking keybind arg at %d for token %s for input %s.\n", tidx, current_node->name, data);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking keybind arg at %d for token %s for input %s\n", tidx, current_node->name, data);
 			nqiv_keybind_pair tmp;
 			const int length = nqiv_keybind_text_to_keybind(mutdata_start, &tmp);
 			if(length != -1) {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd keybind arg at %d for token %s for input %s.\n", tidx, current_node->name, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd keybind arg at %d for token %s for input %s\n", tidx, current_node->name, data);
 				memcpy( &token->value.as_keybind, &tmp, sizeof(nqiv_keybind_pair) );
 				output = length;
 			} else {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing keybind arg at %d for token %s with input %s.\n", tidx, current_node->name, data);
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing keybind arg at %d for token %s with input %s\n", tidx, current_node->name, data);
 			}
 		}
 		break;
 	case NQIV_CMD_ARG_STRING:
 		if(desc->setting.of_string.spaceless) {
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking spaceless arg at %d for token %s for input %s.\n", tidx, current_node->name, data);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking spaceless arg at %d for token %s for input %s\n", tidx, current_node->name, data);
 			const int length = nqiv_cmd_scan_whitespace(data, 0, eolpos - start_idx, NULL);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd spaceless string at %d for token %s for input %s\n", tidx, current_node->name, data);
 			if(length != -1) {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd spaceless string at %d for token %s for input %s.\n", tidx, current_node->name, data);
 				output = length;
 			} else {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing spaceless string arg at %d for token %s with input %s.\n", tidx, current_node->name, data);
+				output = eolpos - start_idx;
 			}
 		} else {
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd string at %d for token %s for input %s.\n", tidx, current_node->name, data);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd string at %d for token %s for input %s\n", tidx, current_node->name, data);
 			output = eolpos - start_idx;
 		}
 		break;
@@ -1615,9 +1675,8 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager* manager, const nqiv_cmd_node* current
 		const int next_text_offset = nqiv_cmd_scan_not_whitespace(data, idx, eolpos, NULL);
 		if(next_text_offset != -1) {
 			idx = next_text_offset;
-		} else if(idx != start_idx || idx >= eolpos) {
-			error = true;
-			break;
+		} else {
+			idx = eolpos;
 		}
 		const int parse_result = nqiv_cmd_parse_arg_token(manager, current_node, tidx, idx, eolpos, tokens[tidx]);
 		if(parse_result == -1) {
@@ -1681,6 +1740,7 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 	char* data = manager->buffer->data;
 	int idx = nqiv_cmd_scan_not_whitespace_and_eol(data, 0, manager->buffer->position, NULL);
 	if(idx == -1) {
+		nqiv_array_remove_bytes(manager->buffer, 0, manager->buffer->position);
 		return true; /* The entire string must be whitespace- nothing to do. */
 	}
 	const int eolpos = nqiv_cmd_scan_eol(data, idx, manager->buffer->position, NULL);
@@ -1689,13 +1749,13 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 	}
 	if(data[idx] == '#') {
 		const char eolc = nqiv_cmd_tmpterm(data, eolpos);
-		nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd skipping input %s.\n", data + idx);
+		nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd skipping input %s\n", data + idx);
 		nqiv_cmd_tmpret(data, eolpos, eolc);
 		nqiv_array_remove_bytes(manager->buffer, 0, eolpos);
 		return true; /* This line is a comment- ignore it. */
 	}
 	const char eolc = nqiv_cmd_tmpterm(data, eolpos);
-	nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd parsing input %s.\n", data + idx);
+	nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd parsing input %s\n", data + idx);
 	nqiv_cmd_tmpret(data, eolpos, eolc);
 	if(strncmp( &data[idx], "helptree", strlen("helptree") ) == 0) {
 		idx += strlen("helptree");
@@ -1716,17 +1776,13 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 		if(next_text_offset != -1) {
 			idx = next_text_offset;
 		} else if(help || current_node != &nqiv_parser_nodes_root) {
-			const char tmp = nqiv_cmd_tmpterm(data, eolpos);
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd parse error: expected whitespace for input %s.\n", data + idx);
-			nqiv_cmd_tmpret(data, eolpos, tmp);
-			error = true;
 			break;
 		}
 		bool found_node = false;
 		int cidx = 0;
 		while(current_node->children[cidx] != NULL) {
 			const char tmp = nqiv_cmd_tmpterm(data, eolpos);
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking token %s child %s for input %s.\n", current_node->name, current_node->children[cidx]->name, data + idx);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking token %s child %s for input %s\n", current_node->name, current_node->children[cidx]->name, data + idx);
 			nqiv_cmd_tmpret(data, eolpos, tmp);
 			if(strncmp( &data[idx], current_node->children[cidx]->name, strlen(current_node->children[cidx]->name) ) == 0) {
 				current_node = current_node->children[cidx];
@@ -1845,22 +1901,22 @@ bool nqiv_cmd_manager_init(nqiv_cmd_manager* manager, nqiv_state* state)
 	nqiv_cmd_manager_destroy(manager);
 	manager->buffer = nqiv_array_create(state->queue_length);
 	if(manager->buffer == NULL) {
-		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR, "Failed to allocate memory to create cmd buffer of length %d\n.", state->queue_length);
+		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR, "Failed to allocate memory to create cmd buffer of length %d\n", state->queue_length);
 		return false;
 	}
 	manager->state = state;
 	manager->state->cmd_parse_error_quit = true;
 	manager->state->cmd_apply_error_quit = true;
-	nqiv_log_write(&manager->state->logger, NQIV_LOG_INFO, "Initialized cmd manager.\n.");
+	nqiv_log_write(&manager->state->logger, NQIV_LOG_INFO, "Initialized cmd manager.\n");
 	return true;
 }
 
 bool nqiv_cmd_consume_stream_from_path(nqiv_cmd_manager* manager, const char* path)
 {
-	nqiv_log_write(&manager->state->logger, NQIV_LOG_INFO, "Reading commands from %s\n.", path);
+	nqiv_log_write(&manager->state->logger, NQIV_LOG_INFO, "Reading commands from %s\n", path);
 	FILE* stream = fopen(path, "r");
 	if(stream == NULL) {
-		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Failed to read commands from %s\n.", path);
+		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Failed to read commands from %s\n", path);
 		return false;
 	}
 	const bool output = nqiv_cmd_consume_stream(manager, stream);
