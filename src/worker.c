@@ -158,7 +158,7 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 			tell_finished.user.code = (Sint32)event_code;
 			tell_finished.user.data1 = lock;
 			if(SDL_PushEvent(&tell_finished) < 0) {
-				nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to send SDL event from thread %d. SDL Error: %s\n", omp_get_thread_num(), SDL_GetError() );
+				nqiv_log_write( queue->logger, NQIV_LOG_ERROR, "Failed to send SDL event from thread %d. SDL Error: %s\n", omp_get_thread_num(), SDL_GetError() );
 				running = false;
 			}
 			last_event_found = false;

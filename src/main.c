@@ -16,6 +16,7 @@
 #include "keybinds.h"
 #include "keyrate.h"
 #include "state.h"
+#include "cmd.h"
 
 #define OPTPARSE_IMPLEMENTATION
 #define OPTPARSE_API static
@@ -41,7 +42,7 @@ void nqiv_state_clear(nqiv_state* state)
 	if(state->key_actions.array != NULL) {
 		nqiv_queue_destroy(&state->key_actions);
 	}
-	if(state->cmd.array != NULL) {
+	if(state->cmds.buffer != NULL) {
 		nqiv_cmd_manager_destroy(&state->cmds);
 	}
 	if(state->keybinds.lookup != NULL) {
@@ -112,102 +113,15 @@ void nqiv_set_keyrate_defaults(nqiv_keyrate_manager* manager)
 		NQIV_KEY_ACTION_MONTAGE_DOWN,
 		NQIV_KEY_ACTION_MONTAGE_START,
 		NQIV_KEY_ACTION_MONTAGE_END,
+		NQIV_KEY_ACTION_NONE
 	};
-	const int down_actions_len = sizeof(down_actions) / sizeof(nqiv_key_action);
 	int idx;
-	for(idx = 0; idx < down_actions_len; ++idx) {
+	for(idx = 0; down_actions[idx] != NQIV_KEY_ACTION_NONE; ++idx) {
 		nqiv_keyrate_keystate* state = &manager->states[ down_actions[idx] ];
 		state->send_on_up = NQIV_KEYRATE_DENY;
 		state->send_on_down = NQIV_KEYRATE_ALLOW;
 	}
 }
-
-bool nqiv_parse_args(char *argv[], nqiv_state* state)
-{
-	/*
-	nqiv_log_level arg_log_level = NQIV_LOG_WARNING;
-	char* arg_log_prefix = "#time:%Y-%m-%d_%H:%M:%S%z# #level#: ";
-	*/
-	state->queue_length = STARTING_QUEUE_LENGTH;
-	nqiv_log_init(&state->logger);
-	if( !nqiv_cmd_manager_init(&state->cmds, state) ) {
-		return false;
-	}
-	if( !nqiv_check_and_print_logger_error(&state->logger) ) {
-		return false;
-	}
-	if( !nqiv_image_manager_init(&state->images, &state->logger, STARTING_QUEUE_LENGTH) ) {
-		fputs("Failed to initialize image manager.\n", stderr);
-		return false;
-	}
-	if( !nqiv_keybind_create_manager(&state->keybinds, &state->logger, STARTING_QUEUE_LENGTH) ) {
-		fputs("Failed to initialize image manager.\n", stderr);
-		return false;
-	}
-	nqiv_set_keyrate_defaults(&state->keystates);
-	if( !nqiv_queue_init(&state->thread_queue, &state->logger, STARTING_QUEUE_LENGTH) ) {
-		fputs("Failed to initialize thread queue.\n", stderr);
-		return false;
-	}
-	struct optparse_long longopts[] = {
-		{"cmd-from-stdin", 's', OPTPARSE_NONE},
-		{"cmd", 'c', OPTPARSE_REQUIRED},
-		{"cfg", 'C', OPTPARSE_REQUIRED},
-		{"thread-count", 't', OPTPARSE_REQUIRED},
-		{"help", 'h', OPTPARSE_NONE},
-		{0}
-	};
-	struct optparse options;
-	optparse_init(&options, argv);
-	int option;
-	int tmpint = 0;
-    while ((option = optparse_long(&options, longopts, NULL)) != -1) {
-        switch (option) {
-		case 's':
-			if( !nqiv_cmd_consume_stream(&state->cmds, stdin) ) {
-				return false;
-			}
-			break;
-		case 'c':
-			if( !nqiv_cmd_add_line_and_parse(&state->cmds, options.optarg) ) {
-				return false;
-			}
-			break;
-		case 'C':
-			if( !nqiv_cmd_consume_stream_from_path(&state->cmds, options.optarg) ) {
-				return false;
-			}
-			break;
-		case 't':
-            tmpint = strtol(options.optarg, NULL, 10);
-			if(tmpint <= 0 || errno == ERANGE) {
-				fprintf(stderr, "Number of threads %d must be greater than 0\n", options.optarg);
-				return false;
-			}
-			state->thread_count = tmpint;
-			break;
-		case 'h':
-			fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.");
-			fprintf(stderr, "-c/--cmd <path> Issue a single command to the image viewer's command processor. Also pass help to get information about commands.");
-			fprintf(stderr, "-C/--cfg <cmd> Specify a config file to be read by the image viewer's command processor.");
-			fprintf(stderr, "-t/--thread-count <positive> Number of worker threads.");
-			fprintf(stderr, "-h/--help Print this help message.");
-			break;
-        case '?':
-            fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
-			return false;
-        }
-    }
-	char* arg;
-    while ( ( arg = optparse_arg(&options) ) ) {
-		if( nqiv_image_manager_has_path_extension(&state->images, arg) ) {
-			if( !nqiv_image_manager_append(&state->images, arg) ) {
-				return false;
-			}
-		}
-	}
-	return true;
-} /* parse_args */
 
 bool nqiv_setup_sdl(nqiv_state* state)
 {
@@ -293,6 +207,107 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	nqiv_act_on_thread_locks(state, omp_init_lock);
 	return true;
 }
+
+bool nqiv_parse_args(char *argv[], nqiv_state* state)
+{
+	/*
+	nqiv_log_level arg_log_level = NQIV_LOG_WARNING;
+	char* arg_log_prefix = "#time:%Y-%m-%d_%H:%M:%S%z# #level#: ";
+	*/
+	state->queue_length = STARTING_QUEUE_LENGTH;
+	nqiv_log_init(&state->logger);
+	if( !nqiv_cmd_manager_init(&state->cmds, state) ) {
+		return false;
+	}
+	if( !nqiv_check_and_print_logger_error(&state->logger) ) {
+		return false;
+	}
+	if( !nqiv_image_manager_init(&state->images, &state->logger, STARTING_QUEUE_LENGTH) ) {
+		fputs("Failed to initialize image manager.\n", stderr);
+		return false;
+	}
+	if( !nqiv_keybind_create_manager(&state->keybinds, &state->logger, STARTING_QUEUE_LENGTH) ) {
+		fputs("Failed to initialize image manager.\n", stderr);
+		return false;
+	}
+	nqiv_set_keyrate_defaults(&state->keystates);
+	if( !nqiv_queue_init(&state->thread_queue, &state->logger, STARTING_QUEUE_LENGTH) ) {
+		fputs("Failed to initialize thread queue.\n", stderr);
+		return false;
+	}
+	if( !nqiv_queue_init(&state->key_actions, &state->logger, STARTING_QUEUE_LENGTH) ) {
+		fputs("Failed to initialize key action queue.\n", stderr);
+		return false;
+	}
+	nqiv_state_set_default_colors(state);
+	if( !nqiv_setup_sdl(state) ) {
+		nqiv_state_clear(state);
+		return false;
+	}
+	nqiv_setup_montage(state);
+	if( !nqiv_setup_thread_info(state) ) {
+		nqiv_state_clear(state);
+		return false;
+	}
+	struct optparse_long longopts[] = {
+		{"cmd-from-stdin", 's', OPTPARSE_NONE},
+		{"cmd", 'c', OPTPARSE_REQUIRED},
+		{"cfg", 'C', OPTPARSE_REQUIRED},
+		{"thread-count", 't', OPTPARSE_REQUIRED},
+		{"help", 'h', OPTPARSE_NONE},
+		{0}
+	};
+	struct optparse options;
+	optparse_init(&options, argv);
+	int option;
+	int tmpint = 0;
+    while ((option = optparse_long(&options, longopts, NULL)) != -1) {
+        switch (option) {
+		case 's':
+			if( !nqiv_cmd_consume_stream(&state->cmds, stdin) ) {
+				return false;
+			}
+			break;
+		case 'c':
+			if( !nqiv_cmd_add_line_and_parse(&state->cmds, options.optarg) ) {
+				return false;
+			}
+			break;
+		case 'C':
+			if( !nqiv_cmd_consume_stream_from_path(&state->cmds, options.optarg) ) {
+				return false;
+			}
+			break;
+		case 't':
+            tmpint = strtol(options.optarg, NULL, 10);
+			if(tmpint <= 0 || errno == ERANGE) {
+				fprintf(stderr, "Number of threads %d must be greater than 0\n", tmpint);
+				return false;
+			}
+			state->thread_count = tmpint;
+			break;
+		case 'h':
+			fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.\n");
+			fprintf(stderr, "-c/--cmd <cmd> Issue a single command to the image viewer's command processor. Also pass help to get information about commands.\n");
+			fprintf(stderr, "-C/--cfg <path> Specify a config file to be read by the image viewer's command processor.\n");
+			fprintf(stderr, "-t/--thread-count <positive> Number of worker threads.\n");
+			fprintf(stderr, "-h/--help Print this help message.\n");
+			return false;
+        case '?':
+            fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
+			return false;
+        }
+    }
+	char* arg;
+    while ( ( arg = optparse_arg(&options) ) ) {
+		if( nqiv_image_manager_has_path_extension(&state->images, arg) ) {
+			if( !nqiv_image_manager_append(&state->images, arg) ) {
+				return false;
+			}
+		}
+	}
+	return true;
+} /* parse_args */
 
 void nqiv_unlock_threads(nqiv_state* state)
 {
@@ -979,9 +994,6 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 
 bool nqiv_master_thread(nqiv_state* state)
 {
-	if( !nqiv_queue_init(&state->key_actions, &state->logger, STARTING_QUEUE_LENGTH) ) {
-		return false;
-	}
 	bool result = true;
 	bool running = true;
 	while(running) {
@@ -1074,7 +1086,6 @@ bool nqiv_master_thread(nqiv_state* state)
 		}
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Finished waiting on events.\n");
-	nqiv_queue_destroy(&state->key_actions);
 	nqiv_event output_event = {0};
 	output_event.type = NQIV_EVENT_WORKER_STOP;
 	nqiv_send_thread_event_force(state, &output_event);
@@ -1122,16 +1133,6 @@ int main(int argc, char *argv[])
 	}
 
 	if( !nqiv_parse_args(argv, &state) ) {
-		nqiv_state_clear(&state);
-		return 1;
-	}
-	nqiv_state_set_default_colors(&state);
-	if( !nqiv_setup_sdl(&state) ) {
-		nqiv_state_clear(&state);
-		return 1;
-	}
-	nqiv_setup_montage(&state);
-	if( !nqiv_setup_thread_info(&state) ) {
 		nqiv_state_clear(&state);
 		return 1;
 	}

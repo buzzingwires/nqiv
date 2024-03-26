@@ -21,8 +21,8 @@ const char* nqiv_log_level_names[] =
 
 nqiv_log_level nqiv_log_level_from_string(const char* text)
 {
-	nqiv_log_level level = NQIV_LOG_LEVEL_UNKNOWN;
-	for(level = NQIV_LOG_LEVEL_ANY; level <= NQIV_LOG_FINAL; level += 10) {
+	nqiv_log_level level = NQIV_LOG_UNKNOWN;
+	for(level = NQIV_LOG_ANY; level <= NQIV_LOG_FINAL; level += 10) {
 		if(strcmp(text, nqiv_log_level_names[level / 10]) == 0) {
 			break;
 		}

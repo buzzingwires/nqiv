@@ -553,6 +553,8 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, 
 	manager->zoom.zoom_in_amount = -0.05;
 	manager->zoom.zoom_out_amount = 0.05;
 	manager->zoom.thumbnail_adjust = 10;
+
+	manager->thumbnail.size = 256;
 	nqiv_log_write(logger, NQIV_LOG_INFO, "Successfully made image manager with starting length of: %d", starting_length);
 	return true;
 }
@@ -609,7 +611,7 @@ bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, co
 		// nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Failed to generate image at path '%s'. Success: %s", path, "false");
 		return false;
 	}
-	const int images_length = state->images->images->position / sizeof(nqiv_image*);
+	const int images_length = manager->images->position / sizeof(nqiv_image*);
 	if(index > images_length) {
 		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Cannot insert image from path '%s' at index %d, greater than the length of the current images array %d.\n", path, index, images_length);
 		return false;
@@ -628,7 +630,7 @@ bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, co
 bool nqiv_image_manager_remove(nqiv_image_manager* manager, const int index)
 {
 	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Removing image from index %d from image manager.\n", index);
-	const int images_length = state->images->images->position / sizeof(nqiv_image*);
+	const int images_length = manager->images->position / sizeof(nqiv_image*);
 	if(index > images_length) {
 		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Cannot remove image at index %d, greater than the length of the current images array %d.\n", index, images_length);
 		return false;
@@ -861,13 +863,13 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, S
 void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size)
 {
 	if(old_size > 128 || manager->thumbnail.size <= 128) {
-		return
+		return;
 	}
 	const int num_images = manager->images->position / sizeof(nqiv_image*);
 	int idx;
 	for(idx = 0; idx < num_images; ++idx) {
 		nqiv_image* image;
-		if( nqiv_array_get_bytes(manager->images, idx, sizeof(image*), &image) ) {
+		if( nqiv_array_get_bytes(manager->images, idx, sizeof(nqiv_image*), &image) ) {
 			image->thumbnail_attempted = false;
 		}
 	}

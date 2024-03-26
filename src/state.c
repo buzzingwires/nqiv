@@ -203,17 +203,17 @@ bool nqiv_state_recreate_single_color_texture(nqiv_state* state, const SDL_Color
 
 bool nqiv_state_recreate_background_texture(nqiv_state* state)
 {
-	return nqiv_state_recreate_single_color_texture(state, &state->background_color, &texture_background);
+	return nqiv_state_recreate_single_color_texture(state, &state->background_color, &state->texture_background);
 }
 
 bool nqiv_state_recreate_error_texture(nqiv_state* state)
 {
-	return nqiv_state_recreate_single_color_texture(state, &state->error_color, &texture_montage_error_background);
+	return nqiv_state_recreate_single_color_texture(state, &state->error_color, &state->texture_montage_error_background);
 }
 
 bool nqiv_state_recreate_loading_texture(nqiv_state* state)
 {
-	return nqiv_state_recreate_single_color_texture(state, &state->loading_color, &texture_montage_unloaded_background);
+	return nqiv_state_recreate_single_color_texture(state, &state->loading_color, &state->texture_montage_unloaded_background);
 }
 
 bool nqiv_state_expand_queues(nqiv_state* state)
@@ -223,7 +223,7 @@ bool nqiv_state_expand_queues(nqiv_state* state)
 	   !nqiv_array_grow(state->images.extensions, state->queue_length) ||
 	   !nqiv_array_grow(state->thread_queue.array, state->queue_length) ||
 	   !nqiv_array_grow(state->key_actions.array, state->queue_length) ||
-	   !nqiv_array_grow(state->buffer, state->queue_length) ) {
+	   !nqiv_array_grow(state->cmds.buffer, state->queue_length) ) {
 		return false;
 	}
 	return true;

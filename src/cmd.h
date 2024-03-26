@@ -5,14 +5,17 @@
 
 #include <SDL2/SDL.h>
 
+#include "typedefs.h"
 #include "array.h"
 #include "state.h"
 #include "logging.h"
 #include "keybinds.h"
 #include "keyrate.h"
 
-#define NQIV_CMD_MAX_ARGS 4
+#define NQIV_CMD_MAX_ARGS 8
+#define NQIV_CMD_MAX_CHILDREN 16
 #define NQIV_CMD_DUMPCFG_BUFFER_LENGTH 1024
+#define NQIV_CMD_ADD_BYTE_BUFFER_LENGTH (sizeof(char) * 1)
 
 typedef enum nqiv_cmd_arg_type
 {
@@ -26,7 +29,7 @@ typedef enum nqiv_cmd_arg_type
 	NQIV_CMD_ARG_KEY_ACTION,
 	NQIV_CMD_ARG_KEYBIND,
 	NQIV_CMD_ARG_STRING,
-} nqiv_event_type;
+} nqiv_cmd_arg_type;
 
 typedef struct nqiv_cmd_arg_desc_setting_int
 {
@@ -62,7 +65,7 @@ typedef union nqiv_cmd_arg_desc_setting
 	nqiv_cmd_arg_desc_setting_Uint64 of_Uint64;
 	nqiv_cmd_arg_desc_setting_double of_double;
 	nqiv_cmd_arg_desc_setting_string of_string;
-	nqiv_cmd_arg_desc_setting_keyaction of_key_action;
+	nqiv_cmd_arg_desc_setting_key_action of_key_action;
 } nqiv_cmd_arg_desc_setting;
 
 typedef struct nqiv_cmd_arg_desc
@@ -92,6 +95,12 @@ typedef struct nqiv_cmd_arg_token
 	nqiv_cmd_arg_value value;
 } nqiv_cmd_arg_token;
 
+struct nqiv_cmd_manager
+{
+	nqiv_state* state;
+	nqiv_array* buffer;
+};
+
 /*Read characters until we get an EOL. Then, begin by traversing the tree to find the name of the node. Once we no longer find names, we begin grabbing the parameters. We do paremeters by seeing if they match whatever format. Then we create an array of structs, with a type enum, pointer to the string, a union with the raw data, if relevant. Whenever we're finished with text, we can traverse the string forward.*/
 typedef struct nqiv_cmd_node nqiv_cmd_node;
 
@@ -102,15 +111,9 @@ struct nqiv_cmd_node
 	char* description;
 	bool (*store_value)(nqiv_cmd_manager*, nqiv_cmd_arg_token**);
 	void (*print_value)(nqiv_cmd_manager*, const int);
-	nqiv_cmd_arg_desc* args[];
-	nqiv_cmd_node* children[];
+	nqiv_cmd_arg_desc* args[NQIV_CMD_MAX_ARGS];
+	nqiv_cmd_node* children[NQIV_CMD_MAX_CHILDREN];
 };
-
-typedef struct nqiv_cmd_manager
-{
-	nqiv_state* state;
-	nqiv_array* buffer;
-} nqiv_cmd_manager;
 
 bool nqiv_cmd_add_line_and_parse(nqiv_cmd_manager* manager, const char* str);
 bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream);

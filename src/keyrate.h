@@ -46,7 +46,7 @@ typedef struct nqiv_keyrate_keystate
 
 typedef struct nqiv_keyrate_manager
 {
-	nqiv_keyrate_keystate states[NQIV_KEY_ACTION_MAX];
+	nqiv_keyrate_keystate states[NQIV_KEY_ACTION_MAX + 1];
 	/* Defaults for each state */
 	nqiv_keyrate_keystate_settings settings;
 	bool send_on_down;

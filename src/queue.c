@@ -74,12 +74,12 @@ void nqiv_queue_push_force(nqiv_queue* queue, const int count, void* entry)
 	assert(entry != NULL);
 	assert(queue != NULL);
 	assert(queue->array != NULL);
-	assert(array->data_length >= count);
+	assert(queue->array->data_length >= count);
 	omp_set_lock(&queue->lock);
 	if( !nqiv_array_push_bytes(queue->array, entry, count) ) {
 		nqiv_log_write(queue->logger, NQIV_LOG_WARNING, "Failed to push to array of length %d, so, we are forcibly overwriting it.\n", queue->array->data_length);
 		nqiv_array_clear(queue->array);
-		const result = nqiv_array_push_bytes(queue->array, entry, count);
+		const bool result = nqiv_array_push_bytes(queue->array, entry, count);
 		assert(result);
 	} else {
 		nqiv_log_write(queue->logger, NQIV_LOG_DEBUG, "Pushed to queue of length %d at position %d.\n", queue->array->data_length, queue->array->position - 1);

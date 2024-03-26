@@ -4,19 +4,21 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "typedefs.h"
 #include "logging.h"
 #include "image.h"
 #include "keybinds.h"
 #include "keyrate.h"
 #include "montage.h"
 #include "queue.h"
+#include "cmd.h"
 
 #include <SDL2/SDL.h>
 #include <omp.h>
 
 #define STARTING_QUEUE_LENGTH 1024
 
-typedef struct nqiv_state
+struct nqiv_state
 {
 	nqiv_log_ctx logger;
 	nqiv_image_manager images;
@@ -53,7 +55,7 @@ typedef struct nqiv_state
 	SDL_Color alpha_checker_color_two;
 	bool cmd_parse_error_quit;
 	bool cmd_apply_error_quit;
-} nqiv_state;
+};
 
 
 bool nqiv_check_and_print_logger_error(nqiv_log_ctx* logger);
