@@ -34,6 +34,17 @@ void nqiv_close_log_streams(nqiv_log_ctx* logger)
 	}
 }
 
+void nqiv_state_clear_thread_locks(nqiv_state* state)
+{
+	int idx;
+	for(idx = 0; idx < state->thread_count; ++idx) {
+		omp_destroy_lock(&state->thread_locks[idx]);
+	}
+	memset( state->thread_locks, 0, sizeof(omp_lock_t) * (state->thread_count + 1) );
+	free(state->thread_locks);
+	state->thread_locks = NULL;
+}
+
 void nqiv_state_clear(nqiv_state* state)
 {
 	if(state->thread_queue.array != NULL) {
@@ -77,11 +88,7 @@ void nqiv_state_clear(nqiv_state* state)
 		SDL_Quit();
 	}
 	if(state->thread_locks != NULL) {
-		int idx;
-		for(idx = 0; idx < state->thread_count; ++idx) {
-			omp_destroy_lock(&state->thread_locks[idx]);
-		}
-		free(state->thread_locks);
+		nqiv_state_clear_thread_locks(state);
 	}
 	if(state->window_title != NULL) {
 		free(state->window_title);
@@ -182,24 +189,34 @@ void nqiv_act_on_thread_locks( nqiv_state* state, void (*action)(omp_lock_t *loc
 {
 	int idx;
 	for(idx = 0; idx < state->thread_count; ++idx) {
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Acted on thread %d.\n", idx);
+		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Acted on worker thread %d.\n", idx);
 		action(&state->thread_locks[idx]);
 	}
 }
 
 bool nqiv_setup_thread_info(nqiv_state* state)
 {
-	state->thread_event_number = SDL_RegisterEvents(1);
-	if(state->thread_event_number == 0xFFFFFFFF) {
-		nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL event for messages from threads. SDL Error: %s\n", SDL_GetError() );
-		return false;
+	if(state->thread_event_number != 0) {
+		state->thread_event_number = SDL_RegisterEvents(1);
+		if(state->thread_event_number == 0xFFFFFFFF) {
+			nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL event for messages from threads. SDL Error: %s\n", SDL_GetError() );
+			return false;
+		}
 	}
-	state->cfg_event_number = SDL_RegisterEvents(1);
-	if(state->cfg_event_number == 0xFFFFFFFF) {
-		nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL event for messages from threads. SDL Error: %s\n", SDL_GetError() );
-		return false;
+	if(state->cfg_event_number != 0) {
+		state->cfg_event_number = SDL_RegisterEvents(1);
+		if(state->cfg_event_number == 0xFFFFFFFF) {
+			nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL event for messages from threads. SDL Error: %s\n", SDL_GetError() );
+			return false;
+		}
 	}
-	state->thread_locks = (omp_lock_t*)calloc( state->thread_count, sizeof(omp_lock_t) );
+	if(state->thread_count == 0) {
+		state->thread_count = 1;
+	}
+	if(state->thread_locks != NULL) {
+		nqiv_state_clear_thread_locks(state);
+	}
+	state->thread_locks = (omp_lock_t*)calloc( state->thread_count + 1, sizeof(omp_lock_t) ); /* XXX: Why do we need this? */
 	if(state->thread_locks == NULL) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to allocate memory for %d thread locks.\n", state->thread_count);
 		return false;

@@ -661,7 +661,7 @@ bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path)
 bool nqiv_image_manager_set_thumbnail_root(nqiv_image_manager* manager, const char* path)
 {
 	const size_t path_len = strlen(path);
-	char* path_ptr = (char*)calloc(1, path_len);
+	char* path_ptr = (char*)calloc(1, path_len + 1);
 	if(path_ptr == NULL) {
 		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Failed to create buffer to store thumbnail root of %s.", path);
 		return false;

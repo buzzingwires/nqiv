@@ -1892,7 +1892,7 @@ bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream)
 
 void nqiv_cmd_manager_destroy(nqiv_cmd_manager* manager)
 {
-	if(!manager->buffer) {
+	if(manager->buffer != NULL) {
 		nqiv_array_destroy(manager->buffer);
 	}
 	memset( manager, 0, sizeof(nqiv_cmd_manager) );
