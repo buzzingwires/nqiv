@@ -56,7 +56,7 @@ double nqiv_montage_calculate_axis(int* counter, const double ratio)
 
 void nqiv_montage_calculate_dimensions(nqiv_montage_state* state)
 {
-	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Caculating montage dimensions.\n");
+	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Calculating montage dimensions.\n");
 	assert(state != NULL);
 	assert(state->images != NULL);
 	assert(state->window != NULL);
@@ -78,6 +78,9 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state)
 	const int images_len = state->images->images->position / sizeof(nqiv_image*);
 	if(state->positions.end > images_len) {
 		state->positions.end = images_len;
+	}
+	if(state->positions.selection < 0) {
+		state->positions.selection = 0;
 	}
 	if(state->positions.selection >= state->positions.end) {
 		state->positions.selection = state->positions.end - 1;

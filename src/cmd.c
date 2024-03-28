@@ -1691,6 +1691,7 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager* manager, const nqiv_cmd_node* current
 		nqiv_cmd_print_help(manager, current_node, false);
 		if(manager->state->cmd_parse_error_quit) {
 			nqiv_cmd_force_quit_main(manager);
+			error = true;
 		} else {
 			error = false;
 		}
@@ -1708,9 +1709,9 @@ bool nqiv_cmd_execute_node(nqiv_cmd_manager* manager, const nqiv_cmd_node* curre
 	}
 	if( !nqiv_cmd_parse_args(manager, current_node, idx, eolpos, token_ptrs) ) {
 		if(manager->state->cmd_parse_error_quit) {
-			return false;
-		} else {
 			return true;
+		} else {
+			return false;
 		}
 	}
 	nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd storing value for %s (%s).\n", current_node->name, current_node->description);
@@ -1719,13 +1720,14 @@ bool nqiv_cmd_execute_node(nqiv_cmd_manager* manager, const nqiv_cmd_node* curre
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error storing value for %s (%s).\n", current_node->name, current_node->description);
 		if(manager->state->cmd_apply_error_quit) {
 			nqiv_cmd_force_quit_main(manager);
-		} else {
 			output = true;
+		} else {
+			output = false;
 		}
 	} else {
-		nqiv_cmd_alert_main(manager);
+		output = false;
 	}
-	return !output;
+	return output;
 }
 
 bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)

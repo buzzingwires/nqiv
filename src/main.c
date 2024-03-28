@@ -317,27 +317,27 @@ void nqiv_unlock_threads(nqiv_state* state)
 
 bool nqiv_send_thread_event_base(nqiv_state* state, nqiv_event* event, const bool force)
 {
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Sending event.\n");
-		bool event_sent;
-		if(force) {
-			nqiv_queue_push_force(&state->thread_queue, sizeof(nqiv_event), event);
-			event_sent = true;
-		} else {
-			event_sent = nqiv_queue_push(&state->thread_queue, sizeof(nqiv_event), event);
-		}
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent attempted, status: %s.\n", event_sent ? "Success" : "Failure");
-		if(!event_sent) {
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Failed to send event.\n");
-			/*
-			nqiv_unlock_threads(state);
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for event.\n");
-			*/
-			return false;
-		}
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent successfully.\n");
+	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Sending event.\n");
+	bool event_sent;
+	if(force) {
+		nqiv_queue_push_force(&state->thread_queue, sizeof(nqiv_event), event);
+		event_sent = true;
+	} else {
+		event_sent = nqiv_queue_push(&state->thread_queue, sizeof(nqiv_event), event);
+	}
+	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent attempted, status: %s.\n", event_sent ? "Success" : "Failure");
+	if(!event_sent) {
+		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Failed to send event.\n");
+		/*
 		nqiv_unlock_threads(state);
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for event.\n");
-		return true;
+		*/
+		return false;
+	}
+	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent successfully.\n");
+	nqiv_unlock_threads(state);
+	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for event.\n");
+	return true;
 }
 
 bool nqiv_send_thread_event(nqiv_state* state, nqiv_event* event)
@@ -866,6 +866,7 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 		} else if(action == NQIV_KEY_ACTION_QUIT) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action quit.\n");
 			*running = false;
+			return;
 		} else if(action == NQIV_KEY_ACTION_MONTAGE_RIGHT) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage right.\n");
 			if(state->in_montage) {
@@ -1086,9 +1087,13 @@ bool nqiv_master_thread(nqiv_state* state)
 		}
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Finished waiting on events.\n");
-	nqiv_event output_event = {0};
-	output_event.type = NQIV_EVENT_WORKER_STOP;
-	nqiv_send_thread_event_force(state, &output_event);
+	int idx;
+	for(idx = 0; idx < state->thread_count; ++idx) {
+		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Killing thread %d.\n", idx);
+		nqiv_event output_event = {0};
+		output_event.type = NQIV_EVENT_WORKER_STOP;
+		nqiv_send_thread_event_force(state, &output_event);
+	}
 	return result;
 }
 
