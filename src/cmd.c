@@ -13,6 +13,7 @@
 #include "state.h"
 #include "keybinds.h"
 #include "keyrate.h"
+#include "pruner.h"
 
 void nqiv_cmd_alert_main(nqiv_cmd_manager* manager)
 {
@@ -279,6 +280,11 @@ bool nqiv_cmd_parser_set_delay_accel_default(nqiv_cmd_manager* manager, nqiv_cmd
 {
 	manager->state->keystates.settings.delay_accel = tokens[0]->value.as_Uint64;
 	return true;
+}
+
+bool nqiv_cmd_parser_append_pruner(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	return nqiv_pruner_append(&manager->state->pruner, &tokens[0]->value.as_pruner);
 }
 
 bool nqiv_cmd_parser_append_extension(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
@@ -739,6 +745,11 @@ nqiv_cmd_arg_desc nqiv_parser_arg_type_string_full = {
 	.setting = { .of_string = {.spaceless = false} },
 };
 
+nqiv_cmd_arg_desc nqiv_parser_arg_type_pruner = {
+	.type = NQIV_CMD_ARG_PRUNER,
+	.setting = { {0} },
+};
+
 nqiv_cmd_node nqiv_parser_nodes_root = {
 	.name = "root",
 	.description = "Root of parsing tree. Prefix help to get help messages on commands, helptree to do the same recursively, or dumpcfg to dump functional commands to set the current configuration. Lines can also be commented by prefixing with #",
@@ -841,6 +852,15 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 					.store_value = nqiv_cmd_parser_append_image,
 					.print_value = NULL,
 					.args = {&nqiv_parser_arg_type_string_full, NULL},
+					.children = {NULL},
+				},
+				&(nqiv_cmd_node)
+				{
+					.name = "pruner",
+					.description = "Declaratively specified pruning instructions. Use help to get list of commands..",
+					.store_value = nqiv_cmd_parser_append_pruner,
+					.print_value = NULL,
+					.args = {&nqiv_parser_arg_type_pruner, NULL},
 					.children = {NULL},
 				},
 				&(nqiv_cmd_node)
@@ -1379,72 +1399,118 @@ int nqiv_cmd_scan_eol(const char* data, const int start, const int end, int* len
 	return nqiv_cmd_scan_subs(data, start, end, false, eol, length);
 }
 
-void nqiv_cmd_print_args(nqiv_cmd_manager* manager, const nqiv_cmd_arg_desc* const* args)
+void nqiv_cmd_print_comment_prefix(const nqiv_cmd_manager* manager)
+{
+	(void) manager;
+
+	fprintf(stdout, "#");
+}
+
+void nqiv_cmd_print_single_arg( nqiv_cmd_manager* manager, const nqiv_cmd_arg_desc* arg, void (*print_prefix)(const nqiv_cmd_manager*) )
+{
+	fprintf(stdout, " ");
+	switch(arg->type) {
+	case NQIV_CMD_ARG_INT:
+		fprintf(stdout, "INT(%d-%d)", arg->setting.of_int.min, arg->setting.of_int.max);
+		break;
+	case NQIV_CMD_ARG_DOUBLE:
+		fprintf(stdout, "DOUBLE(%f-%f)", arg->setting.of_double.min, arg->setting.of_double.max);
+		break;
+	case NQIV_CMD_ARG_UINT64:
+		fprintf(stdout, "UINT64(%lu-%lu)", arg->setting.of_Uint64.min, arg->setting.of_Uint64.max);
+		break;
+	case NQIV_CMD_ARG_UINT8:
+		fprintf(stdout, "UINT8(0-255)");
+		break;
+	case NQIV_CMD_ARG_BOOL:
+		fprintf(stdout, "BOOL(true|false)");
+		break;
+	case NQIV_CMD_ARG_LOG_LEVEL:
+		fprintf(stdout, "LOG_LEVEL(");
+		{
+			nqiv_log_level level;
+			for(level = NQIV_LOG_ANY; level <= NQIV_LOG_ERROR; level += 10) {
+				fprintf(stdout, "%s", nqiv_log_level_names[level / 10]);
+				if(level != NQIV_LOG_FINAL) {
+					fprintf(stdout, "|");
+				}
+			}
+		}
+		fprintf(stdout, ")");
+		break;
+	case NQIV_CMD_ARG_PRESS_ACTION:
+		fprintf(stdout, "PRESS_ACTION(");
+		{
+			nqiv_keyrate_press_action action;
+			for(action = NQIV_KEYRATE_START; action <= NQIV_KEYRATE_END; ++action) {
+				fprintf(stdout, "%s", nqiv_press_action_names[action]);
+				if(action != NQIV_KEYRATE_END) {
+					fprintf(stdout, "|");
+				}
+			}
+		}
+		fprintf(stdout, ")");
+		break;
+	case NQIV_CMD_ARG_KEY_ACTION:
+		fprintf(stdout, "KEY_ACTION");
+		if(!arg->setting.of_key_action.brief) {
+			fprintf(stdout, "\n");
+			nqiv_key_action action;
+			for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
+				print_prefix(manager);
+				fprintf(stdout, "%s\n", nqiv_keybind_action_names[action]);
+			}
+		}
+		break;
+	case NQIV_CMD_ARG_KEYBIND:
+		fprintf(stdout, "<SDL_key_sequence>=<key_action>");
+		break;
+	case NQIV_CMD_ARG_STRING:
+		fprintf(stdout, "STRING(%s)", arg->setting.of_string.spaceless ? "spaceless" : "spaces allowed");
+		break;
+	case NQIV_CMD_ARG_PRUNER:
+		fprintf(stdout, "PRUNER\n");
+		print_prefix(manager);
+		fprintf(stdout, "'no' will clear the option that comes after.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'sum' <MAX> will check the addition of all checked integer values against another specified value to determine success.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'or' will use boolean or with the result of all checks to determine success.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'and' will use boolean and with the result of all checks to determine success.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'unload' will cause specified image datatypes to be unloaded in the event of a failed check.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'thumbnail' will cause thumbnail images to be considered by the following checks.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'image' will cause normal images to be considered by the following checks.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'vips' will cause the following checks to consider vips data only.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'raw' will cause the following checks to consider raw data only.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'surface' will cause the following checks to consider SDL surface data only.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'texture' will cause the following checks to consider SDL texture data only.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'loaded_ahead' <THRESHOLD> <MAX> will check for whether the number of loaded images after the threshold is greater than max.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'loaded_behind' <THRESHOLD> <MAX> will check for whether the number of loaded images before the threshold is greater than max.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'bytes_ahead' <THRESHOLD> <MAX> will check for whether the number of loaded bytes after the threshold is greater than max.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'bytes_behind' <THRESHOLD> <MAX> will check for whether the number of loaded bytes before the threshold is greater than max.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'self_opened' <THRESHOLD> <MAX> will check if the currently-selected image is loaded.\n");
+		break;
+	}
+}
+
+void nqiv_cmd_print_args( nqiv_cmd_manager* manager, const nqiv_cmd_arg_desc* const* args, void (*print_prefix)(const nqiv_cmd_manager*) )
 {
 	int idx = 0;
 	while(args[idx] != NULL) {
-		const nqiv_cmd_arg_desc* arg = args[idx];
-		fprintf(stdout, " ");
-		switch(arg->type) {
-		case NQIV_CMD_ARG_INT:
-			fprintf(stdout, "INT(%d-%d)", arg->setting.of_int.min, arg->setting.of_int.max);
-			break;
-		case NQIV_CMD_ARG_DOUBLE:
-			fprintf(stdout, "DOUBLE(%f-%f)", arg->setting.of_double.min, arg->setting.of_double.max);
-			break;
-		case NQIV_CMD_ARG_UINT64:
-			fprintf(stdout, "UINT64(%lu-%lu)", arg->setting.of_Uint64.min, arg->setting.of_Uint64.max);
-			break;
-		case NQIV_CMD_ARG_UINT8:
-			fprintf(stdout, "UINT8(0-255)");
-			break;
-		case NQIV_CMD_ARG_BOOL:
-			fprintf(stdout, "BOOL(true|false)");
-			break;
-		case NQIV_CMD_ARG_LOG_LEVEL:
-			fprintf(stdout, "LOG_LEVEL(");
-			{
-				nqiv_log_level level;
-				for(level = NQIV_LOG_ANY; level <= NQIV_LOG_ERROR; level += 10) {
-					fprintf(stdout, "%s", nqiv_log_level_names[level / 10]);
-					if(level != NQIV_LOG_FINAL) {
-						fprintf(stdout, "|");
-					}
-				}
-			}
-			fprintf(stdout, ")");
-			break;
-		case NQIV_CMD_ARG_PRESS_ACTION:
-			fprintf(stdout, "PRESS_ACTION(");
-			{
-				nqiv_keyrate_press_action action;
-				for(action = NQIV_KEYRATE_START; action <= NQIV_KEYRATE_END; ++action) {
-					fprintf(stdout, "%s", nqiv_press_action_names[action]);
-					if(action != NQIV_KEYRATE_END) {
-						fprintf(stdout, "|");
-					}
-				}
-			}
-			fprintf(stdout, ")");
-			break;
-		case NQIV_CMD_ARG_KEY_ACTION:
-			fprintf(stdout, "KEY_ACTION");
-			if(!arg->setting.of_key_action.brief) {
-				fprintf(stdout, "\n");
-				nqiv_key_action action;
-				for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-					nqiv_cmd_print_indent(manager);
-					fprintf(stdout, "%s\n", nqiv_keybind_action_names[action]);
-				}
-			}
-			break;
-		case NQIV_CMD_ARG_KEYBIND:
-			fprintf(stdout, "<SDL_key_sequence>=<key_action>");
-			break;
-		case NQIV_CMD_ARG_STRING:
-			fprintf(stdout, "STRING(%s)", arg->setting.of_string.spaceless ? "spaceless" : "spaces allowed");
-			break;
-		}
+		nqiv_cmd_print_single_arg(manager, args[idx], print_prefix);
 		++idx;
 	}
 }
@@ -1462,6 +1528,7 @@ void nqiv_cmd_dumpcfg(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_no
 	}
 	if(current_node->print_value != NULL || current_node->store_value != NULL) {
 		fprintf(stdout, "#%s\n", current_node->description);
+		nqiv_cmd_print_args(manager, (const nqiv_cmd_arg_desc* const*)(current_node->args), nqiv_cmd_print_comment_prefix);
 		if(current_node->print_value != NULL) {
 			fprintf(stdout, "%s", new_cmd);
 			manager->print_settings.prefix = new_cmd;
@@ -1492,7 +1559,7 @@ void nqiv_cmd_print_help(nqiv_cmd_manager* manager, const nqiv_cmd_node* current
 		current_node->print_value(manager);
 	}
 	fprintf(stdout, " - ");
-	nqiv_cmd_print_args( manager, (const nqiv_cmd_arg_desc* const*)(current_node->args) );
+	nqiv_cmd_print_args(manager, (const nqiv_cmd_arg_desc* const*)(current_node->args), nqiv_cmd_print_indent);
 	fprintf(stdout, "\n");
 	if(!recurse) {
 		return;
@@ -1637,6 +1704,19 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager* manager, const nqiv_cmd_node* cur
 			} else {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing keybind arg at %d for token %s with input %s\n", tidx, current_node->name, data);
 			}
+		}
+		break;
+	case NQIV_CMD_ARG_PRUNER:
+		{
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking pruner arg at %d for token %s for input %s\n", tidx, current_node->name, data);
+			nqiv_pruner_desc tmp;
+			if( !nqiv_pruner_create_desc(&manager->state->logger, data, &tmp) ) {
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd pruner arg at %d for token %s for input %s\n", tidx, current_node->name, data);
+				memcpy( &token->value.as_pruner, &tmp, sizeof(nqiv_pruner_desc) );
+			} else {
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing pruner arg at %d for token %s with input %s\n", tidx, current_node->name, data);
+			}
+			output = eolpos - start_idx;
 		}
 		break;
 	case NQIV_CMD_ARG_STRING:

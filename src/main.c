@@ -62,6 +62,9 @@ void nqiv_state_clear(nqiv_state* state)
 	if(state->images.images != NULL) {
 		nqiv_image_manager_destroy(&state->images);
 	}
+	if(state->pruner.pruners != NULL) {
+		nqiv_pruner_destroy(&state->pruner);
+	}
 	if(state->logger.streams != NULL) {
 		nqiv_close_log_streams(&state->logger);
 		nqiv_log_destroy(&state->logger);
@@ -241,6 +244,10 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	}
 	if( !nqiv_image_manager_init(&state->images, &state->logger, STARTING_QUEUE_LENGTH) ) {
 		fputs("Failed to initialize image manager.\n", stderr);
+		return false;
+	}
+	if( !nqiv_pruner_init(&state->pruner, &state->logger, STARTING_QUEUE_LENGTH) ) {
+		fputs("Failed to initialize pruner.\n", stderr);
 		return false;
 	}
 	if( !nqiv_keybind_create_manager(&state->keybinds, &state->logger, STARTING_QUEUE_LENGTH) ) {
@@ -870,6 +877,10 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 	}
 	if(*result != false) {
 		SDL_RenderPresent(state->renderer);
+	}
+	if( !nqiv_pruner_run(&state->pruner, &state->montage, &state->images, &state->thread_queue) ) {
+		*running = false;
+		*result = false;
 	}
 }
 

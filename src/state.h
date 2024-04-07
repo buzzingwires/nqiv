@@ -12,6 +12,7 @@
 #include "montage.h"
 #include "queue.h"
 #include "cmd.h"
+#include "pruner.h"
 
 #include <SDL2/SDL.h>
 #include <omp.h>
@@ -22,6 +23,7 @@ struct nqiv_state
 {
 	nqiv_log_ctx logger;
 	nqiv_image_manager images;
+	nqiv_pruner pruner;
 	nqiv_keybind_manager keybinds;
 	nqiv_keyrate_manager keystates;
 	nqiv_montage_state montage;
