@@ -857,7 +857,7 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 				&(nqiv_cmd_node)
 				{
 					.name = "pruner",
-					.description = "Declaratively specified pruning instructions. Use help to get list of commands..",
+					.description = "Declaratively specified pruning instructions. Use help to get list of commands.",
 					.store_value = nqiv_cmd_parser_append_pruner,
 					.print_value = NULL,
 					.args = {&nqiv_parser_arg_type_pruner, NULL},
@@ -1408,7 +1408,6 @@ void nqiv_cmd_print_comment_prefix(const nqiv_cmd_manager* manager)
 
 void nqiv_cmd_print_single_arg( nqiv_cmd_manager* manager, const nqiv_cmd_arg_desc* arg, void (*print_prefix)(const nqiv_cmd_manager*) )
 {
-	fprintf(stdout, " ");
 	switch(arg->type) {
 	case NQIV_CMD_ARG_INT:
 		fprintf(stdout, "INT(%d-%d)", arg->setting.of_int.min, arg->setting.of_int.max);
@@ -1512,6 +1511,9 @@ void nqiv_cmd_print_args( nqiv_cmd_manager* manager, const nqiv_cmd_arg_desc* co
 	while(args[idx] != NULL) {
 		nqiv_cmd_print_single_arg(manager, args[idx], print_prefix);
 		++idx;
+		if(args[idx] != NULL) {
+			fprintf(stdout, " ");
+		}
 	}
 }
 
@@ -1527,8 +1529,9 @@ void nqiv_cmd_dumpcfg(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_no
 		new_position += sizeof(char);
 	}
 	if(current_node->print_value != NULL || current_node->store_value != NULL) {
-		fprintf(stdout, "#%s\n", current_node->description);
+		fprintf(stdout, "#%s\n#", current_node->description);
 		nqiv_cmd_print_args(manager, (const nqiv_cmd_arg_desc* const*)(current_node->args), nqiv_cmd_print_comment_prefix);
+		fprintf(stdout, "\n");
 		if(current_node->print_value != NULL) {
 			fprintf(stdout, "%s", new_cmd);
 			manager->print_settings.prefix = new_cmd;
