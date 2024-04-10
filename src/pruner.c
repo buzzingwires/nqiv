@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "typedefs.h"
 #include "logging.h"
 #include "array.h"
 #include "event.h"

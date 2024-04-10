@@ -7,7 +7,6 @@
 
 #include "typedefs.h"
 #include "array.h"
-#include "state.h"
 #include "logging.h"
 #include "keybinds.h"
 #include "keyrate.h"
