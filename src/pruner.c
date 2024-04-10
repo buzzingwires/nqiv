@@ -2,8 +2,10 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "typedefs.h"
 #include "logging.h"
 #include "array.h"
+#include "event.h"
 #include "montage.h"
 #include "cmd.h"
 #include "pruner.h"
@@ -50,17 +52,17 @@ typedef struct nqiv_pruner_desc_datapoint
 	nqiv_pruner_desc_datapoint bytes_ahead;
 	nqiv_pruner_desc_datapoint bytes_behind;
 */
-void nqiv_pruner_update_state_boolean(nqiv_pruner_state* state, const bool value)
+void nqiv_pruner_update_state_boolean(nqiv_pruner* pruner, const bool value)
 {
-	state->or_result = state->or_result || value;
-	state->and_result = state->or_result && value;
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "New prune state boolean is or_result: %s and_result: %s\n", state->or_result ? "true" : "false", state->and_result ? "true" : "false");
+	pruner->state.or_result = pruner->state.or_result || value;
+	pruner->state.and_result = pruner->state.or_result && value;
+	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "New prune state boolean is or_result: %s and_result: %s\n", pruner->state.or_result ? "true" : "false", pruner->state.and_result ? "true" : "false");
 }
 
-void nqiv_pruner_update_state_integer(nqiv_pruner_state* state, const int value)
+void nqiv_pruner_update_state_integer(nqiv_pruner* pruner, const int value)
 {
-	state->total_sum += value;
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "New prune state total_sum is %d\n", state->total_sum);
+	pruner->state.total_sum += value;
+	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "New prune state total_sum is %d\n", pruner->state.total_sum);
 }
 
 void nqiv_pruner_run_loaded_self(nqiv_pruner* pruner, nqiv_pruner_desc_datapoint* datapoint, const void* object)
@@ -69,7 +71,7 @@ void nqiv_pruner_run_loaded_self(nqiv_pruner* pruner, nqiv_pruner_desc_datapoint
 		const bool result = object != NULL;
 		datapoint->value.as_bool = result;
 		nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "loaded_self result is: %s\n", result ? "true" : "false");
-		nqiv_pruner_update_state_boolean(&(pruner->state), result);
+		nqiv_pruner_update_state_boolean(pruner, result);
 	}
 }
 
@@ -77,9 +79,9 @@ void nqiv_pruner_loaded_count_body(nqiv_pruner* pruner, nqiv_pruner_desc_datapoi
 {
 	datapoint->value.as_int += increment;
 	const bool result = datapoint->value.as_int > datapoint->condition.as_int_pair[1];
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "count_body result is %s New datapoint value %d compared to %d\n",  ? "true" : "false", datapoint->value.as_int, datapoint->condition.as_int_pair[1]);
-	nqiv_pruner_update_state_boolean(&(pruner->state), result);
-	nqiv_pruner_update_state_integer(&(pruner->state), increment);
+	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "count_body result is %s New datapoint value %d compared to %d\n", result ? "true" : "false", datapoint->value.as_int, datapoint->condition.as_int_pair[1]);
+	nqiv_pruner_update_state_boolean(pruner, result);
+	nqiv_pruner_update_state_integer(pruner, increment);
 }
 
 void nqiv_pruner_run_loaded_ahead(nqiv_pruner* pruner, nqiv_pruner_desc_datapoint* datapoint, const void* object)
@@ -154,8 +156,8 @@ void nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqi
 
 bool nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_image_manager* images, nqiv_queue* thread_queue)
 {
-	memset( &pruners->state, 0, sizeof(nqiv_pruner_state) );
-	const int num_descs = manager->pruner->position / sizeof(nqiv_pruner_desc);
+	memset( &pruner->state, 0, sizeof(nqiv_pruner_state) );
+	const int num_descs = pruner->pruners->position / sizeof(nqiv_pruner_desc);
 	int idx;
 	for(idx = 0; idx < num_descs; ++idx) {
 		nqiv_pruner_desc desc;
@@ -169,12 +171,12 @@ bool nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_imag
 					nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_set_lock(&image->lock);
 					nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-					pruners->state.idx = iidx;
-					pruners->state.selection = montage->positions.selection;
+					pruner->state.idx = iidx;
+					pruner->state.selection = montage->positions.selection;
 					nqiv_pruner_run_desc(pruner, &desc, image);
-					if( (desc.counter & NQIV_PRUNER_COUNT_OP_SUM && pruner->state->total_sum > desc.state_check->total_sum) ||
-						(desc.counter & NQIV_PRUNER_COUNT_OP_OR && pruner->state->or_result == desc.state_check->or_result) ||
-						(desc.counter & NQIV_PRUNER_COUNT_OP_AND && pruner->state->and_result == desc.state_check->and_result) ) {
+					if( (desc.counter & NQIV_PRUNER_COUNT_OP_SUM && pruner->state.total_sum > desc.state_check.total_sum) ||
+						(desc.counter & NQIV_PRUNER_COUNT_OP_OR && pruner->state.or_result == desc.state_check.or_result) ||
+						(desc.counter & NQIV_PRUNER_COUNT_OP_AND && pruner->state.and_result == desc.state_check.and_result) ) {
 							nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Pruning image %s.\n", image->image.path);
 							nqiv_event event = {0};
 							event.type = NQIV_EVENT_IMAGE_LOAD;
@@ -183,17 +185,22 @@ bool nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_imag
 							event.options.image_load.image_options.vips = desc.unload_vips;
 							event.options.image_load.image_options.raw = desc.unload_raw;
 							event.options.image_load.image_options.surface = desc.unload_surface;
-							event.options.image_load.image_options.texture = desc.unload_texture;
 							event.options.image_load.thumbnail_options.unload = true;
 							event.options.image_load.thumbnail_options.vips = desc.unload_thumbnail_vips;
 							event.options.image_load.thumbnail_options.raw = desc.unload_thumbnail_raw;
 							event.options.image_load.thumbnail_options.surface = desc.unload_thumbnail_surface;
-							event.options.image_load.thumbnail_options.texture = desc.unload_thumbnail_texture;
-							if( !nqiv_queue_push(thread_queue, sizeof(nqiv_event), event) ) {
+							if( !nqiv_queue_push(thread_queue, sizeof(nqiv_event), &event) ) {
 								nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 								omp_unset_lock(&image->lock);
 								nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 								return false;
+							}
+							/* TODO: This cannot be called from a thread. If we plan to have the pruner run in a thread, we need to do this in a thread safe way, probably by sending an SDL event for master. */
+							if(desc.unload_texture && image->image.texture != NULL) {
+								SDL_DestroyTexture(image->image.texture);
+							}
+							if(desc.unload_thumbnail_texture && image->thumbnail.texture != NULL) {
+								SDL_DestroyTexture(image->thumbnail.texture);
 							}
 					}
 					nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -247,7 +254,7 @@ int nqiv_pruner_parse_int_pair(nqiv_log_ctx* logger, const char* text, const int
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to get non-whitespace for integer value\n");
 		return nidx;
 	}
-	nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Trying to get integer pair at %s\n", &text[nidx]);
+	nqiv_log_write(logger, NQIV_LOG_DEBUG, "Trying to get integer pair at %s\n", &text[nidx]);
 	const int first_value_orig = output->as_int_pair[0];
 	nidx = nqiv_pruner_parse_int(logger, text, nidx, end_idx, &output->as_int_pair[0]);
 	if(nidx == -1) {
@@ -326,7 +333,7 @@ int nqiv_pruner_parse_check( nqiv_log_ctx* logger,
 	return nidx;
 }
 
-bool nqiv_pruner_append(nqiv_pruner* pruner, nqiv_pruner_desc* desc)
+bool nqiv_pruner_append(nqiv_pruner* pruner, const nqiv_pruner_desc* desc)
 {
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Adding desc to pruner list.\n");
 	if( !nqiv_array_push_bytes( pruner->pruners, &desc, sizeof(nqiv_pruner_desc) ) ) {
@@ -336,7 +343,7 @@ bool nqiv_pruner_append(nqiv_pruner* pruner, nqiv_pruner_desc* desc)
 	return true;
 }
 
-bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner_desc* desc);
+bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner_desc* desc)
 {
 	memset( desc, 0, sizeof(nqiv_pruner_desc) );
 	/* TODO Make it so we can set multiple sets at once? */
@@ -365,12 +372,12 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 			if(inside_no) {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling sum\n");
 				desc->counter &= ~NQIV_PRUNER_COUNT_OP_SUM;
-				desc->state_check.sum_result = 0;
+				desc->state_check.total_sum = 0;
 				inside_no = false;
 			} else {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling sum\n");
 				desc->counter |= NQIV_PRUNER_COUNT_OP_SUM;
-				idx = nqiv_pruner_parse_int(logger, text, idx, end, &desc->state_check.sum_result);
+				idx = nqiv_pruner_parse_int(logger, text, idx, end, &desc->state_check.total_sum);
 			}
 		} else if(strncmp( &text[idx], "or", strlen("or") ) == 0) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'or' at %s\n", &text[idx]);

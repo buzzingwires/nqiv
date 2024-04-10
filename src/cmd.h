@@ -131,4 +131,6 @@ bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream);
 bool nqiv_cmd_consume_stream_from_path(nqiv_cmd_manager* manager, const char* path);
 void nqiv_cmd_manager_destroy(nqiv_cmd_manager* manager);
 bool nqiv_cmd_manager_init(nqiv_cmd_manager* manager, nqiv_state* state);
+
+int nqiv_cmd_scan_not_whitespace(const char* data, const int start, const int end, int* length);
 #endif /* NQIV_CMD_H */
