@@ -1500,7 +1500,7 @@ void nqiv_cmd_print_single_arg( nqiv_cmd_manager* manager, const nqiv_cmd_arg_de
 		print_prefix(manager);
 		fprintf(stdout, "'bytes_behind' <THRESHOLD> <MAX> will check for whether the number of loaded bytes before the threshold is greater than max.\n");
 		print_prefix(manager);
-		fprintf(stdout, "'self_opened' <THRESHOLD> <MAX> will check if the currently-selected image is loaded.\n");
+		fprintf(stdout, "'self_opened' will check if the currently-selected image is loaded.\n");
 		break;
 	}
 }
@@ -1713,7 +1713,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager* manager, const nqiv_cmd_node* cur
 		{
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking pruner arg at %d for token %s for input %s\n", tidx, current_node->name, data);
 			nqiv_pruner_desc tmp;
-			if( !nqiv_pruner_create_desc(&manager->state->logger, data, &tmp) ) {
+			if( nqiv_pruner_create_desc(&manager->state->logger, data, &tmp) ) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd pruner arg at %d for token %s for input %s\n", tidx, current_node->name, data);
 				memcpy( &token->value.as_pruner, &tmp, sizeof(nqiv_pruner_desc) );
 			} else {

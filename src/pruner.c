@@ -51,6 +51,7 @@ typedef struct nqiv_pruner_desc_datapoint
 	nqiv_pruner_desc_datapoint bytes_ahead;
 	nqiv_pruner_desc_datapoint bytes_behind;
 */
+
 void nqiv_pruner_update_state_boolean(nqiv_pruner* pruner, const bool value)
 {
 	pruner->state.or_result = pruner->state.or_result || value;
@@ -78,7 +79,7 @@ void nqiv_pruner_loaded_count_body(nqiv_pruner* pruner, nqiv_pruner_desc_datapoi
 {
 	datapoint->value.as_int += increment;
 	const bool result = datapoint->value.as_int > datapoint->condition.as_int_pair[1];
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "count_body result is %s New datapoint value %d compared to %d\n", result ? "true" : "false", datapoint->value.as_int, datapoint->condition.as_int_pair[1]);
+	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "count_body result is %s new datapoint value %d compared to %d\n", result ? "true" : "false", datapoint->value.as_int, datapoint->condition.as_int_pair[1]);
 	nqiv_pruner_update_state_boolean(pruner, result);
 	nqiv_pruner_update_state_integer(pruner, increment);
 }
@@ -177,29 +178,40 @@ bool nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_imag
 						(desc.counter & NQIV_PRUNER_COUNT_OP_OR && pruner->state.or_result == desc.state_check.or_result) ||
 						(desc.counter & NQIV_PRUNER_COUNT_OP_AND && pruner->state.and_result == desc.state_check.and_result) ) {
 							nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Pruning image %s.\n", image->image.path);
+							bool send_event = false;
+							/* TODO: This cannot be called from a thread. If we plan to have the pruner run in a thread, we need to do this in a thread safe way, probably by sending an SDL event for master. */
+							if(desc.unload_texture && image->image.texture != NULL) {
+								SDL_DestroyTexture(image->image.texture);
+								send_event = true;
+							}
+							if(desc.unload_thumbnail_texture && image->thumbnail.texture != NULL) {
+								SDL_DestroyTexture(image->thumbnail.texture);
+								send_event = true;
+							}
 							nqiv_event event = {0};
 							event.type = NQIV_EVENT_IMAGE_LOAD;
 							event.options.image_load.image = image;
 							event.options.image_load.image_options.unload = true;
-							event.options.image_load.image_options.vips = desc.unload_vips;
-							event.options.image_load.image_options.raw = desc.unload_raw;
-							event.options.image_load.image_options.surface = desc.unload_surface;
+							event.options.image_load.image_options.vips = desc.unload_vips && image->image.vips != NULL;
+							event.options.image_load.image_options.raw = desc.unload_raw && image->image.data != NULL;
+							event.options.image_load.image_options.surface = desc.unload_surface && image->image.surface != NULL;
 							event.options.image_load.thumbnail_options.unload = true;
-							event.options.image_load.thumbnail_options.vips = desc.unload_thumbnail_vips;
-							event.options.image_load.thumbnail_options.raw = desc.unload_thumbnail_raw;
-							event.options.image_load.thumbnail_options.surface = desc.unload_thumbnail_surface;
-							if( !nqiv_queue_push(thread_queue, sizeof(nqiv_event), &event) ) {
+							event.options.image_load.thumbnail_options.vips = desc.unload_thumbnail_vips && image->thumbnail.vips != NULL;
+							event.options.image_load.thumbnail_options.raw = desc.unload_thumbnail_raw && image->thumbnail.data != NULL;
+							event.options.image_load.thumbnail_options.surface = desc.unload_thumbnail_surface && image->thumbnail.surface != NULL;
+							send_event = send_event ||
+										 event.options.image_load.image_options.vips ||
+										 event.options.image_load.image_options.raw ||
+										 event.options.image_load.image_options.surface ||
+										 event.options.image_load.thumbnail_options.vips ||
+										 event.options.image_load.thumbnail_options.raw ||
+										 event.options.image_load.thumbnail_options.surface;
+							nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "%sending prune event.\n", send_event ? "S" : "Not s" );
+							if( send_event && !nqiv_queue_push(thread_queue, sizeof(nqiv_event), &event) ) {
 								nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 								omp_unset_lock(&image->lock);
 								nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 								return false;
-							}
-							/* TODO: This cannot be called from a thread. If we plan to have the pruner run in a thread, we need to do this in a thread safe way, probably by sending an SDL event for master. */
-							if(desc.unload_texture && image->image.texture != NULL) {
-								SDL_DestroyTexture(image->image.texture);
-							}
-							if(desc.unload_thumbnail_texture && image->thumbnail.texture != NULL) {
-								SDL_DestroyTexture(image->thumbnail.texture);
 							}
 					}
 					nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -297,11 +309,11 @@ int nqiv_pruner_parse_set_check( nqiv_log_ctx* logger,
 		}
 	} else {
 		if(inside_no) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Clearing datapoint value\n");
-			memset( &point->value, 0, sizeof(nqiv_pruner_desc_datapoint_content) );
+			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Clearing datapoint condition\n");
+			memset( &point->condition, 0, sizeof(nqiv_pruner_desc_datapoint_content) );
 			point->active = false;
 		} else {
-			nidx = parse_func(logger, text, nidx, end,  &point->value);
+			nidx = parse_func(logger, text, nidx, end,  &point->condition);
 			point->active = true;
 		}
 	}
@@ -332,10 +344,10 @@ int nqiv_pruner_parse_check( nqiv_log_ctx* logger,
 	return nidx;
 }
 
-bool nqiv_pruner_append(nqiv_pruner* pruner, const nqiv_pruner_desc* desc)
+bool nqiv_pruner_append(nqiv_pruner* pruner, nqiv_pruner_desc* desc)
 {
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Adding desc to pruner list.\n");
-	if( !nqiv_array_push_bytes( pruner->pruners, &desc, sizeof(nqiv_pruner_desc) ) ) {
+	if( !nqiv_array_push_bytes( pruner->pruners, desc, sizeof(nqiv_pruner_desc) ) ) {
 		nqiv_log_write(pruner->logger, NQIV_LOG_ERROR, "Failed to add pruning desc to list\n");
 		return false;
 	}
