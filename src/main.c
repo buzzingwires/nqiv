@@ -347,10 +347,20 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	return true;
 } /* parse_args */
 
-void nqiv_unlock_threads(nqiv_state* state)
+void nqiv_unlock_threads(nqiv_state* state, const int count)
 {
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocking threads.\n");
-	nqiv_act_on_thread_locks(state, omp_unset_lock);
+	int idx;
+	int unlocked;
+	for(idx = 0, unlocked = count; idx < state->thread_count &&unlocked > 0; ++idx) {
+		if( !omp_test_lock(state->thread_locks[idx]) ) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocking worker thread %d.\n", idx);
+			++unlocked;
+		} else {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Already unlocked worker thread %d.\n", idx);
+		}
+		omp_unset_lock(state->thread_locks[idx]);
+	}
 }
 
 bool nqiv_send_thread_event_base(nqiv_state* state, nqiv_event* event, const bool force, const bool unlock_threads)
@@ -374,7 +384,7 @@ bool nqiv_send_thread_event_base(nqiv_state* state, nqiv_event* event, const boo
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent successfully.\n");
 	if(unlock_threads) {
-		nqiv_unlock_threads(state);
+		nqiv_unlock_threads(state, 1);
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for event.\n");
 	}
 	return true;
@@ -734,7 +744,7 @@ state->images.thumbnail.load
 		form->pending_change_count = pending_change_count;
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Pending change count Image: %d Thumbnail: %d, from main thread %d.\n", image->image.pending_change_count, image->thumbnail.pending_change_count, omp_get_thread_num() );
 		if(form->pending_change_count > 0) {
-			nqiv_unlock_threads(state);
+			nqiv_unlock_threads(state, pending_change_count);
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for update.\n");
 		}
 	}
@@ -1112,7 +1122,7 @@ bool nqiv_master_thread(nqiv_state* state)
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Thread already locked from master.\n");
 							}
 						} else {
-							nqiv_unlock_threads(state);
+							nqiv_unlock_threads(state, queue_length);
 						}
 						omp_unset_lock(&state->thread_queue.lock);
 						render_and_update(state, &running, &result, false, false);
