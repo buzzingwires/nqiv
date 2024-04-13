@@ -36,17 +36,20 @@ void nqiv_close_log_streams(nqiv_log_ctx* logger)
 
 void nqiv_state_clear_thread_locks(nqiv_state* state)
 {
-	int idx;
-	for(idx = 0; idx < state->thread_count; ++idx) {
-		if(state->thread_locks[idx] != NULL) {
-			omp_destroy_lock(state->thread_locks[idx]);
-			memset( state->thread_locks[idx], 0, sizeof(omp_lock_t) );
-			free(state->thread_locks[idx]);
+	if(state->thread_locks != NULL) {
+		int idx;
+		for(idx = 0; idx < state->thread_count; ++idx) {
+			if(state->thread_locks[idx] != NULL) {
+				omp_unset_lock(state->thread_locks[idx]);
+				omp_destroy_lock(state->thread_locks[idx]);
+				memset( state->thread_locks[idx], 0, sizeof(omp_lock_t) );
+				free(state->thread_locks[idx]);
+			}
 		}
+		memset(state->thread_locks, 0, sizeof(omp_lock_t*) * state->thread_count);
+		free(state->thread_locks);
+		state->thread_locks = NULL;
 	}
-	memset(state->thread_locks, 0, sizeof(omp_lock_t*) * state->thread_count);
-	free(state->thread_locks);
-	state->thread_locks = NULL;
 }
 
 void nqiv_state_clear(nqiv_state* state)
@@ -225,7 +228,7 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	if(state->thread_locks != NULL) {
 		nqiv_state_clear_thread_locks(state);
 	}
-	state->thread_locks = (omp_lock_t**)calloc( state->thread_count, sizeof(omp_lock_t*) ); /* XXX: Why do we need this? */
+	state->thread_locks = (omp_lock_t**)calloc( state->thread_count, sizeof(omp_lock_t*) );
 	if(state->thread_locks == NULL) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to allocate memory for %d thread locks.\n", state->thread_count);
 		return false;
