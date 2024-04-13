@@ -35,6 +35,7 @@ typedef struct nqiv_image_form_animation
 
 typedef struct nqiv_image_form
 {
+	int pending_change_count;
 	nqiv_image_form_animation animation;
 	bool error;
 	char* path;

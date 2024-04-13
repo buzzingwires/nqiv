@@ -339,7 +339,7 @@ void nqiv_unlock_threads(nqiv_state* state)
 	nqiv_act_on_thread_locks(state, omp_unset_lock);
 }
 
-bool nqiv_send_thread_event_base(nqiv_state* state, nqiv_event* event, const bool force)
+bool nqiv_send_thread_event_base(nqiv_state* state, nqiv_event* event, const bool force, const bool unlock_threads)
 {
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Sending event.\n");
 	bool event_sent;
@@ -359,19 +359,21 @@ bool nqiv_send_thread_event_base(nqiv_state* state, nqiv_event* event, const boo
 		return false;
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent successfully.\n");
-	nqiv_unlock_threads(state);
-	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for event.\n");
+	if(unlock_threads) {
+		nqiv_unlock_threads(state);
+		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for event.\n");
+	}
 	return true;
 }
 
 bool nqiv_send_thread_event(nqiv_state* state, nqiv_event* event)
 {
-	return nqiv_send_thread_event_base(state, event, false);
+	return nqiv_send_thread_event_base(state, event, false, false);
 }
 
 bool nqiv_send_thread_event_force(nqiv_state* state, nqiv_event* event)
 {
-	return nqiv_send_thread_event_base(state, event, true);
+	return nqiv_send_thread_event_base(state, event, true, true);
 }
 
 bool render_texture(bool* cleared, nqiv_state* state, SDL_Texture* texture, SDL_Rect* srcrect, const SDL_Rect* dstrect)
@@ -398,11 +400,20 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 	/* TODO Srcrect easily can make this work for both views DONE */
 	/* TODO Merge load/save thumbnail, or have an short load to check for the thumbnail before saving  DONE*/
 	/* TODO Use load thumbnail for is_thumbnail? */
-
+	int pending_change_count = 0;
 	bool cleared = is_montage;
 	if(lock) {
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-		omp_set_lock(&image->lock);
+		if( !omp_test_lock(&image->lock) ) {
+			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Failed to lock image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+			if( !render_texture(&cleared, state, state->texture_montage_unloaded_background, NULL, dstrect) ) {
+				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+				omp_unset_lock(&image->lock);
+				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+				return false;
+			}
+			return true;
+		}
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 	}
 	nqiv_image_form* form = is_thumbnail ? &image->thumbnail : &image->image;
@@ -474,11 +485,15 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 			event.options.image_load.image = image;
 			event.options.image_load.set_thumbnail_path = true;
 			event.options.image_load.create_thumbnail = true;
-			if( !nqiv_send_thread_event(state, &event) ) {
+			if(form->pending_change_count > 0) {
+				/* NOOP */
+			} else if( !nqiv_send_thread_event(state, &event) ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
+			} else {
+				pending_change_count += 1;
 			}
 		/* TODO Signal to create thumbnail from main image, set thumbnail attempted after DONE */
 		} else {
@@ -502,11 +517,15 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				event.options.image_load.image = image;
 				event.options.image_load.set_thumbnail_path = true;
 				event.options.image_load.create_thumbnail = true;
-				if( !nqiv_send_thread_event(state, &event) ) {
+				if(form->pending_change_count > 0) {
+					/* NOOP */
+				} else if( !nqiv_send_thread_event(state, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					return false;
+				} else {
+					pending_change_count += 1;
 				}
 				/* TODO Signal to create thumbnail from main image, set thumbnail attempted after */
 				/* TODO UNSET ERROR */
@@ -578,11 +597,15 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				}
 				event.options.image_load.thumbnail_options.first_frame = first_frame;
 				event.options.image_load.thumbnail_options.next_frame = next_frame && !first_frame;
-				if( !nqiv_send_thread_event(state, &event) ) {
+				if(form->pending_change_count > 0) {
+					/* NOOP */
+				} else if( !nqiv_send_thread_event(state, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					return false;
+				} else {
+					pending_change_count += 1;
 				}
 				/* TODO Signal to load thumbnail image if it's available, otherwise use main */
 			} else {
@@ -606,11 +629,15 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				}
 				event.options.image_load.image_options.first_frame = first_frame;
 				event.options.image_load.image_options.next_frame = next_frame && !first_frame;
-				if( !nqiv_send_thread_event(state, &event) ) {
-					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-					omp_unset_lock(&image->lock);
+				if(form->pending_change_count > 0) {
+					/* NOOP */
+				} else if( !nqiv_send_thread_event(state, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+					omp_unset_lock(&image->lock);
+					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					return false;
+				} else {
+					pending_change_count += 1;
 				}
 				/* TODO Signal to use main image as thumbnail */
 			}
@@ -668,11 +695,15 @@ state->images.thumbnail.load
 				}
 				event.options.image_load.image_options.first_frame = first_frame;
 				event.options.image_load.image_options.next_frame = next_frame && !first_frame;
-				if( !nqiv_send_thread_event(state, &event) ) {
-					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-					omp_unset_lock(&image->lock);
+				if(form->pending_change_count > 0) {
+					/* NOOP */
+				} else if( !nqiv_send_thread_event(state, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+					omp_unset_lock(&image->lock);
+					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					return false;
+				} else {
+					pending_change_count += 1;
 				}
 			}
 		}
@@ -683,6 +714,14 @@ state->images.thumbnail.load
 			omp_unset_lock(&image->lock);
 			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 			return false;
+		}
+	}
+	if(form->pending_change_count == 0) {
+		form->pending_change_count = pending_change_count;
+		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Pending change count Image: %d Thumbnail: %d, from main thread %d.\n", image->image.pending_change_count, image->thumbnail.pending_change_count, omp_get_thread_num() );
+		if(form->pending_change_count > 0) {
+			nqiv_unlock_threads(state);
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for update.\n");
 		}
 	}
 	nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );

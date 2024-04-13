@@ -147,6 +147,13 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 					if(event.options.image_load.borrow_thumbnail_dimension_metadata) {
 						nqiv_image_borrow_thumbnail_dimensions(event.options.image_load.image);
 					}
+					if(event.options.image_load.image->thumbnail.pending_change_count > 0) {
+						event.options.image_load.image->thumbnail.pending_change_count -= 1;
+					}
+					if(event.options.image_load.image->image.pending_change_count > 0) {
+						event.options.image_load.image->image.pending_change_count -= 1;
+					}
+					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Pending change count Image: %d Thumbnail: %d, from worker thread %d.\n", event.options.image_load.image->image.pending_change_count, event.options.image_load.image->thumbnail.pending_change_count, omp_get_thread_num() );
 					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&event.options.image_load.image->lock);
 					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
@@ -165,7 +172,7 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocking thread %d.\n", omp_get_thread_num() );
 			omp_unset_lock(lock);
 			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocked thread %d.\n", omp_get_thread_num() );
-			SDL_Delay(2); /* XXX: Sleep for a short time so the master thread can sync faster. Strictly speaking, it should *not* be necessary. */
+			SDL_Delay(50); /* XXX: Sleep for a short time so the master thread can sync faster. Strictly speaking, it should *not* be necessary. */
 		}
 	}
 }
