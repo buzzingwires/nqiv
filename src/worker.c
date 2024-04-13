@@ -84,6 +84,7 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 
 void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_code)
 {
+	int wait_time = omp_get_thread_num();
 	bool running = true;
 	bool last_event_found = false;
 	while(running) {
@@ -96,6 +97,7 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 		nqiv_event event = {0};
 		const bool event_found = nqiv_queue_pop(queue, sizeof(nqiv_event), &event);
 		if(event_found) {
+			wait_time = 0;
 			switch(event.type) {
 				case NQIV_EVENT_WORKER_STOP:
 					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Received stop event on thread %d.\n", omp_get_thread_num() );
@@ -172,7 +174,9 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const Uint32 event_co
 			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocking thread %d.\n", omp_get_thread_num() );
 			omp_unset_lock(lock);
 			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocked thread %d.\n", omp_get_thread_num() );
-			SDL_Delay(50); /* XXX: Sleep for a short time so the master thread can sync faster. Strictly speaking, it should *not* be necessary. */
+			wait_time += omp_get_thread_num();
+			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Waiting for %d from thread %d.\n", wait_time, omp_get_thread_num() );
+			SDL_Delay(wait_time); /* XXX: Sleep for a short time so the master thread can sync faster. Strictly speaking, it should *not* be necessary. */
 		}
 	}
 }
