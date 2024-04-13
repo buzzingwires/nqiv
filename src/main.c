@@ -38,9 +38,13 @@ void nqiv_state_clear_thread_locks(nqiv_state* state)
 {
 	int idx;
 	for(idx = 0; idx < state->thread_count; ++idx) {
-		omp_destroy_lock(&state->thread_locks[idx]);
+		if(state->thread_locks[idx] != NULL) {
+			omp_destroy_lock(state->thread_locks[idx]);
+			memset( state->thread_locks[idx], 0, sizeof(omp_lock_t) );
+			free(state->thread_locks[idx]);
+		}
 	}
-	memset( state->thread_locks, 0, sizeof(omp_lock_t) * (state->thread_count + 1) );
+	memset(state->thread_locks, 0, sizeof(omp_lock_t*) * state->thread_count);
 	free(state->thread_locks);
 	state->thread_locks = NULL;
 }
@@ -176,6 +180,22 @@ bool nqiv_setup_sdl(nqiv_state* state)
 		return false;
 	}
 
+	if(state->thread_event_number != 0) {
+		state->thread_event_number = SDL_RegisterEvents(1);
+		if(state->thread_event_number == 0xFFFFFFFF) {
+			nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL event for messages from threads. SDL Error: %s\n", SDL_GetError() );
+			return false;
+		}
+	}
+
+	if(state->cfg_event_number != 0) {
+		state->cfg_event_number = SDL_RegisterEvents(1);
+		if(state->cfg_event_number == 0xFFFFFFFF) {
+			nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL event for messages from threads. SDL Error: %s\n", SDL_GetError() );
+			return false;
+		}
+	}
+
 	SDL_Delay(1); /* So that we are completely guaranteed to have at least one ticks passed for SDL. */
 	return true;
 }
@@ -193,36 +213,30 @@ void nqiv_act_on_thread_locks( nqiv_state* state, void (*action)(omp_lock_t *loc
 	int idx;
 	for(idx = 0; idx < state->thread_count; ++idx) {
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Acted on worker thread %d.\n", idx);
-		action(&state->thread_locks[idx]);
+		action(state->thread_locks[idx]);
 	}
 }
 
 bool nqiv_setup_thread_info(nqiv_state* state)
 {
-	if(state->thread_event_number != 0) {
-		state->thread_event_number = SDL_RegisterEvents(1);
-		if(state->thread_event_number == 0xFFFFFFFF) {
-			nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL event for messages from threads. SDL Error: %s\n", SDL_GetError() );
-			return false;
-		}
-	}
-	if(state->cfg_event_number != 0) {
-		state->cfg_event_number = SDL_RegisterEvents(1);
-		if(state->cfg_event_number == 0xFFFFFFFF) {
-			nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to create SDL event for messages from threads. SDL Error: %s\n", SDL_GetError() );
-			return false;
-		}
-	}
 	if(state->thread_count == 0) {
 		state->thread_count = 1;
 	}
 	if(state->thread_locks != NULL) {
 		nqiv_state_clear_thread_locks(state);
 	}
-	state->thread_locks = (omp_lock_t*)calloc( state->thread_count + 1, sizeof(omp_lock_t) ); /* XXX: Why do we need this? */
+	state->thread_locks = (omp_lock_t**)calloc( state->thread_count, sizeof(omp_lock_t*) ); /* XXX: Why do we need this? */
 	if(state->thread_locks == NULL) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to allocate memory for %d thread locks.\n", state->thread_count);
 		return false;
+	}
+	int thread;
+	for(thread = 0; thread < state->thread_count; ++thread) {
+		state->thread_locks[thread] = (omp_lock_t*)calloc( 1, sizeof(omp_lock_t) );
+		if(state->thread_locks[thread] == NULL) {
+			nqiv_state_clear_thread_locks(state);
+			return false;
+		}
 	}
 	nqiv_act_on_thread_locks(state, omp_init_lock);
 	return true;
@@ -269,10 +283,6 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 		return false;
 	}
 	nqiv_setup_montage(state);
-	if( !nqiv_setup_thread_info(state) ) {
-		nqiv_state_clear(state);
-		return false;
-	}
 	struct optparse_long longopts[] = {
 		{"cmd-from-stdin", 's', OPTPARSE_NONE},
 		{"cmd", 'c', OPTPARSE_REQUIRED},
@@ -322,6 +332,10 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			return false;
         }
     }
+	if( !nqiv_setup_thread_info(state) ) {
+		nqiv_state_clear(state);
+		return false;
+	}
 	char* arg;
     while ( ( arg = optparse_arg(&options) ) ) {
 		if( nqiv_image_manager_has_path_extension(&state->images, arg) ) {
@@ -1169,7 +1183,7 @@ bool nqiv_run(nqiv_state* state)
 	bool result;
 	bool* result_ptr = &result;
 	const int thread_count = state->thread_count;
-	omp_lock_t* thread_locks = state->thread_locks;
+	omp_lock_t** thread_locks = state->thread_locks;
 	nqiv_queue* thread_queue = &state->thread_queue;
 	const Uint32 event_code = state->thread_event_number;
 	#pragma omp parallel default(none) firstprivate(state, thread_count, thread_locks, thread_queue, event_code, result_ptr)
@@ -1178,7 +1192,7 @@ bool nqiv_run(nqiv_state* state)
 		{
 			int thread;
 			for(thread = 0; thread < thread_count; ++thread) {
-				omp_lock_t* lock = &thread_locks[thread];
+				omp_lock_t* lock = thread_locks[thread];
 				#pragma omp task default(none) firstprivate(thread_queue, lock, event_code)
 				nqiv_worker_main(thread_queue, lock, event_code);
 			}
