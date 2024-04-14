@@ -845,10 +845,27 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, S
 	assert(srcrect->h > 0);
 	assert(dstrect->w > 0);
 	assert(dstrect->h > 0);
+	const double old_image_to_viewport_ratio_max = manager->zoom.image_to_viewport_ratio_max;
+	double src_aspect;
+	double dst_aspect;
 	if(srcrect->w > srcrect->h) {
 		manager->zoom.fit_level = (double)dstrect->w / (double)srcrect->w;
+		src_aspect = (double)srcrect->w / (double)srcrect->h;
 	} else {
-		manager->zoom.fit_level = (double)dstrect->w / (double)srcrect->h;
+		src_aspect = (double)srcrect->h / (double)srcrect->w;
+		manager->zoom.fit_level = (double)dstrect->h / (double)srcrect->h;
+	}
+	if(dstrect->w > dstrect->h) {
+		dst_aspect = (double)dstrect->w / (double)dstrect->h;
+	} else {
+		dst_aspect = (double)dstrect->h / (double)dstrect->w;
+	}
+	if(srcrect->w > dstrect->w && srcrect->h > dstrect->h) {
+		if(src_aspect > dst_aspect) {
+			manager->zoom.fit_level = 1.0 + (src_aspect - dst_aspect);
+		} else {
+			manager->zoom.fit_level = 1.0 + (dst_aspect - src_aspect);
+		}
 	}
 	manager->zoom.actual_size_level = manager->zoom.fit_level;
 	if(manager->zoom.fit_level > 1.0) {
@@ -857,10 +874,12 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, S
 		manager->zoom.image_to_viewport_ratio_max = 1.0;
 		manager->zoom.fit_level = 1.0;
 	}
+	assert(manager->zoom.image_to_viewport_ratio_max >= 1.0);
+	manager->zoom.image_to_viewport_ratio *= (manager->zoom.image_to_viewport_ratio_max / old_image_to_viewport_ratio_max);
+	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Zoom parameters - Viewport ratio: %f/%f Fit level: %f Actual Size Level: %f\n", manager->zoom.image_to_viewport_ratio, manager->zoom.image_to_viewport_ratio_max, manager->zoom.fit_level, manager->zoom.actual_size_level);
 	if(manager->zoom.image_to_viewport_ratio > manager->zoom.image_to_viewport_ratio_max) {
 		manager->zoom.image_to_viewport_ratio = manager->zoom.image_to_viewport_ratio_max;
 	}
-	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Zoom parameters - Viewport ratio: %f/%f Fit level: %f Actual Size Level: %f\n", manager->zoom.image_to_viewport_ratio, manager->zoom.image_to_viewport_ratio_max, manager->zoom.fit_level, manager->zoom.actual_size_level);
 }
 
 void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size)
