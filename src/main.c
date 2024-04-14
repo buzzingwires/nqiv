@@ -1206,8 +1206,8 @@ bool nqiv_run(nqiv_state* state)
 			int thread;
 			for(thread = 0; thread < thread_count; ++thread) {
 				omp_lock_t* lock = thread_locks[thread];
-				#pragma omp task default(none) firstprivate(thread_queue, lock, event_code)
-				nqiv_worker_main(thread_queue, lock, event_code);
+				#pragma omp task default(none) firstprivate(thread_queue, lock, thread_count, event_code)
+				nqiv_worker_main(thread_queue, lock, thread_count, event_code);
 			}
 			*result_ptr = nqiv_master_thread(state);
 		}
