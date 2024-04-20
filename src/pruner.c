@@ -87,7 +87,7 @@ void nqiv_pruner_loaded_count_body(nqiv_pruner* pruner, nqiv_pruner_desc_datapoi
 void nqiv_pruner_run_loaded_ahead(nqiv_pruner* pruner, nqiv_pruner_desc_datapoint* datapoint, const void* object)
 {
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking loaded_ahead\n");
-	if(datapoint->active && object != NULL && pruner->state.idx - pruner->state.selection > datapoint->condition.as_int_pair[0]) {
+	if(datapoint->active && object != NULL && pruner->state.idx - pruner->state.montage_end > datapoint->condition.as_int_pair[0]) {
 		nqiv_pruner_loaded_count_body(pruner, datapoint, 1);
 	}
 }
@@ -95,7 +95,7 @@ void nqiv_pruner_run_loaded_ahead(nqiv_pruner* pruner, nqiv_pruner_desc_datapoin
 void nqiv_pruner_run_loaded_behind(nqiv_pruner* pruner, nqiv_pruner_desc_datapoint* datapoint, const void* object)
 {
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking loaded_behind\n");
-	if(datapoint->active && object != NULL && pruner->state.selection - pruner->state.idx > datapoint->condition.as_int_pair[0]) {
+	if(datapoint->active && object != NULL && pruner->state.montage_start - pruner->state.idx > datapoint->condition.as_int_pair[0]) {
 		nqiv_pruner_loaded_count_body(pruner, datapoint, 1);
 	}
 }
@@ -103,7 +103,7 @@ void nqiv_pruner_run_loaded_behind(nqiv_pruner* pruner, nqiv_pruner_desc_datapoi
 void nqiv_pruner_run_bytes_ahead(nqiv_pruner* pruner, nqiv_pruner_desc_datapoint* datapoint, const void* object, const int size)
 {
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking bytes_ahead\n");
-	if(datapoint->active && object != NULL && pruner->state.idx - pruner->state.selection > datapoint->condition.as_int_pair[0]) {
+	if(datapoint->active && object != NULL && pruner->state.idx - pruner->state.montage_end > datapoint->condition.as_int_pair[0]) {
 		nqiv_pruner_loaded_count_body(pruner, datapoint, size);
 	}
 }
@@ -111,7 +111,7 @@ void nqiv_pruner_run_bytes_ahead(nqiv_pruner* pruner, nqiv_pruner_desc_datapoint
 void nqiv_pruner_run_bytes_behind(nqiv_pruner* pruner, nqiv_pruner_desc_datapoint* datapoint, const void* object, const int size)
 {
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking bytes_behind\n");
-	if(datapoint->active && object != NULL && pruner->state.selection - pruner->state.idx > datapoint->condition.as_int_pair[0]) {
+	if(datapoint->active && object != NULL && pruner->state.montage_start - pruner->state.idx > datapoint->condition.as_int_pair[0]) {
 		nqiv_pruner_loaded_count_body(pruner, datapoint, size);
 	}
 }
@@ -156,12 +156,12 @@ void nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqi
 
 bool nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_image_manager* images, nqiv_queue* thread_queue)
 {
-	memset( &pruner->state, 0, sizeof(nqiv_pruner_state) );
 	const int num_descs = pruner->pruners->position / sizeof(nqiv_pruner_desc);
 	int idx;
 	for(idx = 0; idx < num_descs; ++idx) {
 		nqiv_pruner_desc desc;
 		if( nqiv_array_get_bytes(pruner->pruners, idx, sizeof(nqiv_pruner_desc), &desc) ) {
+			memset( &pruner->state, 0, sizeof(nqiv_pruner_state) );
 			nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Checking prune directive %d.\n", idx);
 			const int num_images = images->images->position / sizeof(nqiv_image*);
 			int iidx;
@@ -173,6 +173,8 @@ bool nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_imag
 					nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					pruner->state.idx = iidx;
 					pruner->state.selection = montage->positions.selection;
+					pruner->state.montage_start = montage->positions.start;
+					pruner->state.montage_end = montage->positions.end;
 					nqiv_pruner_run_desc(pruner, &desc, image);
 					if( (desc.counter & NQIV_PRUNER_COUNT_OP_SUM && pruner->state.total_sum > desc.state_check.total_sum) ||
 						(desc.counter & NQIV_PRUNER_COUNT_OP_OR && pruner->state.or_result == desc.state_check.or_result) ||
@@ -182,10 +184,12 @@ bool nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_imag
 							/* TODO: This cannot be called from a thread. If we plan to have the pruner run in a thread, we need to do this in a thread safe way, probably by sending an SDL event for master. */
 							if(desc.unload_texture && image->image.texture != NULL) {
 								SDL_DestroyTexture(image->image.texture);
+								image->image.texture = NULL;
 								send_event = true;
 							}
 							if(desc.unload_thumbnail_texture && image->thumbnail.texture != NULL) {
 								SDL_DestroyTexture(image->thumbnail.texture);
+								image->thumbnail.texture = NULL;
 								send_event = true;
 							}
 							nqiv_event event = {0};
@@ -206,7 +210,7 @@ bool nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_imag
 										 event.options.image_load.thumbnail_options.vips ||
 										 event.options.image_load.thumbnail_options.raw ||
 										 event.options.image_load.thumbnail_options.surface;
-							nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "%sending prune event.\n", send_event ? "S" : "Not s" );
+							nqiv_log_write( pruner->logger, NQIV_LOG_INFO, "%sending prune event for image %d desc %d/%d.\n", send_event ? "S" : "Not s", iidx, idx, num_descs );
 							if( send_event && !nqiv_queue_push(thread_queue, sizeof(nqiv_event), &event) ) {
 								nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 								omp_unset_lock(&image->lock);
@@ -335,10 +339,11 @@ int nqiv_pruner_parse_check( nqiv_log_ctx* logger,
 							 int (*parse_func)(nqiv_log_ctx*, const char*, const int, const int, nqiv_pruner_desc_datapoint_content*) )
 {
 	int nidx = idx;
+	int tidx;
 	if(inside_image) {
-		nidx = nqiv_pruner_parse_set_check(logger, text, nidx, end, inside_no, inside_unload, point, unload_setting, parse_func);
+		tidx = nqiv_pruner_parse_set_check(logger, text, nidx, end, inside_no, inside_unload, point, unload_setting, parse_func);
 	}
-	if(inside_thumbnail && nidx != -1) {
+	if(inside_thumbnail && tidx != -1) {
 		nidx = nqiv_pruner_parse_set_check(logger, text, nidx, end, inside_no, inside_unload, thumbnail_point, thumbnail_unload_setting, parse_func);
 	}
 	return nidx;
@@ -453,12 +458,27 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'vips' at %s\n", &text[idx]);
 			idx += strlen("vips");
 			if(inside_no) {
+				if(inside_unload) {
+					if(inside_thumbnail) {
+						desc->unload_thumbnail_vips = false;
+					}
+					if(inside_image) {
+						desc->unload_vips = false;
+					}
+				}
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling vips\n");
 				set = NULL;
 				unload_setting = NULL;
 				thumbnail_set = NULL;
 				thumbnail_unload_setting = NULL;
 				inside_no = false;
+			} else if(inside_unload) {
+				if(inside_thumbnail) {
+					desc->unload_thumbnail_vips = true;
+				}
+				if(inside_image) {
+					desc->unload_vips = true;
+				}
 			} else {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling vips\n");
 				set = &desc->vips_set;
@@ -470,12 +490,27 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'raw' at %s\n", &text[idx]);
 			idx += strlen("raw");
 			if(inside_no) {
+				if(inside_unload) {
+					if(inside_thumbnail) {
+						desc->unload_thumbnail_raw = false;
+					}
+					if(inside_image) {
+						desc->unload_raw = false;
+					}
+				}
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling raw\n");
 				set = NULL;
 				unload_setting = NULL;
 				thumbnail_set = NULL;
 				thumbnail_unload_setting = NULL;
 				inside_no = false;
+			} else if(inside_unload) {
+				if(inside_thumbnail) {
+					desc->unload_thumbnail_raw = true;
+				}
+				if(inside_image) {
+					desc->unload_raw = true;
+				}
 			} else {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling raw\n");
 				set = &desc->raw_set;
@@ -487,12 +522,27 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'surface' at %s\n", &text[idx]);
 			idx += strlen("surface");
 			if(inside_no) {
+				if(inside_unload) {
+					if(inside_thumbnail) {
+						desc->unload_thumbnail_surface = false;
+					}
+					if(inside_image) {
+						desc->unload_surface = false;
+					}
+				}
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling surface\n");
 				set = NULL;
 				unload_setting = NULL;
 				thumbnail_set = NULL;
 				thumbnail_unload_setting = NULL;
 				inside_no = false;
+			} else if(inside_unload) {
+				if(inside_thumbnail) {
+					desc->unload_thumbnail_surface = true;
+				}
+				if(inside_image) {
+					desc->unload_surface = true;
+				}
 			} else {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling surface\n");
 				set = &desc->surface_set;
@@ -504,12 +554,27 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'texture' at %s\n", &text[idx]);
 			idx += strlen("texture");
 			if(inside_no) {
+				if(inside_unload) {
+					if(inside_thumbnail) {
+						desc->unload_thumbnail_texture = false;
+					}
+					if(inside_image) {
+						desc->unload_texture = false;
+					}
+				}
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling texture\n");
 				set = NULL;
 				unload_setting = NULL;
 				thumbnail_set = NULL;
 				thumbnail_unload_setting = NULL;
 				inside_no = false;
+			} else if(inside_unload) {
+				if(inside_thumbnail) {
+					desc->unload_thumbnail_texture = true;
+				}
+				if(inside_image) {
+					desc->unload_texture = true;
+				}
 			} else {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling texture\n");
 				set = &desc->texture_set;

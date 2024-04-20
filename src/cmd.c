@@ -1716,10 +1716,10 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager* manager, const nqiv_cmd_node* cur
 			if( nqiv_pruner_create_desc(&manager->state->logger, data, &tmp) ) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd pruner arg at %d for token %s for input %s\n", tidx, current_node->name, data);
 				memcpy( &token->value.as_pruner, &tmp, sizeof(nqiv_pruner_desc) );
+				output = eolpos - start_idx;
 			} else {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing pruner arg at %d for token %s with input %s\n", tidx, current_node->name, data);
 			}
-			output = eolpos - start_idx;
 		}
 		break;
 	case NQIV_CMD_ARG_STRING:

@@ -49,6 +49,8 @@ typedef struct nqiv_pruner_state
 {
 	int idx;
 	int selection;
+	int montage_start;
+	int montage_end;
 	int total_sum;
 	bool or_result;
 	bool and_result;
