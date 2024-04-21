@@ -981,6 +981,18 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action quit.\n");
 			*running = false;
 			return;
+		} else if(action == NQIV_KEY_ACTION_IMAGE_PREVIOUS) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image previous.\n");
+			if(!state->in_montage) {
+				nqiv_montage_previous_selection(&state->montage);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_IMAGE_NEXT) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image next.\n");
+			if(!state->in_montage) {
+				nqiv_montage_next_selection(&state->montage);
+				render_and_update(state, running, result, false, false);
+			}
 		} else if(action == NQIV_KEY_ACTION_MONTAGE_RIGHT) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage right.\n");
 			if(state->in_montage) {
