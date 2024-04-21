@@ -554,6 +554,14 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, 
 	manager->zoom.zoom_out_amount = 0.05;
 	manager->zoom.thumbnail_adjust = 10;
 
+	manager->zoom.pan_left_amount_more = -0.2;
+	manager->zoom.pan_right_amount_more = 0.2;
+	manager->zoom.pan_up_amount_more = -0.2;
+	manager->zoom.pan_down_amount_more = 0.2;
+	manager->zoom.zoom_in_amount_more = -0.2;
+	manager->zoom.zoom_out_amount_more = 0.2;
+	manager->zoom.thumbnail_adjust_more = 50;
+
 	manager->thumbnail.size = 256;
 	nqiv_log_write(logger, NQIV_LOG_INFO, "Successfully made image manager with starting length of: %d", starting_length);
 	return true;
@@ -731,6 +739,36 @@ void nqiv_image_manager_zoom_out(nqiv_image_manager* manager)
 	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount);
 }
 
+void nqiv_image_manager_pan_left_more(nqiv_image_manager* manager)
+{
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_horizontal_shift, manager->zoom.pan_left_amount_more);
+}
+
+void nqiv_image_manager_pan_right_more(nqiv_image_manager* manager)
+{
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_horizontal_shift, manager->zoom.pan_right_amount_more);
+}
+
+void nqiv_image_manager_pan_up_more(nqiv_image_manager* manager)
+{
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_vertical_shift, manager->zoom.pan_up_amount_more);
+}
+
+void nqiv_image_manager_pan_down_more(nqiv_image_manager* manager)
+{
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_vertical_shift, manager->zoom.pan_down_amount_more);
+}
+
+void nqiv_image_manager_zoom_in_more(nqiv_image_manager* manager)
+{
+	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount_more);
+}
+
+void nqiv_image_manager_zoom_out_more(nqiv_image_manager* manager)
+{
+	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount_more);
+}
+
 /*
  *
 	When zoomed all the way out, we have a rect called the 'canvas rect'.
@@ -897,21 +935,41 @@ void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const 
 	}
 }
 
-void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager)
+void nqiv_image_manager_increment_thumbnail_size_base(nqiv_image_manager* manager, const int adjust)
 {
 	const int old_size = manager->thumbnail.size;
-	manager->thumbnail.size += manager->zoom.thumbnail_adjust;
+	manager->thumbnail.size += adjust;
 	nqiv_image_manager_reattempt_thumbnails(manager, old_size);
+}
+
+void nqiv_image_manager_decrement_thumbnail_size_base(nqiv_image_manager* manager, const int adjust)
+{
+	const int old_size = manager->thumbnail.size;
+	manager->thumbnail.size -= adjust;
+	if(manager->thumbnail.size <= 0) {
+		manager->thumbnail.size = adjust;
+	}
+	nqiv_image_manager_reattempt_thumbnails(manager, old_size);
+}
+
+void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager)
+{
+	nqiv_image_manager_increment_thumbnail_size_base(manager, manager->zoom.thumbnail_adjust);
 }
 
 void nqiv_image_manager_decrement_thumbnail_size(nqiv_image_manager* manager)
 {
-	const int old_size = manager->thumbnail.size;
-	manager->thumbnail.size -= manager->zoom.thumbnail_adjust;
-	if(manager->thumbnail.size <= 0) {
-		manager->thumbnail.size = manager->zoom.thumbnail_adjust;
-	}
-	nqiv_image_manager_reattempt_thumbnails(manager, old_size);
+	nqiv_image_manager_decrement_thumbnail_size_base(manager, manager->zoom.thumbnail_adjust);
+}
+
+void nqiv_image_manager_increment_thumbnail_size_more(nqiv_image_manager* manager)
+{
+	nqiv_image_manager_increment_thumbnail_size_base(manager, manager->zoom.thumbnail_adjust_more);
+}
+
+void nqiv_image_manager_decrement_thumbnail_size_more(nqiv_image_manager* manager)
+{
+	nqiv_image_manager_decrement_thumbnail_size_base(manager, manager->zoom.thumbnail_adjust_more);
 }
 
 void nqiv_image_form_delay_frame(nqiv_image_form* form)

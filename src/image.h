@@ -116,6 +116,13 @@ typedef struct nqiv_image_manager_zoom_settings
 	double zoom_in_amount;
 	double zoom_out_amount;
 	int thumbnail_adjust;
+	double pan_left_amount_more;
+	double pan_right_amount_more;
+	double pan_up_amount_more;
+	double pan_down_amount_more;
+	double zoom_in_amount_more;
+	double zoom_out_amount_more;
+	int thumbnail_adjust_more;
 } nqiv_image_manager_zoom_settings;
 
 struct nqiv_image_manager
@@ -144,12 +151,22 @@ void nqiv_image_manager_pan_up(nqiv_image_manager* manager);
 void nqiv_image_manager_pan_down(nqiv_image_manager* manager);
 void nqiv_image_manager_zoom_in(nqiv_image_manager* manager);
 void nqiv_image_manager_zoom_out(nqiv_image_manager* manager);
+
+void nqiv_image_manager_pan_left_more(nqiv_image_manager* manager);
+void nqiv_image_manager_pan_right_more(nqiv_image_manager* manager);
+void nqiv_image_manager_pan_up_more(nqiv_image_manager* manager);
+void nqiv_image_manager_pan_down_more(nqiv_image_manager* manager);
+void nqiv_image_manager_zoom_in_more(nqiv_image_manager* manager);
+void nqiv_image_manager_zoom_out_more(nqiv_image_manager* manager);
+
 void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bool do_zoom, const bool do_stretch, SDL_Rect* srcrect, SDL_Rect* dstrect);
 void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, SDL_Rect* srcrect, SDL_Rect* dstrect);
 
 void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size);
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager);
 void nqiv_image_manager_decrement_thumbnail_size(nqiv_image_manager* manager);
+void nqiv_image_manager_increment_thumbnail_size_more(nqiv_image_manager* manager);
+void nqiv_image_manager_decrement_thumbnail_size_more(nqiv_image_manager* manager);
 /* REMOVE? */
 /* Dynamic array? */
 /* convert to dynamic */

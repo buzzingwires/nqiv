@@ -81,6 +81,12 @@ const char* nqiv_keybind_action_names[] =
 	"pan_right",
 	"pan_up",
 	"pan_down",
+	"zoom_in_more",
+	"zoom_out_more",
+	"pan_left_more",
+	"pan_right_more",
+	"pan_up_more",
+	"pan_down_more",
 	"montage_left",
 	"montage_right",
 	"montage_up",
@@ -97,7 +103,7 @@ nqiv_key_action nqiv_text_to_key_action(const char* text)
 {
 	nqiv_key_action action = NQIV_KEY_ACTION_NONE;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		if(strncmp(text, nqiv_keybind_action_names[action], strlen(nqiv_keybind_action_names[action])) == 0) {
+		if( strncmp( text, nqiv_keybind_action_names[action], strlen(nqiv_keybind_action_names[action]) ) == 0 && strlen(text) == strlen(nqiv_keybind_action_names[action]) ) {
 			return action;
 		}
 	}

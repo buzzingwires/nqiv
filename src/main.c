@@ -123,6 +123,12 @@ void nqiv_set_keyrate_defaults(nqiv_keyrate_manager* manager)
 		NQIV_KEY_ACTION_PAN_RIGHT,
 		NQIV_KEY_ACTION_PAN_UP,
 		NQIV_KEY_ACTION_PAN_DOWN,
+		NQIV_KEY_ACTION_ZOOM_IN_MORE,
+		NQIV_KEY_ACTION_ZOOM_OUT_MORE,
+		NQIV_KEY_ACTION_PAN_LEFT_MORE,
+		NQIV_KEY_ACTION_PAN_RIGHT_MORE,
+		NQIV_KEY_ACTION_PAN_UP_MORE,
+		NQIV_KEY_ACTION_PAN_DOWN_MORE,
 		NQIV_KEY_ACTION_PAGE_UP,
 		NQIV_KEY_ACTION_PAGE_DOWN,
 		NQIV_KEY_ACTION_MONTAGE_LEFT,
@@ -1076,9 +1082,51 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 				render_and_update(state, running, result, false, false);
 			}
 		} else if(action == NQIV_KEY_ACTION_PAN_DOWN) {
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan down.\n");
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan down more.\n");
 			if(!state->in_montage) {
-				nqiv_image_manager_pan_down(&state->images);
+				nqiv_image_manager_pan_down_more(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_ZOOM_IN_MORE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom in more.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_zoom_in_more(&state->images);
+				render_and_update(state, running, result, false, false);
+			} else if(state->montage.dimensions.count > 1) {
+				nqiv_image_manager_increment_thumbnail_size_more(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_ZOOM_OUT_MORE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom out more.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_zoom_out_more(&state->images);
+				render_and_update(state, running, result, false, false);
+			} else {
+				nqiv_image_manager_decrement_thumbnail_size_more(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_PAN_LEFT_MORE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan left more.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_pan_left_more(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_PAN_RIGHT_MORE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan right more.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_pan_right_more(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_PAN_UP_MORE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan up more.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_pan_up_more(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_PAN_DOWN_MORE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan down more.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_pan_down_more(&state->images);
 				render_and_update(state, running, result, false, false);
 			}
 		} else if(action == NQIV_KEY_ACTION_TOGGLE_STRETCH) {

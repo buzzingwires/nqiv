@@ -80,6 +80,42 @@ bool nqiv_cmd_parser_set_zoom_up_amount(nqiv_cmd_manager* manager, nqiv_cmd_arg_
 	return true;
 }
 
+bool nqiv_cmd_parser_set_zoom_down_amount_more(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->images.zoom.pan_down_amount_more = tokens[0]->value.as_double;
+	return true;
+}
+
+bool nqiv_cmd_parser_set_zoom_in_amount_more(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->images.zoom.zoom_in_amount_more = tokens[0]->value.as_double;
+	return true;
+}
+
+bool nqiv_cmd_parser_set_zoom_left_amount_more(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->images.zoom.pan_left_amount_more = tokens[0]->value.as_double;
+	return true;
+}
+
+bool nqiv_cmd_parser_set_zoom_out_amount_more(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->images.zoom.zoom_out_amount_more = tokens[0]->value.as_double;
+	return true;
+}
+
+bool nqiv_cmd_parser_set_zoom_right_amount_more(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->images.zoom.pan_right_amount_more = tokens[0]->value.as_double;
+	return true;
+}
+
+bool nqiv_cmd_parser_set_zoom_up_amount_more(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->images.zoom.pan_up_amount_more = tokens[0]->value.as_double;
+	return true;
+}
+
 bool nqiv_cmd_parser_set_thumbnail_load(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->images.thumbnail.load = tokens[0]->value.as_bool;
@@ -103,6 +139,12 @@ bool nqiv_cmd_parser_set_thumbnail_size(nqiv_cmd_manager* manager, nqiv_cmd_arg_
 bool nqiv_cmd_parser_set_thumbnail_zoom_amount(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->images.zoom.thumbnail_adjust = tokens[0]->value.as_int;
+	return true;
+}
+
+bool nqiv_cmd_parser_set_thumbnail_zoom_amount_more(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->images.zoom.thumbnail_adjust_more = tokens[0]->value.as_int;
 	return true;
 }
 
@@ -391,6 +433,36 @@ void nqiv_cmd_parser_print_zoom_up_amount(nqiv_cmd_manager* manager)
 	fprintf(stdout, "%f", manager->state->images.zoom.pan_up_amount);
 }
 
+void nqiv_cmd_parser_print_zoom_down_amount_more(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%f", manager->state->images.zoom.pan_down_amount_more);
+}
+
+void nqiv_cmd_parser_print_zoom_in_amount_more(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%f", manager->state->images.zoom.zoom_in_amount_more);
+}
+
+void nqiv_cmd_parser_print_zoom_left_amount_more(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%f", manager->state->images.zoom.pan_left_amount_more);
+}
+
+void nqiv_cmd_parser_print_zoom_out_amount_more(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%f", manager->state->images.zoom.zoom_out_amount_more);
+}
+
+void nqiv_cmd_parser_print_zoom_right_amount_more(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%f", manager->state->images.zoom.pan_right_amount_more);
+}
+
+void nqiv_cmd_parser_print_zoom_up_amount_more(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%f", manager->state->images.zoom.pan_up_amount_more);
+}
+
 void nqiv_cmd_parser_print_thumbnail_load(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%s", manager->state->images.thumbnail.load ? "true" : "false");
@@ -409,6 +481,11 @@ void nqiv_cmd_parser_print_thumbnail_size(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_thumbnail_zoom_amount(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%d", manager->state->images.zoom.thumbnail_adjust);
+}
+
+void nqiv_cmd_parser_print_thumbnail_zoom_amount_more(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%d", manager->state->images.zoom.thumbnail_adjust_more);
 }
 
 void nqiv_cmd_parser_print_thumbnail_path(nqiv_cmd_manager* manager)
@@ -983,6 +1060,60 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 							.args = {&nqiv_parser_arg_type_double_negative, NULL},
 							.children = {NULL},
 						},
+						&(nqiv_cmd_node)
+						{
+							.name = "left_amount_more",
+							.description = "Higher amount to pan the zoom left with each action",
+							.store_value = nqiv_cmd_parser_set_zoom_left_amount_more,
+							.print_value = nqiv_cmd_parser_print_zoom_left_amount_more,
+							.args = {&nqiv_parser_arg_type_double_negative_one, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "right_amount_more",
+							.description = "Higher amount to pan the zoom right with each action",
+							.store_value = nqiv_cmd_parser_set_zoom_right_amount_more,
+							.print_value = nqiv_cmd_parser_print_zoom_right_amount_more,
+							.args = {&nqiv_parser_arg_type_double_positive_one, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "down_amount_more",
+							.description = "Higher amount to pan the zoom down with each action",
+							.store_value = nqiv_cmd_parser_set_zoom_down_amount_more,
+							.print_value = nqiv_cmd_parser_print_zoom_down_amount_more,
+							.args = {&nqiv_parser_arg_type_double_positive_one, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "up_amount_more",
+							.description = "Higher amount to pan the zoom up with each action",
+							.store_value = nqiv_cmd_parser_set_zoom_up_amount_more,
+							.print_value = nqiv_cmd_parser_print_zoom_up_amount_more,
+							.args = {&nqiv_parser_arg_type_double_negative_one, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "out_amount_more",
+							.description = "Higher amount to pan the zoom out with each action",
+							.store_value = nqiv_cmd_parser_set_zoom_out_amount_more,
+							.print_value = nqiv_cmd_parser_print_zoom_out_amount_more,
+							.args = {&nqiv_parser_arg_type_double_positive, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "in_amount_more",
+							.description = "Higher amount to pan the zoom in with each action",
+							.store_value = nqiv_cmd_parser_set_zoom_in_amount_more,
+							.print_value = nqiv_cmd_parser_print_zoom_in_amount_more,
+							.args = {&nqiv_parser_arg_type_double_negative, NULL},
+							.children = {NULL},
+						},
 						NULL,
 					}
 				},
@@ -1009,6 +1140,15 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 							.description = "Number of pixels to resize thumbnails by with 'zoom' action in montage mode.",
 							.store_value = nqiv_cmd_parser_set_thumbnail_zoom_amount,
 							.print_value = nqiv_cmd_parser_print_thumbnail_zoom_amount,
+							.args = {&nqiv_parser_arg_type_int_positive, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "size_adjust_more",
+							.description = "Higher number of pixels to resize thumbnails by with 'zoom' action in montage mode.",
+							.store_value = nqiv_cmd_parser_set_thumbnail_zoom_amount_more,
+							.print_value = nqiv_cmd_parser_print_thumbnail_zoom_amount_more,
 							.args = {&nqiv_parser_arg_type_int_positive, NULL},
 							.children = {NULL},
 						},
@@ -1685,6 +1825,11 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager* manager, const nqiv_cmd_node* cur
 	case NQIV_CMD_ARG_KEY_ACTION:
 		{
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking key action arg at %d for token %s for input %s\n", tidx, current_node->name, data);
+			int arg_end = nqiv_cmd_scan_whitespace(mutdata, start_idx, eolpos, NULL);
+			if(arg_end == -1 || arg_end > eolpos) {
+				arg_end = eolpos;
+			}
+			const char arg_end_char = nqiv_cmd_tmpterm(mutdata, arg_end);
 			const nqiv_key_action tmp = nqiv_text_to_key_action(data);
 			if(tmp != NQIV_KEY_ACTION_NONE) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd key action arg at %d for token %s is %s for input %s\n", tidx, current_node->name, nqiv_keybind_action_names[tmp], data);
@@ -1693,6 +1838,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager* manager, const nqiv_cmd_node* cur
 			} else {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing key action arg at %d for token %s with input %s\n", tidx, current_node->name, data);
 			}
+			nqiv_cmd_tmpret(mutdata, arg_end, arg_end_char);
 		}
 		break;
 	case NQIV_CMD_ARG_KEYBIND:
@@ -1869,9 +2015,13 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 			const char tmp = nqiv_cmd_tmpterm(data, eolpos);
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking token %s child %s for input %s\n", current_node->name, current_node->children[cidx]->name, data + idx);
 			nqiv_cmd_tmpret(data, eolpos, tmp);
-			if(strncmp( &data[idx], current_node->children[cidx]->name, strlen(current_node->children[cidx]->name) ) == 0) {
+			int data_end = nqiv_cmd_scan_whitespace(data, idx, eolpos, NULL);
+			if(data_end == -1 || data_end > eolpos) {
+				data_end = eolpos;
+			}
+			if(strncmp( &data[idx], current_node->children[cidx]->name, data_end - idx) == 0 && strlen(current_node->children[cidx]->name) == (size_t)(data_end - idx) ) {
 				current_node = current_node->children[cidx];
-				idx += strlen(current_node->name);
+				idx = data_end;
 				found_node = true;
 				memcpy( current_cmd + current_cmd_position, current_node->name, strlen(current_node->name) );
 				current_cmd_position += strlen(current_node->name);
