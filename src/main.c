@@ -6,6 +6,7 @@
 #include <SDL2/SDL.h>
 #include <omp.h>
 
+#include "platform.h"
 #include "logging.h"
 #include "image.h"
 #include "worker.h"
@@ -298,6 +299,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	optparse_init(&options, argv);
 	int option;
 	int tmpint = 0;
+	bool load_default_config = true;
     while ((option = optparse_long(&options, longopts, NULL)) != -1) {
         switch (option) {
 		case 's':
@@ -314,6 +316,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			if( !nqiv_cmd_consume_stream_from_path(&state->cmds, options.optarg) ) {
 				return false;
 			}
+			load_default_config = false;
 			break;
 		case 't':
             tmpint = strtol(options.optarg, NULL, 10);
@@ -335,6 +338,17 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			return false;
         }
     }
+	if(load_default_config) {
+		char default_config_path[PATH_MAX + 1] = {0};
+		if( !nqiv_get_default_cfg(default_config_path, PATH_MAX + 1) ) {
+            fprintf(stderr, "Failed to find default config path..\n");
+			return false;
+		}
+		if( !nqiv_cmd_consume_stream_from_path(&state->cmds, default_config_path) ) {
+            fprintf(stderr, "Failed to read commands from default config path %s\n", default_config_path);
+			return false;
+		}
+	}
 	if( !nqiv_setup_thread_info(state) ) {
 		nqiv_state_clear(state);
 		return false;
