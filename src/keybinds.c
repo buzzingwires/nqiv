@@ -98,6 +98,10 @@ const char* nqiv_keybind_action_names[] =
 	"toggle_stretch",
 	"stretch",
 	"keep_aspect_ratio",
+	"image_mark_toggle",
+	"image_mark",
+	"image_unmark",
+	"print_marked",
 	"reload"
 };
 

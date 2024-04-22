@@ -234,6 +234,11 @@ bool nqiv_cmd_parser_set_selection_color(nqiv_cmd_manager* manager, nqiv_cmd_arg
 	return nqiv_cmd_parser_apply_color(manager, tokens, &manager->state->selection_color, "selection outline color", nqiv_state_recreate_thumbnail_selection_texture);
 }
 
+bool nqiv_cmd_parser_set_mark_color(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	return nqiv_cmd_parser_apply_color(manager, tokens, &manager->state->mark_color, "mark outline color", nqiv_state_recreate_mark_texture);
+}
+
 bool nqiv_cmd_parser_set_window_height(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	int w;
@@ -583,6 +588,11 @@ void nqiv_cmd_parser_print_loading_color(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_selection_color(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%hhu %hhu %hhu %hhu", manager->state->selection_color.r, manager->state->selection_color.g, manager->state->selection_color.b, manager->state->selection_color.a);
+}
+
+void nqiv_cmd_parser_print_mark_color(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%hhu %hhu %hhu %hhu", manager->state->mark_color.r, manager->state->mark_color.g, manager->state->mark_color.b, manager->state->mark_color.a);
 }
 
 void nqiv_cmd_parser_print_window_height(nqiv_cmd_manager* manager)
@@ -1364,6 +1374,15 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 							.description = "Color of box around selected image.",
 							.store_value = nqiv_cmd_parser_set_selection_color,
 							.print_value = nqiv_cmd_parser_print_selection_color,
+							.args = {&nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "mark",
+							.description = "Color of dashed box around marked image.",
+							.store_value = nqiv_cmd_parser_set_mark_color,
+							.print_value = nqiv_cmd_parser_print_mark_color,
 							.args = {&nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, NULL},
 							.children = {NULL},
 						},

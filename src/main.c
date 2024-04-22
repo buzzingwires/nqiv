@@ -83,6 +83,9 @@ void nqiv_state_clear(nqiv_state* state)
 	if(state->texture_montage_selection != NULL) {
 		SDL_DestroyTexture(state->texture_montage_selection);
 	}
+	if(state->texture_montage_mark != NULL) {
+		SDL_DestroyTexture(state->texture_montage_mark);
+	}
 	if(state->texture_montage_alpha_background != NULL) {
 		SDL_DestroyTexture(state->texture_montage_alpha_background);
 	}
@@ -179,6 +182,9 @@ bool nqiv_setup_sdl(nqiv_state* state)
 		return false;
 	}
 	if( !nqiv_state_create_thumbnail_selection_texture(state) ) {
+		return false;
+	}
+	if( !nqiv_state_create_mark_texture(state) ) {
 		return false;
 	}
 
@@ -763,6 +769,14 @@ state->images.thumbnail.load
 			return false;
 		}
 	}
+	if(image->marked && is_montage) {
+		if( !render_texture(&cleared, state, state->texture_montage_mark, NULL, dstrect) ) {
+			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+			omp_unset_lock(&image->lock);
+			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+			return false;
+		}
+	}
 	if(form->pending_change_count == 0) {
 		form->pending_change_count = pending_change_count;
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Pending change count Image: %d Thumbnail: %d, from main thread %d.\n", image->image.pending_change_count, image->thumbnail.pending_change_count, omp_get_thread_num() );
@@ -823,15 +837,30 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 {
 	char idx_string[INT_MAX_STRLEN] = {0};
 	char count_string[INT_MAX_STRLEN] = {0};
+	char width_string[INT_MAX_STRLEN] = {0};
+	char height_string[INT_MAX_STRLEN] = {0};
+	char zoom_string[INT_MAX_STRLEN] = {0};
 	snprintf(idx_string, INT_MAX_STRLEN, "%d", state->montage.positions.selection + 1);
 	snprintf( count_string, INT_MAX_STRLEN, "%lu", state->images.images->position / sizeof(nqiv_image*) );
+	snprintf(width_string, INT_MAX_STRLEN, "%d", image->image.width);
+	snprintf(height_string, INT_MAX_STRLEN, "%d", image->image.height);
+	if(!state->in_montage) {
+		snprintf( zoom_string, INT_MAX_STRLEN, "%d", nqiv_image_manager_get_zoom_percent(&state->images) );
+	}
 	const char* path_components[] =
 	{
-		"nqiv - (",
+		"nqiv - ",
 		idx_string,
 		"/",
 		count_string,
-		") - ",
+		" - ",
+		width_string,
+		"x",
+		height_string,
+		" - ",
+		zoom_string,
+		!state->in_montage ? "% - " : "",
+		image->marked ? "MARKED -" : "",
 		image->image.path,
 		NULL
 	};
@@ -1152,6 +1181,40 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 		} else if(action == NQIV_KEY_ACTION_KEEP_ASPECT_RATIO) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action keep aspect ratio.\n");
 			state->stretch_images = false;
+			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_IMAGE_MARK_TOGGLE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image mark.\n");
+			nqiv_image* tmp_image;
+			if( nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &tmp_image) ) {
+				tmp_image->marked = !tmp_image->marked;
+			}
+			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_IMAGE_MARK) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image mark.\n");
+			nqiv_image* tmp_image;
+			if( nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &tmp_image) ) {
+				tmp_image->marked = true;
+			}
+			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_IMAGE_UNMARK) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image unmark.\n");
+			nqiv_image* tmp_image;
+			if( nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &tmp_image) ) {
+				tmp_image->marked = false;
+			}
+			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_PRINT_MARKED) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image print marked.\n");
+			const int num_images = state->images.images->position / sizeof(nqiv_image*);
+			int iidx;
+			for(iidx = 0; iidx < num_images; ++iidx) {
+				nqiv_image* image;
+				if( nqiv_array_get_bytes(state->images.images, iidx, sizeof(nqiv_image*), &image) ) {
+					if(image->marked) {
+						fprintf(stdout, "%s\n", image->image.path);
+					}
+				}
+			}
 			render_and_update(state, running, result, false, false);
 		} else if(action == NQIV_KEY_ACTION_RELOAD) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action reload.\n");

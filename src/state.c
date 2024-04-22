@@ -50,6 +50,10 @@ void nqiv_state_set_default_colors(nqiv_state* state)
 	state->selection_color.g = 255;
 	state->selection_color.b = 0;
 	state->selection_color.a = 255;
+	state->mark_color.r = 255;
+	state->mark_color.g = 255;
+	state->mark_color.b = 255;
+	state->mark_color.a = 255;
 	state->alpha_checker_color_one.r = 60;
 	state->alpha_checker_color_one.g = 60;
 	state->alpha_checker_color_one.b = 60;
@@ -87,14 +91,14 @@ bool nqiv_create_solid_rect_texture(nqiv_log_ctx* logger, SDL_Renderer* renderer
 	if( !nqiv_create_sdl_drawing_surface(logger, rect->w, rect->h, &surface) ) {
 		return false;
 	}
-	nqiv_fill_rect(surface, rect, color);
+	nqiv_fill_checked_rect(surface, rect, -1, -1, color, color);
 	if( !nqiv_sdl_surface_to_texture(logger, renderer, surface, texture) ) {
 		return false;
 	}
 	return true;
 }
 
-bool nqiv_create_border_rect_texture(nqiv_log_ctx* logger, SDL_Renderer* renderer, const SDL_Rect* rect, const SDL_Color* color, SDL_Texture** texture)
+bool nqiv_create_border_rect_texture(nqiv_log_ctx* logger, SDL_Renderer* renderer, const SDL_Rect* rect, const int dash_size, const SDL_Color* color, const SDL_Color* dash_color, SDL_Texture** texture)
 {
 	SDL_Surface* surface;
 	if( !nqiv_create_sdl_drawing_surface(logger, rect->w, rect->h, &surface) ) {
@@ -102,7 +106,7 @@ bool nqiv_create_border_rect_texture(nqiv_log_ctx* logger, SDL_Renderer* rendere
 	}
 	int pixel_size = ( (rect->w + rect->h) / 2 ) / 64;
 	pixel_size = pixel_size > 0 ? pixel_size : 1;
-	nqiv_draw_rect(surface, rect, color, pixel_size);
+	nqiv_draw_rect(surface, rect, dash_size, color, dash_color, pixel_size);
 	if( !nqiv_sdl_surface_to_texture(logger, renderer, surface, texture) ) {
 		return false;
 	}
@@ -117,7 +121,7 @@ bool nqiv_create_alpha_background_texture(nqiv_state* state, const SDL_Rect* rec
 	if( !nqiv_create_sdl_drawing_surface(&state->logger, rect->w, rect->h, &surface) ) {
 		return false;
 	}
-	nqiv_draw_alpha_background(surface, rect, thickness, &state->alpha_checker_color_one, &state->alpha_checker_color_two);
+	nqiv_fill_checked_rect(surface, rect, thickness, thickness, &state->alpha_checker_color_one, &state->alpha_checker_color_two);
 	if( !nqiv_sdl_surface_to_texture(&state->logger, state->renderer, surface, texture) ) {
 		return false;
 	}
@@ -131,7 +135,7 @@ bool nqiv_state_create_thumbnail_selection_texture(nqiv_state* state)
 	thumbnail_rect.y = 0;
 	thumbnail_rect.w = state->images.thumbnail.size;
 	thumbnail_rect.h = state->images.thumbnail.size;
-	if( !nqiv_create_border_rect_texture(&state->logger, state->renderer, &thumbnail_rect, &state->selection_color, &state->texture_montage_selection) ) {
+	if( !nqiv_create_border_rect_texture(&state->logger, state->renderer, &thumbnail_rect, -1, &state->selection_color, &state->selection_color, &state->texture_montage_selection) ) {
 		return false;
 	}
 	return true;
@@ -142,6 +146,33 @@ bool nqiv_state_recreate_thumbnail_selection_texture(nqiv_state* state)
 	SDL_Texture* old_texture = state->texture_montage_selection;
 	if( !nqiv_state_create_thumbnail_selection_texture(state) ) {
 		state->texture_montage_selection = old_texture;
+		return false;
+	}
+	SDL_DestroyTexture(old_texture);
+	return true;
+}
+
+bool nqiv_state_create_mark_texture(nqiv_state* state)
+{
+	SDL_Rect thumbnail_rect;
+	thumbnail_rect.x = 0;
+	thumbnail_rect.y = 0;
+	thumbnail_rect.w = state->images.thumbnail.size;
+	thumbnail_rect.h = state->images.thumbnail.size;
+	SDL_Color dash_color;
+	memcpy( &dash_color, &state->mark_color, sizeof(SDL_Color) );
+	dash_color.a = 0;
+	if( !nqiv_create_border_rect_texture(&state->logger, state->renderer, &thumbnail_rect, state->images.thumbnail.size / 16, &state->mark_color, &dash_color, &state->texture_montage_mark) ) {
+		return false;
+	}
+	return true;
+}
+
+bool nqiv_state_recreate_mark_texture(nqiv_state* state)
+{
+	SDL_Texture* old_texture = state->texture_montage_mark;
+	if( !nqiv_state_create_mark_texture(state) ) {
+		state->texture_montage_mark = old_texture;
 		return false;
 	}
 	SDL_DestroyTexture(old_texture);

@@ -893,6 +893,7 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, S
 		src_aspect = (double)srcrect->h / (double)srcrect->w;
 		manager->zoom.fit_level = (double)dstrect->h / (double)srcrect->h;
 	}
+	manager->zoom.actual_size_level = manager->zoom.fit_level;
 	if(dstrect->w > dstrect->h) {
 		dst_aspect = (double)dstrect->w / (double)dstrect->h;
 	} else {
@@ -905,7 +906,6 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, S
 			manager->zoom.fit_level = 1.0 + (dst_aspect - src_aspect);
 		}
 	}
-	manager->zoom.actual_size_level = manager->zoom.fit_level;
 	if(manager->zoom.fit_level > 1.0) {
 		manager->zoom.image_to_viewport_ratio_max = manager->zoom.fit_level;
 	} else {
@@ -918,6 +918,11 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, S
 	if(manager->zoom.image_to_viewport_ratio > manager->zoom.image_to_viewport_ratio_max) {
 		manager->zoom.image_to_viewport_ratio = manager->zoom.image_to_viewport_ratio_max;
 	}
+}
+
+int nqiv_image_manager_get_zoom_percent(nqiv_image_manager* manager)
+{
+	return (int)( (manager->zoom.actual_size_level / manager->zoom.image_to_viewport_ratio) * 100.0 );
 }
 
 void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size)

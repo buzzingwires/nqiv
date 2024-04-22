@@ -58,6 +58,7 @@ struct nqiv_image
 	nqiv_image_manager* parent;
 	omp_lock_t lock;
 	bool thumbnail_attempted;
+	bool marked;
 	nqiv_image_form image;
 	nqiv_image_form thumbnail;
 };
@@ -161,6 +162,7 @@ void nqiv_image_manager_zoom_out_more(nqiv_image_manager* manager);
 
 void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bool do_zoom, const bool do_stretch, SDL_Rect* srcrect, SDL_Rect* dstrect);
 void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, SDL_Rect* srcrect, SDL_Rect* dstrect);
+int nqiv_image_manager_get_zoom_percent(nqiv_image_manager* manager);
 
 void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size);
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager);
