@@ -24,6 +24,12 @@ typedef struct nqiv_montage_positions
 	int end;
 } nqiv_montage_positions;
 
+typedef struct nqiv_montage_preload
+{
+	int ahead;
+	int behind;
+} nqiv_montage_preload;
+
 typedef struct nqiv_montage_state
 {
 	nqiv_log_ctx* logger;
@@ -31,6 +37,7 @@ typedef struct nqiv_montage_state
 	nqiv_image_manager* images;
 	nqiv_montage_dimensions dimensions;
 	nqiv_montage_positions positions;
+	nqiv_montage_preload preload;
 } nqiv_montage_state;
 
 void nqiv_montage_calculate_dimensions(nqiv_montage_state* state);

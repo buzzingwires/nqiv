@@ -431,6 +431,9 @@ bool nqiv_send_thread_event_force(nqiv_state* state, nqiv_event* event)
 
 bool render_texture(bool* cleared, nqiv_state* state, SDL_Texture* texture, SDL_Rect* srcrect, const SDL_Rect* dstrect)
 {
+	if(dstrect == NULL) {
+		return true;
+	}
 	if(!*cleared) {
 		if(SDL_RenderClear(state->renderer) != 0) {
 			return false;
@@ -473,8 +476,10 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 	SDL_Rect srcrect = {0};
 	SDL_Rect* srcrect_ptr = &srcrect;
 	SDL_Rect dstrect_zoom = {0};
+	SDL_Rect* dstrect_zoom_ptr = NULL;
 	bool resample_zoom = false;
-	if(form->width > 0 && form->height > 0 && image->image.width > 0 && image->image.height > 0) {
+	if(form->width > 0 && form->height > 0 && image->image.width > 0 && image->image.height > 0 && dstrect != NULL) {
+		dstrect_zoom_ptr = &dstrect_zoom;
 		if(is_thumbnail) {
 			srcrect.w = image->image.width;
 			srcrect.h = image->image.height;
@@ -496,8 +501,8 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 		dstrect_zoom.h = dstrect->h;
 		dstrect_zoom.x = dstrect->x;
 		dstrect_zoom.y = dstrect->y;
-		nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, &dstrect_zoom);
-		nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, &dstrect_zoom); /* TODO aspect ratio */
+		nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, dstrect_zoom_ptr);
+		nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr); /* TODO aspect ratio */
 		if(!state->no_resample_oversized && (form->height > 16000 || form->width > 16000) )  {
 			if(form->srcrect.x != srcrect.x || form->srcrect.y != srcrect.y || form->srcrect.w != srcrect.w || form->srcrect.h != srcrect.h) {
 				resample_zoom = true;
@@ -525,8 +530,8 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				dstrect_zoom.h = dstrect->h;
 				dstrect_zoom.x = dstrect->x;
 				dstrect_zoom.y = dstrect->y;
-				nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, &dstrect_zoom);
-				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, &dstrect_zoom); /* TODO aspect ratio */
+				nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, dstrect_zoom_ptr);
+				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr); /* TODO aspect ratio */
 			}
 		}
 	}
@@ -712,14 +717,14 @@ state->images.thumbnail.load
 			*/
 		}
 		if(form->texture != NULL) {
-			if( !render_texture(&cleared, state, alpha_background, &dstrect_zoom, &dstrect_zoom) ) {
+			if( !render_texture(&cleared, state, alpha_background, dstrect_zoom_ptr, dstrect_zoom_ptr) ) {
 				nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to draw image alpha background.\n");
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
 			}
-			if( !render_texture(&cleared, state, form->texture, srcrect_ptr, &dstrect_zoom) ) {
+			if( !render_texture(&cleared, state, form->texture, srcrect_ptr, dstrect_zoom_ptr) ) {
 				nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to draw image texture.\n");
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
@@ -937,20 +942,32 @@ bool render_montage(nqiv_state* state, const bool hard)
 	if(SDL_RenderCopy(state->renderer, state->texture_background, NULL, NULL) != 0) {
 		return false;
 	}
+	const int images_len = state->images.images->position / sizeof(nqiv_image*);
+	const int raw_start_idx = state->montage.positions.start - state->montage.preload.behind;
+	const int raw_end = state->montage.positions.end + state->montage.preload.ahead;
+	const int start_idx = raw_start_idx >= 0 ? raw_start_idx : 0;
+	const int end = raw_end <= images_len ? raw_end : images_len;
 	int idx;
-	for(idx = state->montage.positions.start; idx < state->montage.positions.end; ++idx) {
-		SDL_Rect dstrect;
-		nqiv_montage_get_image_rect(&state->montage, idx, &dstrect);
+	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Preload Start: %d Preload End: %d Montage Start: %d Montage Selection: %d Montage End %d\n", start_idx, end, state->montage.positions.start, state->montage.positions.selection, state->montage.positions.end);
+	for(idx = start_idx; idx < end; ++idx) {
 		nqiv_image* image;
 		if( !nqiv_array_get_bytes(state->images.images, idx, sizeof(nqiv_image*), &image) ) {
 			return false;
 		}
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n", image->image.path, idx);
-		if( !render_from_form(state, image, state->texture_montage_alpha_background, true, &dstrect, state->images.thumbnail.load, true, false, state->montage.positions.selection == idx, hard, true) ) {
-			return false;
-		}
-		if( idx == state->montage.positions.selection && !set_title(state, image) ) {
-			return false;
+		if(idx >= state->montage.positions.start && idx < state->montage.positions.end) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n", image->image.path, idx);
+			SDL_Rect dstrect;
+			nqiv_montage_get_image_rect(&state->montage, idx, &dstrect);
+			if( !render_from_form(state, image, state->texture_montage_alpha_background, true, &dstrect, state->images.thumbnail.load, true, false, state->montage.positions.selection == idx, hard, true) ) {
+				return false;
+			}
+			if( idx == state->montage.positions.selection && !set_title(state, image) ) {
+				return false;
+			}
+		} else {
+			if( !render_from_form(state, image, state->texture_montage_alpha_background, true, NULL, state->images.thumbnail.load, true, false, state->montage.positions.selection == idx, hard, true) ) {
+				return false;
+			}
 		}
 	}
 	return true;

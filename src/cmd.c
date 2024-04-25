@@ -239,6 +239,18 @@ bool nqiv_cmd_parser_set_mark_color(nqiv_cmd_manager* manager, nqiv_cmd_arg_toke
 	return nqiv_cmd_parser_apply_color(manager, tokens, &manager->state->mark_color, "mark outline color", nqiv_state_recreate_mark_texture);
 }
 
+bool nqiv_cmd_parser_set_preload_ahead(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->montage.preload.ahead = tokens[0]->value.as_int;
+	return true;
+}
+
+bool nqiv_cmd_parser_set_preload_behind(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->montage.preload.behind = tokens[0]->value.as_int;
+	return true;
+}
+
 bool nqiv_cmd_parser_set_window_height(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	int w;
@@ -593,6 +605,16 @@ void nqiv_cmd_parser_print_selection_color(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_mark_color(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%hhu %hhu %hhu %hhu", manager->state->mark_color.r, manager->state->mark_color.g, manager->state->mark_color.b, manager->state->mark_color.a);
+}
+
+void nqiv_cmd_parser_print_preload_ahead(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%d", manager->state->montage.preload.ahead);
+}
+
+void nqiv_cmd_parser_print_preload_behind(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%d", manager->state->montage.preload.behind);
 }
 
 void nqiv_cmd_parser_print_window_height(nqiv_cmd_manager* manager)
@@ -1402,6 +1424,35 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 							.store_value = nqiv_cmd_parser_set_alpha_background_color_two,
 							.print_value = nqiv_cmd_parser_print_alpha_background_color_two,
 							.args = {&nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, NULL},
+							.children = {NULL},
+						},
+						NULL,
+					}
+				},
+				&(nqiv_cmd_node)
+				{
+					.name = "preload",
+					.description = "Set options related to preloading images not yet in view.",
+					.store_value = NULL,
+					.print_value = NULL,
+					.args = {NULL},
+					.children = {
+						&(nqiv_cmd_node)
+						{
+							.name = "ahead",
+							.description = "This number of images ahead of the current montage are loaded.",
+							.store_value = nqiv_cmd_parser_set_preload_ahead,
+							.print_value = nqiv_cmd_parser_print_preload_ahead,
+							.args = {&nqiv_parser_arg_type_int_natural, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "behind",
+							.description = "This number of images ahead of the current montage are loaded.",
+							.store_value = nqiv_cmd_parser_set_preload_behind,
+							.print_value = nqiv_cmd_parser_print_preload_behind,
+							.args = {&nqiv_parser_arg_type_int_natural, NULL},
 							.children = {NULL},
 						},
 						NULL,

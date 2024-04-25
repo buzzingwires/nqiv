@@ -154,6 +154,77 @@ void nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqi
 	nqiv_pruner_run_set(pruner, &(desc->thumbnail_texture_set), image->thumbnail.texture, image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
 }
 
+bool nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_queue* thread_queue, nqiv_pruner_desc* desc, const int idx, const int iidx, nqiv_image* image)
+{
+	const int num_descs = pruner->pruners->position / sizeof(nqiv_pruner_desc);
+	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+	omp_set_lock(&image->lock);
+	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+	pruner->state.idx = iidx;
+	pruner->state.selection = montage->positions.selection;
+	const int raw_start_idx = montage->positions.start - montage->preload.behind;
+	pruner->state.montage_start = raw_start_idx >= 0 ? raw_start_idx : 0;
+	pruner->state.montage_end = montage->positions.end + montage->preload.ahead;
+	nqiv_pruner_run_desc(pruner, desc, image);
+	if( (desc->counter & NQIV_PRUNER_COUNT_OP_SUM && pruner->state.total_sum > desc->state_check.total_sum) ||
+		(desc->counter & NQIV_PRUNER_COUNT_OP_OR && pruner->state.or_result == desc->state_check.or_result) ||
+		(desc->counter & NQIV_PRUNER_COUNT_OP_AND && pruner->state.and_result == desc->state_check.and_result) ) {
+			nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Pruning image %s.\n", image->image.path);
+			bool send_event = false;
+			/* TODO: This cannot be called from a thread. If we plan to have the pruner run in a thread, we need to do this in a thread safe way, probably by sending an SDL event for master. */
+			if(desc->unload_texture && image->image.texture != NULL) {
+				SDL_DestroyTexture(image->image.texture);
+				image->image.texture = NULL;
+				send_event = true;
+			}
+			if(desc->unload_thumbnail_texture && image->thumbnail.texture != NULL) {
+				SDL_DestroyTexture(image->thumbnail.texture);
+				image->thumbnail.texture = NULL;
+				send_event = true;
+			}
+			nqiv_event event = {0};
+			event.type = NQIV_EVENT_IMAGE_LOAD;
+			event.options.image_load.image = image;
+			event.options.image_load.image_options.unload = true;
+			event.options.image_load.image_options.vips = desc->unload_vips && image->image.vips != NULL;
+			event.options.image_load.image_options.raw = desc->unload_raw && image->image.data != NULL;
+			event.options.image_load.image_options.surface = desc->unload_surface && image->image.surface != NULL;
+			event.options.image_load.thumbnail_options.unload = true;
+			event.options.image_load.thumbnail_options.vips = desc->unload_thumbnail_vips && image->thumbnail.vips != NULL;
+			event.options.image_load.thumbnail_options.raw = desc->unload_thumbnail_raw && image->thumbnail.data != NULL;
+			event.options.image_load.thumbnail_options.surface = desc->unload_thumbnail_surface && image->thumbnail.surface != NULL;
+			send_event = send_event ||
+						 event.options.image_load.image_options.vips ||
+						 event.options.image_load.image_options.raw ||
+						 event.options.image_load.image_options.surface ||
+						 event.options.image_load.thumbnail_options.vips ||
+						 event.options.image_load.thumbnail_options.raw ||
+						 event.options.image_load.thumbnail_options.surface;
+			nqiv_log_write( pruner->logger, NQIV_LOG_INFO, "%sending prune event for image %d desc %d/%d.\n", send_event ? "S" : "Not s", iidx, idx, num_descs );
+			if( send_event && !nqiv_queue_push(thread_queue, sizeof(nqiv_event), &event) ) {
+				nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+				omp_unset_lock(&image->lock);
+				nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+				return false;
+			}
+	}
+	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+	omp_unset_lock(&image->lock);
+	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+	return true;
+}
+
+bool nqiv_pruner_run_image_idx(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_queue* thread_queue, nqiv_image_manager* images, nqiv_pruner_desc* desc, const int idx, const int iidx)
+{
+	nqiv_image* image;
+	if( nqiv_array_get_bytes(images->images, iidx, sizeof(nqiv_image*), &image) ) {
+		if( !nqiv_pruner_run_image(pruner, montage, thread_queue, desc, idx, iidx, image) ) {
+			return false;
+		}
+	}
+	return true;
+}
+
 bool nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_image_manager* images, nqiv_queue* thread_queue)
 {
 	const int num_descs = pruner->pruners->position / sizeof(nqiv_pruner_desc);
@@ -166,61 +237,8 @@ bool nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_imag
 			const int num_images = images->images->position / sizeof(nqiv_image*);
 			int iidx;
 			for(iidx = 0; iidx < num_images; ++iidx) {
-				nqiv_image* image;
-				if( nqiv_array_get_bytes(images->images, iidx, sizeof(nqiv_image*), &image) ) {
-					nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-					omp_set_lock(&image->lock);
-					nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-					pruner->state.idx = iidx;
-					pruner->state.selection = montage->positions.selection;
-					pruner->state.montage_start = montage->positions.start;
-					pruner->state.montage_end = montage->positions.end;
-					nqiv_pruner_run_desc(pruner, &desc, image);
-					if( (desc.counter & NQIV_PRUNER_COUNT_OP_SUM && pruner->state.total_sum > desc.state_check.total_sum) ||
-						(desc.counter & NQIV_PRUNER_COUNT_OP_OR && pruner->state.or_result == desc.state_check.or_result) ||
-						(desc.counter & NQIV_PRUNER_COUNT_OP_AND && pruner->state.and_result == desc.state_check.and_result) ) {
-							nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Pruning image %s.\n", image->image.path);
-							bool send_event = false;
-							/* TODO: This cannot be called from a thread. If we plan to have the pruner run in a thread, we need to do this in a thread safe way, probably by sending an SDL event for master. */
-							if(desc.unload_texture && image->image.texture != NULL) {
-								SDL_DestroyTexture(image->image.texture);
-								image->image.texture = NULL;
-								send_event = true;
-							}
-							if(desc.unload_thumbnail_texture && image->thumbnail.texture != NULL) {
-								SDL_DestroyTexture(image->thumbnail.texture);
-								image->thumbnail.texture = NULL;
-								send_event = true;
-							}
-							nqiv_event event = {0};
-							event.type = NQIV_EVENT_IMAGE_LOAD;
-							event.options.image_load.image = image;
-							event.options.image_load.image_options.unload = true;
-							event.options.image_load.image_options.vips = desc.unload_vips && image->image.vips != NULL;
-							event.options.image_load.image_options.raw = desc.unload_raw && image->image.data != NULL;
-							event.options.image_load.image_options.surface = desc.unload_surface && image->image.surface != NULL;
-							event.options.image_load.thumbnail_options.unload = true;
-							event.options.image_load.thumbnail_options.vips = desc.unload_thumbnail_vips && image->thumbnail.vips != NULL;
-							event.options.image_load.thumbnail_options.raw = desc.unload_thumbnail_raw && image->thumbnail.data != NULL;
-							event.options.image_load.thumbnail_options.surface = desc.unload_thumbnail_surface && image->thumbnail.surface != NULL;
-							send_event = send_event ||
-										 event.options.image_load.image_options.vips ||
-										 event.options.image_load.image_options.raw ||
-										 event.options.image_load.image_options.surface ||
-										 event.options.image_load.thumbnail_options.vips ||
-										 event.options.image_load.thumbnail_options.raw ||
-										 event.options.image_load.thumbnail_options.surface;
-							nqiv_log_write( pruner->logger, NQIV_LOG_INFO, "%sending prune event for image %d desc %d/%d.\n", send_event ? "S" : "Not s", iidx, idx, num_descs );
-							if( send_event && !nqiv_queue_push(thread_queue, sizeof(nqiv_event), &event) ) {
-								nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-								omp_unset_lock(&image->lock);
-								nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-								return false;
-							}
-					}
-					nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-					omp_unset_lock(&image->lock);
-					nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+				if( !nqiv_pruner_run_image_idx(pruner, montage, thread_queue, images, &desc, idx, iidx) ) {
+					return false;
 				}
 			}
 		}
