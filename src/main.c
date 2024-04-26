@@ -463,9 +463,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 		if( !omp_test_lock(&image->lock) ) {
 			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Failed to lock image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 			if( !render_texture(&cleared, state, state->texture_montage_unloaded_background, NULL, dstrect) ) {
-				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-				omp_unset_lock(&image->lock);
-				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
 			}
 			return true;
