@@ -360,7 +360,7 @@ int nqiv_pruner_parse_check( nqiv_log_ctx* logger,
 							 int (*parse_func)(nqiv_log_ctx*, const char*, const int, const int, nqiv_pruner_desc_datapoint_content*) )
 {
 	int nidx = idx;
-	int tidx;
+	int tidx = -1;
 	if(inside_image) {
 		tidx = nqiv_pruner_parse_set_check(logger, text, nidx, end, inside_no, inside_unload, point, unload_setting, parse_func);
 	}

@@ -96,7 +96,7 @@ nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* path)
 		return NULL;
 	}
 	omp_init_lock(&image->lock);
-	strncpy(image->image.path, path, path_len);
+	memcpy(image->image.path, path, path_len);
 	assert(strcmp(image->image.path, path) == 0);
 	nqiv_log_write(logger, NQIV_LOG_DEBUG, "Created image %s.\n", image->image.path);
 	return image;
@@ -366,7 +366,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		return false;
 	}
 
-	memcpy( form->data, extracted, data_size);
+	memcpy(form->data, extracted, data_size);
 	form->effective_width = vips_image_get_width(used_vips);
 	form->effective_height = vips_image_get_height(used_vips);
 	if(used_vips != form->vips) {
