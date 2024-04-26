@@ -265,6 +265,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	char* arg_log_prefix = "#time:%Y-%m-%d_%H:%M:%S%z# #level#: ";
 	*/
 	state->queue_length = STARTING_QUEUE_LENGTH;
+	state->thread_count = omp_get_num_procs() / 4;
 	nqiv_log_init(&state->logger);
 	if( !nqiv_cmd_manager_init(&state->cmds, state) ) {
 		return false;
@@ -303,14 +304,12 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 		{"cmd-from-stdin", 's', OPTPARSE_NONE},
 		{"cmd", 'c', OPTPARSE_REQUIRED},
 		{"cfg", 'C', OPTPARSE_REQUIRED},
-		{"thread-count", 't', OPTPARSE_REQUIRED},
 		{"help", 'h', OPTPARSE_NONE},
 		{0}
 	};
 	struct optparse options;
 	optparse_init(&options, argv);
 	int option;
-	int tmpint = 0;
 	bool load_default_config = true;
     while ((option = optparse_long(&options, longopts, NULL)) != -1) {
         switch (option) {
@@ -330,19 +329,10 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			}
 			load_default_config = false;
 			break;
-		case 't':
-            tmpint = strtol(options.optarg, NULL, 10);
-			if(tmpint <= 0 || errno == ERANGE) {
-				fprintf(stderr, "Number of threads %d must be greater than 0\n", tmpint);
-				return false;
-			}
-			state->thread_count = tmpint;
-			break;
 		case 'h':
 			fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.\n");
 			fprintf(stderr, "-c/--cmd <cmd> Issue a single command to the image viewer's command processor. Also pass help to get information about commands.\n");
 			fprintf(stderr, "-C/--cfg <path> Specify a config file to be read by the image viewer's command processor.\n");
-			fprintf(stderr, "-t/--thread-count <positive> Number of worker threads.\n");
 			fprintf(stderr, "-h/--help Print this help message.\n");
 			return false;
         case '?':

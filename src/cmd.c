@@ -44,6 +44,12 @@ void nqiv_cmd_tmpret(char* data, const int pos, const char value)
 	data[pos] = value;
 }
 
+bool nqiv_cmd_parser_set_threads(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->thread_count = tokens[0]->value.as_int;
+	return true;
+}
+
 bool nqiv_cmd_parser_set_zoom_down_amount(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->images.zoom.pan_down_amount = tokens[0]->value.as_double;
@@ -418,6 +424,11 @@ void nqiv_cmd_print_indent(const nqiv_cmd_manager* manager)
 	for(indent_count = manager->print_settings.indent; indent_count > 0; --indent_count) {
 		fprintf(stdout, "\t");
 	}
+}
+
+void nqiv_cmd_parser_print_threads(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%d", manager->state->thread_count);
 }
 
 void nqiv_cmd_parser_print_zoom_down_amount(nqiv_cmd_manager* manager)
@@ -1029,6 +1040,15 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 						},
 						NULL,
 					}
+				},
+				&(nqiv_cmd_node)
+				{
+					.name = "threads",
+					.description = "Set the number of worker threads used by the software.",
+					.store_value = nqiv_cmd_parser_set_threads,
+					.print_value = nqiv_cmd_parser_print_threads,
+					.args = {&nqiv_parser_arg_type_int_positive, NULL},
+					.children = {NULL},
 				},
 				&(nqiv_cmd_node)
 				{
