@@ -158,7 +158,10 @@ bool nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqi
 {
 	const int num_descs = pruner->pruners->position / sizeof(nqiv_pruner_desc);
 	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-	omp_set_lock(&image->lock);
+	if( !omp_test_lock(&image->lock) ) {
+		nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Failed to lock image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+		return true;
+	}
 	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 	pruner->state.idx = iidx;
 	pruner->state.selection = montage->positions.selection;
