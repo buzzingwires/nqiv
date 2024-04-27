@@ -834,8 +834,11 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 	char zoom_string[INT_MAX_STRLEN] = {0};
 	snprintf(idx_string, INT_MAX_STRLEN, "%d", state->montage.positions.selection + 1);
 	snprintf( count_string, INT_MAX_STRLEN, "%lu", state->images.images->position / sizeof(nqiv_image*) );
-	snprintf(width_string, INT_MAX_STRLEN, "%d", image->image.width);
-	snprintf(height_string, INT_MAX_STRLEN, "%d", image->image.height);
+	const bool do_dimensions = image->image.width > 0 && image->image.height > 0;
+	if(do_dimensions) {
+		snprintf(width_string, INT_MAX_STRLEN, "%d", image->image.width);
+		snprintf(height_string, INT_MAX_STRLEN, "%d", image->image.height);
+	}
 	if(!state->in_montage) {
 		snprintf( zoom_string, INT_MAX_STRLEN, "%d", nqiv_image_manager_get_zoom_percent(&state->images) );
 	}
@@ -847,9 +850,9 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 		count_string,
 		" - ",
 		width_string,
-		"x",
+		do_dimensions ? "x" : "",
 		height_string,
-		" - ",
+		do_dimensions ? " - " : "",
 		zoom_string,
 		!state->in_montage ? "% - " : "",
 		image->marked ? "MARKED -" : "",
