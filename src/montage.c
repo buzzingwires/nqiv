@@ -180,9 +180,8 @@ void nqiv_montage_jump_selection_end(nqiv_montage_state* state)
 
 void nqiv_montage_get_image_rect(nqiv_montage_state* state, const int idx, SDL_Rect* rect)
 {
-	const int images_len = state->images->images->position / sizeof(nqiv_image*);
 	assert(idx >= 0);
-	assert(idx < images_len);
+	assert( idx < state->images->images->position / (int)sizeof(nqiv_image*) );
 	/*
 	if(idx < 0) {
 		return;
