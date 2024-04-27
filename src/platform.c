@@ -52,7 +52,7 @@
 		memcpy( output, base_path, strlen(base_path) );
 		available_length -= strlen(base_path);
 		position += strlen(base_path);
-		memcpy( output, "/.config/nqiv.cfg", strlen("/.config/nqiv.cfg") );
+		memcpy( output + position, "/.config/nqiv.cfg", strlen("/.config/nqiv.cfg") );
 		return true;
 	}
 #else
