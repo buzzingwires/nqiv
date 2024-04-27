@@ -363,6 +363,9 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			}
 		}
 	}
+	if(state->images.images->position / sizeof(nqiv_image*) > 1) {
+		state->in_montage = true;
+	}
 	return true;
 } /* parse_args */
 
@@ -985,8 +988,8 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 
 void render_and_update(nqiv_state* state, bool* running, bool* result, const bool first_render, const bool hard)
 {
+	nqiv_montage_calculate_dimensions(&state->montage);
 	if(state->in_montage) {
-		nqiv_montage_calculate_dimensions(&state->montage);
 		if( !render_montage(state, hard) ) {
 			*running = false;
 			*result = false;
@@ -1368,8 +1371,6 @@ int main(int argc, char *argv[])
 
 	nqiv_state state;
 	memset( &state, 0, sizeof(nqiv_state) );
-
-	state.in_montage = true;
 
 	if(VIPS_INIT(argv[0]) != 0) {
 		fputs("Failed to initialize vips.\n", stderr);
