@@ -486,6 +486,18 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 	return true;
 }
 
+bool nqiv_image_has_loaded_form(nqiv_image* image)
+{
+	return image->image.vips != NULL ||
+		   image->image.data != NULL ||
+		   image->image.surface != NULL ||
+		   image->image.texture != NULL ||
+		   image->thumbnail.vips != NULL ||
+		   image->thumbnail.data != NULL ||
+		   image->thumbnail.surface != NULL ||
+		   image->thumbnail.texture != NULL;
+}
+
 /* Image manager */
 void nqiv_image_manager_destroy(nqiv_image_manager* manager)
 {
