@@ -82,15 +82,17 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 	}
 }
 
-void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock_t* lock, const int delay_base, const Uint32 event_code)
+void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock_t* lock, const int delay_base, const int event_interval, const Uint32 event_code)
 {
 	bool increment_wait_time = false;
 	int wait_time = delay_base + omp_get_thread_num();
 	bool running = true;
 	bool last_event_found = false;
+	int events_processed;
 	while(running) {
 		if(!last_event_found) {
 			last_event_found = true;
+			events_processed = 0;
 			if(!increment_wait_time) {
 				increment_wait_time = true;
 			} else {
@@ -103,13 +105,17 @@ void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock
 			nqiv_log_write( logger, NQIV_LOG_DEBUG, "Locked thread %d.\n", omp_get_thread_num() );
 		}
 		nqiv_event event = {0};
-		const bool event_found = nqiv_priority_queue_pop(queue, sizeof(nqiv_event), &event);
+		bool event_found = false;
+		if(events_processed < event_interval) {
+			event_found = nqiv_priority_queue_pop(queue, sizeof(nqiv_event), &event);
+		}
 		if(event_found) {
 			increment_wait_time = false;
 			wait_time -= ( delay_base + omp_get_thread_num() );
 			if( wait_time < delay_base + omp_get_thread_num() ) {
 				wait_time = delay_base + omp_get_thread_num();
 			}
+			events_processed += 1;
 			switch(event.type) {
 				case NQIV_EVENT_WORKER_STOP:
 					nqiv_log_write( logger, NQIV_LOG_DEBUG, "Received stop event on thread %d.\n", omp_get_thread_num() );

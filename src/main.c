@@ -236,6 +236,9 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	if(state->thread_count == 0) {
 		state->thread_count = 1;
 	}
+	if(state->thread_event_interval == 0) {
+		state->thread_event_interval = 5;
+	}
 	if(state->thread_locks != NULL) {
 		nqiv_state_clear_thread_locks(state);
 	}
@@ -1360,19 +1363,20 @@ bool nqiv_run(nqiv_state* state)
 	bool result;
 	bool* result_ptr = &result;
 	const int thread_count = state->thread_count;
+	const int thread_event_interval = state->thread_event_interval;
 	omp_lock_t** thread_locks = state->thread_locks;
 	nqiv_log_ctx* logger = &state->logger;
 	nqiv_priority_queue* thread_queue = &state->thread_queue;
 	const Uint32 event_code = state->thread_event_number;
-	#pragma omp parallel default(none) firstprivate(state, logger, thread_count, thread_locks, thread_queue, event_code, result_ptr)
+	#pragma omp parallel default(none) firstprivate(state, logger, thread_count, thread_event_interval, thread_locks, thread_queue, event_code, result_ptr)
 	{
 		#pragma omp master
 		{
 			int thread;
 			for(thread = 0; thread < thread_count; ++thread) {
 				omp_lock_t* lock = thread_locks[thread];
-				#pragma omp task default(none) firstprivate(logger, thread_queue, lock, thread_count, event_code)
-				nqiv_worker_main(logger, thread_queue, lock, thread_count, event_code);
+				#pragma omp task default(none) firstprivate(logger, thread_queue, lock, thread_count, thread_event_interval, event_code)
+				nqiv_worker_main(logger, thread_queue, lock, thread_count, thread_event_interval, event_code);
 			}
 			*result_ptr = nqiv_master_thread(state);
 		}

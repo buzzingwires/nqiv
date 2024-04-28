@@ -45,6 +45,7 @@ struct nqiv_state
 	Uint32 thread_event_number;
 	Uint32 cfg_event_number;
 	int thread_count;
+	int thread_event_interval;
 	omp_lock_t** thread_locks;
 	bool in_montage;
 	bool stretch_images;

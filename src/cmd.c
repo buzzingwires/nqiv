@@ -44,9 +44,15 @@ void nqiv_cmd_tmpret(char* data, const int pos, const char value)
 	data[pos] = value;
 }
 
-bool nqiv_cmd_parser_set_threads(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+bool nqiv_cmd_parser_set_thread_count(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->thread_count = tokens[0]->value.as_int;
+	return true;
+}
+
+bool nqiv_cmd_parser_set_thread_event_interval(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->thread_event_interval = tokens[0]->value.as_int;
 	return true;
 }
 
@@ -426,9 +432,14 @@ void nqiv_cmd_print_indent(const nqiv_cmd_manager* manager)
 	}
 }
 
-void nqiv_cmd_parser_print_threads(nqiv_cmd_manager* manager)
+void nqiv_cmd_parser_print_thread_count(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%d", manager->state->thread_count);
+}
+
+void nqiv_cmd_parser_print_thread_event_interval(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%d", manager->state->thread_event_interval);
 }
 
 void nqiv_cmd_parser_print_zoom_down_amount(nqiv_cmd_manager* manager)
@@ -1049,12 +1060,32 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 				},
 				&(nqiv_cmd_node)
 				{
-					.name = "threads",
-					.description = "Set the number of worker threads used by the software.",
-					.store_value = nqiv_cmd_parser_set_threads,
-					.print_value = nqiv_cmd_parser_print_threads,
-					.args = {&nqiv_parser_arg_type_int_positive, NULL},
-					.children = {NULL},
+					.name = "thread",
+					.description = "Settings related to thread behavior.",
+					.store_value = NULL,
+					.print_value = NULL,
+					.args = {NULL},
+					.children = {
+						&(nqiv_cmd_node)
+						{
+							.name = "count",
+							.description = "Set the number of worker threads used by the software.",
+							.store_value = nqiv_cmd_parser_set_thread_count,
+							.print_value = nqiv_cmd_parser_print_thread_count,
+							.args = {&nqiv_parser_arg_type_int_positive, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "event_interval",
+							.description = "Threads will update the master after processing this many events.",
+							.store_value = nqiv_cmd_parser_set_thread_event_interval,
+							.print_value = nqiv_cmd_parser_print_thread_event_interval,
+							.args = {&nqiv_parser_arg_type_int_positive, NULL},
+							.children = {NULL},
+						},
+						NULL
+					}
 				},
 				&(nqiv_cmd_node)
 				{
