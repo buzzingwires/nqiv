@@ -368,10 +368,10 @@ void nqiv_unlock_threads(nqiv_state* state, const int count)
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocking threads.\n");
 	int idx;
 	int unlocked;
-	for(idx = 0, unlocked = count; idx < state->thread_count &&unlocked > 0; ++idx) {
+	for(idx = 0, unlocked = count; idx < state->thread_count && unlocked > 0; ++idx) {
 		if( !omp_test_lock(state->thread_locks[idx]) ) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocking worker thread %d.\n", idx);
-			++unlocked;
+			--unlocked;
 		} else {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Already unlocked worker thread %d.\n", idx);
 		}
@@ -1350,6 +1350,7 @@ bool nqiv_master_thread(nqiv_state* state)
 		nqiv_event output_event = {0};
 		output_event.type = NQIV_EVENT_WORKER_STOP;
 		nqiv_send_thread_event_force(state, 0, &output_event);
+		nqiv_unlock_threads(state, state->thread_count);
 	}
 	return result;
 }
