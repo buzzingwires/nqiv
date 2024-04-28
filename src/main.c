@@ -55,9 +55,7 @@ void nqiv_state_clear_thread_locks(nqiv_state* state)
 
 void nqiv_state_clear(nqiv_state* state)
 {
-	if(state->thread_queue.array != NULL) {
-		nqiv_queue_destroy(&state->thread_queue);
-	}
+	nqiv_priority_queue_destroy(&state->thread_queue);
 	if(state->key_actions.array != NULL) {
 		nqiv_queue_destroy(&state->key_actions);
 	}
@@ -286,7 +284,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 		return false;
 	}
 	nqiv_set_keyrate_defaults(&state->keystates);
-	if( !nqiv_queue_init(&state->thread_queue, &state->logger, STARTING_QUEUE_LENGTH) ) {
+	if( !nqiv_priority_queue_init(&state->thread_queue, &state->logger, STARTING_QUEUE_LENGTH, THREAD_QUEUE_BIN_COUNT) ) {
 		fputs("Failed to initialize thread queue.\n", stderr);
 		return false;
 	}
@@ -381,15 +379,15 @@ void nqiv_unlock_threads(nqiv_state* state, const int count)
 	}
 }
 
-bool nqiv_send_thread_event_base(nqiv_state* state, nqiv_event* event, const bool force, const bool unlock_threads)
+bool nqiv_send_thread_event_base(nqiv_state* state, const int level, nqiv_event* event, const bool force, const bool unlock_threads)
 {
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Sending event.\n");
 	bool event_sent;
 	if(force) {
-		nqiv_queue_push_force(&state->thread_queue, sizeof(nqiv_event), event);
+		nqiv_priority_queue_push_force(&state->thread_queue, level, sizeof(nqiv_event), event);
 		event_sent = true;
 	} else {
-		event_sent = nqiv_queue_push(&state->thread_queue, sizeof(nqiv_event), event);
+		event_sent = nqiv_priority_queue_push(&state->thread_queue, level, sizeof(nqiv_event), event);
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent attempted, status: %s.\n", event_sent ? "Success" : "Failure");
 	if(!event_sent) {
@@ -408,14 +406,14 @@ bool nqiv_send_thread_event_base(nqiv_state* state, nqiv_event* event, const boo
 	return true;
 }
 
-bool nqiv_send_thread_event(nqiv_state* state, nqiv_event* event)
+bool nqiv_send_thread_event(nqiv_state* state, const int level, nqiv_event* event)
 {
-	return nqiv_send_thread_event_base(state, event, false, false);
+	return nqiv_send_thread_event_base(state, level, event, false, false);
 }
 
-bool nqiv_send_thread_event_force(nqiv_state* state, nqiv_event* event)
+bool nqiv_send_thread_event_force(nqiv_state* state, const int level, nqiv_event* event)
 {
-	return nqiv_send_thread_event_base(state, event, true, true);
+	return nqiv_send_thread_event_base(state, level, event, true, true);
 }
 
 bool render_texture(bool* cleared, nqiv_state* state, SDL_Texture* texture, SDL_Rect* srcrect, const SDL_Rect* dstrect)
@@ -531,7 +529,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 			event.options.image_load.create_thumbnail = true;
 			if(form->pending_change_count > 0) {
 				/* NOOP */
-			} else if( !nqiv_send_thread_event(state, &event) ) {
+			} else if( !nqiv_send_thread_event(state, 4, &event) ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -563,7 +561,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				event.options.image_load.create_thumbnail = true;
 				if(form->pending_change_count > 0) {
 					/* NOOP */
-				} else if( !nqiv_send_thread_event(state, &event) ) {
+				} else if( !nqiv_send_thread_event(state, 3, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -642,7 +640,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				event.options.image_load.thumbnail_options.next_frame = next_frame && !first_frame;
 				if(form->pending_change_count > 0) {
 					/* NOOP */
-				} else if( !nqiv_send_thread_event(state, &event) ) {
+				} else if( !nqiv_send_thread_event(state, 2, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -661,7 +659,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					event.options.image_load.borrow_thumbnail_dimension_metadata = true;
 					if(form->pending_change_count > 0) {
 						/* NOOP */
-					} else if( !nqiv_send_thread_event(state, &event) ) {
+					} else if( !nqiv_send_thread_event(state, 3, &event) ) {
 						nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 						omp_unset_lock(&image->lock);
 						nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -693,7 +691,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				event.options.image_load.image_options.next_frame = next_frame && !first_frame;
 				if(form->pending_change_count > 0) {
 					/* NOOP */
-				} else if( !nqiv_send_thread_event(state, &event) ) {
+				} else if( !nqiv_send_thread_event(state, 2, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -759,7 +757,7 @@ state->images.thumbnail.load
 				event.options.image_load.image_options.next_frame = next_frame && !first_frame;
 				if(form->pending_change_count > 0) {
 					/* NOOP */
-				} else if( !nqiv_send_thread_event(state, &event) ) {
+				} else if( !nqiv_send_thread_event(state, 2, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -1277,8 +1275,12 @@ bool nqiv_master_thread(nqiv_state* state)
 						omp_set_lock(input_event.user.data1);
 						nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locked thread from master.\n");
 						*/
-						omp_set_lock(&state->thread_queue.lock);
-						const int queue_length = state->thread_queue.array->position / sizeof(nqiv_event*);
+						nqiv_priority_queue_lock(&state->thread_queue);
+						int queue_length = 0;
+						int idx;
+						for(idx = 0; idx < state->thread_queue.bin_count; ++idx) {
+							queue_length += state->thread_queue.bins[idx].array->position / sizeof(nqiv_event*);
+						}
 						if(queue_length == 0) {
 							if( omp_test_lock(input_event.user.data1) ) {
 								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locked thread from master.\n");
@@ -1288,7 +1290,7 @@ bool nqiv_master_thread(nqiv_state* state)
 						} else {
 							nqiv_unlock_threads(state, queue_length);
 						}
-						omp_unset_lock(&state->thread_queue.lock);
+						nqiv_priority_queue_unlock(&state->thread_queue);
 						render_and_update(state, &running, &result, false, false);
 					} else if( ( Uint32)input_event.user.code == state->cfg_event_number ) {
 						nqiv_handle_keyactions(state, &running, &result, false, false); /* TODO No simulated actions for now. */
@@ -1347,7 +1349,7 @@ bool nqiv_master_thread(nqiv_state* state)
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Killing thread %d.\n", idx);
 		nqiv_event output_event = {0};
 		output_event.type = NQIV_EVENT_WORKER_STOP;
-		nqiv_send_thread_event_force(state, &output_event);
+		nqiv_send_thread_event_force(state, 0, &output_event);
 	}
 	return result;
 }
@@ -1358,17 +1360,18 @@ bool nqiv_run(nqiv_state* state)
 	bool* result_ptr = &result;
 	const int thread_count = state->thread_count;
 	omp_lock_t** thread_locks = state->thread_locks;
-	nqiv_queue* thread_queue = &state->thread_queue;
+	nqiv_log_ctx* logger = &state->logger;
+	nqiv_priority_queue* thread_queue = &state->thread_queue;
 	const Uint32 event_code = state->thread_event_number;
-	#pragma omp parallel default(none) firstprivate(state, thread_count, thread_locks, thread_queue, event_code, result_ptr)
+	#pragma omp parallel default(none) firstprivate(state, logger, thread_count, thread_locks, thread_queue, event_code, result_ptr)
 	{
 		#pragma omp master
 		{
 			int thread;
 			for(thread = 0; thread < thread_count; ++thread) {
 				omp_lock_t* lock = thread_locks[thread];
-				#pragma omp task default(none) firstprivate(thread_queue, lock, thread_count, event_code)
-				nqiv_worker_main(thread_queue, lock, thread_count, event_code);
+				#pragma omp task default(none) firstprivate(logger, thread_queue, lock, thread_count, event_code)
+				nqiv_worker_main(logger, thread_queue, lock, thread_count, event_code);
 			}
 			*result_ptr = nqiv_master_thread(state);
 		}

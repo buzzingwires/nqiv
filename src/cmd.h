@@ -16,6 +16,7 @@
 #define NQIV_CMD_MAX_CHILDREN 16
 #define NQIV_CMD_DUMPCFG_BUFFER_LENGTH 1024
 #define NQIV_CMD_ADD_BYTE_BUFFER_LENGTH (sizeof(char) * 1)
+#define NQIV_CMD_READ_BUFFER_LENGTH 100000
 
 typedef enum nqiv_cmd_arg_type
 {

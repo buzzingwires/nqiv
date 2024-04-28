@@ -82,7 +82,7 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 	}
 }
 
-void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const int delay_base, const Uint32 event_code)
+void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock_t* lock, const int delay_base, const Uint32 event_code)
 {
 	bool increment_wait_time = false;
 	int wait_time = delay_base + omp_get_thread_num();
@@ -96,14 +96,14 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const int delay_base,
 			} else {
 				wait_time += ( delay_base + omp_get_thread_num() );
 			}
-			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Waiting for %d from thread %d.\n", wait_time, omp_get_thread_num() );
+			nqiv_log_write( logger, NQIV_LOG_DEBUG, "Waiting for %d from thread %d.\n", wait_time, omp_get_thread_num() );
 			SDL_Delay(wait_time); /* XXX: Sleep for a short time so the master thread can sync faster. Strictly speaking, it should *not* be necessary. */
-			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locking thread %d.\n", omp_get_thread_num() );
+			nqiv_log_write( logger, NQIV_LOG_DEBUG, "Locking thread %d.\n", omp_get_thread_num() );
 			omp_set_lock(lock);
-			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locked thread %d.\n", omp_get_thread_num() );
+			nqiv_log_write( logger, NQIV_LOG_DEBUG, "Locked thread %d.\n", omp_get_thread_num() );
 		}
 		nqiv_event event = {0};
-		const bool event_found = nqiv_queue_pop(queue, sizeof(nqiv_event), &event);
+		const bool event_found = nqiv_priority_queue_pop(queue, sizeof(nqiv_event), &event);
 		if(event_found) {
 			increment_wait_time = false;
 			wait_time -= ( delay_base + omp_get_thread_num() );
@@ -112,14 +112,14 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const int delay_base,
 			}
 			switch(event.type) {
 				case NQIV_EVENT_WORKER_STOP:
-					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Received stop event on thread %d.\n", omp_get_thread_num() );
+					nqiv_log_write( logger, NQIV_LOG_DEBUG, "Received stop event on thread %d.\n", omp_get_thread_num() );
 					running = false;
 					break;
 				case NQIV_EVENT_IMAGE_LOAD:
-					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Received image load event on thread %d.\n", omp_get_thread_num() );
-					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
+					nqiv_log_write( logger, NQIV_LOG_DEBUG, "Received image load event on thread %d.\n", omp_get_thread_num() );
+					nqiv_log_write( logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
 					omp_set_lock(&event.options.image_load.image->lock);
-					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
+					nqiv_log_write( logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
 					if(event.options.image_load.set_thumbnail_path) {
 						if(event.options.image_load.image->thumbnail.path == NULL) {
 							if( !nqiv_thumbnail_calculate_path(event.options.image_load.image, &event.options.image_load.image->thumbnail.path, false) ) {
@@ -167,10 +167,10 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const int delay_base,
 					if(event.options.image_load.image->image.pending_change_count > 0) {
 						event.options.image_load.image->image.pending_change_count -= 1;
 					}
-					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Pending change count Image: %d Thumbnail: %d, from worker thread %d.\n", event.options.image_load.image->image.pending_change_count, event.options.image_load.image->thumbnail.pending_change_count, omp_get_thread_num() );
-					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
+					nqiv_log_write( logger, NQIV_LOG_DEBUG, "Pending change count Image: %d Thumbnail: %d, from worker thread %d.\n", event.options.image_load.image->image.pending_change_count, event.options.image_load.image->thumbnail.pending_change_count, omp_get_thread_num() );
+					nqiv_log_write( logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&event.options.image_load.image->lock);
-					nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
+					nqiv_log_write( logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
 					break;
 			}
 		} else {
@@ -179,13 +179,13 @@ void nqiv_worker_main(nqiv_queue* queue, omp_lock_t* lock, const int delay_base,
 			tell_finished.user.code = (Sint32)event_code;
 			tell_finished.user.data1 = lock;
 			if(SDL_PushEvent(&tell_finished) < 0) {
-				nqiv_log_write( queue->logger, NQIV_LOG_ERROR, "Failed to send SDL event from thread %d. SDL Error: %s\n", omp_get_thread_num(), SDL_GetError() );
+				nqiv_log_write( logger, NQIV_LOG_ERROR, "Failed to send SDL event from thread %d. SDL Error: %s\n", omp_get_thread_num(), SDL_GetError() );
 				running = false;
 			}
 			last_event_found = false;
-			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocking thread %d.\n", omp_get_thread_num() );
+			nqiv_log_write( logger, NQIV_LOG_DEBUG, "Unlocking thread %d.\n", omp_get_thread_num() );
 			omp_unset_lock(lock);
-			nqiv_log_write( queue->logger, NQIV_LOG_DEBUG, "Unlocked thread %d.\n", omp_get_thread_num() );
+			nqiv_log_write( logger, NQIV_LOG_DEBUG, "Unlocked thread %d.\n", omp_get_thread_num() );
 		}
 	}
 }

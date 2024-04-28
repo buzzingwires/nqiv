@@ -542,8 +542,11 @@ void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 		fprintf(stdout, "Images: %d\n", manager->state->images.images->data_length);
 		nqiv_cmd_print_indent(manager);
 		fprintf(stdout, "Image extensions: %d\n", manager->state->images.extensions->data_length);
-		nqiv_cmd_print_indent(manager);
-		fprintf(stdout, "Thread Queue: %d\n", manager->state->thread_queue.array->data_length);
+		int idx;
+		for(idx = 0; idx < manager->state->thread_queue.bin_count; ++idx) {
+			nqiv_cmd_print_indent(manager);
+			fprintf(stdout, "Thread Queue %d: %d\n", idx, manager->state->thread_queue.bins[idx].array->data_length);
+		}
 		nqiv_cmd_print_indent(manager);
 		fprintf(stdout, "Key Actions: %d\n", manager->state->key_actions.array->data_length);
 		nqiv_cmd_print_indent(manager);
@@ -553,7 +556,10 @@ void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 		fprintf(stdout, "#Keybinds: %d\n", manager->state->keybinds.lookup->data_length);
 		fprintf(stdout, "#Images: %d\n", manager->state->images.images->data_length);
 		fprintf(stdout, "#Image extensions: %d\n", manager->state->images.extensions->data_length);
-		fprintf(stdout, "#Thread Queue: %d\n", manager->state->thread_queue.array->data_length);
+		int idx;
+		for(idx = 0; idx < manager->state->thread_queue.bin_count; ++idx) {
+			fprintf(stdout, "#Thread Queue %d: %d\n", idx, manager->state->thread_queue.bins[idx].array->data_length);
+		}
 		fprintf(stdout, "#Key Actions: %d\n", manager->state->key_actions.array->data_length);
 		fprintf(stdout, "#Cmd Buffer: %d", manager->state->cmds.buffer->data_length);
 	}
@@ -2224,7 +2230,7 @@ void nqiv_cmd_manager_destroy(nqiv_cmd_manager* manager)
 bool nqiv_cmd_manager_init(nqiv_cmd_manager* manager, nqiv_state* state)
 {
 	nqiv_cmd_manager_destroy(manager);
-	manager->buffer = nqiv_array_create(state->queue_length);
+	manager->buffer = nqiv_array_create(NQIV_CMD_READ_BUFFER_LENGTH);
 	if(manager->buffer == NULL) {
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR, "Failed to allocate memory to create cmd buffer of length %d\n", state->queue_length);
 		return false;

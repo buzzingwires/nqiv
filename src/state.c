@@ -252,7 +252,7 @@ bool nqiv_state_expand_queues(nqiv_state* state)
 	if(!nqiv_array_grow(state->keybinds.lookup, state->queue_length) ||
 	   !nqiv_array_grow(state->images.images, state->queue_length) ||
 	   !nqiv_array_grow(state->images.extensions, state->queue_length) ||
-	   !nqiv_array_grow(state->thread_queue.array, state->queue_length) ||
+	   !nqiv_priorty_queue_grow( &(state->thread_queue), state->queue_length) ||
 	   !nqiv_array_grow(state->key_actions.array, state->queue_length) ||
 	   !nqiv_array_grow(state->cmds.buffer, state->queue_length) ) {
 		return false;

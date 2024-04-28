@@ -122,3 +122,99 @@ bool nqiv_queue_pop_front(nqiv_queue* queue, const int count, void* entry)
 	omp_unset_lock(&queue->lock);
 	return result;
 }
+
+void nqiv_priority_queue_destroy(nqiv_priority_queue* queue)
+{
+	if(queue->bins != NULL) {
+		int idx;
+		for(idx = 0; idx < queue->bin_count; ++idx) {
+			nqiv_queue_destroy( &(queue->bins[idx]) );
+		}
+		free(queue->bins);
+	}
+	memset( queue, 0, sizeof(nqiv_priority_queue) );
+}
+
+bool nqiv_priority_queue_init(nqiv_priority_queue* queue, nqiv_log_ctx* logger, const int starting_bin_length, const int bin_count)
+{
+	if(queue == NULL) {
+		return false;
+	}
+	if(bin_count == 0) {
+		return false;
+	}
+	nqiv_priority_queue tmp;
+	tmp.bins = (nqiv_queue*)calloc( bin_count, sizeof(nqiv_queue) );
+	if(tmp.bins == NULL) {
+		return false;
+	}
+	tmp.bin_count = bin_count;
+	int idx;
+	for(idx = 0; idx < tmp.bin_count; ++idx) {
+		if( !nqiv_queue_init(&(tmp.bins[idx]), logger, starting_bin_length) ) {
+			nqiv_priority_queue_destroy(&tmp);
+			return false;
+		}
+	}
+	memcpy( queue, &tmp, sizeof(nqiv_priority_queue) );
+	return true;
+}
+
+bool nqiv_priority_queue_push(nqiv_priority_queue* queue, const int level, const int count, void* entry)
+{
+	assert(queue != NULL);
+	assert(level >= 0);
+	assert(level < queue->bin_count);
+	return nqiv_queue_push(&(queue->bins[level]), count, entry);
+}
+
+void nqiv_priority_queue_push_force(nqiv_priority_queue* queue, const int level, const int count, void* entry)
+{
+	assert(queue != NULL);
+	assert(level >= 0);
+	assert(level < queue->bin_count);
+	nqiv_queue_push_force(&(queue->bins[level]), count, entry);
+}
+
+bool nqiv_priority_queue_pop_op( nqiv_priority_queue* queue, const int count, void* entry, bool (*op)(nqiv_queue*, const int, void*) )
+{
+	int idx;
+	for(idx = 0; idx < queue->bin_count; ++idx) {
+		if( op(&(queue->bins[idx]), count, entry) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool nqiv_priority_queue_pop(nqiv_priority_queue* queue, const int count, void* entry)
+{
+	return nqiv_priority_queue_pop_op(queue, count, entry, nqiv_queue_pop);
+}
+
+void nqiv_priority_queue_lock(nqiv_priority_queue* queue)
+{
+	int idx;
+	for(idx = 0; idx < queue->bin_count; ++idx) {
+		omp_set_lock( &(queue->bins[idx].lock) );
+	}
+}
+
+void nqiv_priority_queue_unlock(nqiv_priority_queue* queue)
+{
+	int idx;
+	for(idx = 0; idx < queue->bin_count; ++idx) {
+		omp_unset_lock( &(queue->bins[idx].lock) );
+	}
+}
+
+bool nqiv_priorty_queue_grow(nqiv_priority_queue* queue, const int queue_length)
+{
+	int idx;
+	for(idx = 0; idx < queue->bin_count; ++idx) {
+		if( !nqiv_array_grow(queue->bins[idx].array, queue_length) ) {
+			return false;
+		}
+	}
+	return true;
+}
