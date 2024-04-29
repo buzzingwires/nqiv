@@ -154,20 +154,21 @@ void nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqi
 	nqiv_pruner_run_set(pruner, &(desc->thumbnail_texture_set), image->thumbnail.texture, image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
 }
 
-bool nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_priority_queue* thread_queue, const int iidx, nqiv_image* image)
+int nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_priority_queue* thread_queue, const int iidx, nqiv_image* image)
 {
 	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 	if( !omp_test_lock(&image->lock) ) {
 		nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Failed to lock image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-		return true;
+		return 0;
 	}
 	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 	if( !nqiv_image_has_loaded_form(image) ) {
 		nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 		omp_unset_lock(&image->lock);
 		nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-		return true;
+		return 0;
 	}
+	int prune_count = 0;
 	int idx;
 	const int num_descs = pruner->pruners->position / sizeof(nqiv_pruner_desc);
 	for(idx = 0; idx < num_descs; ++idx) {
@@ -215,6 +216,9 @@ bool nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqi
 							 event.options.image_load.thumbnail_options.vips ||
 							 event.options.image_load.thumbnail_options.raw ||
 							 event.options.image_load.thumbnail_options.surface;
+				if(send_event) {
+					prune_count += 1;
+				}
 				nqiv_log_write( pruner->logger, NQIV_LOG_INFO, "%sending prune event for image %d desc %d/%d.\n", send_event ? "S" : "Not s", iidx, idx, num_descs );
 				if(send_event) {
 					event.transaction_group = pruner->thread_event_transaction_group;
@@ -231,20 +235,23 @@ bool nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqi
 	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 	omp_unset_lock(&image->lock);
 	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-	return true;
+	return prune_count;
 }
 
-bool nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_image_manager* images, nqiv_priority_queue* thread_queue)
+int nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_image_manager* images, nqiv_priority_queue* thread_queue)
 {
+	int output = 0;
 	const int num_images = images->images->position / sizeof(nqiv_image*);
 	nqiv_image** images_array = images->images->data;
 	int iidx;
 	for(iidx = 0; iidx < num_images; ++iidx) {
-		if( !nqiv_pruner_run_image(pruner, montage, thread_queue, iidx, images_array[iidx]) ) {
-			return false;
+		const int result = !nqiv_pruner_run_image(pruner, montage, thread_queue, iidx, images_array[iidx]);
+		if(result == -1) {
+			return result;
 		}
+		output += result;
 	}
-	return true;
+	return output;
 }
 
 /*

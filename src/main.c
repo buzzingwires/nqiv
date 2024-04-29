@@ -1030,9 +1030,12 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 		SDL_RenderPresent(state->renderer);
 	}
 	state->pruner.thread_event_transaction_group = state->thread_event_transaction_group;
-	if( !nqiv_pruner_run(&state->pruner, &state->montage, &state->images, &state->thread_queue) ) {
+	const int prune_count = nqiv_pruner_run(&state->pruner, &state->montage, &state->images, &state->thread_queue);
+	if(prune_count == -1) {
 		*running = false;
 		*result = false;
+	} else if(prune_count > 0) {
+		nqiv_unlock_threads(state, prune_count);
 	}
 }
 
