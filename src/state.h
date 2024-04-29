@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "typedefs.h"
 #include "logging.h"
@@ -46,6 +47,7 @@ struct nqiv_state
 	Uint32 cfg_event_number;
 	int thread_count;
 	int thread_event_interval;
+	int64_t thread_event_transaction_group;
 	omp_lock_t** thread_locks;
 	bool in_montage;
 	bool stretch_images;

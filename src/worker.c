@@ -89,6 +89,7 @@ void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock
 	bool running = true;
 	bool last_event_found = false;
 	int events_processed;
+	int64_t transaction_group = 0;
 	while(running) {
 		if(!last_event_found) {
 			last_event_found = true;
@@ -108,6 +109,13 @@ void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock
 		bool event_found = false;
 		if(events_processed < event_interval || event_interval == 0) {
 			event_found = nqiv_priority_queue_pop(queue, sizeof(nqiv_event), &event);
+		}
+		if(event.transaction_group == -1) {
+			/* NOOP */
+		} else if(event.transaction_group < transaction_group) {
+			event_found = false;
+		} else {
+			transaction_group = event.transaction_group;
 		}
 		if(event_found) {
 			increment_wait_time = false;

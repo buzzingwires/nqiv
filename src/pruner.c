@@ -216,11 +216,14 @@ bool nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqi
 							 event.options.image_load.thumbnail_options.raw ||
 							 event.options.image_load.thumbnail_options.surface;
 				nqiv_log_write( pruner->logger, NQIV_LOG_INFO, "%sending prune event for image %d desc %d/%d.\n", send_event ? "S" : "Not s", iidx, idx, num_descs );
-				if( send_event && !nqiv_priority_queue_push(thread_queue, 1, sizeof(nqiv_event), &event) ) {
-					nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-					omp_unset_lock(&image->lock);
-					nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-					return false;
+				if(send_event) {
+					event.transaction_group = pruner->thread_event_transaction_group;
+					if( !nqiv_priority_queue_push(thread_queue, 1, sizeof(nqiv_event), &event) ) {
+						nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+						omp_unset_lock(&image->lock);
+						nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+						return false;
+					}
 				}
 			}
 		}

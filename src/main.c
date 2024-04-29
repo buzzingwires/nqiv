@@ -411,11 +411,13 @@ bool nqiv_send_thread_event_base(nqiv_state* state, const int level, nqiv_event*
 
 bool nqiv_send_thread_event(nqiv_state* state, const int level, nqiv_event* event)
 {
+	event->transaction_group = state->thread_event_transaction_group;
 	return nqiv_send_thread_event_base(state, level, event, false, false);
 }
 
 bool nqiv_send_thread_event_force(nqiv_state* state, const int level, nqiv_event* event)
 {
+	event->transaction_group = -1;
 	return nqiv_send_thread_event_base(state, level, event, true, true);
 }
 
@@ -1003,7 +1005,16 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 
 void render_and_update(nqiv_state* state, bool* running, bool* result, const bool first_render, const bool hard)
 {
+	nqiv_montage_positions montage_positions  = {0};
+	nqiv_montage_dimensions montage_dimensions = {0};
+	memcpy( &montage_positions, &state->montage.positions, sizeof(nqiv_montage_positions) );
+	memcpy( &montage_dimensions, &state->montage.dimensions, sizeof(nqiv_montage_dimensions) );
 	nqiv_montage_calculate_dimensions(&state->montage);
+	if( memcmp( &montage_positions, &state->montage.positions, sizeof(nqiv_montage_positions) ) != 0 ||
+		memcmp( &montage_dimensions, &state->montage.dimensions, sizeof(nqiv_montage_dimensions) )
+	  ) {
+		state->thread_event_transaction_group += 1;
+	}
 	if(state->in_montage) {
 		if( !render_montage(state, hard) ) {
 			*running = false;
@@ -1018,6 +1029,7 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 	if(*result != false) {
 		SDL_RenderPresent(state->renderer);
 	}
+	state->pruner.thread_event_transaction_group = state->thread_event_transaction_group;
 	if( !nqiv_pruner_run(&state->pruner, &state->montage, &state->images, &state->thread_queue) ) {
 		*running = false;
 		*result = false;

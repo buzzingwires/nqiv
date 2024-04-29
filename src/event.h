@@ -2,6 +2,7 @@
 #define NQIV_EVENT_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "image.h"
 
@@ -44,6 +45,7 @@ typedef union nqiv_event_options
 typedef struct nqiv_event
 {
 	nqiv_event_type type;
+	int64_t transaction_group;
 	nqiv_event_options options;
 } nqiv_event;
 
