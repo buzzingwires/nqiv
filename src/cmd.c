@@ -1078,7 +1078,7 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 						&(nqiv_cmd_node)
 						{
 							.name = "event_interval",
-							.description = "Threads will update the master after processing this many events.",
+							.description = "Threads will update the master after processing this many events. 0 to process all.",
 							.store_value = nqiv_cmd_parser_set_thread_event_interval,
 							.print_value = nqiv_cmd_parser_print_thread_event_interval,
 							.args = {&nqiv_parser_arg_type_int_positive, NULL},

@@ -106,7 +106,7 @@ void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock
 		}
 		nqiv_event event = {0};
 		bool event_found = false;
-		if(events_processed < event_interval) {
+		if(events_processed < event_interval || event_interval == 0) {
 			event_found = nqiv_priority_queue_pop(queue, sizeof(nqiv_event), &event);
 		}
 		if(event_found) {
