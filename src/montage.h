@@ -38,6 +38,7 @@ typedef struct nqiv_montage_state
 	nqiv_montage_dimensions dimensions;
 	nqiv_montage_positions positions;
 	nqiv_montage_preload preload;
+	bool range_changed;
 } nqiv_montage_state;
 
 void nqiv_montage_calculate_dimensions(nqiv_montage_state* state);

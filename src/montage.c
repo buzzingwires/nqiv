@@ -56,6 +56,8 @@ double nqiv_montage_calculate_axis(int* counter, const double ratio)
 
 void nqiv_montage_calculate_dimensions(nqiv_montage_state* state)
 {
+	nqiv_montage_state original = {0};
+	memcpy( &original, state, sizeof(nqiv_montage_state) );
 	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Calculating montage dimensions.\n");
 	assert(state != NULL);
 	assert(state->images != NULL);
@@ -89,10 +91,14 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state)
 	state->dimensions.column_space = column_leftover / ( (double)state->dimensions.count_per_row + 3.0 );
 	state->dimensions.vertical_margin = state->dimensions.row_space * 2.0;
 	state->dimensions.horizontal_margin = state->dimensions.column_space * 2.0;
+	original.positions.selection = state->positions.selection;
+	state->range_changed = state->range_changed || memcmp( &original, state, sizeof(nqiv_montage_state) ) != 0;
 }
 
 void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 {
+	nqiv_montage_state original = {0};
+	memcpy( &original, state, sizeof(nqiv_montage_state) );
 	int new_idx = idx;
 	const int images_len = state->images->images->position / sizeof(nqiv_image*);
 	if(new_idx >= images_len) {
@@ -102,10 +108,14 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 		new_idx = 0;
 	}
 	if(new_idx == state->positions.selection) {
+		original.positions.selection = state->positions.selection;
+		state->range_changed = state->range_changed || memcmp( &original, state, sizeof(nqiv_montage_state) ) != 0;
 		return;
 	}
 	if(new_idx >= state->positions.start && new_idx < state->positions.end) {
 		state->positions.selection = new_idx;
+		original.positions.selection = state->positions.selection;
+		state->range_changed = state->range_changed || memcmp( &original, state, sizeof(nqiv_montage_state) ) != 0;
 		return;
 	}
 	const int page = new_idx / state->dimensions.count;
@@ -121,6 +131,8 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 		state->positions.end = images_len - 1;
 	}
 	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Setting montage selection to %d.\n", state->positions.selection);
+	original.positions.selection = state->positions.selection;
+	state->range_changed = state->range_changed || memcmp( &original, state, sizeof(nqiv_montage_state) ) != 0;
 }
 
 void nqiv_montage_jump_selection(nqiv_montage_state* state, const int offset)

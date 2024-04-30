@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <assert.h>
 
 #include <SDL2/SDL.h>
@@ -82,14 +83,13 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 	}
 }
 
-void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock_t* lock, const int delay_base, const int event_interval, const Uint32 event_code)
+void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock_t* lock, const int delay_base, const int event_interval, const Uint32 event_code, const int64_t* transaction_group, omp_lock_t* transaction_group_lock)
 {
 	bool increment_wait_time = false;
 	int wait_time = delay_base + omp_get_thread_num();
 	bool running = true;
 	bool last_event_found = false;
 	int events_processed;
-	int64_t transaction_group = 0;
 	while(running) {
 		if(!last_event_found) {
 			last_event_found = true;
@@ -112,12 +112,14 @@ void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock
 				event_found = nqiv_priority_queue_pop(queue, sizeof(nqiv_event), &event);
 				if(!event_found || event.transaction_group == -1) {
 					break;
-				} else if(event.transaction_group < transaction_group) {
-					/* NOOP */
-				} else {
-					transaction_group = event.transaction_group;
-					break;
 				}
+				omp_set_lock(transaction_group_lock);
+				if(event.transaction_group >= *transaction_group) {
+					omp_unset_lock(transaction_group_lock);
+					break;
+					/* NOOP */
+				}
+				omp_unset_lock(transaction_group_lock);
 			}
 		}
 		if(event_found) {

@@ -48,6 +48,7 @@ struct nqiv_state
 	int thread_count;
 	int thread_event_interval;
 	int64_t thread_event_transaction_group;
+	omp_lock_t thread_event_transaction_group_lock;
 	omp_lock_t** thread_locks;
 	bool in_montage;
 	bool stretch_images;

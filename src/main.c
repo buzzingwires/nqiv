@@ -102,6 +102,7 @@ void nqiv_state_clear(nqiv_state* state)
 	if(state->thread_locks != NULL) {
 		nqiv_state_clear_thread_locks(state);
 	}
+	omp_destroy_lock(&state->thread_event_transaction_group_lock);
 	if(state->window_title != NULL) {
 		free(state->window_title);
 	}
@@ -247,6 +248,7 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to allocate memory for %d thread locks.\n", state->thread_count);
 		return false;
 	}
+	omp_init_lock(&state->thread_event_transaction_group_lock);
 	int thread;
 	for(thread = 0; thread < state->thread_count; ++thread) {
 		state->thread_locks[thread] = (omp_lock_t*)calloc( 1, sizeof(omp_lock_t) );
@@ -411,7 +413,9 @@ bool nqiv_send_thread_event_base(nqiv_state* state, const int level, nqiv_event*
 
 bool nqiv_send_thread_event(nqiv_state* state, const int level, nqiv_event* event)
 {
+	omp_set_lock(&state->thread_event_transaction_group_lock);
 	event->transaction_group = state->thread_event_transaction_group;
+	omp_unset_lock(&state->thread_event_transaction_group_lock);
 	return nqiv_send_thread_event_base(state, level, event, false, false);
 }
 
@@ -674,7 +678,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					}
 				}
 			} else {
-				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading image.\n");
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading image %s.\n", image->image.path);
 				nqiv_event event = {0};
 				event.type = NQIV_EVENT_IMAGE_LOAD;
 				event.options.image_load.image = image;
@@ -1005,15 +1009,14 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 
 void render_and_update(nqiv_state* state, bool* running, bool* result, const bool first_render, const bool hard)
 {
-	nqiv_montage_positions montage_positions  = {0};
-	nqiv_montage_dimensions montage_dimensions = {0};
-	memcpy( &montage_positions, &state->montage.positions, sizeof(nqiv_montage_positions) );
-	memcpy( &montage_dimensions, &state->montage.dimensions, sizeof(nqiv_montage_dimensions) );
 	nqiv_montage_calculate_dimensions(&state->montage);
-	if( memcmp( &montage_positions, &state->montage.positions, sizeof(nqiv_montage_positions) ) != 0 ||
-		memcmp( &montage_dimensions, &state->montage.dimensions, sizeof(nqiv_montage_dimensions) )
-	  ) {
+	if(state->montage.range_changed) {
+		omp_set_lock(&state->thread_event_transaction_group_lock);
 		state->thread_event_transaction_group += 1;
+		state->pruner.thread_event_transaction_group = state->thread_event_transaction_group;
+		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Increased transaction group value to %" PRIi64 " at position %d.\n", state->thread_event_transaction_group, state->montage.positions.selection);
+		omp_unset_lock(&state->thread_event_transaction_group_lock);
+		state->montage.range_changed = false;
 	}
 	if(state->in_montage) {
 		if( !render_montage(state, hard) ) {
@@ -1029,7 +1032,6 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 	if(*result != false) {
 		SDL_RenderPresent(state->renderer);
 	}
-	state->pruner.thread_event_transaction_group = state->thread_event_transaction_group;
 	const int prune_count = nqiv_pruner_run(&state->pruner, &state->montage, &state->images, &state->thread_queue);
 	if(prune_count == -1) {
 		*running = false;
@@ -1382,16 +1384,18 @@ bool nqiv_run(nqiv_state* state)
 	omp_lock_t** thread_locks = state->thread_locks;
 	nqiv_log_ctx* logger = &state->logger;
 	nqiv_priority_queue* thread_queue = &state->thread_queue;
+	const int64_t* thread_event_transaction_group = &state->thread_event_transaction_group;
+	omp_lock_t* thread_event_transaction_group_lock = &state->thread_event_transaction_group_lock;
 	const Uint32 event_code = state->thread_event_number;
-	#pragma omp parallel default(none) firstprivate(state, logger, thread_count, thread_event_interval, thread_locks, thread_queue, event_code, result_ptr)
+	#pragma omp parallel default(none) firstprivate(state, logger, thread_count, thread_event_interval, thread_locks, thread_queue, event_code, result_ptr, thread_event_transaction_group, thread_event_transaction_group_lock)
 	{
 		#pragma omp master
 		{
 			int thread;
 			for(thread = 0; thread < thread_count; ++thread) {
 				omp_lock_t* lock = thread_locks[thread];
-				#pragma omp task default(none) firstprivate(logger, thread_queue, lock, thread_count, thread_event_interval, event_code)
-				nqiv_worker_main(logger, thread_queue, lock, thread_count, thread_event_interval, event_code);
+				#pragma omp task default(none) firstprivate(logger, thread_queue, lock, thread_count, thread_event_interval, event_code, thread_event_transaction_group, thread_event_transaction_group_lock)
+				nqiv_worker_main(logger, thread_queue, lock, thread_count, thread_event_interval, event_code, thread_event_transaction_group, thread_event_transaction_group_lock);
 			}
 			*result_ptr = nqiv_master_thread(state);
 		}
