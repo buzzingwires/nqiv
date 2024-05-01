@@ -545,7 +545,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 			event.options.image_load.image = image;
 			event.options.image_load.set_thumbnail_path = true;
 			event.options.image_load.create_thumbnail = true;
-			if( !nqiv_send_thread_event(state, base_priority + 4, &event) ) {
+			if( !nqiv_send_thread_event(state, base_priority + 3, &event) ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -575,7 +575,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				event.options.image_load.image = image;
 				event.options.image_load.set_thumbnail_path = true;
 				event.options.image_load.create_thumbnail = true;
-				if( !nqiv_send_thread_event(state, base_priority + 3, &event) ) {
+				if( !nqiv_send_thread_event(state, base_priority + 2, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -634,6 +634,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				event.type = NQIV_EVENT_IMAGE_LOAD;
 				event.options.image_load.image = image;
 				event.options.image_load.set_thumbnail_path = true;
+				event.options.image_load.create_thumbnail = state->images.thumbnail.save;
 				if(hard) {
 					event.options.image_load.thumbnail_options.file = true;
 					event.options.image_load.thumbnail_options.vips = true;
@@ -661,23 +662,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					pending_change_count += 1;
 				}
 				/* TODO Signal to load thumbnail image if it's available, otherwise use main */
-				memset( &event, 0, sizeof(nqiv_event) );
-				if(state->images.thumbnail.save) {
-					/* TODO SOFTEN EVENTS */
-					event.type = NQIV_EVENT_IMAGE_LOAD;
-					event.options.image_load.image = image;
-					event.options.image_load.set_thumbnail_path = true;
-					event.options.image_load.create_thumbnail = true;
-					event.options.image_load.borrow_thumbnail_dimension_metadata = true;
-					if( !nqiv_send_thread_event(state, base_priority + 3, &event) ) {
-						nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-						omp_unset_lock(&image->lock);
-						nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-						return false;
-					} else {
-						pending_change_count += 1;
-					}
-				}
 			} else {
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading image %s.\n", image->image.path);
 				nqiv_event event = {0};
