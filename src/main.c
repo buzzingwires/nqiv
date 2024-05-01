@@ -454,11 +454,12 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 	/* TODO Use load thumbnail for is_thumbnail? */
 	int pending_change_count = 0;
 	bool cleared = is_montage;
+	nqiv_image_form* form = is_thumbnail ? &image->thumbnail : &image->image;
 	if(lock) {
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 		if( !omp_test_lock(&image->lock) ) {
 			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Failed to lock image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-			if( !render_texture(&cleared, state, state->texture_montage_unloaded_background, NULL, dstrect) ) {
+			if( !render_texture(&cleared, state, form->texture != NULL ? form->texture : state->texture_montage_unloaded_background, NULL, dstrect) ) {
 				return false;
 			}
 			if(selected) {
@@ -475,7 +476,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 		}
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 	}
-	nqiv_image_form* form = is_thumbnail ? &image->thumbnail : &image->image;
 	SDL_Rect srcrect = {0};
 	SDL_Rect* srcrect_ptr = &srcrect;
 	SDL_Rect dstrect_zoom = {0};
