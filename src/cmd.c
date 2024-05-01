@@ -62,6 +62,12 @@ bool nqiv_cmd_parser_set_prune_delay(nqiv_cmd_manager* manager, nqiv_cmd_arg_tok
 	return true;
 }
 
+bool nqiv_cmd_parser_set_extra_wakeup_delay(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->extra_wakeup_delay = tokens[0]->value.as_int;
+	return true;
+}
+
 bool nqiv_cmd_parser_set_zoom_down_amount(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->images.zoom.pan_down_amount = tokens[0]->value.as_double;
@@ -451,6 +457,11 @@ void nqiv_cmd_parser_print_thread_event_interval(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_prune_delay(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%lu", manager->state->prune_delay);
+}
+
+void nqiv_cmd_parser_print_extra_wakeup_delay(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%d", manager->state->extra_wakeup_delay);
 }
 
 void nqiv_cmd_parser_print_zoom_down_amount(nqiv_cmd_manager* manager)
@@ -1102,6 +1113,15 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 							.store_value = nqiv_cmd_parser_set_prune_delay,
 							.print_value = nqiv_cmd_parser_print_prune_delay,
 							.args = {&nqiv_parser_arg_type_Uint64, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "extra_wakeup_delay",
+							.description = "In addition to an internal algorithm, wait this long to wait to let the master thread lock a worker. Longer times might produce longer loading delays, but help improve UI responsiveness.",
+							.store_value = nqiv_cmd_parser_set_extra_wakeup_delay,
+							.print_value = nqiv_cmd_parser_print_extra_wakeup_delay,
+							.args = {&nqiv_parser_arg_type_int_natural, NULL},
 							.children = {NULL},
 						},
 						NULL

@@ -268,6 +268,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	state->thread_count = omp_get_num_procs() / 4;
 	state->thread_event_interval = 5;
 	state->prune_delay = 200;
+	state->extra_wakeup_delay = 0;
 	nqiv_log_init(&state->logger);
 	if( !nqiv_cmd_manager_init(&state->cmds, state) ) {
 		return false;
@@ -1365,21 +1366,22 @@ bool nqiv_run(nqiv_state* state)
 	bool* result_ptr = &result;
 	const int thread_count = state->thread_count;
 	const int thread_event_interval = state->thread_event_interval;
+	const int extra_wakeup_delay = state->extra_wakeup_delay;
 	omp_lock_t** thread_locks = state->thread_locks;
 	nqiv_log_ctx* logger = &state->logger;
 	nqiv_priority_queue* thread_queue = &state->thread_queue;
 	const int64_t* thread_event_transaction_group = &state->thread_event_transaction_group;
 	omp_lock_t* thread_event_transaction_group_lock = &state->thread_event_transaction_group_lock;
 	const Uint32 event_code = state->thread_event_number;
-	#pragma omp parallel default(none) firstprivate(state, logger, thread_count, thread_event_interval, thread_locks, thread_queue, event_code, result_ptr, thread_event_transaction_group, thread_event_transaction_group_lock)
+	#pragma omp parallel default(none) firstprivate(state, logger, thread_count, extra_wakeup_delay, thread_event_interval, thread_locks, thread_queue, event_code, result_ptr, thread_event_transaction_group, thread_event_transaction_group_lock)
 	{
 		#pragma omp master
 		{
 			int thread;
 			for(thread = 0; thread < thread_count; ++thread) {
 				omp_lock_t* lock = thread_locks[thread];
-				#pragma omp task default(none) firstprivate(logger, thread_queue, lock, thread_count, thread_event_interval, event_code, thread_event_transaction_group, thread_event_transaction_group_lock)
-				nqiv_worker_main(logger, thread_queue, lock, thread_count, thread_event_interval, event_code, thread_event_transaction_group, thread_event_transaction_group_lock);
+				#pragma omp task default(none) firstprivate(logger, thread_queue, lock, extra_wakeup_delay, thread_event_interval, event_code, thread_event_transaction_group, thread_event_transaction_group_lock)
+				nqiv_worker_main(logger, thread_queue, lock, extra_wakeup_delay, thread_event_interval, event_code, thread_event_transaction_group, thread_event_transaction_group_lock);
 			}
 			*result_ptr = nqiv_master_thread(state);
 		}
