@@ -536,9 +536,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 			event.options.image_load.image = image;
 			event.options.image_load.set_thumbnail_path = true;
 			event.options.image_load.create_thumbnail = true;
-			if(form->pending_change_count > 0) {
-				/* NOOP */
-			} else if( !nqiv_send_thread_event(state, base_priority + 4, &event) ) {
+			if( !nqiv_send_thread_event(state, base_priority + 4, &event) ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -568,9 +566,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				event.options.image_load.image = image;
 				event.options.image_load.set_thumbnail_path = true;
 				event.options.image_load.create_thumbnail = true;
-				if(form->pending_change_count > 0) {
-					/* NOOP */
-				} else if( !nqiv_send_thread_event(state, base_priority + 3, &event) ) {
+				if( !nqiv_send_thread_event(state, base_priority + 3, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -647,9 +643,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				}
 				event.options.image_load.thumbnail_options.first_frame = first_frame;
 				event.options.image_load.thumbnail_options.next_frame = next_frame && !first_frame;
-				if(form->pending_change_count > 0) {
-					/* NOOP */
-				} else if( !nqiv_send_thread_event(state, base_priority + 2, &event) ) {
+				if( !nqiv_send_thread_event(state, base_priority + 2, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -666,9 +660,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					event.options.image_load.set_thumbnail_path = true;
 					event.options.image_load.create_thumbnail = true;
 					event.options.image_load.borrow_thumbnail_dimension_metadata = true;
-					if(form->pending_change_count > 0) {
-						/* NOOP */
-					} else if( !nqiv_send_thread_event(state, base_priority + 3, &event) ) {
+					if( !nqiv_send_thread_event(state, base_priority + 3, &event) ) {
 						nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 						omp_unset_lock(&image->lock);
 						nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -698,9 +690,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				}
 				event.options.image_load.image_options.first_frame = first_frame;
 				event.options.image_load.image_options.next_frame = next_frame && !first_frame;
-				if(form->pending_change_count > 0) {
-					/* NOOP */
-				} else if( !nqiv_send_thread_event(state, base_priority + 2, &event) ) {
+				if( !nqiv_send_thread_event(state, base_priority + 2, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -764,9 +754,7 @@ state->images.thumbnail.load
 				}
 				event.options.image_load.image_options.first_frame = first_frame;
 				event.options.image_load.image_options.next_frame = next_frame && !first_frame;
-				if(form->pending_change_count > 0) {
-					/* NOOP */
-				} else if( !nqiv_send_thread_event(state, base_priority + 2, &event) ) {
+				if( !nqiv_send_thread_event(state, base_priority + 2, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -793,13 +781,11 @@ state->images.thumbnail.load
 			return false;
 		}
 	}
-	if(form->pending_change_count == 0) {
-		form->pending_change_count = pending_change_count;
-		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Pending change count Image: %d Thumbnail: %d, from main thread %d.\n", image->image.pending_change_count, image->thumbnail.pending_change_count, omp_get_thread_num() );
-		if(form->pending_change_count > 0) {
-			nqiv_unlock_threads(state, pending_change_count);
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for update.\n");
-		}
+	form->pending_change_count += pending_change_count;
+	nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Pending change count Image: %d Thumbnail: %d, from main thread %d.\n", image->image.pending_change_count, image->thumbnail.pending_change_count, omp_get_thread_num() );
+	if(form->pending_change_count > 0) {
+		nqiv_unlock_threads(state, pending_change_count);
+		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for update.\n");
 	}
 	nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 	omp_unset_lock(&image->lock);
@@ -1037,6 +1023,7 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 		*running = false;
 		*result = false;
 	} else if(prune_count > 0) {
+		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Prune count %d.\n", prune_count);
 		nqiv_unlock_threads(state, prune_count);
 	}
 }
