@@ -237,9 +237,6 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	if(state->thread_count == 0) {
 		state->thread_count = 1;
 	}
-	if(state->thread_event_interval == 0) {
-		state->thread_event_interval = 5;
-	}
 	if(state->thread_locks != NULL) {
 		nqiv_state_clear_thread_locks(state);
 	}
@@ -269,6 +266,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	*/
 	state->queue_length = STARTING_QUEUE_LENGTH;
 	state->thread_count = omp_get_num_procs() / 4;
+	state->thread_event_interval = 5;
 	state->prune_delay = 200;
 	nqiv_log_init(&state->logger);
 	if( !nqiv_cmd_manager_init(&state->cmds, state) ) {
