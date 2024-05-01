@@ -996,6 +996,14 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 void render_and_update(nqiv_state* state, bool* running, bool* result, const bool first_render, const bool hard)
 {
 	nqiv_montage_calculate_dimensions(&state->montage);
+	const int prune_count = nqiv_pruner_run(&state->pruner, &state->montage, &state->images, &state->thread_queue);
+	if(prune_count == -1) {
+		*running = false;
+		*result = false;
+	} else if(prune_count > 0) {
+		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Prune count %d.\n", prune_count);
+		nqiv_unlock_threads(state, prune_count);
+	}
 	if(state->montage.range_changed) {
 		omp_set_lock(&state->thread_event_transaction_group_lock);
 		state->thread_event_transaction_group += 1;
@@ -1017,14 +1025,6 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 	}
 	if(*result != false) {
 		SDL_RenderPresent(state->renderer);
-	}
-	const int prune_count = nqiv_pruner_run(&state->pruner, &state->montage, &state->images, &state->thread_queue);
-	if(prune_count == -1) {
-		*running = false;
-		*result = false;
-	} else if(prune_count > 0) {
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Prune count %d.\n", prune_count);
-		nqiv_unlock_threads(state, prune_count);
 	}
 }
 
