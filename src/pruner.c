@@ -219,9 +219,9 @@ int nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv
 				if(send_event) {
 					prune_count += 1;
 				}
-				nqiv_log_write( pruner->logger, NQIV_LOG_INFO, "%sending prune event for image %d desc %d/%d.\n", send_event ? "S" : "Not s", iidx, idx, num_descs );
+				nqiv_log_write(pruner->logger, NQIV_LOG_INFO, "%sending prune event for image %d desc %d/%d.\n", send_event ? "S" : "Not s", iidx, idx, num_descs);
 				if(send_event) {
-					event.transaction_group = pruner->thread_event_transaction_group;
+					event.transaction_group = -1;
 					if( !nqiv_priority_queue_push(thread_queue, 1, sizeof(nqiv_event), &event) ) {
 						nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 						omp_unset_lock(&image->lock);
@@ -245,7 +245,7 @@ int nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_image
 	nqiv_image** images_array = images->images->data;
 	int iidx;
 	for(iidx = 0; iidx < num_images; ++iidx) {
-		const int result = !nqiv_pruner_run_image(pruner, montage, thread_queue, iidx, images_array[iidx]);
+		const int result = nqiv_pruner_run_image(pruner, montage, thread_queue, iidx, images_array[iidx]);
 		if(result == -1) {
 			return result;
 		}
