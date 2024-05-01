@@ -56,6 +56,12 @@ bool nqiv_cmd_parser_set_thread_event_interval(nqiv_cmd_manager* manager, nqiv_c
 	return true;
 }
 
+bool nqiv_cmd_parser_set_prune_delay(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->prune_delay = tokens[0]->value.as_Uint64;
+	return true;
+}
+
 bool nqiv_cmd_parser_set_zoom_down_amount(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->images.zoom.pan_down_amount = tokens[0]->value.as_double;
@@ -440,6 +446,11 @@ void nqiv_cmd_parser_print_thread_count(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_thread_event_interval(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%d", manager->state->thread_event_interval);
+}
+
+void nqiv_cmd_parser_print_prune_delay(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%lu", manager->state->prune_delay);
 }
 
 void nqiv_cmd_parser_print_zoom_down_amount(nqiv_cmd_manager* manager)
@@ -1082,6 +1093,15 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 							.store_value = nqiv_cmd_parser_set_thread_event_interval,
 							.print_value = nqiv_cmd_parser_print_thread_event_interval,
 							.args = {&nqiv_parser_arg_type_int_natural, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "prune_delay",
+							.description = "A pruning cycle will be allowed to run after this many milliseconds since the last one. 0 always allow prune cycles.",
+							.store_value = nqiv_cmd_parser_set_prune_delay,
+							.print_value = nqiv_cmd_parser_print_prune_delay,
+							.args = {&nqiv_parser_arg_type_Uint64, NULL},
 							.children = {NULL},
 						},
 						NULL

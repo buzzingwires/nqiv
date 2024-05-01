@@ -269,6 +269,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	*/
 	state->queue_length = STARTING_QUEUE_LENGTH;
 	state->thread_count = omp_get_num_procs() / 4;
+	state->prune_delay = 200;
 	nqiv_log_init(&state->logger);
 	if( !nqiv_cmd_manager_init(&state->cmds, state) ) {
 		return false;
@@ -996,13 +997,17 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 void render_and_update(nqiv_state* state, bool* running, bool* result, const bool first_render, const bool hard)
 {
 	nqiv_montage_calculate_dimensions(&state->montage);
-	const int prune_count = nqiv_pruner_run(&state->pruner, &state->montage, &state->images, &state->thread_queue);
-	if(prune_count == -1) {
-		*running = false;
-		*result = false;
-	} else if(prune_count > 0) {
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Prune count %d.\n", prune_count);
-		nqiv_unlock_threads(state, prune_count);
+	const Uint64 new_time = SDL_GetTicks64();
+	if(new_time - state->time_of_last_prune > state->prune_delay) {
+		state->time_of_last_prune = new_time;
+		const int prune_count = nqiv_pruner_run(&state->pruner, &state->montage, &state->images, &state->thread_queue);
+		if(prune_count == -1) {
+			*running = false;
+			*result = false;
+		} else if(prune_count > 0) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Prune count %d.\n", prune_count);
+			nqiv_unlock_threads(state, prune_count);
+		}
 	}
 	if(state->montage.range_changed) {
 		omp_set_lock(&state->thread_event_transaction_group_lock);

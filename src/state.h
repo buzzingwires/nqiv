@@ -48,6 +48,8 @@ struct nqiv_state
 	int thread_count;
 	int thread_event_interval;
 	int64_t thread_event_transaction_group;
+	Uint64 time_of_last_prune;
+	Uint64 prune_delay;
 	omp_lock_t thread_event_transaction_group_lock;
 	omp_lock_t** thread_locks;
 	bool in_montage;
