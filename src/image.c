@@ -61,7 +61,7 @@ void nqiv_unload_image_form(nqiv_image_form* form)
 void nqiv_image_destroy(nqiv_image* image) {
 	assert(image != NULL);
 	assert(image->parent != NULL);
-	nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Destroying image %s.\n", image->image.path);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_INFO, "Destroying image %s.\n", image->image.path);
 	omp_destroy_lock(&image->lock);
 	nqiv_unload_image_form(&image->image);
 	nqiv_unload_image_form(&image->thumbnail);
