@@ -1214,6 +1214,7 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 			nqiv_image* tmp_image;
 			if( nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &tmp_image) ) {
 				tmp_image->marked = !tmp_image->marked;
+				nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
 			}
 			render_and_update(state, running, result, false, false);
 		} else if(action == NQIV_KEY_ACTION_IMAGE_MARK) {
@@ -1221,6 +1222,7 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 			nqiv_image* tmp_image;
 			if( nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &tmp_image) ) {
 				tmp_image->marked = true;
+				nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
 			}
 			render_and_update(state, running, result, false, false);
 		} else if(action == NQIV_KEY_ACTION_IMAGE_UNMARK) {
@@ -1228,6 +1230,7 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 			nqiv_image* tmp_image;
 			if( nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &tmp_image) ) {
 				tmp_image->marked = false;
+				nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
 			}
 			render_and_update(state, running, result, false, false);
 		} else if(action == NQIV_KEY_ACTION_PRINT_MARKED) {
