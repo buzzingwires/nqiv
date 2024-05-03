@@ -250,6 +250,7 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	for(thread = 0; thread < state->thread_count; ++thread) {
 		state->thread_locks[thread] = (omp_lock_t*)calloc( 1, sizeof(omp_lock_t) );
 		if(state->thread_locks[thread] == NULL) {
+			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to allocate memory for thread lock %d.\n", thread);
 			nqiv_state_clear_thread_locks(state);
 			return false;
 		}
@@ -396,7 +397,7 @@ bool nqiv_send_thread_event_base(nqiv_state* state, const int level, nqiv_event*
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent attempted, status: %s.\n", event_sent ? "Success" : "Failure");
 	if(!event_sent) {
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Failed to send event.\n");
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to send event.\n");
 		/*
 		nqiv_unlock_threads(state);
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for event.\n");
@@ -432,14 +433,17 @@ bool render_texture(bool* cleared, nqiv_state* state, SDL_Texture* texture, SDL_
 	}
 	if(!*cleared) {
 		if(SDL_RenderClear(state->renderer) != 0) {
+			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to clear renderer.\n");
 			return false;
 		}
 		if(SDL_RenderCopy(state->renderer, state->texture_background, NULL, NULL) != 0) {
+			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to copy texture background.\n");
 			return false;
 		}
 		*cleared = true;
 	}
 	if( SDL_RenderCopy(state->renderer, texture, srcrect, dstrect) != 0 ) {
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to copy texture.\n");
 		return false;
 	}
 	return true;
@@ -613,7 +617,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading texture for image %s.\n", image->image.path);
 			form->texture = SDL_CreateTextureFromSurface(state->renderer, form->surface);
 			if(form->texture == NULL) {
-				nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to load texture for image.\n");
+				nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to load texture for image form %s (%s).\n", form->path, SDL_GetError() );
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -931,9 +935,11 @@ bool render_montage(nqiv_state* state, const bool hard)
 	*/
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage.\n");
 	if(SDL_RenderClear(state->renderer) != 0) {
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to clear renderer for montage.\n");
 		return false;
 	}
 	if(SDL_RenderCopy(state->renderer, state->texture_background, NULL, NULL) != 0) {
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to copy texture background for montage.\n");
 		return false;
 	}
 	const int images_len = state->images.images->position / sizeof(nqiv_image*);
@@ -946,6 +952,7 @@ bool render_montage(nqiv_state* state, const bool hard)
 	for(idx = start_idx; idx < end; ++idx) {
 		nqiv_image* image;
 		if( !nqiv_array_get_bytes(state->images.images, idx, sizeof(nqiv_image*), &image) ) {
+			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to get image %d for montage.\n", idx);
 			return false;
 		}
 		if(idx >= state->montage.positions.start && idx < state->montage.positions.end) {
@@ -972,6 +979,7 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering selected image.\n");
 	nqiv_image* image;
 	if( !nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &image) ) {
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to get image index %d.\n", state->montage.positions.selection);
 		return false;
 	}
 	SDL_Rect dstrect = {0};
