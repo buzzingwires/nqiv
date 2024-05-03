@@ -1161,7 +1161,7 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 		} else if(action == NQIV_KEY_ACTION_PAN_DOWN) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan down more.\n");
 			if(!state->in_montage) {
-				nqiv_image_manager_pan_down_more(&state->images);
+				nqiv_image_manager_pan_down(&state->images);
 				render_and_update(state, running, result, false, false);
 			}
 		} else if(action == NQIV_KEY_ACTION_ZOOM_IN_MORE) {
