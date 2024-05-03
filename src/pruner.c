@@ -174,12 +174,13 @@ int nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv
 	for(idx = 0; idx < num_descs; ++idx) {
 		nqiv_pruner_desc desc;
 		if( nqiv_array_get_bytes(pruner->pruners, idx, sizeof(nqiv_pruner_desc), &desc) ) {
-			memset( &pruner->state, 0, sizeof(nqiv_pruner_state) );
 			pruner->state.idx = iidx;
 			pruner->state.selection = montage->positions.selection;
 			const int raw_start_idx = montage->positions.start - montage->preload.behind;
 			pruner->state.montage_start = raw_start_idx >= 0 ? raw_start_idx : 0;
 			pruner->state.montage_end = montage->positions.end + montage->preload.ahead;
+			pruner->state.or_result = false;
+			pruner->state.and_result = false;
 			nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Checking prune directive %d.\n", idx);
 			nqiv_pruner_run_desc(pruner, &desc, image);
 			if( (desc.counter & NQIV_PRUNER_COUNT_OP_SUM && pruner->state.total_sum > desc.state_check.total_sum) ||
@@ -251,6 +252,7 @@ int nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_image
 		}
 		output += result;
 	}
+	memset( &pruner->state, 0, sizeof(nqiv_pruner_state) );
 	return output;
 }
 
