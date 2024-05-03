@@ -463,9 +463,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 		if( !omp_test_lock(&image->lock) ) {
 			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Failed to lock image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-			if( !render_texture(&cleared, state, form->texture != NULL ? form->texture : state->texture_montage_unloaded_background, NULL, dstrect) ) {
-				return false;
-			}
 			if(selected) {
 				if( !render_texture(&cleared, state, state->texture_montage_selection, NULL, dstrect) ) {
 					return false;
