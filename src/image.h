@@ -1,7 +1,6 @@
 #ifndef NQIV_IMAGE_H
 #define NQIV_IMAGE_H
 
-#include <time.h>
 #include <stdbool.h>
 
 #include <SDL2/SDL.h>
@@ -29,7 +28,7 @@ typedef struct nqiv_image_form_animation
 	bool frame_rendered;
 	int frame;
 	int frame_count;
-	clock_t last_frame_time;
+	Uint64 last_frame_time;
 	Uint32 delay;
 } nqiv_image_form_animation;
 

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <stdbool.h>
 #include <errno.h>
 #include <assert.h>
@@ -991,13 +990,11 @@ void nqiv_image_manager_decrement_thumbnail_size_more(nqiv_image_manager* manage
 
 void nqiv_image_form_delay_frame(nqiv_image_form* form)
 {
-	const clock_t new_frame_time = clock();
-	const clock_t frame_diff = (new_frame_time - form->animation.last_frame_time) / ( (clock_t)CLOCKS_PER_SEC / (clock_t)1000 );
-	if(frame_diff < (clock_t)2 << (clock_t)30 && (Uint32)frame_diff <= form->animation.delay) {
-		SDL_Delay(form->animation.delay - (Uint32)frame_diff);
+	const Uint64 frame_diff = SDL_GetTicks64() - form->animation.last_frame_time;
+	if(frame_diff <= form->animation.delay) {
+		SDL_Delay( (Uint32)(form->animation.delay - frame_diff) );
 	}
-	fprintf(stderr, "Actual wait %u Frame diff %lu New frame time %lu Last frame time %lu Clocks per sec: %lu\n", form->animation.delay - (Uint32)frame_diff, frame_diff, new_frame_time, form->animation.last_frame_time, CLOCKS_PER_SEC);
-	form->animation.last_frame_time = new_frame_time;
+	form->animation.last_frame_time = SDL_GetTicks64();
 }
 
 bool nqiv_image_form_first_frame(nqiv_image* image, nqiv_image_form* form)
