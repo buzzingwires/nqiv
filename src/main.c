@@ -510,6 +510,9 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 		dstrect_zoom.x = dstrect->x;
 		dstrect_zoom.y = dstrect->y;
 		nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, dstrect_zoom_ptr);
+		if(first_frame) {
+			state->images.zoom.image_to_viewport_ratio = state->images.zoom.image_to_viewport_ratio_max;
+		}
 		nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr); /* TODO aspect ratio */
 		if(!state->no_resample_oversized && (form->height > 16000 || form->width > 16000) )  {
 			if(form->srcrect.x != srcrect.x || form->srcrect.y != srcrect.y || form->srcrect.w != srcrect.w || form->srcrect.h != srcrect.h) {
@@ -539,6 +542,9 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				dstrect_zoom.x = dstrect->x;
 				dstrect_zoom.y = dstrect->y;
 				nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, dstrect_zoom_ptr);
+				if(first_frame) {
+					state->images.zoom.image_to_viewport_ratio = state->images.zoom.image_to_viewport_ratio_max;
+				}
 				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr); /* TODO aspect ratio */
 			}
 		}
