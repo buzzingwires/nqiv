@@ -445,6 +445,7 @@ bool render_texture(bool* cleared, nqiv_state* state, SDL_Texture* texture, SDL_
 			return false;
 		}
 		*cleared = true;
+		state->render_cleared = true;
 	}
 	if( SDL_RenderCopy(state->renderer, texture, srcrect, dstrect) != 0 ) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to copy texture.\n");
@@ -467,7 +468,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 		if( !omp_test_lock(&image->lock) ) {
 			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Failed to lock image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-			if(selected) {
+			if(selected && is_montage) {
 				if( !render_texture(&cleared, state, state->texture_montage_selection, NULL, dstrect) ) {
 					return false;
 				}
@@ -664,7 +665,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					event.options.image_load.thumbnail_options.surface_soft = true;
 				}
 				event.options.image_load.thumbnail_options.first_frame = first_frame;
-				event.options.image_load.thumbnail_options.next_frame = next_frame && !first_frame;
+				event.options.image_load.thumbnail_options.next_frame = next_frame && !first_frame && form->animation.frame_rendered;
 				if( !nqiv_send_thread_event(state, base_priority + 2, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
@@ -694,7 +695,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					event.options.image_load.image_options.surface_soft = true;
 				}
 				event.options.image_load.image_options.first_frame = first_frame;
-				event.options.image_load.image_options.next_frame = next_frame && !first_frame;
+				event.options.image_load.image_options.next_frame = next_frame && !first_frame && form->animation.frame_rendered;
 				if( !nqiv_send_thread_event(state, base_priority + 2, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
@@ -758,7 +759,7 @@ state->images.thumbnail.load
 					event.options.image_load.image_options.surface_soft = true;
 				}
 				event.options.image_load.image_options.first_frame = first_frame;
-				event.options.image_load.image_options.next_frame = next_frame && !first_frame;
+				event.options.image_load.image_options.next_frame = next_frame && !first_frame && form->animation.frame_rendered;
 				if( !nqiv_send_thread_event(state, base_priority + 2, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
@@ -949,6 +950,7 @@ bool render_montage(nqiv_state* state, const bool hard)
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to copy texture background for montage.\n");
 		return false;
 	}
+	state->render_cleared = true;
 	const int images_len = state->images.images->position / sizeof(nqiv_image*);
 	const int raw_start_idx = state->montage.positions.start - state->montage.preload.behind;
 	const int raw_end = state->montage.positions.end + state->montage.preload.ahead;
@@ -1036,8 +1038,9 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 			*result = false;
 		}
 	}
-	if(*result != false) {
+	if(*result != false && state->render_cleared) {
 		SDL_RenderPresent(state->renderer);
+		state->render_cleared = false;
 	}
 }
 

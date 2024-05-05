@@ -53,6 +53,7 @@ struct nqiv_state
 	int extra_wakeup_delay;
 	omp_lock_t thread_event_transaction_group_lock;
 	omp_lock_t** thread_locks;
+	bool render_cleared;
 	bool in_montage;
 	bool stretch_images;
 	char* window_title;

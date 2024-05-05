@@ -1040,7 +1040,6 @@ bool nqiv_image_form_first_frame(nqiv_image* image, nqiv_image_form* form)
 	if( !nqiv_image_form_set_frame_delay(image, form) ) {
 		return false;
 	}
-	nqiv_image_form_delay_frame(form);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
 }
@@ -1052,9 +1051,12 @@ bool nqiv_image_form_next_frame(nqiv_image* image, nqiv_image_form* form)
 	if(!form->animation.exists) {
 		return true;
 	}
+	if(form->texture != NULL && !form->animation.frame_rendered) {
+		return false;
+	}
 	form->animation.frame += 1;
 	if( form->animation.frame >= form->animation.frame_count ) {
-			form->animation.frame = 0;
+		form->animation.frame = 0;
 	}
 	form->animation.frame_rendered = false;
 	if( !nqiv_image_form_set_frame_delay(image, form) ) {
