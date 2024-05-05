@@ -42,11 +42,15 @@ typedef struct nqiv_image_form
 	void* data;
 	SDL_Surface* surface;
 	SDL_Texture* texture;
+	SDL_Texture* fallback_texture;
 	int height;
 	int width;
 	SDL_Rect srcrect;
 	int effective_height;
 	int effective_width;
+	SDL_Rect master_srcrect;
+	SDL_Rect master_dstrect;
+	bool master_dimensions_set;
 } nqiv_image_form;
 
 typedef struct nqiv_image nqiv_image;
@@ -84,6 +88,7 @@ void nqiv_unload_image_form_vips(nqiv_image_form* form);
 void nqiv_unload_image_form_texture(nqiv_image_form* form);
 void nqiv_unload_image_form_surface(nqiv_image_form* form);
 void nqiv_unload_image_form_raw(nqiv_image_form* form);
+void nqiv_unload_image_form_fallback_texture(nqiv_image_form* form);
 
 bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_texture(nqiv_image* image, nqiv_image_form* form);
@@ -162,7 +167,7 @@ void nqiv_image_manager_zoom_in_more(nqiv_image_manager* manager);
 void nqiv_image_manager_zoom_out_more(nqiv_image_manager* manager);
 
 void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bool do_zoom, const bool do_stretch, SDL_Rect* srcrect, SDL_Rect* dstrect);
-void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, SDL_Rect* srcrect, SDL_Rect* dstrect);
+void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, const bool tight_fit, SDL_Rect* srcrect, SDL_Rect* dstrect);
 int nqiv_image_manager_get_zoom_percent(nqiv_image_manager* manager);
 
 void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size);

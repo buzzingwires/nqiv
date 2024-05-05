@@ -21,13 +21,26 @@ void nqiv_unload_image_form_vips(nqiv_image_form* form)
 	}
 }
 
+void nqiv_unload_texture_ptr(SDL_Texture** texture, const bool destroy)
+{
+	assert(texture != NULL);
+	if(*texture != NULL) {
+		if(destroy) {
+			SDL_DestroyTexture(*texture);
+		}
+		*texture = NULL;
+	}
+}
+
 void nqiv_unload_image_form_texture(nqiv_image_form* form)
 {
-	assert(form != NULL);
-	if(form->texture != NULL) {
-		SDL_DestroyTexture(form->texture);
-		form->texture = NULL;
-	}
+	nqiv_unload_texture_ptr(&form->texture, form->fallback_texture != form->texture);
+}
+
+void nqiv_unload_image_form_fallback_texture(nqiv_image_form* form)
+{
+	assert(form->texture == NULL || form->texture != form->fallback_texture);
+	nqiv_unload_texture_ptr(&form->fallback_texture, true);
 }
 
 void nqiv_unload_image_form_surface(nqiv_image_form* form)
@@ -885,7 +898,7 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bo
 	assert(dstrect->h > 0);
 }
 
-void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, SDL_Rect* srcrect, SDL_Rect* dstrect)
+void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, const bool tight_fit, SDL_Rect* srcrect, SDL_Rect* dstrect)
 {
 	assert(manager != NULL);
 	assert(srcrect != NULL);
@@ -922,15 +935,22 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, S
 	double current_ratio = manager->zoom.image_to_viewport_ratio;
 	bool ever_set = false;
 	while(true) {
-		SDL_Rect src = {0};
-		src.w = srcrect->w;
-		src.h = srcrect->h;
-		SDL_Rect dst = {0};
-		dst.w = dstrect->w;
-		dst.h = dstrect->h;
-		nqiv_image_manager_calculate_zoomrect(manager, true, false, &src, &dst);
-		if(dst.w < dstrect->w && dst.h < dstrect->h) {
-			current_ratio = manager->zoom.image_to_viewport_ratio;
+		if(manager->zoom.image_to_viewport_ratio > 0.0) {
+			SDL_Rect src = {0};
+			src.w = srcrect->w;
+			src.h = srcrect->h;
+			SDL_Rect dst = {0};
+			dst.w = dstrect->w;
+			dst.h = dstrect->h;
+			nqiv_image_manager_calculate_zoomrect(manager, tight_fit, false, &src, &dst);
+			if(dst.w < dstrect->w && dst.h < dstrect->h) {
+				current_ratio = manager->zoom.image_to_viewport_ratio;
+			} else {
+				if(ever_set) {
+					manager->zoom.fit_level = current_ratio;
+				}
+				break;
+			}
 		} else {
 			if(ever_set) {
 				manager->zoom.fit_level = current_ratio;

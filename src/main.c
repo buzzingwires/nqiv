@@ -468,6 +468,20 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 		if( !omp_test_lock(&image->lock) ) {
 			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Failed to lock image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+			if(form->master_dimensions_set && form->fallback_texture != NULL && form->master_srcrect.w > 0 && form->master_srcrect.h > 0 && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
+				SDL_Rect tmp_srcrect;
+				SDL_Rect tmp_dstrect;
+				memcpy( &tmp_srcrect, &form->master_srcrect, sizeof(SDL_Rect) );
+				memcpy( &tmp_dstrect, &form->master_dstrect, sizeof(SDL_Rect) );
+				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &tmp_srcrect, &tmp_dstrect);
+				if(first_frame) {
+					state->images.zoom.image_to_viewport_ratio = state->images.zoom.image_to_viewport_ratio_max;
+				}
+				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &tmp_srcrect, &tmp_dstrect); /* TODO aspect ratio */
+				if( !render_texture(&cleared, state, form->fallback_texture, &tmp_srcrect, &tmp_dstrect) ) {
+					return false;
+				}
+			}
 			if(selected && is_montage) {
 				if( !render_texture(&cleared, state, state->texture_montage_selection, NULL, dstrect) ) {
 					return false;
@@ -510,7 +524,10 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 		dstrect_zoom.h = dstrect->h;
 		dstrect_zoom.x = dstrect->x;
 		dstrect_zoom.y = dstrect->y;
-		nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, dstrect_zoom_ptr);
+		memcpy( &form->master_srcrect, &srcrect, sizeof(SDL_Rect) );
+		memcpy( &form->master_dstrect, &dstrect_zoom, sizeof(SDL_Rect) );
+		form->master_dimensions_set = true;
+		nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect, dstrect_zoom_ptr);
 		if(first_frame) {
 			state->images.zoom.image_to_viewport_ratio = state->images.zoom.image_to_viewport_ratio_max;
 		}
@@ -542,7 +559,10 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				dstrect_zoom.h = dstrect->h;
 				dstrect_zoom.x = dstrect->x;
 				dstrect_zoom.y = dstrect->y;
-				nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect, dstrect_zoom_ptr);
+				memcpy( &form->master_srcrect, &srcrect, sizeof(SDL_Rect) );
+				memcpy( &form->master_dstrect, &dstrect_zoom, sizeof(SDL_Rect) );
+				form->master_dimensions_set = true;
+				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect, dstrect_zoom_ptr);
 				if(first_frame) {
 					state->images.zoom.image_to_viewport_ratio = state->images.zoom.image_to_viewport_ratio_max;
 				}
@@ -624,6 +644,8 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 		} else if( form->surface != NULL && !resample_zoom && (is_montage || !first_frame || !form->animation.exists) ) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading texture for image %s.\n", image->image.path);
 			form->texture = SDL_CreateTextureFromSurface(state->renderer, form->surface);
+			nqiv_unload_image_form_fallback_texture(form);
+			form->fallback_texture = form->texture;
 			if(form->texture == NULL) {
 				nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to load texture for image form %s (%s).\n", form->path, SDL_GetError() );
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
