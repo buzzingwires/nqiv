@@ -1,11 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #include "logging.h"
 #include "array.h"
 #include "event.h"
 #include "montage.h"
+#include "image.h"
 #include "cmd.h"
 #include "pruner.h"
 
@@ -189,14 +191,20 @@ int nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv
 				nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Pruning image %s.\n", image->image.path);
 				bool send_event = false;
 				/* TODO: This cannot be called from a thread. If we plan to have the pruner run in a thread, we need to do this in a thread safe way, probably by sending an SDL event for master. */
-				if(desc.unload_texture && image->image.texture != NULL) {
-					SDL_DestroyTexture(image->image.texture);
-					image->image.texture = NULL;
+				if( desc.unload_texture && (image->image.texture != NULL || image->image.fallback_texture != NULL) ) {
+					nqiv_unload_image_form_texture(&image->image);
+					nqiv_unload_image_form_fallback_texture(&image->image);
+					nqiv_unload_image_form_texture(&image->image);
+					assert(image->image.texture == NULL);
+					assert(image->image.fallback_texture == NULL);
 					send_event = true;
 				}
-				if(desc.unload_thumbnail_texture && image->thumbnail.texture != NULL) {
-					SDL_DestroyTexture(image->thumbnail.texture);
-					image->thumbnail.texture = NULL;
+				if( desc.unload_thumbnail_texture && (image->thumbnail.texture != NULL || image->thumbnail.fallback_texture != NULL) ) {
+					nqiv_unload_image_form_texture(&image->thumbnail);
+					nqiv_unload_image_form_fallback_texture(&image->thumbnail);
+					nqiv_unload_image_form_texture(&image->thumbnail);
+					assert(image->thumbnail.texture == NULL);
+					assert(image->thumbnail.fallback_texture == NULL);
 					send_event = true;
 				}
 				nqiv_event event = {0};
