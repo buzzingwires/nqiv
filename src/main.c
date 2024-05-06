@@ -84,9 +84,6 @@ void nqiv_state_clear(nqiv_state* state)
 	if(state->texture_montage_mark != NULL) {
 		SDL_DestroyTexture(state->texture_montage_mark);
 	}
-	if(state->texture_montage_alpha_background != NULL) {
-		SDL_DestroyTexture(state->texture_montage_alpha_background);
-	}
 	if(state->texture_alpha_background != NULL) {
 		SDL_DestroyTexture(state->texture_alpha_background);
 	}
@@ -188,14 +185,6 @@ bool nqiv_setup_sdl(nqiv_state* state)
 		return false;
 	}
 	if( !nqiv_state_create_mark_texture(state) ) {
-		return false;
-	}
-
-	if( !nqiv_state_create_montage_alpha_background_texture(state) ) {
-		return false;
-	}
-
-	if( !nqiv_state_create_alpha_background_texture(state) ) {
 		return false;
 	}
 
@@ -456,7 +445,7 @@ bool render_texture(bool* cleared, nqiv_state* state, SDL_Texture* texture, SDL_
 
 /* TODO STEP FRAME? */
 /* TODO Reset frame */
-bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_background, const bool is_montage, const SDL_Rect* dstrect, const bool is_thumbnail, const bool first_frame, const bool next_frame, const bool selected, const bool hard, const bool lock, const int base_priority)
+bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montage, const SDL_Rect* dstrect, const bool is_thumbnail, const bool first_frame, const bool next_frame, const bool selected, const bool hard, const bool lock, const int base_priority)
 {
 	/* TODO Srcrect easily can make this work for both views DONE */
 	/* TODO Merge load/save thumbnail, or have an short load to check for the thumbnail before saving  DONE*/
@@ -478,7 +467,10 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					state->images.zoom.image_to_viewport_ratio = state->images.zoom.image_to_viewport_ratio_max;
 				}
 				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &tmp_srcrect, &tmp_dstrect); /* TODO aspect ratio */
-				if( !render_texture(&cleared, state, alpha_background, &tmp_dstrect, &tmp_dstrect) ) {
+				if( !nqiv_state_update_alpha_background_dimensions(state, tmp_dstrect.w, tmp_dstrect.h) ) {
+					return false;
+				}
+				if( !render_texture(&cleared, state, state->texture_alpha_background, NULL, &tmp_dstrect) ) {
 					return false;
 				}
 				if( !render_texture(&cleared, state, form->fallback_texture, &tmp_srcrect, &tmp_dstrect) ) {
@@ -622,7 +614,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 				/* TODO Signal to create thumbnail from main image, set thumbnail attempted after */
 				/* TODO UNSET ERROR */
 			} else {
-				if( !render_from_form(state, image, alpha_background, is_montage, dstrect, false, true, false, selected, hard, false, base_priority) ) {
+				if( !render_from_form(state, image, is_montage, dstrect, false, true, false, selected, hard, false, base_priority) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -749,7 +741,10 @@ state->images.thumbnail.load
 			*/
 		}
 		if(form->texture != NULL) {
-			if( !render_texture(&cleared, state, alpha_background, dstrect_zoom_ptr, dstrect_zoom_ptr) ) {
+			if( dstrect_zoom_ptr != NULL && !nqiv_state_update_alpha_background_dimensions(state, dstrect_zoom_ptr->w, dstrect_zoom_ptr->h) ) {
+				return false;
+			}
+			if( !render_texture(&cleared, state, state->texture_alpha_background, NULL, dstrect_zoom_ptr) ) {
 				nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to draw image alpha background.\n");
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
@@ -993,14 +988,14 @@ bool render_montage(nqiv_state* state, const bool hard)
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n", image->image.path, idx);
 			SDL_Rect dstrect;
 			nqiv_montage_get_image_rect(&state->montage, idx, &dstrect);
-			if( !render_from_form(state, image, state->texture_montage_alpha_background, true, &dstrect, state->images.thumbnail.load, true, false, state->montage.positions.selection == idx, hard, true, 0) ) {
+			if( !render_from_form(state, image, true, &dstrect, state->images.thumbnail.load, true, false, state->montage.positions.selection == idx, hard, true, 0) ) {
 				return false;
 			}
 			if( idx == state->montage.positions.selection && !set_title(state, image) ) {
 				return false;
 			}
 		} else {
-			if( !render_from_form(state, image, state->texture_montage_alpha_background, true, NULL, state->images.thumbnail.load, true, false, state->montage.positions.selection == idx, hard, true, 1) ) {
+			if( !render_from_form(state, image, true, NULL, state->images.thumbnail.load, true, false, state->montage.positions.selection == idx, hard, true, 1) ) {
 				return false;
 			}
 		}
@@ -1019,7 +1014,7 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	SDL_Rect dstrect = {0};
 	/* TODO RECT DONE BUT ASPECT RATIO */
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
-	if( !render_from_form(state, image, state->texture_alpha_background, false, &dstrect, false, start, true, false, hard, true, 0) ) {
+	if( !render_from_form(state, image, false, &dstrect, false, start, true, false, hard, true, 0) ) {
 		return false;
 	}
 	if( !set_title(state, image) ) {

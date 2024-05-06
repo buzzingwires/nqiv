@@ -20,6 +20,7 @@
 
 #define STARTING_QUEUE_LENGTH 1024
 #define THREAD_QUEUE_BIN_COUNT 5
+#define ALPHA_BACKGROUND_CHECKER_PROPORTION 32
 
 struct nqiv_state
 {
@@ -39,10 +40,11 @@ struct nqiv_state
 	SDL_Texture* texture_background;
 	SDL_Texture* texture_montage_selection;
 	SDL_Texture* texture_montage_mark;
-	SDL_Texture* texture_montage_alpha_background;
 	SDL_Texture* texture_montage_unloaded_background;
 	SDL_Texture* texture_montage_error_background;
 	SDL_Texture* texture_alpha_background;
+	int alpha_background_width;
+	int alpha_background_height;
 	Uint32 thread_event_number;
 	Uint32 cfg_event_number;
 	int thread_count;
@@ -74,14 +76,13 @@ struct nqiv_state
 bool nqiv_check_and_print_logger_error(nqiv_log_ctx* logger);
 bool nqiv_add_logger_path(nqiv_log_ctx* logger, const char* path);
 void nqiv_state_set_default_colors(nqiv_state* state);
-bool nqiv_create_alpha_background_texture(nqiv_state* state, const SDL_Rect* rect, const int thickness, SDL_Texture** texture);
 bool nqiv_state_create_thumbnail_selection_texture(nqiv_state* state);
 bool nqiv_state_recreate_thumbnail_selection_texture(nqiv_state* state);
 bool nqiv_state_create_mark_texture(nqiv_state* state);
 bool nqiv_state_recreate_mark_texture(nqiv_state* state);
-bool nqiv_state_create_montage_alpha_background_texture(nqiv_state* state);
 bool nqiv_state_create_alpha_background_texture(nqiv_state* state);
 bool nqiv_state_recreate_all_alpha_background_textures(nqiv_state* state);
+bool nqiv_state_update_alpha_background_dimensions(nqiv_state* state, const int alpha_background_width, const int alpha_background_height);
 bool nqiv_state_create_single_color_texture(nqiv_state* state, const SDL_Color* color, SDL_Texture** texture);
 bool nqiv_state_recreate_single_color_texture(nqiv_state* state, const SDL_Color* color, SDL_Texture** texture);
 bool nqiv_state_recreate_background_texture(nqiv_state* state);

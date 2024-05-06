@@ -179,30 +179,14 @@ bool nqiv_state_recreate_mark_texture(nqiv_state* state)
 	return true;
 }
 
-bool nqiv_state_create_montage_alpha_background_texture(nqiv_state* state)
-{
-	SDL_Rect thumbnail_rect;
-	thumbnail_rect.x = 0;
-	thumbnail_rect.h = state->images.thumbnail.size;
-	SDL_Rect window_rect;
-	window_rect.x = 0;
-	window_rect.y = 0;
-	SDL_GetWindowSizeInPixels(state->window, &window_rect.w, &window_rect.h);
-	const int thumbnail_thickness = ( (thumbnail_rect.x + thumbnail_rect.h) / 2 ) / 32;
-	if( !nqiv_create_alpha_background_texture(state, &window_rect, thumbnail_thickness, &state->texture_montage_alpha_background) ) {
-		return false;
-	}
-	return true;
-}
-
 bool nqiv_state_create_alpha_background_texture(nqiv_state* state)
 {
 	SDL_Rect window_rect;
 	window_rect.x = 0;
 	window_rect.y = 0;
-	SDL_GetWindowSizeInPixels(state->window, &window_rect.w, &window_rect.h);
-	const int window_thickness = ( (window_rect.x + window_rect.h) / 2 ) / 32;
-	if( !nqiv_create_alpha_background_texture(state, &window_rect, window_thickness, &state->texture_alpha_background) ) {
+	window_rect.w = state->alpha_background_width;
+	window_rect.h = state->alpha_background_height;
+	if( !nqiv_create_alpha_background_texture(state, &window_rect, ( (window_rect.x + window_rect.h) / 2 ) / ALPHA_BACKGROUND_CHECKER_PROPORTION, &state->texture_alpha_background) ) {
 		return false;
 	}
 	return true;
@@ -263,24 +247,35 @@ bool nqiv_state_expand_queues(nqiv_state* state)
 
 bool nqiv_state_recreate_all_alpha_background_textures(nqiv_state* state)
 {
+	if(state->alpha_background_width == 0 || state->alpha_background_height == 0) {
+		return true;
+	}
 	SDL_Texture* old_alpha_background = state->texture_alpha_background;
-	SDL_Texture* old_montage_alpha_background = state->texture_montage_alpha_background;
 	state->texture_alpha_background = NULL;
-	state->texture_montage_alpha_background = NULL;
 	nqiv_state_create_alpha_background_texture(state);
 	if( state->texture_alpha_background == NULL ) {
 		state->texture_alpha_background = old_alpha_background;
-		state->texture_montage_alpha_background = old_montage_alpha_background;
 		return false;
 	}
-	nqiv_state_create_montage_alpha_background_texture(state);
-	if( state->texture_montage_alpha_background == NULL ) {
-		SDL_DestroyTexture(state->texture_alpha_background);
-		state->texture_alpha_background = old_alpha_background;
-		state->texture_montage_alpha_background = old_montage_alpha_background;
+	if(old_alpha_background != NULL) {
+		SDL_DestroyTexture(old_alpha_background);
+	}
+	return true;
+}
+
+bool nqiv_state_update_alpha_background_dimensions(nqiv_state* state, const int alpha_background_width, const int alpha_background_height)
+{
+	if(alpha_background_width == state->alpha_background_width && alpha_background_height == state->alpha_background_height) {
+		return true;
+	}
+	const int old_alpha_background_width = state->alpha_background_width;
+	const int old_alpha_background_height = state->alpha_background_height;
+	state->alpha_background_width = alpha_background_width;
+	state->alpha_background_height = alpha_background_height;
+	if( !nqiv_state_recreate_all_alpha_background_textures(state) ) {
+		state->alpha_background_width = old_alpha_background_width;
+		state->alpha_background_height = old_alpha_background_height;
 		return false;
 	}
-	SDL_DestroyTexture(old_alpha_background);
-	SDL_DestroyTexture(old_montage_alpha_background);
 	return true;
 }
