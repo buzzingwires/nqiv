@@ -478,6 +478,9 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, SDL_Texture* alpha_b
 					state->images.zoom.image_to_viewport_ratio = state->images.zoom.image_to_viewport_ratio_max;
 				}
 				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &tmp_srcrect, &tmp_dstrect); /* TODO aspect ratio */
+				if( !render_texture(&cleared, state, alpha_background, &tmp_dstrect, &tmp_dstrect) ) {
+					return false;
+				}
 				if( !render_texture(&cleared, state, form->fallback_texture, &tmp_srcrect, &tmp_dstrect) ) {
 					return false;
 				}
