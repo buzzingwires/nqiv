@@ -16,12 +16,12 @@ void nqiv_fill_checked_rect(SDL_Surface* surface, const SDL_Rect* rect, const in
 	int y;
 	int x;
 	const SDL_Color* color = color_one;
+	const SDL_Color* row_start_color = color;
 	int x_square_count = 0;
 	int y_square_count = 0;
 	for(y = rect->y; y < rect->h; ++y) {
-		const SDL_Color* row_start_color = color;
 		if(y_square_count == y_check_size) {
-			row_start_color = color == color_one ? color_two : color_one;
+			row_start_color = row_start_color == color_one ? color_two : color_one;
 			y_square_count = 0;
 		}
 		color = row_start_color;
