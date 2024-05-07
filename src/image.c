@@ -119,7 +119,7 @@ void nqiv_log_vips_exception(nqiv_log_ctx* logger,  const char* path)
 	assert(logger != NULL);
 	assert(path != NULL);
 	char* error = vips_error_buffer_copy();
-	nqiv_log_write(logger, NQIV_LOG_ERROR, "Vips exception for path %s: %s\n", path, error);
+	nqiv_log_write(logger, NQIV_LOG_WARNING, "Vips exception for path %s: %s\n", path, error);
 	g_free(error);
 }
 
