@@ -58,6 +58,7 @@ struct nqiv_state
 	bool render_cleared;
 	bool in_montage;
 	bool stretch_images;
+	bool first_frame_pending;
 	char* window_title;
 	size_t window_title_size;
 	bool no_resample_oversized;

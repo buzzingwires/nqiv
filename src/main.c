@@ -356,6 +356,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			}
 		}
 	}
+	state->first_frame_pending = true;
 	if(state->images.images->position / sizeof(nqiv_image*) > 1) {
 		state->in_montage = true;
 	}
@@ -463,8 +464,9 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				memcpy( &tmp_srcrect, &form->master_srcrect, sizeof(SDL_Rect) );
 				memcpy( &tmp_dstrect, &form->master_dstrect, sizeof(SDL_Rect) );
 				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &tmp_srcrect, &tmp_dstrect);
-				if(first_frame) {
+				if(first_frame || state->first_frame_pending) {
 					state->images.zoom.image_to_viewport_ratio = state->images.zoom.image_to_viewport_ratio_max;
+					state->first_frame_pending = false;
 				}
 				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &tmp_srcrect, &tmp_dstrect); /* TODO aspect ratio */
 				if( !nqiv_state_update_alpha_background_dimensions(state, tmp_dstrect.w, tmp_dstrect.h) ) {
@@ -523,8 +525,9 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 		memcpy( &form->master_dstrect, &dstrect_zoom, sizeof(SDL_Rect) );
 		form->master_dimensions_set = true;
 		nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect, dstrect_zoom_ptr);
-		if(first_frame) {
+		if(first_frame || state->first_frame_pending) {
 			state->images.zoom.image_to_viewport_ratio = state->images.zoom.image_to_viewport_ratio_max;
+			state->first_frame_pending = false;
 		}
 		nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr); /* TODO aspect ratio */
 		if(!state->no_resample_oversized && (form->height > 16000 || form->width > 16000) )  {
@@ -558,8 +561,9 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				memcpy( &form->master_dstrect, &dstrect_zoom, sizeof(SDL_Rect) );
 				form->master_dimensions_set = true;
 				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect, dstrect_zoom_ptr);
-				if(first_frame) {
+				if(first_frame || state->first_frame_pending) {
 					state->images.zoom.image_to_viewport_ratio = state->images.zoom.image_to_viewport_ratio_max;
+					state->first_frame_pending = false;
 				}
 				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr); /* TODO aspect ratio */
 			}
