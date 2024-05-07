@@ -127,6 +127,10 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 	char* pathptr_base = pathptr;
 	strncpy(pathptr, image->parent->thumbnail.root, rootlen);
 	pathptr += rootlen;
+	if( strncmp(image->image.path, pathptr_base, pathptr - pathptr_base) == 0 ) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Image path '%s' matches thumbnail path starting at '%s'. Avoiding recreating thumbnail.\n", image->image.path, pathptr_base);
+		return false;
+	}
 	memcpy(pathptr, thumbspart, thumblen);
 	pathptr += thumblen;
 	memcpy(pathptr, typeseg, typelen);
