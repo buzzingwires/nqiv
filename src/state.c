@@ -3,6 +3,25 @@
 
 #include <SDL2/SDL.h>
 
+const char* nqiv_zoom_default_names[] =
+{
+	"keep",
+	"fit",
+	"actual"
+};
+
+nqiv_zoom_default nqiv_text_to_zoom_default(const char* text)
+{
+	nqiv_zoom_default zd = NQIV_ZOOM_DEFAULT_UNKNOWN;
+	for(zd = NQIV_ZOOM_DEFAULT_KEEP; zd <= NQIV_ZOOM_DEFAULT_ACTUAL; ++zd) {
+		if( strncmp( text, nqiv_zoom_default_names[zd], strlen(nqiv_zoom_default_names[zd]) ) == 0 && strlen(text) == strlen(nqiv_zoom_default_names[zd]) ) {
+			return zd;
+		}
+	}
+	return NQIV_ZOOM_DEFAULT_UNKNOWN;
+}
+
+
 bool nqiv_check_and_print_logger_error(nqiv_log_ctx* logger)
 {
 	if( nqiv_log_has_error(logger) ) {

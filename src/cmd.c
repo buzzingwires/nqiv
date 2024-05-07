@@ -140,6 +140,18 @@ bool nqiv_cmd_parser_set_zoom_up_amount_more(nqiv_cmd_manager* manager, nqiv_cmd
 	return true;
 }
 
+bool nqiv_cmd_parser_set_zoom_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	const char data_end = nqiv_cmd_tmpterm(tokens[0]->raw, tokens[0]->length);
+	const nqiv_zoom_default zd = nqiv_text_to_zoom_default(tokens[0]->raw);
+	nqiv_cmd_tmpret(tokens[0]->raw, tokens[0]->length, data_end);
+	if(zd == NQIV_ZOOM_DEFAULT_UNKNOWN) {
+		return false;
+	}
+	manager->state->zoom_default = zd;
+	return true;
+}
+
 bool nqiv_cmd_parser_set_thumbnail_load(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->images.thumbnail.load = tokens[0]->value.as_bool;
@@ -522,6 +534,11 @@ void nqiv_cmd_parser_print_zoom_right_amount_more(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_zoom_up_amount_more(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%f", manager->state->images.zoom.pan_up_amount_more);
+}
+
+void nqiv_cmd_parser_print_zoom_default(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%s", nqiv_zoom_default_names[manager->state->zoom_default]);
 }
 
 void nqiv_cmd_parser_print_thumbnail_load(nqiv_cmd_manager* manager)
@@ -1241,6 +1258,15 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 							.store_value = nqiv_cmd_parser_set_zoom_in_amount_more,
 							.print_value = nqiv_cmd_parser_print_zoom_in_amount_more,
 							.args = {&nqiv_parser_arg_type_double_negative, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "default",
+							.description = "Default zoom setting when loading an image- 'keep' old zoom, 'fit' to display, or set 'actual_size'.",
+							.store_value = nqiv_cmd_parser_set_zoom_default,
+							.print_value = nqiv_cmd_parser_print_zoom_default,
+							.args = {&nqiv_parser_arg_type_string, NULL},
 							.children = {NULL},
 						},
 						NULL,

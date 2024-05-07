@@ -22,6 +22,16 @@
 #define THREAD_QUEUE_BIN_COUNT 5
 #define ALPHA_BACKGROUND_CHECKER_PROPORTION 32
 
+typedef enum nqiv_zoom_default
+{
+	NQIV_ZOOM_DEFAULT_UNKNOWN = -1,
+	NQIV_ZOOM_DEFAULT_KEEP = 0,
+	NQIV_ZOOM_DEFAULT_FIT = 1,
+	NQIV_ZOOM_DEFAULT_ACTUAL = 2
+} nqiv_zoom_default;
+
+extern const char* nqiv_zoom_default_names[];
+
 struct nqiv_state
 {
 	nqiv_log_ctx logger;
@@ -59,6 +69,7 @@ struct nqiv_state
 	bool in_montage;
 	bool stretch_images;
 	bool first_frame_pending;
+	nqiv_zoom_default zoom_default;
 	char* window_title;
 	size_t window_title_size;
 	bool no_resample_oversized;
@@ -90,5 +101,6 @@ bool nqiv_state_recreate_background_texture(nqiv_state* state);
 bool nqiv_state_recreate_error_texture(nqiv_state* state);
 bool nqiv_state_recreate_loading_texture(nqiv_state* state);
 bool nqiv_state_expand_queues(nqiv_state* state);
+nqiv_zoom_default nqiv_text_to_zoom_default(const char* text);
 
 #endif /* NQIV_STATE_H */

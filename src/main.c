@@ -444,6 +444,26 @@ bool render_texture(bool* cleared, nqiv_state* state, SDL_Texture* texture, SDL_
 	return true;
 }
 
+void nqiv_apply_zoom_default(nqiv_state* state, const bool first_frame)
+{
+	if(first_frame || state->first_frame_pending) {
+		switch(state->zoom_default) {
+		case NQIV_ZOOM_DEFAULT_KEEP:
+			break;
+		case NQIV_ZOOM_DEFAULT_FIT:
+			state->images.zoom.image_to_viewport_ratio = state->images.zoom.fit_level;
+			break;
+		case NQIV_ZOOM_DEFAULT_ACTUAL:
+			state->images.zoom.image_to_viewport_ratio = state->images.zoom.actual_size_level;
+			break;
+		default:
+			assert(false);
+			break;
+		}
+		state->first_frame_pending = false;
+	}
+}
+
 /* TODO STEP FRAME? */
 /* TODO Reset frame */
 bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montage, const SDL_Rect* dstrect, const bool is_thumbnail, const bool first_frame, const bool next_frame, const bool selected, const bool hard, const bool lock, const int base_priority)
@@ -464,10 +484,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				memcpy( &tmp_srcrect, &form->master_srcrect, sizeof(SDL_Rect) );
 				memcpy( &tmp_dstrect, &form->master_dstrect, sizeof(SDL_Rect) );
 				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &tmp_srcrect, &tmp_dstrect);
-				if(first_frame || state->first_frame_pending) {
-					state->images.zoom.image_to_viewport_ratio = state->images.zoom.image_to_viewport_ratio_max;
-					state->first_frame_pending = false;
-				}
+				nqiv_apply_zoom_default(state, first_frame);
 				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &tmp_srcrect, &tmp_dstrect); /* TODO aspect ratio */
 				if( !nqiv_state_update_alpha_background_dimensions(state, tmp_dstrect.w, tmp_dstrect.h) ) {
 					return false;
@@ -525,10 +542,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 		memcpy( &form->master_dstrect, &dstrect_zoom, sizeof(SDL_Rect) );
 		form->master_dimensions_set = true;
 		nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect, dstrect_zoom_ptr);
-		if(first_frame || state->first_frame_pending) {
-			state->images.zoom.image_to_viewport_ratio = state->images.zoom.image_to_viewport_ratio_max;
-			state->first_frame_pending = false;
-		}
+		nqiv_apply_zoom_default(state, first_frame);
 		nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr); /* TODO aspect ratio */
 		if(!state->no_resample_oversized && (form->height > 16000 || form->width > 16000) )  {
 			if(form->srcrect.x != srcrect.x || form->srcrect.y != srcrect.y || form->srcrect.w != srcrect.w || form->srcrect.h != srcrect.h) {
@@ -561,10 +575,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				memcpy( &form->master_dstrect, &dstrect_zoom, sizeof(SDL_Rect) );
 				form->master_dimensions_set = true;
 				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect, dstrect_zoom_ptr);
-				if(first_frame || state->first_frame_pending) {
-					state->images.zoom.image_to_viewport_ratio = state->images.zoom.image_to_viewport_ratio_max;
-					state->first_frame_pending = false;
-				}
+				nqiv_apply_zoom_default(state, first_frame);
 				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr); /* TODO aspect ratio */
 			}
 		}
@@ -1250,6 +1261,34 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 		} else if(action == NQIV_KEY_ACTION_KEEP_ASPECT_RATIO) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action keep aspect ratio.\n");
 			state->stretch_images = false;
+			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_FIT) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action fit.\n");
+			state->images.zoom.image_to_viewport_ratio = state->images.zoom.fit_level;
+			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_ACTUAL_SIZE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action actual_size.\n");
+			state->images.zoom.image_to_viewport_ratio = state->images.zoom.actual_size_level;
+			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_KEEP_FIT) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action keep_fit.\n");
+			state->zoom_default = NQIV_ZOOM_DEFAULT_FIT;
+			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_KEEP_ACTUAL_SIZE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action keep_actual_size.\n");
+			state->zoom_default = NQIV_ZOOM_DEFAULT_ACTUAL;
+			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_KEEP_CURRENT_ZOOM) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action keep_current_zoom.\n");
+			state->zoom_default = NQIV_ZOOM_DEFAULT_KEEP;
+			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_TOGGLE_KEPT_ZOOM) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action toggle_kept_zoom.\n");
+			if(state->zoom_default == NQIV_ZOOM_DEFAULT_ACTUAL) {
+				state->zoom_default = NQIV_ZOOM_DEFAULT_KEEP;
+			} else {
+				state->zoom_default += 1;
+			}
 			render_and_update(state, running, result, false, false);
 		} else if(action == NQIV_KEY_ACTION_IMAGE_MARK_TOGGLE) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image mark.\n");
