@@ -451,9 +451,13 @@ void nqiv_apply_zoom_default(nqiv_state* state, const bool first_frame)
 		case NQIV_ZOOM_DEFAULT_KEEP:
 			break;
 		case NQIV_ZOOM_DEFAULT_FIT:
+			state->images.zoom.viewport_horizontal_shift = 0.0;
+			state->images.zoom.viewport_vertical_shift = 0.0;
 			state->images.zoom.image_to_viewport_ratio = state->images.zoom.fit_level;
 			break;
 		case NQIV_ZOOM_DEFAULT_ACTUAL:
+			state->images.zoom.viewport_horizontal_shift = 0.0;
+			state->images.zoom.viewport_vertical_shift = 0.0;
 			state->images.zoom.image_to_viewport_ratio = state->images.zoom.actual_size_level;
 			break;
 		default:
