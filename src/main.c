@@ -587,6 +587,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 			event.type = NQIV_EVENT_IMAGE_LOAD;
 			event.options.image_load.image = image;
 			event.options.image_load.set_thumbnail_path = true;
+			event.options.image_load.thumbnail_options.clear_error = true;
 			event.options.image_load.create_thumbnail = true;
 			if( !nqiv_send_thread_event(state, base_priority + 3, &event) ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -612,11 +613,11 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 		if(is_thumbnail && !image->image.error) {
 			if(!image->thumbnail_attempted && state->images.thumbnail.save) {
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Creating thumbnail after failing to load it.\n");
-				form->error = false;
 				nqiv_event event = {0};
 				event.type = NQIV_EVENT_IMAGE_LOAD;
 				event.options.image_load.image = image;
 				event.options.image_load.set_thumbnail_path = true;
+				event.options.image_load.thumbnail_options.clear_error = state->images.thumbnail.save;
 				event.options.image_load.create_thumbnail = true;
 				if( !nqiv_send_thread_event(state, base_priority + 2, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -679,6 +680,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				event.type = NQIV_EVENT_IMAGE_LOAD;
 				event.options.image_load.image = image;
 				event.options.image_load.set_thumbnail_path = true;
+				event.options.image_load.thumbnail_options.clear_error = state->images.thumbnail.save;
 				event.options.image_load.create_thumbnail = state->images.thumbnail.save;
 				if(hard) {
 					event.options.image_load.thumbnail_options.file = true;

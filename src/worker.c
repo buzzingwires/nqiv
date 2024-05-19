@@ -83,6 +83,13 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 	}
 }
 
+void nqiv_worker_handle_image_load_form_clear_error(nqiv_event_image_load_form_options* options, nqiv_image_form* form)
+{
+	if(options->clear_error) {
+		form->error = false;
+	}
+}
+
 void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock_t* lock, const int delay_base, const int event_interval, const Uint32 event_code, const int64_t* transaction_group, omp_lock_t* transaction_group_lock)
 {
 	bool increment_wait_time = false;
@@ -139,6 +146,8 @@ void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock
 					nqiv_log_write( logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
 					omp_set_lock(&event.options.image_load.image->lock);
 					nqiv_log_write( logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
+					nqiv_worker_handle_image_load_form_clear_error(&event.options.image_load.thumbnail_options, &event.options.image_load.image->thumbnail);
+					nqiv_worker_handle_image_load_form_clear_error(&event.options.image_load.image_options, &event.options.image_load.image->image);
 					if(!event.options.image_load.image->thumbnail_attempted && event.options.image_load.set_thumbnail_path) {
 						if(event.options.image_load.image->thumbnail.path == NULL) {
 							if( !nqiv_thumbnail_calculate_path(event.options.image_load.image, &event.options.image_load.image->thumbnail.path, false) ) {
