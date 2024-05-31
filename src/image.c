@@ -258,7 +258,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	VipsImage* new_vips;
 	if( form->srcrect.x != 0 || form->srcrect.y + frame_offset != 0 || form->srcrect.w != vips_image_get_width(used_vips) || form->srcrect.h != vips_image_get_height(used_vips) ) {
 		if(vips_crop(used_vips, &new_vips, form->srcrect.x, form->srcrect.y + frame_offset, form->srcrect.w, form->srcrect.h, NULL) == -1) {
-			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to crop out oversized vips region to resize for %s.", form->path);
+			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to crop out oversized vips region to resize for %s.\n", form->path);
 			nqiv_unload_image_form(form);
 			form->error = true;
 			return false;
