@@ -924,7 +924,9 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 		height_string,
 		do_dimensions ? " - " : "",
 		zoom_string,
-		!state->in_montage ? "% - " : "",
+		!state->in_montage ? "% (" : "",
+		!state->in_montage ? nqiv_zoom_default_names[state->zoom_default] : "",
+		!state->in_montage ? ") - " : "",
 		image->marked ? "MARKED -" : "",
 		image->image.path,
 		NULL
