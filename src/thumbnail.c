@@ -153,28 +153,25 @@ bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, cons
 #define NQIV_SIZE_STRLEN 21
 /*2147483647\0*/
 #define NQIV_DIMENSION_STRLEN 11
-bool nqiv_thumbnail_create(nqiv_image* image)
+
+bool nqiv_thumbnail_create_vips(nqiv_image* image)
 {
 	assert(image != NULL);
-	assert(image->parent != NULL);
 	assert(image->image.path != NULL);
 	assert(image->image.vips != NULL);
+	assert(image->thumbnail.vips == NULL);
 	assert(image->parent->thumbnail.size > 0);
-	/* assert(image->thumbnail.path == NULL); */
 
-	if(image->thumbnail.path == NULL) {
-		return false;
-	}
 	VipsImage* old_vips;
 	VipsImage* thumbnail_vips;
 	if(vips_copy(image->image.vips, &thumbnail_vips, NULL) == -1) {
-		nqiv_log_vips_exception(image->parent->logger,  image->image.path);
+		nqiv_log_vips_exception(image->parent->logger, image->image.path);
 		return false;
 	}
 	old_vips = thumbnail_vips;
 	if(vips_crop(old_vips, &thumbnail_vips, 0, 0, image->image.width, image->image.height, NULL) == -1) {
 		g_object_unref(old_vips);
-		nqiv_log_vips_exception(image->parent->logger,  image->image.path);
+		nqiv_log_vips_exception(image->parent->logger, image->image.path);
 		return false;
 	}
 	g_object_unref(old_vips);
@@ -183,19 +180,44 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	old_vips = thumbnail_vips;
 	if(vips_thumbnail_image(old_vips, &thumbnail_vips, image->parent->thumbnail.size, NULL) == -1) {
 		g_object_unref(old_vips);
-		nqiv_log_vips_exception(image->parent->logger,  image->image.path);
+		nqiv_log_vips_exception(image->parent->logger, image->image.path);
 		return false;
 	}
 	g_object_unref(old_vips);
+	image->thumbnail.vips = thumbnail_vips;
+
+	image->thumbnail.width = vips_image_get_width(image->thumbnail.vips);
+	image->thumbnail.height = vips_image_get_height(image->thumbnail.vips);
+	image->thumbnail.srcrect.x = 0;
+	image->thumbnail.srcrect.y = 0;
+	image->thumbnail.srcrect.w = image->thumbnail.width;
+	image->thumbnail.srcrect.h = image->thumbnail.height;
+	image->thumbnail.animation.frame_count = 1;
+	image->thumbnail.animation.frame = 0;
+	image->thumbnail.animation.exists = false;
+
+	return true;
+}
+
+bool nqiv_thumbnail_create(nqiv_image* image)
+{
+	assert(image != NULL);
+	assert(image->parent != NULL);
+	/* assert(image->thumbnail.path == NULL); */
+
+	if(image->thumbnail.path == NULL) {
+		return false;
+	}
+	if( !nqiv_thumbnail_create_vips(image) ) {
+		return false;
+	}
 	char actualpath[NQIV_URI_LEN];
 	if( !nqiv_thumbnail_render_uri(image, actualpath) ) {
-		g_object_unref(thumbnail_vips);
 		return false;
 	}
 	nqiv_stat_data stat_data;
 	if( !nqiv_stat(image->image.path, &stat_data) ) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to get stat data for image at %s.\n", image->image.path);
-		g_object_unref(thumbnail_vips); /* TODO: Where should this be? */
 		return false;
 	}
 	char mtime_string[NQIV_MTIME_STRLEN] = {0};
@@ -207,23 +229,20 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	char height_string[NQIV_DIMENSION_STRLEN] = {0};
 	snprintf(height_string, NQIV_DIMENSION_STRLEN, "%d", image->image.height);
 
-	vips_image_set_string(thumbnail_vips, "png-comment-0-Thumb::URI", actualpath);
-	vips_image_set_string(thumbnail_vips, "png-comment-1-Thumb::MTime", mtime_string);
-	vips_image_set_string(thumbnail_vips, "png-comment-2-Thumb::Size", size_string);
-	vips_image_set_string(thumbnail_vips, "png-comment-3-Thumb::Image::Width", width_string);
-	vips_image_set_string(thumbnail_vips, "png-comment-4-Thumb::Image::Height", height_string);
+	vips_image_set_string(image->thumbnail.vips, "png-comment-0-Thumb::URI", actualpath);
+	vips_image_set_string(image->thumbnail.vips, "png-comment-1-Thumb::MTime", mtime_string);
+	vips_image_set_string(image->thumbnail.vips, "png-comment-2-Thumb::Size", size_string);
+	vips_image_set_string(image->thumbnail.vips, "png-comment-3-Thumb::Image::Width", width_string);
+	vips_image_set_string(image->thumbnail.vips, "png-comment-4-Thumb::Image::Height", height_string);
 
 	if( !nqiv_thumbnail_create_dirs(image->parent, false) ) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed create thumbnail dirs under %s.\n", image->parent->thumbnail.root);
-		g_object_unref(thumbnail_vips); /* TODO: Where should this be? */
 		return false;
 	}
-	if( vips_image_write_to_file(thumbnail_vips, image->thumbnail.path, NULL) == -1 ) {
+	if( vips_image_write_to_file(image->thumbnail.vips, image->thumbnail.path, NULL) == -1 ) {
 		nqiv_log_vips_exception(image->parent->logger, image->image.path);
-		g_object_unref(thumbnail_vips); /* TODO: Where should this be? */
 		return false;
 	}
-	g_object_unref(thumbnail_vips); /* TODO: Where should this be? */
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Created thumbnail at path '%s' for image at path '%s'.\n", image->thumbnail.path, image->image.path);
 	return true;
 }

@@ -15,6 +15,7 @@ we need to copy, resize, write metadata, optimize the image, and finally save to
 
 bool nqiv_thumbnail_calculate_path(nqiv_image* image, char** pathptr_store, const bool failed);
 
+bool nqiv_thumbnail_create_vips(nqiv_image* image);
 bool nqiv_thumbnail_create(nqiv_image* image);
 
 bool nqiv_thumbnail_matches_image(nqiv_image* image);

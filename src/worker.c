@@ -49,9 +49,29 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 				if(options->vips) {
 					nqiv_unload_image_form_vips(form);
 					success = nqiv_image_load_vips(image, form);
+					if(!success && form == &image->thumbnail) {
+						if(image->image.vips != NULL) {
+							success = nqiv_thumbnail_create_vips(image);
+						} else {
+							if( nqiv_image_load_vips(image, &image->image) ) {
+								success = nqiv_thumbnail_create_vips(image);
+								nqiv_unload_image_form_vips(&image->image);
+							}
+						}
+					}
 				}
 			} else {
 				success = nqiv_image_load_vips(image, form);
+				if(!success && form == &image->thumbnail) {
+					if(image->image.vips != NULL) {
+						success = nqiv_thumbnail_create_vips(image);
+					} else {
+						if( nqiv_image_load_vips(image, &image->image) ) {
+							success = nqiv_thumbnail_create_vips(image);
+							nqiv_unload_image_form_vips(&image->image);
+						}
+					}
+				}
 			}
 		}
 		if(success && options->first_frame) {

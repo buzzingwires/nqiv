@@ -634,13 +634,26 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				/* TODO Signal to create thumbnail from main image, set thumbnail attempted after */
 				/* TODO UNSET ERROR */
 			} else {
-				if( !render_from_form(state, image, is_montage, dstrect, false, true, false, selected, hard, false, base_priority) ) {
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Generating ephemeral thumbnail for image.\n");
+				nqiv_event event = {0};
+				event.type = NQIV_EVENT_IMAGE_LOAD;
+				event.options.image_load.image = image;
+				event.options.image_load.thumbnail_options.clear_error = true;
+				if(hard) {
+					event.options.image_load.thumbnail_options.file = true;
+					event.options.image_load.thumbnail_options.vips = true;
+				} else {
+					event.options.image_load.thumbnail_options.file_soft = true;
+					event.options.image_load.thumbnail_options.vips_soft = true;
+				}
+				if( !nqiv_send_thread_event(state, base_priority + 2, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					return false;
+				} else {
+					pending_change_count += 1;
 				}
-				/* TODO Use main image for the thumbnail */
 			}
 		} else {
 			if( !render_texture(&cleared, state, state->texture_montage_error_background, NULL, dstrect) ) {
@@ -1009,14 +1022,14 @@ bool render_montage(nqiv_state* state, const bool hard)
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n", image->image.path, idx);
 			SDL_Rect dstrect;
 			nqiv_montage_get_image_rect(&state->montage, idx, &dstrect);
-			if( !render_from_form(state, image, true, &dstrect, state->images.thumbnail.load, true, false, state->montage.positions.selection == idx, hard, true, 0) ) {
+			if( !render_from_form(state, image, true, &dstrect, true, true, false, state->montage.positions.selection == idx, hard, true, 0) ) {
 				return false;
 			}
 			if( idx == state->montage.positions.selection && !set_title(state, image) ) {
 				return false;
 			}
 		} else {
-			if( !render_from_form(state, image, true, NULL, state->images.thumbnail.load, true, false, state->montage.positions.selection == idx, hard, true, 1) ) {
+			if( !render_from_form(state, image, true, NULL, true, true, false, state->montage.positions.selection == idx, hard, true, 1) ) {
 				return false;
 			}
 		}
