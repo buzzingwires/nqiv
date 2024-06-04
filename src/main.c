@@ -738,7 +738,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 					event.options.image_load.image_options.file_soft = true;
 					event.options.image_load.image_options.vips_soft = true;
 				}
-				if( hard || next_frame || resample_zoom || (first_frame && image->image.vips != NULL && image->image.animation.frame != 0) ) {
+				if( image->image.vips != NULL && ( hard || next_frame || resample_zoom || (first_frame && image->image.animation.frame != 0) ) ) {
 					event.options.image_load.image_options.raw = true;
 					event.options.image_load.image_options.surface = true;
 				} else {
