@@ -776,6 +776,9 @@ state->images.thumbnail.load
 		}
 		if(form->texture != NULL) {
 			if( dstrect_zoom_ptr != NULL && !nqiv_state_update_alpha_background_dimensions(state, dstrect_zoom_ptr->w, dstrect_zoom_ptr->h) ) {
+				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+				omp_unset_lock(&image->lock);
+				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
 			}
 			if( !render_texture(&cleared, state, state->texture_alpha_background, NULL, dstrect_zoom_ptr) ) {
