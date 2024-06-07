@@ -160,7 +160,6 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 	char* delay_string;
 	if(vips_image_get_as_string(form->vips, "delay", &delay_string) == -1) {
 		nqiv_log_vips_exception(image->parent->logger, image->image.path);
-		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
@@ -168,7 +167,6 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 	if(idx == -1) {
 		g_free(delay_string);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Unable to find delay for frame %d of '%s'.\n", form->animation.frame, image->image.path);
-		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
@@ -176,13 +174,11 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 	g_free(delay_string);
 	if(delay_value == 0 || errno == ERANGE) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Delay for frame %d of '%s' is not a valid integer.\n", form->animation.frame, image->image.path);
-		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
 	if(delay_value < 0) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid delay of %d for frame %d of '%s'.\n", delay_value, form->animation.frame, image->image.path);
-		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
@@ -204,7 +200,6 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 	form->vips = vips_image_new_from_file( form->path, NULL );
 	if( form->vips == NULL || !vips_colourspace_issupported (form->vips) ) {
 		nqiv_log_vips_exception(image->parent->logger, form->path);
-		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
@@ -225,7 +220,6 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 		form->animation.exists = true;
 		if( !nqiv_image_form_set_frame_delay(image, form) ) {
 			nqiv_log_vips_exception(image->parent->logger, form->path);
-			nqiv_unload_image_form(form);
 			form->error = true;
 			return false;
 		}
@@ -234,7 +228,6 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 		g_object_unref(old_vips);
 		if(form->vips == NULL) {
 			nqiv_log_vips_exception(image->parent->logger, form->path);
-			nqiv_unload_image_form(form);
 			form->error = true;
 			return false;
 		}
@@ -259,7 +252,6 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	if( form->srcrect.x != 0 || form->srcrect.y + frame_offset != 0 || form->srcrect.w != vips_image_get_width(used_vips) || form->srcrect.h != vips_image_get_height(used_vips) ) {
 		if(vips_crop(used_vips, &new_vips, form->srcrect.x, form->srcrect.y + frame_offset, form->srcrect.w, form->srcrect.h, NULL) == -1) {
 			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to crop out oversized vips region to resize for %s.\n", form->path);
-			nqiv_unload_image_form(form);
 			form->error = true;
 			return false;
 		}
@@ -275,7 +267,6 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 				g_object_unref(used_vips);
 			}
 			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to resize oversized vips region for %s.", form->path);
-			nqiv_unload_image_form(form);
 			form->error = true;
 			return false;
 		}
@@ -292,7 +283,6 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 			g_object_unref(used_vips);
 		}
 		nqiv_log_vips_exception(image->parent->logger, form->path);
-		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
@@ -302,7 +292,6 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 				g_object_unref(used_vips);
 			}
 			nqiv_log_vips_exception(image->parent->logger, form->path);
-			nqiv_unload_image_form(form);
 			form->error = true;
 			return false;
 		}
@@ -318,7 +307,6 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 			g_object_unref(used_vips);
 		}
 		nqiv_log_vips_exception(image->parent->logger, form->path);
-		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
@@ -328,7 +316,6 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 				g_object_unref(used_vips);
 			}
 			nqiv_log_vips_exception(image->parent->logger, form->path);
-			nqiv_unload_image_form(form);
 			form->error = true;
 			return false;
 		}
@@ -344,7 +331,6 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 				g_object_unref(used_vips);
 			}
 			nqiv_log_vips_exception(image->parent->logger, form->path);
-			nqiv_unload_image_form(form);
 			form->error = true;
 			return false;
 		}
@@ -360,7 +346,6 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 			g_object_unref(used_vips);
 		}
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to extract raw image data at path %s.", form->path);
-		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
@@ -373,7 +358,6 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 			g_object_unref(used_vips);
 		}
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to extract raw image data at path %s.", form->path);
-		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
@@ -398,7 +382,6 @@ bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form)
 	form->surface = SDL_CreateRGBSurfaceWithFormatFrom(form->data, form->effective_width, form->effective_height, 4 * 8, 4 * form->effective_width, SDL_PIXELFORMAT_ABGR8888);
 	if(form->surface == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to create SDL surface for path %s (%s).", form->path, SDL_GetError() );
-		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
@@ -415,7 +398,6 @@ bool nqiv_image_load_sdl_texture(nqiv_image* image, nqiv_image_form* form, SDL_R
 	form->texture = SDL_CreateTextureFromSurface(renderer, form->surface);
 	if(form->texture == NULL) {
 		nqiv_log_write( image->parent->logger, NQIV_LOG_ERROR, "Failed to create SDL texture for path %s (%s).", form->path, SDL_GetError() );
-		nqiv_unload_image_form(form);
 		form->error = true;
 		return false;
 	}
