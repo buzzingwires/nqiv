@@ -43,6 +43,9 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 			nqiv_unload_image_form_vips(form);
 		}
 	} else {
+		if(form->texture != NULL) {
+			return;
+		}
 		bool success = true;
 		if(options->vips || options->vips_soft) {
 			if(form->vips != NULL) {
