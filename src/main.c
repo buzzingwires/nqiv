@@ -486,11 +486,15 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 		if( !omp_test_lock(&image->lock) ) {
 			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Failed to lock image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-			if(form->master_dimensions_set && form->fallback_texture != NULL && form->master_srcrect.w > 0 && form->master_srcrect.h > 0 && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
-				SDL_Rect tmp_srcrect;
-				SDL_Rect tmp_dstrect;
+			SDL_Rect tmp_srcrect;
+			SDL_Rect tmp_dstrect;
+			const SDL_Rect* tmp_dstrect_ptr = dstrect;
+			if(form->master_srcrect.w > 0 && form->master_srcrect.h > 0 && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
 				memcpy( &tmp_srcrect, &form->master_srcrect, sizeof(SDL_Rect) );
 				memcpy( &tmp_dstrect, &form->master_dstrect, sizeof(SDL_Rect) );
+				tmp_dstrect_ptr = &tmp_dstrect;
+			}
+			if(form->master_dimensions_set && form->fallback_texture != NULL && form->master_srcrect.w > 0 && form->master_srcrect.h > 0 && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
 				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &tmp_srcrect, &tmp_dstrect);
 				nqiv_apply_zoom_default(state, first_frame);
 				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &tmp_srcrect, &tmp_dstrect); /* TODO aspect ratio */
@@ -503,6 +507,8 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				if( !render_texture(&cleared, NULL, state, form->fallback_texture, &tmp_srcrect, &tmp_dstrect) ) {
 					return false;
 				}
+			} else if( !render_texture(&cleared, NULL, state, state->texture_montage_unloaded_background, NULL, tmp_dstrect_ptr) ) {
+				return false;
 			}
 			if(selected && is_montage) {
 				if( !render_texture(&cleared, NULL, state, state->texture_montage_selection, NULL, dstrect) ) {
@@ -687,7 +693,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 			}
 		} else {
 			if(first_frame || hard) {
-				if( !render_texture(&cleared, dstrect, state, state->texture_montage_unloaded_background, NULL, dstrect_zoom_ptr) ) {
+				if( !render_texture(&cleared, dstrect, state, state->texture_montage_unloaded_background, NULL, dstrect_zoom_ptr == NULL ? dstrect : dstrect_zoom_ptr) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
