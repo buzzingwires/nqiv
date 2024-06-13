@@ -420,7 +420,7 @@ bool nqiv_send_thread_event_force(nqiv_state* state, const int level, nqiv_event
 	return nqiv_send_thread_event_base(state, level, event, true, true);
 }
 
-bool render_texture(bool* cleared, nqiv_state* state, SDL_Texture* texture, SDL_Rect* srcrect, const SDL_Rect* dstrect)
+bool render_texture(bool* cleared, const SDL_Rect* cleardst, nqiv_state* state, SDL_Texture* texture, SDL_Rect* srcrect, const SDL_Rect* dstrect)
 {
 	if(dstrect == NULL) {
 		return true;
@@ -436,6 +436,10 @@ bool render_texture(bool* cleared, nqiv_state* state, SDL_Texture* texture, SDL_
 		}
 		*cleared = true;
 		state->render_cleared = true;
+	}
+	if(cleardst != NULL && SDL_RenderCopy(state->renderer, state->texture_background, NULL, cleardst) != 0) {
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to clear rendering space using texture background.\n");
+		return false;
 	}
 	if( SDL_RenderCopy(state->renderer, texture, srcrect, dstrect) != 0 ) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to copy texture.\n");
@@ -493,20 +497,20 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				if( !nqiv_state_update_alpha_background_dimensions(state, tmp_dstrect.w, tmp_dstrect.h) ) {
 					return false;
 				}
-				if( !render_texture(&cleared, state, state->texture_alpha_background, NULL, &tmp_dstrect) ) {
+				if( !render_texture(&cleared, NULL, state, state->texture_alpha_background, NULL, &tmp_dstrect) ) {
 					return false;
 				}
-				if( !render_texture(&cleared, state, form->fallback_texture, &tmp_srcrect, &tmp_dstrect) ) {
+				if( !render_texture(&cleared, NULL, state, form->fallback_texture, &tmp_srcrect, &tmp_dstrect) ) {
 					return false;
 				}
 			}
 			if(selected && is_montage) {
-				if( !render_texture(&cleared, state, state->texture_montage_selection, NULL, dstrect) ) {
+				if( !render_texture(&cleared, NULL, state, state->texture_montage_selection, NULL, dstrect) ) {
 					return false;
 				}
 			}
 			if(image->marked && is_montage) {
-				if( !render_texture(&cleared, state, state->texture_montage_mark, NULL, dstrect) ) {
+				if( !render_texture(&cleared, NULL, state, state->texture_montage_mark, NULL, dstrect) ) {
 					return false;
 				}
 			}
@@ -656,7 +660,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				}
 			}
 		} else {
-			if( !render_texture(&cleared, state, state->texture_montage_error_background, NULL, dstrect) ) {
+			if( !render_texture(&cleared, dstrect, state, state->texture_montage_error_background, NULL, dstrect) ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -683,7 +687,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 			}
 		} else {
 			if(first_frame || hard) {
-				if( !render_texture(&cleared, state, state->texture_montage_unloaded_background, NULL, dstrect) ) {
+				if( !render_texture(&cleared, dstrect, state, state->texture_montage_unloaded_background, NULL, dstrect) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -781,14 +785,14 @@ state->images.thumbnail.load
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
 			}
-			if( !render_texture(&cleared, state, state->texture_alpha_background, NULL, dstrect_zoom_ptr) ) {
+			if( !render_texture(&cleared, dstrect, state, state->texture_alpha_background, NULL, dstrect_zoom_ptr) ) {
 				nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to draw image alpha background.\n");
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
 			}
-			if( !render_texture(&cleared, state, form->texture, srcrect_ptr, dstrect_zoom_ptr) ) {
+			if( !render_texture(&cleared, NULL, state, form->texture, srcrect_ptr, dstrect_zoom_ptr) ) {
 				nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to draw image texture.\n");
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
@@ -829,7 +833,7 @@ state->images.thumbnail.load
 		}
 	}
 	if(selected) {
-		if( !render_texture(&cleared, state, state->texture_montage_selection, NULL, dstrect) ) {
+		if( !render_texture(&cleared, NULL, state, state->texture_montage_selection, NULL, dstrect) ) {
 			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 			omp_unset_lock(&image->lock);
 			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -837,7 +841,7 @@ state->images.thumbnail.load
 		}
 	}
 	if(image->marked && is_montage) {
-		if( !render_texture(&cleared, state, state->texture_montage_mark, NULL, dstrect) ) {
+		if( !render_texture(&cleared, NULL, state, state->texture_montage_mark, NULL, dstrect) ) {
 			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 			omp_unset_lock(&image->lock);
 			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
