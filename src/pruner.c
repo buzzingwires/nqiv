@@ -56,8 +56,12 @@ typedef struct nqiv_pruner_desc_datapoint
 
 void nqiv_pruner_update_state_boolean(nqiv_pruner* pruner, const bool value)
 {
+	if(!pruner->state.and_is_set) {
+		pruner->state.and_result = true;
+	}
+	pruner->state.and_is_set = true;
 	pruner->state.or_result = pruner->state.or_result || value;
-	pruner->state.and_result = pruner->state.or_result && value;
+	pruner->state.and_result = pruner->state.and_result && value;
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "New prune state boolean is or_result: %s and_result: %s\n", pruner->state.or_result ? "true" : "false", pruner->state.and_result ? "true" : "false");
 }
 
@@ -65,6 +69,16 @@ void nqiv_pruner_update_state_integer(nqiv_pruner* pruner, const int value)
 {
 	pruner->state.total_sum += value;
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "New prune state total_sum is %d\n", pruner->state.total_sum);
+}
+
+void nqiv_pruner_run_not_animated(nqiv_pruner* pruner, nqiv_pruner_desc_datapoint* datapoint, const void* object)
+{
+	if(datapoint->active) {
+		const bool result = !( ( (nqiv_image_form*)object )->animation.exists );
+		datapoint->value.as_bool = result;
+		nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "not_animated result is: %s\n", result ? "true" : "false");
+		nqiv_pruner_update_state_boolean(pruner, result);
+	}
 }
 
 void nqiv_pruner_run_loaded_self(nqiv_pruner* pruner, nqiv_pruner_desc_datapoint* datapoint, const void* object)
@@ -118,8 +132,9 @@ void nqiv_pruner_run_bytes_behind(nqiv_pruner* pruner, nqiv_pruner_desc_datapoin
 	}
 }
 
-void nqiv_pruner_run_set(nqiv_pruner* pruner, nqiv_pruner_desc_dataset* set, const void* object, const int size)
+void nqiv_pruner_run_set(nqiv_pruner* pruner, nqiv_pruner_desc_dataset* set, const nqiv_image_form* form, const void* object, const int size)
 {
+	nqiv_pruner_run_not_animated(pruner, &(set->not_animated), form);
 	nqiv_pruner_run_loaded_self(pruner, &(set->loaded_self), object);
 	nqiv_pruner_run_loaded_ahead(pruner, &(set->loaded_ahead), object);
 	nqiv_pruner_run_loaded_behind(pruner, &(set->loaded_behind), object);
@@ -139,21 +154,21 @@ void nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqi
 		if(dataset->loaded_self)
 	}*/
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking vips_set\n");
-	nqiv_pruner_run_set(pruner, &(desc->vips_set), image->image.vips, image->image.effective_width * image->image.effective_height * 4);
+	nqiv_pruner_run_set(pruner, &(desc->vips_set), &image->image, image->image.vips, image->image.effective_width * image->image.effective_height * 4);
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking raw_set\n");
-	nqiv_pruner_run_set(pruner, &(desc->raw_set), image->image.data, image->image.effective_width * image->image.effective_height * 4);
+	nqiv_pruner_run_set(pruner, &(desc->raw_set), &image->image,  image->image.data, image->image.effective_width * image->image.effective_height * 4);
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking surface_set\n");
-	nqiv_pruner_run_set(pruner, &(desc->surface_set), image->image.surface, image->image.effective_width * image->image.effective_height * 4);
+	nqiv_pruner_run_set(pruner, &(desc->surface_set), &image->image,  image->image.surface, image->image.effective_width * image->image.effective_height * 4);
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking texture_set\n");
-	nqiv_pruner_run_set(pruner, &(desc->texture_set), image->image.texture, image->image.effective_width * image->image.effective_height * 4);
+	nqiv_pruner_run_set(pruner, &(desc->texture_set), &image->image,  image->image.texture, image->image.effective_width * image->image.effective_height * 4);
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking thumbnail_vips_set\n");
-	nqiv_pruner_run_set(pruner, &(desc->thumbnail_vips_set), image->thumbnail.vips, image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
+	nqiv_pruner_run_set(pruner, &(desc->thumbnail_vips_set), &image->thumbnail, image->thumbnail.vips, image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking thumbnail_raw_set\n");
-	nqiv_pruner_run_set(pruner, &(desc->thumbnail_raw_set), image->thumbnail.data, image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
+	nqiv_pruner_run_set(pruner, &(desc->thumbnail_raw_set), &image->thumbnail, image->thumbnail.data, image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking thumbnail_surface_set\n");
-	nqiv_pruner_run_set(pruner, &(desc->thumbnail_surface_set), image->thumbnail.surface, image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
+	nqiv_pruner_run_set(pruner, &(desc->thumbnail_surface_set), &image->thumbnail, image->thumbnail.surface, image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking thumbnail_texture_set\n");
-	nqiv_pruner_run_set(pruner, &(desc->thumbnail_texture_set), image->thumbnail.texture, image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
+	nqiv_pruner_run_set(pruner, &(desc->thumbnail_texture_set), &image->thumbnail, image->thumbnail.texture, image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
 }
 
 int nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_priority_queue* thread_queue, const int iidx, nqiv_image* image)
@@ -183,11 +198,12 @@ int nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv
 			pruner->state.montage_end = montage->positions.end + montage->preload.ahead;
 			pruner->state.or_result = false;
 			pruner->state.and_result = false;
+			pruner->state.and_is_set = false;
 			nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Checking prune directive %d.\n", idx);
 			nqiv_pruner_run_desc(pruner, &desc, image);
 			if( (desc.counter & NQIV_PRUNER_COUNT_OP_SUM && pruner->state.total_sum > desc.state_check.total_sum) ||
 				(desc.counter & NQIV_PRUNER_COUNT_OP_OR && pruner->state.or_result == desc.state_check.or_result) ||
-				(desc.counter & NQIV_PRUNER_COUNT_OP_AND && pruner->state.and_result == desc.state_check.and_result) ) {
+				(pruner->state.and_is_set && desc.counter & NQIV_PRUNER_COUNT_OP_AND && pruner->state.and_result == desc.state_check.and_result) ) {
 				nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Pruning image %s.\n", image->image.path);
 				bool send_event = false;
 				/* TODO: This cannot be called from a thread. If we plan to have the pruner run in a thread, we need to do this in a thread safe way, probably by sending an SDL event for master. */
@@ -395,6 +411,15 @@ bool nqiv_pruner_append(nqiv_pruner* pruner, nqiv_pruner_desc* desc)
 	return true;
 }
 
+bool nqiv_pruner_check_token(const char* text, const int idx, const int end, const char* subs)
+{
+	int token_end = nqiv_cmd_scan_whitespace(text, idx, end, NULL);
+	if(token_end == -1) {
+		token_end = end;
+	}
+	return strncmp( &text[idx], subs, strlen(subs) ) == 0 && idx + (int)strlen(subs) == token_end;
+}
+
 bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner_desc* desc)
 {
 	memset( desc, 0, sizeof(nqiv_pruner_desc) );
@@ -415,10 +440,11 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 		if(idx == -1) {
 			break;
 		}
-		if(strncmp( &text[idx], "no", strlen("no") ) == 0) {
+		if( nqiv_pruner_check_token(text, idx, end, "no") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'no' at %s\n", &text[idx]);
 			inside_no = true;
-		} else if(strncmp( &text[idx], "sum", strlen("sum") ) == 0) {
+			idx += strlen("no");
+		} else if( nqiv_pruner_check_token(text, idx, end, "sum") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'sum' at %s\n", &text[idx]);
 			idx += strlen("sum");
 			if(inside_no) {
@@ -431,7 +457,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				desc->counter |= NQIV_PRUNER_COUNT_OP_SUM;
 				idx = nqiv_pruner_parse_int(logger, text, idx, end, &desc->state_check.total_sum);
 			}
-		} else if(strncmp( &text[idx], "or", strlen("or") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "or") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'or' at %s\n", &text[idx]);
 			idx += strlen("or");
 			if(inside_no) {
@@ -444,7 +470,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				desc->counter |= NQIV_PRUNER_COUNT_OP_OR;
 				desc->state_check.or_result = true;
 			}
-		} else if(strncmp( &text[idx], "and", strlen("and") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "and") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'and' at %s\n", &text[idx]);
 			idx += strlen("and");
 			if(inside_no) {
@@ -457,7 +483,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				desc->counter |= NQIV_PRUNER_COUNT_OP_AND;
 				desc->state_check.and_result = true;
 			}
-		} else if(strncmp( &text[idx], "unload", strlen("unload") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "unload") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'unload' at %s\n", &text[idx]);
 			idx += strlen("unload");
 			if(inside_no) {
@@ -468,7 +494,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling unload\n");
 				inside_unload = true;
 			}
-		} else if(strncmp( &text[idx], "thumbnail", strlen("thumbnail") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "thumbnail") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'thumbnail' at %s\n", &text[idx]);
 			idx += strlen("thumbnail");
 			if(inside_no) {
@@ -479,7 +505,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling thumbnail\n");
 				inside_thumbnail = true;
 			}
-		} else if(strncmp( &text[idx], "image", strlen("image") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "image") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'image' at %s\n", &text[idx]);
 			idx += strlen("image");
 			if(inside_no) {
@@ -490,7 +516,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling image\n");
 				inside_image = true;
 			}
-		} else if(strncmp( &text[idx], "vips", strlen("vips") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "vips") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'vips' at %s\n", &text[idx]);
 			idx += strlen("vips");
 			if(inside_no) {
@@ -522,7 +548,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				thumbnail_set = &desc->thumbnail_vips_set;
 				thumbnail_unload_setting = &desc->unload_thumbnail_vips;
 			}
-		} else if(strncmp( &text[idx], "raw", strlen("raw") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "raw") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'raw' at %s\n", &text[idx]);
 			idx += strlen("raw");
 			if(inside_no) {
@@ -554,7 +580,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				thumbnail_set = &desc->thumbnail_raw_set;
 				thumbnail_unload_setting = &desc->unload_thumbnail_raw;
 			}
-		} else if(strncmp( &text[idx], "surface", strlen("surface") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "surface") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'surface' at %s\n", &text[idx]);
 			idx += strlen("surface");
 			if(inside_no) {
@@ -586,7 +612,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				thumbnail_set = &desc->thumbnail_surface_set;
 				thumbnail_unload_setting = &desc->unload_thumbnail_surface;
 			}
-		} else if(strncmp( &text[idx], "texture", strlen("texture") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "texture") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'texture' at %s\n", &text[idx]);
 			idx += strlen("texture");
 			if(inside_no) {
@@ -621,30 +647,35 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 		} else if(set == NULL) {
 			nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to continue with unknown set target from %s\n", &text[idx]);
 			return false;
-		} else if(strncmp( &text[idx], "loaded_ahead", strlen("loaded_ahead") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "loaded_ahead") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'loaded_ahead' %s\n", &text[idx]);
 			idx += strlen("loaded_ahead");
 			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_unload, inside_image, inside_thumbnail, &set->loaded_ahead, &thumbnail_set->loaded_ahead, unload_setting, thumbnail_unload_setting, nqiv_pruner_parse_int_pair);
 			inside_no = false;
-		} else if(strncmp( &text[idx], "loaded_behind", strlen("loaded_behind") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "loaded_behind") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'loaded_behind' %s\n", &text[idx]);
 			idx += strlen("loaded_behind");
 			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_unload, inside_image, inside_thumbnail, &set->loaded_behind, &thumbnail_set->loaded_behind, unload_setting, thumbnail_unload_setting, nqiv_pruner_parse_int_pair);
 			inside_no = false;
-		} else if(strncmp( &text[idx], "bytes_ahead", strlen("bytes_ahead") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "bytes_ahead") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'bytes_ahead' %s\n", &text[idx]);
 			idx += strlen("bytes_ahead");
 			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_unload, inside_image, inside_thumbnail, &set->bytes_ahead, &thumbnail_set->bytes_ahead, unload_setting, thumbnail_unload_setting, nqiv_pruner_parse_int_pair);
 			inside_no = false;
-		} else if(strncmp( &text[idx], "bytes_behind", strlen("bytes_behind") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "bytes_behind") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'bytes_behind' %s\n", &text[idx]);
 			idx += strlen("bytes_behind");
 			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_unload, inside_image, inside_thumbnail, &set->bytes_behind, &thumbnail_set->bytes_behind, unload_setting, thumbnail_unload_setting, nqiv_pruner_parse_int_pair);
 			inside_no = false;
-		} else if(strncmp( &text[idx], "self_opened", strlen("self_opened") ) == 0) {
+		} else if( nqiv_pruner_check_token(text, idx, end, "self_opened") ) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'self_opened' %s\n", &text[idx]);
 			idx += strlen("self_opened");
 			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_unload, inside_image, inside_thumbnail, &set->loaded_self, &thumbnail_set->loaded_self, unload_setting, thumbnail_unload_setting, nqiv_pruner_set_true);
+			inside_no = false;
+		} else if( nqiv_pruner_check_token(text, idx, end, "not_animated") ) {
+			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'not_animated' %s\n", &text[idx]);
+			idx += strlen("not_animated");
+			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_unload, inside_image, inside_thumbnail, &set->not_animated, &thumbnail_set->not_animated, unload_setting, thumbnail_unload_setting, nqiv_pruner_set_true);
 			inside_no = false;
 		} else {
 			nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to identify %s\n", &text[idx]);

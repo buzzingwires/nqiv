@@ -1834,6 +1834,8 @@ void nqiv_cmd_print_single_arg( nqiv_cmd_manager* manager, const nqiv_cmd_arg_de
 		fprintf(stdout, "'bytes_behind' <THRESHOLD> <MAX> will check for whether the number of loaded bytes before the threshold is greater than max.\n");
 		print_prefix(manager);
 		fprintf(stdout, "'self_opened' will check if the currently-selected image is loaded.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'not_animated' will check if the currently-selected image is not animated.\n");
 		break;
 	}
 }

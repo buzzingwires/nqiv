@@ -133,4 +133,5 @@ void nqiv_cmd_manager_destroy(nqiv_cmd_manager* manager);
 bool nqiv_cmd_manager_init(nqiv_cmd_manager* manager, nqiv_state* state);
 
 int nqiv_cmd_scan_not_whitespace(const char* data, const int start, const int end, int* length);
+int nqiv_cmd_scan_whitespace(const char* data, const int start, const int end, int* length);
 #endif /* NQIV_CMD_H */

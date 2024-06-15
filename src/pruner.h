@@ -39,6 +39,7 @@ typedef struct nqiv_pruner_desc_datapoint
 
 typedef struct nqiv_pruner_desc_dataset
 {
+	nqiv_pruner_desc_datapoint not_animated;
 	nqiv_pruner_desc_datapoint loaded_self;
 	nqiv_pruner_desc_datapoint loaded_ahead;
 	nqiv_pruner_desc_datapoint loaded_behind;
@@ -55,6 +56,7 @@ typedef struct nqiv_pruner_state
 	int total_sum;
 	bool or_result;
 	bool and_result;
+	bool and_is_set;
 } nqiv_pruner_state;
 
 typedef struct nqiv_pruner_desc
