@@ -33,13 +33,13 @@ typedef struct nqiv_event_image_load_options
 void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* options, nqiv_image* image, nqiv_image_form* form)
 {
 	if(options->unload) {
-		if(options->surface) {
+		if( options->surface || (options->surface_soft && form->texture != NULL) ) {
 			nqiv_unload_image_form_surface(form);
 		}
-		if(options->raw) {
+		if( options->raw || (options->raw_soft && form->texture != NULL) ) {
 			nqiv_unload_image_form_raw(form);
 		}
-		if(options->vips) {
+		if( options->vips || (options->vips_soft && form->texture != NULL) ) {
 			nqiv_unload_image_form_vips(form);
 		}
 	} else {

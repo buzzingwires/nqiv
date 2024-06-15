@@ -79,6 +79,14 @@ typedef struct nqiv_pruner_desc
 	bool unload_thumbnail_raw;
 	bool unload_thumbnail_surface;
 	bool unload_thumbnail_texture;
+	bool unload_vips_soft;
+	bool unload_raw_soft;
+	bool unload_surface_soft;
+	bool unload_texture_soft;
+	bool unload_thumbnail_vips_soft;
+	bool unload_thumbnail_raw_soft;
+	bool unload_thumbnail_surface_soft;
+	bool unload_thumbnail_texture_soft;
 } nqiv_pruner_desc;
 
 typedef struct nqiv_pruner
