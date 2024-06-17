@@ -237,9 +237,9 @@ int nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv
 				event.options.image_load.thumbnail_options.vips = desc.unload_thumbnail_vips && image->thumbnail.vips != NULL;
 				event.options.image_load.thumbnail_options.raw = desc.unload_thumbnail_raw && image->thumbnail.data != NULL;
 				event.options.image_load.thumbnail_options.surface = desc.unload_thumbnail_surface && image->thumbnail.surface != NULL;
-				event.options.image_load.thumbnail_options.vips_soft = desc.unload_vips_soft && image->image.vips != NULL;
-				event.options.image_load.thumbnail_options.raw_soft = desc.unload_raw_soft && image->image.data != NULL;
-				event.options.image_load.thumbnail_options.surface_soft = desc.unload_surface_soft && image->image.surface != NULL;
+				event.options.image_load.thumbnail_options.vips_soft = desc.unload_thumbnail_vips_soft && image->thumbnail.vips != NULL;
+				event.options.image_load.thumbnail_options.raw_soft = desc.unload_thumbnail_raw_soft && image->thumbnail.data != NULL;
+				event.options.image_load.thumbnail_options.surface_soft = desc.unload_thumbnail_surface_soft && image->thumbnail.surface != NULL;
 				send_event = send_event ||
 							 event.options.image_load.image_options.vips ||
 							 event.options.image_load.image_options.raw ||
@@ -559,18 +559,28 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 						}
 					}
 				}
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling vips\n");
-				set = NULL;
-				unload_setting = NULL;
-				thumbnail_set = NULL;
-				thumbnail_unload_setting = NULL;
+				if(set == &desc->vips_set) {
+					nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling vips\n");
+					set = NULL;
+					unload_setting = NULL;
+					thumbnail_set = NULL;
+					thumbnail_unload_setting = NULL;
+				}
 				inside_no = false;
 			} else if(inside_unload) {
 				if(inside_thumbnail) {
-					desc->unload_thumbnail_vips = true;
+					if(inside_hard) {
+						desc->unload_thumbnail_vips = true;
+					} else {
+						desc->unload_thumbnail_vips_soft = true;
+					}
 				}
 				if(inside_image) {
-					desc->unload_vips = true;
+					if(inside_hard) {
+						desc->unload_vips = true;
+					} else {
+						desc->unload_vips_soft = true;
+					}
 				}
 			} else {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling vips\n");
@@ -604,18 +614,28 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 						}
 					}
 				}
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling raw\n");
-				set = NULL;
-				unload_setting = NULL;
-				thumbnail_set = NULL;
-				thumbnail_unload_setting = NULL;
+				if(set == &desc->raw_set) {
+					nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling raw\n");
+					set = NULL;
+					unload_setting = NULL;
+					thumbnail_set = NULL;
+					thumbnail_unload_setting = NULL;
+				}
 				inside_no = false;
 			} else if(inside_unload) {
 				if(inside_thumbnail) {
-					desc->unload_thumbnail_raw = true;
+					if(inside_hard) {
+						desc->unload_thumbnail_raw = true;
+					} else {
+						desc->unload_thumbnail_raw_soft = true;
+					}
 				}
 				if(inside_image) {
-					desc->unload_raw = true;
+					if(inside_hard) {
+						desc->unload_raw = true;
+					} else {
+						desc->unload_raw_soft = true;
+					}
 				}
 			} else {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling raw\n");
@@ -649,18 +669,28 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 						}
 					}
 				}
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling surface\n");
-				set = NULL;
-				unload_setting = NULL;
-				thumbnail_set = NULL;
-				thumbnail_unload_setting = NULL;
+				if(set == &desc->surface_set) {
+					nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling surface\n");
+					set = NULL;
+					unload_setting = NULL;
+					thumbnail_set = NULL;
+					thumbnail_unload_setting = NULL;
+				}
 				inside_no = false;
 			} else if(inside_unload) {
 				if(inside_thumbnail) {
-					desc->unload_thumbnail_surface = true;
+					if(inside_hard) {
+						desc->unload_thumbnail_surface = true;
+					} else {
+						desc->unload_thumbnail_surface_soft = true;
+					}
 				}
 				if(inside_image) {
-					desc->unload_surface = true;
+					if(inside_hard) {
+						desc->unload_surface = true;
+					} else {
+						desc->unload_surface_soft = true;
+					}
 				}
 			} else {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling surface\n");
@@ -680,25 +710,19 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 			if(inside_no) {
 				if(inside_unload) {
 					if(inside_thumbnail) {
-						if(inside_hard) {
-							desc->unload_thumbnail_texture = false;
-						} else {
-							desc->unload_thumbnail_texture_soft = false;
-						}
+						desc->unload_thumbnail_texture = false;
 					}
 					if(inside_image) {
-						if(inside_hard) {
-							desc->unload_texture = false;
-						} else {
-							desc->unload_texture_soft = false;
-						}
+						desc->unload_texture = false;
 					}
 				}
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling texture\n");
-				set = NULL;
-				unload_setting = NULL;
-				thumbnail_set = NULL;
-				thumbnail_unload_setting = NULL;
+				if(set == &desc->texture_set) {
+					nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling texture\n");
+					set = NULL;
+					unload_setting = NULL;
+					thumbnail_set = NULL;
+					thumbnail_unload_setting = NULL;
+				}
 				inside_no = false;
 			} else if(inside_unload) {
 				if(inside_thumbnail) {
@@ -710,13 +734,8 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 			} else {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling texture\n");
 				set = &desc->texture_set;
-				if(inside_hard) {
-					unload_setting = &desc->unload_texture;
-					thumbnail_unload_setting = &desc->unload_thumbnail_texture;
-				} else {
-					unload_setting = &desc->unload_texture_soft;
-					thumbnail_unload_setting = &desc->unload_thumbnail_texture_soft;
-				}
+				unload_setting = &desc->unload_texture;
+				thumbnail_unload_setting = &desc->unload_thumbnail_texture;
 				thumbnail_set = &desc->thumbnail_texture_set;
 			}
 		} else if(set == NULL) {
