@@ -494,6 +494,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				memcpy( &tmp_dstrect, &form->master_dstrect, sizeof(SDL_Rect) );
 				tmp_dstrect_ptr = &tmp_dstrect;
 			}
+			bool clearedtmp = true;
 			if(form->master_dimensions_set && form->fallback_texture != NULL && form->master_srcrect.w > 0 && form->master_srcrect.h > 0 && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
 				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &tmp_srcrect, &tmp_dstrect);
 				nqiv_apply_zoom_default(state, first_frame);
@@ -507,7 +508,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				if( !render_texture(&cleared, NULL, state, form->fallback_texture, &tmp_srcrect, &tmp_dstrect) ) {
 					return false;
 				}
-			} else if( !render_texture(&cleared, NULL, state, state->texture_montage_unloaded_background, NULL, tmp_dstrect_ptr) ) {
+			} else if( !render_texture(&clearedtmp, dstrect, state, state->texture_montage_unloaded_background, NULL, dstrect == NULL ? dstrect : tmp_dstrect_ptr) ) {
 				return false;
 			}
 			if(selected && is_montage) {
