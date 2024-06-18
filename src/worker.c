@@ -52,8 +52,9 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 				if(options->vips) {
 					nqiv_unload_image_form_vips(form);
 					if(form == &image->thumbnail) {
-						if(image->parent->thumbnail.load) {
+						if(image->parent->thumbnail.load && !form->thumbnail_load_failed) {
 							success = nqiv_image_load_vips(image, form);
+							form->thumbnail_load_failed = !success;
 						} else {
 							success = false;
 						}
@@ -72,8 +73,9 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 				}
 			} else {
 				if(form == &image->thumbnail) {
-					if(image->parent->thumbnail.load) {
+					if(image->parent->thumbnail.load && !form->thumbnail_load_failed) {
 						success = nqiv_image_load_vips(image, form);
+						form->thumbnail_load_failed = !success;
 					} else {
 						success = false;
 					}
@@ -201,19 +203,19 @@ void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock
 								if(event.options.image_load.image->image.vips == NULL) {
 									if( nqiv_image_load_vips(event.options.image_load.image, &event.options.image_load.image->image) ) {
 										if( !nqiv_thumbnail_matches_image(event.options.image_load.image) ) {
-											nqiv_thumbnail_create(event.options.image_load.image);
+											event.options.image_load.image->thumbnail.thumbnail_load_failed = event.options.image_load.image->thumbnail.thumbnail_load_failed && !nqiv_thumbnail_create(event.options.image_load.image);
 										}
 									}
 								} else if( !nqiv_thumbnail_matches_image(event.options.image_load.image) ) {
-									nqiv_thumbnail_create(event.options.image_load.image);
+									event.options.image_load.image->thumbnail.thumbnail_load_failed = event.options.image_load.image->thumbnail.thumbnail_load_failed && !nqiv_thumbnail_create(event.options.image_load.image);
 								}
 						} else {
 							if(event.options.image_load.image->image.vips == NULL) {
 								if( nqiv_image_load_vips(event.options.image_load.image, &event.options.image_load.image->image) ) {
-									nqiv_thumbnail_create(event.options.image_load.image);
+									event.options.image_load.image->thumbnail.thumbnail_load_failed = event.options.image_load.image->thumbnail.thumbnail_load_failed && !nqiv_thumbnail_create(event.options.image_load.image);
 								}
 							} else {
-								nqiv_thumbnail_create(event.options.image_load.image);
+								event.options.image_load.image->thumbnail.thumbnail_load_failed = event.options.image_load.image->thumbnail.thumbnail_load_failed && !nqiv_thumbnail_create(event.options.image_load.image);
 							}
 						}
 						event.options.image_load.image->thumbnail_attempted = true;

@@ -51,6 +51,7 @@ typedef struct nqiv_image_form
 	SDL_Rect master_srcrect;
 	SDL_Rect master_dstrect;
 	bool master_dimensions_set;
+	bool thumbnail_load_failed;
 } nqiv_image_form;
 
 typedef struct nqiv_image nqiv_image;
