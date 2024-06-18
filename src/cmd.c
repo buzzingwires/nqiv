@@ -1908,6 +1908,7 @@ void nqiv_cmd_print_help(nqiv_cmd_manager* manager, const nqiv_cmd_node* current
 		nqiv_cmd_print_help(manager, current_node->children[cidx], recurse);
 		++cidx;
 	}
+	manager->print_settings.indent -= 1;
 }
 
 int nqiv_cmd_parse_arg_token(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_node, const int tidx, const int start_idx, const int eolpos, nqiv_cmd_arg_token* token)
