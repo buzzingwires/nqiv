@@ -66,6 +66,7 @@ void nqiv_unload_image_form(nqiv_image_form* form)
 	assert(form != NULL);
 	nqiv_unload_image_form_vips(form);
 	nqiv_unload_image_form_texture(form);
+	nqiv_unload_image_form_fallback_texture(form);
 	nqiv_unload_image_form_surface(form);
 	nqiv_unload_image_form_raw(form);
 }
