@@ -1043,6 +1043,7 @@ bool nqiv_image_form_first_frame(nqiv_image* image, nqiv_image_form* form)
 	if( !nqiv_image_form_set_frame_delay(image, form) ) {
 		return false;
 	}
+	nqiv_image_form_delay_frame(form);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
 }
