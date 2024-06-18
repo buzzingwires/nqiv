@@ -1,4 +1,4 @@
-AC_INIT([nqiv], [2024-02-06-01], [buzzingwires@outlook.com])
+AC_INIT([nqiv], [2024-06-18-01], [buzzingwires@outlook.com])
 AM_INIT_AUTOMAKE([-Wall -Werror])
 CFLAGS=${CFLAGS} 
 AC_PROG_CC
