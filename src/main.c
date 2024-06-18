@@ -508,7 +508,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				if( !render_texture(&cleared, NULL, state, form->fallback_texture, &tmp_srcrect, &tmp_dstrect) ) {
 					return false;
 				}
-			} else if( !render_texture(&clearedtmp, dstrect, state, state->texture_montage_unloaded_background, NULL, dstrect == NULL ? dstrect : tmp_dstrect_ptr) ) {
+			} else if( !render_texture(&clearedtmp, dstrect, state, state->texture_montage_unloaded_background, NULL, tmp_dstrect_ptr) ) {
 				return false;
 			}
 			if(selected && is_montage) {
@@ -667,7 +667,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				}
 			}
 		} else {
-			if( !render_texture(&cleared, dstrect, state, state->texture_montage_error_background, NULL, dstrect_zoom_ptr) ) {
+			if( !render_texture(&cleared, dstrect, state, state->texture_montage_error_background, NULL, dstrect_zoom_ptr == NULL ? dstrect : dstrect_zoom_ptr) ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
