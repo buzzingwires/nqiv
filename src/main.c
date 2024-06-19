@@ -484,7 +484,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 	nqiv_image_form* form = is_thumbnail ? &image->thumbnail : &image->image;
 	if(lock) {
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-		if( !omp_test_lock(&image->lock) ) {
+		if(!omp_test_lock(&image->lock) && dstrect != NULL) {
 			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Failed to lock image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 			SDL_Rect tmp_srcrect;
 			SDL_Rect tmp_dstrect;
