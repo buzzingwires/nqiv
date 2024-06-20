@@ -267,7 +267,7 @@ nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manager* manager, const
 	const int lookup_len = manager->lookup->position / sizeof(nqiv_keybind_pair);
 	int idx;
 	for(idx = 0; idx < lookup_len; ++idx) {
-		nqiv_keybind_pair pair;
+		nqiv_keybind_pair pair = {.key = {0}, .action = -1};
 		if( nqiv_array_get_bytes(manager->lookup, idx, sizeof(nqiv_keybind_pair), &pair) &&
 			pair.key.scancode == key->scancode && nqiv_compare_mod(pair.key.mod, key->mod) ) {
 			if( output == NULL || !nqiv_queue_push(output, sizeof(nqiv_key_action), &pair.action) ) {
