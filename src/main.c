@@ -626,6 +626,14 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 	if(form->error) {
 		/* TODO We check this because we try to load a non-existent thumbnail */
 		if(is_thumbnail && !image->image.error) {
+			if(first_frame || hard) {
+				if( !render_texture(&cleared, dstrect, state, state->texture_montage_unloaded_background, NULL, dstrect_zoom_ptr == NULL ? dstrect : dstrect_zoom_ptr) ) {
+					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+					omp_unset_lock(&image->lock);
+					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+					return false;
+				}
+			}
 			if(!image->thumbnail_attempted && state->images.thumbnail.save) {
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Creating thumbnail after failing to load it.\n");
 				nqiv_event event = {0};
