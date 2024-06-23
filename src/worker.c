@@ -64,6 +64,8 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 							} else {
 								if( nqiv_image_load_vips(image, &image->image) ) {
 									success = nqiv_thumbnail_create_vips(image);
+								} else {
+									success = false;
 								}
 							}
 						}
@@ -85,6 +87,8 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 						} else {
 							if( nqiv_image_load_vips(image, &image->image) ) {
 								success = nqiv_thumbnail_create_vips(image);
+							} else {
+								success = false;
 							}
 						}
 					}

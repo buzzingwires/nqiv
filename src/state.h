@@ -19,7 +19,7 @@
 #include <omp.h>
 
 #define STARTING_QUEUE_LENGTH 1024
-#define THREAD_QUEUE_BIN_COUNT 5
+#define THREAD_QUEUE_BIN_COUNT 6
 #define ALPHA_BACKGROUND_CHECKER_PROPORTION 32
 
 typedef enum nqiv_zoom_default
