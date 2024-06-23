@@ -56,6 +56,13 @@ bool nqiv_cmd_parser_set_thread_event_interval(nqiv_cmd_manager* manager, nqiv_c
 	return true;
 }
 
+bool nqiv_cmd_parser_set_vips_threads(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->vips_threads = tokens[0]->value.as_int;
+	vips_concurrency_set(tokens[0]->value.as_int);
+	return true;
+}
+
 bool nqiv_cmd_parser_set_prune_delay(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->prune_delay = tokens[0]->value.as_Uint64;
@@ -464,6 +471,11 @@ void nqiv_cmd_parser_print_thread_count(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_thread_event_interval(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%d", manager->state->thread_event_interval);
+}
+
+void nqiv_cmd_parser_print_vips_threads(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%d", manager->state->vips_threads);
 }
 
 void nqiv_cmd_parser_print_prune_delay(nqiv_cmd_manager* manager)
@@ -1108,7 +1120,7 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 						&(nqiv_cmd_node)
 						{
 							.name = "count",
-							.description = "Set the number of worker threads used by the software.",
+							.description = "Set the number of worker threads used by the software. This does not count toward VIPs threads. See 'set vips threads' for that.",
 							.store_value = nqiv_cmd_parser_set_thread_count,
 							.print_value = nqiv_cmd_parser_print_thread_count,
 							.args = {&nqiv_parser_arg_type_int_positive, NULL},
@@ -1138,6 +1150,26 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 							.description = "In addition to an internal algorithm, wait this long to wait to let the master thread lock a worker. Longer times might produce longer loading delays, but help improve UI responsiveness.",
 							.store_value = nqiv_cmd_parser_set_extra_wakeup_delay,
 							.print_value = nqiv_cmd_parser_print_extra_wakeup_delay,
+							.args = {&nqiv_parser_arg_type_int_natural, NULL},
+							.children = {NULL},
+						},
+						NULL
+					}
+				},
+				&(nqiv_cmd_node)
+				{
+					.name = "vips",
+					.description = "Settings related to the VIPS library.",
+					.store_value = NULL,
+					.print_value = NULL,
+					.args = {NULL},
+					.children = {
+						&(nqiv_cmd_node)
+						{
+							.name = "threads",
+							.description = "Set the number of threads used by the VIPs library. 0 is the default, determined by the environment variable VIPS_CONCURRENCY, or if unset, the number of threads available on the machine.",
+							.store_value = nqiv_cmd_parser_set_vips_threads,
+							.print_value = nqiv_cmd_parser_print_vips_threads,
 							.args = {&nqiv_parser_arg_type_int_natural, NULL},
 							.children = {NULL},
 						},

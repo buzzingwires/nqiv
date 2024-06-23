@@ -59,6 +59,7 @@ struct nqiv_state
 	Uint32 cfg_event_number;
 	int thread_count;
 	int thread_event_interval;
+	int vips_threads;
 	int64_t thread_event_transaction_group;
 	Uint64 time_of_last_prune;
 	Uint64 prune_delay;

@@ -263,6 +263,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	state->thread_event_interval = 5;
 	state->prune_delay = 200;
 	state->extra_wakeup_delay = 0;
+	vips_concurrency_set(state->vips_threads);
 	nqiv_log_init(&state->logger);
 	if( !nqiv_cmd_manager_init(&state->cmds, state) ) {
 		return false;
