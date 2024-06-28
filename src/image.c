@@ -514,6 +514,14 @@ void nqiv_image_manager_destroy(nqiv_image_manager* manager)
 		nqiv_array_destroy(manager->images);
 	}
 	if(manager->extensions != NULL) {
+		const int num_extensions = manager->extensions->position / sizeof(char*);
+		int idx;
+		for(idx = 0; idx < num_extensions; ++idx) {
+			char* ext = nqiv_array_get_char_ptr(manager->extensions, idx);
+			if(ext != NULL) {
+				free(ext);
+			}
+		}
 		nqiv_array_destroy(manager->extensions);
 	}
 	if(manager->thumbnail.root != NULL) {
@@ -691,8 +699,10 @@ bool nqiv_image_manager_set_thumbnail_root(nqiv_image_manager* manager, const ch
 
 bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, char* extension)
 {
-	const bool outcome = nqiv_array_push_char_ptr(manager->extensions, extension);
-	nqiv_log_write(manager->logger, outcome?NQIV_LOG_INFO:NQIV_LOG_ERROR, "Adding extension '%s' to image manager. Success: %s\n", extension, outcome?"true":"false");
+	char* new_extension = (char*)calloc(1, strlen(extension) + 1);
+	memcpy( new_extension, extension, strlen(extension) );
+	const bool outcome = new_extension != NULL && nqiv_array_push_char_ptr(manager->extensions, new_extension);
+	nqiv_log_write(manager->logger, outcome?NQIV_LOG_INFO:NQIV_LOG_ERROR, "Adding extension '%s' to image manager. Success: %s\n", new_extension, outcome?"true":"false");
 	return outcome;
 }
 

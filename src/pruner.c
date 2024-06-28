@@ -407,7 +407,7 @@ int nqiv_pruner_parse_check( nqiv_log_ctx* logger,
 	if(inside_image) {
 		tidx = nqiv_pruner_parse_set_check(logger, text, nidx, end, inside_no, inside_unload, point, unload_setting, parse_func);
 	}
-	if(inside_thumbnail && tidx != -1) {
+	if( inside_thumbnail && (tidx != -1 || !inside_image) ) {
 		nidx = nqiv_pruner_parse_set_check(logger, text, nidx, end, inside_no, inside_unload, thumbnail_point, thumbnail_unload_setting, parse_func);
 	}
 	return nidx;
@@ -780,4 +780,121 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 		}
 	}
 	return true;
+}
+
+typedef struct nqiv_pruner_render_state
+{
+	bool in_image;
+	bool in_thumbnail;
+	bool hard_unload;
+	char* data_name;
+} nqiv_pruner_render_state;
+
+int nqiv_pruner_update_render_state_form(nqiv_pruner_render_state* state, char* buf, const int pos, const nqiv_pruner_render_state* new)
+{
+	int written = 0;
+	if(new->in_image != state->in_image) {
+		written += sprintf(buf + pos + written, "%s ", new->in_image ? "image" : "no image");
+	}
+	if(new->in_thumbnail != state->in_thumbnail) {
+		written += sprintf(buf + pos + written, "%s ", new->in_thumbnail ? "thumbnail" : "no thumbnail");
+	}
+	if(new->hard_unload != state->hard_unload) {
+		written += sprintf(buf + pos + written, "%s ", new->hard_unload ? "hard" : "no hard");
+	}
+	if( new->data_name != NULL && ( state->data_name == NULL || strcmp(new->data_name, state->data_name) ) ) {
+		written += sprintf(buf + pos + written, "%s ", new->data_name);
+	}
+	memcpy( state, new, sizeof(nqiv_pruner_render_state) );
+	return written;
+}
+
+int nqiv_pruner_desc_dataset_to_string(nqiv_pruner_render_state* state, const nqiv_pruner_desc_dataset* set, char* buf, const int pos, const nqiv_pruner_render_state* new_state)
+{
+	int written = 0;
+	if(set->not_animated.active || set->loaded_self.active || set->loaded_ahead.active || set->loaded_behind.active || set->bytes_ahead.active || set->bytes_behind.active) {
+		written += nqiv_pruner_update_render_state_form(state, buf, pos + written, new_state);
+	}
+	if(set->not_animated.active) {
+		written += sprintf(buf + pos + written, "not_animated ");
+	}
+	if(set->loaded_self.active) {
+		written += sprintf(buf + pos + written, "self_opened ");
+	}
+	if(set->loaded_ahead.active) {
+		written += sprintf(buf + pos + written, "loaded_ahead %d %d ", set->loaded_ahead.condition.as_int_pair[0], set->loaded_ahead.condition.as_int_pair[1]);
+	}
+	if(set->loaded_behind.active) {
+		written += sprintf(buf + pos + written, "loaded_behind %d %d ", set->loaded_behind.condition.as_int_pair[0], set->loaded_behind.condition.as_int_pair[1]);
+	}
+	if(set->bytes_ahead.active) {
+		written += sprintf(buf + pos + written, "bytes_ahead %d %d ", set->bytes_ahead.condition.as_int_pair[0], set->bytes_ahead.condition.as_int_pair[1]);
+	}
+	if(set->bytes_behind.active) {
+		written += sprintf(buf + pos + written, "bytes_behind %d %d ", set->bytes_behind.condition.as_int_pair[0], set->bytes_behind.condition.as_int_pair[1]);
+	}
+	return written;
+}
+
+int nqiv_pruner_desc_dataset_pair_to_string(nqiv_pruner_render_state* state, char* name, const nqiv_pruner_desc_dataset* image_set, const nqiv_pruner_desc_dataset* thumbnail_set, char* buf, const int pos)
+{
+	int written = 0;
+	if( memcmp( image_set, thumbnail_set, sizeof(nqiv_pruner_desc_dataset) ) == 0 &&
+		(image_set->not_animated.active || image_set->loaded_self.active || image_set->loaded_ahead.active || image_set->loaded_behind.active || image_set->bytes_ahead.active || image_set->bytes_behind.active) ) {
+		written += nqiv_pruner_desc_dataset_to_string(state, image_set, buf, pos + written, &(nqiv_pruner_render_state){.in_image = true, .in_thumbnail = true, .hard_unload = state->hard_unload, .data_name = name});
+	} else {
+		written += nqiv_pruner_desc_dataset_to_string(state, image_set, buf, pos + written, &(nqiv_pruner_render_state){.in_image = true, .in_thumbnail = false, .hard_unload = state->hard_unload, .data_name = name});
+		written += nqiv_pruner_desc_dataset_to_string(state, thumbnail_set, buf, pos + written, &(nqiv_pruner_render_state){.in_image = false, .in_thumbnail = true, .hard_unload = state->hard_unload, .data_name = name});
+	}
+	return written;
+}
+
+int nqiv_pruner_unload_pair_to_string(nqiv_pruner_render_state* state, char* name, const bool image_unload, const bool thumbnail_unload, const bool hard_unload, char* buf, const int pos)
+{
+	int written = 0;
+	if(image_unload || thumbnail_unload) {
+		written += nqiv_pruner_update_render_state_form(state, buf, pos + written, &(nqiv_pruner_render_state){.in_image = image_unload, .in_thumbnail = thumbnail_unload, .hard_unload = hard_unload, .data_name = name});
+	}
+	return written;
+}
+
+void nqiv_pruner_desc_to_string(nqiv_pruner_desc* desc, char* buf)
+{
+	int pos = 0;
+	if( (desc->counter & NQIV_PRUNER_COUNT_OP_SUM) != 0 ) {
+		pos += sprintf(buf + pos, "sum %d ", desc->state_check.total_sum);
+	}
+	if( (desc->counter & NQIV_PRUNER_COUNT_OP_OR) != 0 ) {
+		pos += sprintf(buf + pos, "or ");
+	}
+	if( (desc->counter & NQIV_PRUNER_COUNT_OP_AND) != 0 ) {
+		pos += sprintf(buf + pos, "and ");
+	}
+	nqiv_pruner_render_state render_state = {.in_image = true, .in_thumbnail = false, .hard_unload = false, .data_name = NULL};
+	pos += nqiv_pruner_desc_dataset_pair_to_string(&render_state, "vips", &desc->vips_set, &desc->thumbnail_vips_set, buf, pos);
+	pos += nqiv_pruner_desc_dataset_pair_to_string(&render_state, "raw", &desc->raw_set, &desc->thumbnail_raw_set, buf, pos);
+	pos += nqiv_pruner_desc_dataset_pair_to_string(&render_state, "surface", &desc->surface_set, &desc->thumbnail_surface_set, buf, pos);
+	pos += nqiv_pruner_desc_dataset_pair_to_string(&render_state, "texture", &desc->texture_set, &desc->thumbnail_texture_set, buf, pos);
+	if(desc->unload_vips || desc->unload_raw || desc->unload_surface || desc->unload_texture ||
+	   desc->unload_thumbnail_vips || desc->unload_thumbnail_raw || desc->unload_thumbnail_surface || desc->unload_thumbnail_texture ||
+	   desc->unload_vips_soft || desc->unload_raw_soft || desc->unload_surface_soft  ||
+	   desc->unload_thumbnail_vips_soft || desc->unload_thumbnail_raw_soft || desc->unload_thumbnail_surface_soft) {
+		pos += sprintf(buf + pos, "unload ");
+	}
+	if(desc->unload_vips || desc->unload_raw || desc->unload_surface || desc->unload_texture ||
+	   desc->unload_thumbnail_vips || desc->unload_thumbnail_raw || desc->unload_thumbnail_surface || desc->unload_thumbnail_texture) {
+		pos += nqiv_pruner_unload_pair_to_string(&render_state, "vips", desc->unload_vips, desc->unload_thumbnail_vips, true, buf, pos);
+		pos += nqiv_pruner_unload_pair_to_string(&render_state, "raw", desc->unload_raw, desc->unload_thumbnail_raw, true, buf, pos);
+		pos += nqiv_pruner_unload_pair_to_string(&render_state, "surface", desc->unload_surface, desc->unload_thumbnail_surface, true,  buf, pos);
+		pos += nqiv_pruner_unload_pair_to_string(&render_state, "texture", desc->unload_texture, desc->unload_thumbnail_texture, true,  buf, pos);
+	}
+	if(desc->unload_vips_soft || desc->unload_raw_soft || desc->unload_surface_soft  ||
+	   desc->unload_thumbnail_vips_soft || desc->unload_thumbnail_raw_soft || desc->unload_thumbnail_surface_soft) {
+		pos += nqiv_pruner_unload_pair_to_string(&render_state, "vips", desc->unload_vips_soft, desc->unload_thumbnail_vips_soft, false,  buf, pos);
+		pos += nqiv_pruner_unload_pair_to_string(&render_state, "raw", desc->unload_raw_soft, desc->unload_thumbnail_raw_soft, false,  buf, pos);
+		pos += nqiv_pruner_unload_pair_to_string(&render_state, "surface", desc->unload_surface_soft, desc->unload_thumbnail_surface_soft, false, buf, pos);
+	}
+	if(pos > 0 && buf[pos - 1] == ' ') {
+		buf[pos - 1] = '\0';
+	}
 }

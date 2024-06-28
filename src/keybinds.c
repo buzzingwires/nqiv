@@ -243,6 +243,77 @@ bool nqiv_keybind_add(nqiv_keybind_manager* manager, const SDL_Keysym* key, cons
 	return nqiv_array_push_bytes( manager->lookup, &pair, sizeof(nqiv_keybind_pair) );
 }
 
+void nqiv_keybind_to_string(nqiv_keybind_pair* pair, char* buf)
+{
+	const Uint16 mods[] =
+	{
+		KMOD_LSHIFT,
+		KMOD_RSHIFT,
+		KMOD_LCTRL,
+		KMOD_RCTRL,
+		KMOD_LALT,
+		KMOD_RALT,
+		KMOD_NUM,
+		KMOD_CAPS,
+		KMOD_MODE,
+		KMOD_SCROLL,
+		KMOD_CTRL,
+		KMOD_SHIFT,
+		KMOD_ALT,
+		0
+	};
+	const Uint16 anti_mods[] =
+	{
+		KMOD_RSHIFT,
+		KMOD_LSHIFT,
+		KMOD_RCTRL,
+		KMOD_LCTRL,
+		KMOD_RALT,
+		KMOD_LALT,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0,
+		0
+	};
+	const char* mod_names[] =
+	{
+		"lshift",
+		"rshift",
+		"lctrl",
+		"rctrl",
+		"lalt",
+		"ralt",
+		"num",
+		"caps",
+		"mode",
+		"scroll",
+		"ctrl",
+		"shift",
+		"alt",
+		NULL
+	};
+	int idx;
+	int pos = 0;
+	for(idx = 0; mod_names[idx] != NULL; ++idx) {
+		if( (pair->key.mod & mods[idx]) == mods[idx] && (pair->key.mod & anti_mods[idx]) == 0 ) {
+			strncpy( buf + pos, mod_names[idx], strlen(mod_names[idx]) );
+			pos += strlen(mod_names[idx]);
+			buf[pos] = '+';
+			pos += 1;
+		}
+	}
+	const char* keyname = SDL_GetScancodeName(pair->key.scancode);
+	strncpy( buf + pos, keyname, strlen(keyname) );
+	pos += strlen(keyname);
+	buf[pos] = '=';
+	pos += 1;
+	strncpy( buf + pos, nqiv_keybind_action_names[pair->action], strlen(nqiv_keybind_action_names[pair->action]) );
+}
+
 bool nqiv_compare_mod(const Uint16 a, const Uint16 b)
 {
 	const Uint16 ac = a & ~KMOD_GUI & ~KMOD_SCROLL & ~KMOD_NUM;

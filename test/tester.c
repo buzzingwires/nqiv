@@ -6,6 +6,7 @@
 
 #include "logging_tests.h"
 #include "array_tests.h"
+#include "pruner_tests.h"
 
 #define TEST_NAME_LEN 50
 
@@ -168,6 +169,9 @@ test_set* create_tests(void)
 	if(add_test(array, &test_counter, "array_ptr", array_test_ptr) == NULL) { goto cleanup; }
 	if(add_test(array, &test_counter, "array_char_ptr", array_test_char_ptr) == NULL) { goto cleanup; }
 	if(add_test(array, &test_counter, "array_FILE_ptr", array_test_FILE_ptr) == NULL) { goto cleanup; }
+
+	test_set* pruner = add_test_subset(root, &test_counter, "pruner"); if(pruner == NULL) { goto cleanup; }
+	if(add_test(array, &test_counter, "pruner_default", pruner_test_default) == NULL) { goto cleanup; }
 
 	goto done;
 	cleanup:

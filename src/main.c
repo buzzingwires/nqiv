@@ -23,14 +23,18 @@
 #define OPTPARSE_API static
 #include "optparse.h"
 
-void nqiv_close_log_streams(nqiv_log_ctx* logger)
+void nqiv_close_log_streams(nqiv_state* state)
 {
-	const int streams_len = logger->streams->position / sizeof(FILE*);
+	const int streams_len = state->logger.streams->position / sizeof(FILE*);
 	int idx;
-	FILE* ptr;
 	for(idx = 0; idx < streams_len; ++idx) {
-		if( nqiv_array_get_bytes(logger->streams, idx, sizeof(FILE*), &ptr) && ptr != stderr && ptr != stdout ) {
-			fclose(ptr);
+		FILE* fileptr;
+		if( nqiv_array_get_bytes(state->logger.streams, idx, sizeof(FILE*), &fileptr) && fileptr != stderr && fileptr != stdout ) {
+			fclose(fileptr);
+		}
+		char* nameptr;
+		if( nqiv_array_get_bytes(state->logger_stream_names, idx, sizeof(char*), &nameptr) ) {
+			free(nameptr);
 		}
 	}
 }
@@ -72,7 +76,7 @@ void nqiv_state_clear(nqiv_state* state)
 		nqiv_pruner_destroy(&state->pruner);
 	}
 	if(state->logger.streams != NULL) {
-		nqiv_close_log_streams(&state->logger);
+		nqiv_close_log_streams(state);
 		nqiv_log_destroy(&state->logger);
 	}
 	if(state->texture_background != NULL) {
@@ -264,6 +268,11 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	state->prune_delay = 200;
 	state->extra_wakeup_delay = 0;
 	vips_concurrency_set(state->vips_threads);
+	state->logger_stream_names = nqiv_array_create(state->queue_length);
+	if(state->logger_stream_names == NULL) {
+		fputs("Failed to initialize logger stream names list.\n", stderr);
+		return false;
+	}
 	nqiv_log_init(&state->logger);
 	if( !nqiv_cmd_manager_init(&state->cmds, state) ) {
 		return false;
@@ -310,7 +319,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	int option;
 	char default_config_path[PATH_MAX + 1] = {0};
 	if( !nqiv_get_default_cfg(default_config_path, PATH_MAX + 1) ) {
-        fprintf(stderr, "Failed to find default config path..\n");
+        fprintf(stderr, "Failed to find default config path.\n");
 		return false;
 	}
 	if( !nqiv_cmd_consume_stream_from_path(&state->cmds, default_config_path) ) {

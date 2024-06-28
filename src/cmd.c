@@ -416,7 +416,7 @@ bool nqiv_cmd_parser_append_keybind(nqiv_cmd_manager* manager, nqiv_cmd_arg_toke
 bool nqiv_cmd_parser_append_log_stream(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	const char data_end = nqiv_cmd_tmpterm(tokens[0]->raw, tokens[0]->length);
-	const bool output = nqiv_add_logger_path(&manager->state->logger, tokens[0]->raw);
+	const bool output = nqiv_add_logger_path(manager->state, tokens[0]->raw);
 	nqiv_cmd_tmpret(tokens[0]->raw, tokens[0]->length, data_end);
 	return output;
 }
@@ -604,6 +604,8 @@ void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 		fprintf(stdout, "Images: %d\n", manager->state->images.images->data_length);
 		nqiv_cmd_print_indent(manager);
 		fprintf(stdout, "Image extensions: %d\n", manager->state->images.extensions->data_length);
+		nqiv_cmd_print_indent(manager);
+		fprintf(stdout, "Logger streams list: %d\n", manager->state->logger_stream_names->data_length);
 		int idx;
 		for(idx = 0; idx < manager->state->thread_queue.bin_count; ++idx) {
 			nqiv_cmd_print_indent(manager);
@@ -618,6 +620,7 @@ void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 		fprintf(stdout, "#Keybinds: %d\n", manager->state->keybinds.lookup->data_length);
 		fprintf(stdout, "#Images: %d\n", manager->state->images.images->data_length);
 		fprintf(stdout, "#Image extensions: %d\n", manager->state->images.extensions->data_length);
+		fprintf(stdout, "#Logger streams list: %d\n", manager->state->logger_stream_names->data_length);
 		int idx;
 		for(idx = 0; idx < manager->state->thread_queue.bin_count; ++idx) {
 			fprintf(stdout, "#Thread Queue %d: %d\n", idx, manager->state->thread_queue.bins[idx].array->data_length);
@@ -717,6 +720,9 @@ void nqiv_cmd_parser_print_delay_accel(nqiv_cmd_manager* manager)
 	nqiv_key_action action;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
 		if(!manager->print_settings.dumpcfg) {
+			if(action == NQIV_KEY_ACTION_QUIT) {
+				fprintf(stdout, "\n");
+			}
 			nqiv_cmd_print_indent(manager);
 			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
 		} else if(action == NQIV_KEY_ACTION_QUIT) {
@@ -739,6 +745,9 @@ void nqiv_cmd_parser_print_minimum_delay(nqiv_cmd_manager* manager)
 	nqiv_key_action action;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
 		if(!manager->print_settings.dumpcfg) {
+			if(action == NQIV_KEY_ACTION_QUIT) {
+				fprintf(stdout, "\n");
+			}
 			nqiv_cmd_print_indent(manager);
 			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
 		} else if(action == NQIV_KEY_ACTION_QUIT) {
@@ -747,6 +756,98 @@ void nqiv_cmd_parser_print_minimum_delay(nqiv_cmd_manager* manager)
 			fprintf(stdout, "%s%s %lu\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
 		} else {
 			fprintf(stdout, "%s%s %lu", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
+		}
+	}
+}
+
+void nqiv_cmd_print_str_list(nqiv_cmd_manager* manager, nqiv_array* list)
+{
+	const int list_len = list->position / sizeof(char*);
+	int idx;
+	for(idx = 0; idx < list_len; ++idx) {
+		char* str = nqiv_array_get_char_ptr(list, idx);
+		if(str != NULL) {
+			if(!manager->print_settings.dumpcfg) {
+				if(idx == 0) {
+					fprintf(stdout, "\n");
+				}
+				nqiv_cmd_print_indent(manager);
+				fprintf(stdout, "%s\n", str);
+			} else if(idx == 0 && idx == list_len - 1) {
+				fprintf(stdout, "%s", str);
+			} else if(idx == 0) {
+				fprintf(stdout, "%s\n", str);
+			} else if(idx == list_len - 1) {
+				fprintf(stdout, "%s%s", manager->print_settings.prefix, str);
+			} else {
+				fprintf(stdout, "%s%s\n", manager->print_settings.prefix, str);
+			}
+		}
+	}
+}
+
+void nqiv_cmd_parser_print_log_stream(nqiv_cmd_manager* manager)
+{
+	nqiv_cmd_print_str_list(manager, manager->state->logger_stream_names);
+}
+
+void nqiv_cmd_parser_print_pruner(nqiv_cmd_manager* manager)
+{
+	const int list_len = manager->state->pruner.pruners->position / sizeof(nqiv_pruner_desc);
+	int idx;
+	for(idx = 0; idx < list_len; ++idx) {
+		nqiv_pruner_desc desc = {0};
+		if( nqiv_array_get_bytes(manager->state->pruner.pruners, idx, sizeof(nqiv_pruner_desc), &desc) ) {
+			char desc_str[NQIV_PRUNER_DESC_STRLEN] = {0};
+			nqiv_pruner_desc_to_string(&desc, desc_str);
+			if(!manager->print_settings.dumpcfg) {
+				if(idx == 0) {
+					fprintf(stdout, "\n");
+				}
+				nqiv_cmd_print_indent(manager);
+				fprintf(stdout, "%s\n", desc_str);
+			} else if(idx == 0 && idx == list_len - 1) {
+				fprintf(stdout, "%s", desc_str);
+			} else if(idx == 0) {
+				fprintf(stdout, "%s\n", desc_str);
+			} else if(idx == list_len - 1) {
+				fprintf(stdout, "%s%s", manager->print_settings.prefix, desc_str);
+			} else {
+				fprintf(stdout, "%s%s\n", manager->print_settings.prefix, desc_str);
+			}
+		}
+	}
+}
+
+void nqiv_cmd_parser_print_extension(nqiv_cmd_manager* manager)
+{
+	nqiv_cmd_print_str_list(manager, manager->state->images.extensions);
+}
+
+void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
+{
+	const int list_len = manager->state->keybinds.lookup->position / sizeof(nqiv_keybind_pair);
+	int idx;
+	for(idx = 0; idx < list_len; ++idx) {
+		nqiv_keybind_pair pair = {.key = {0}, .action = -1};
+		if( nqiv_array_get_bytes(manager->state->keybinds.lookup, idx, sizeof(nqiv_keybind_pair), &pair) ) {
+			char keybind_str[NQIV_KEYBIND_STRLEN] = {0};
+			nqiv_keybind_to_string(&pair, keybind_str);
+			if(!manager->print_settings.dumpcfg) {
+				if(idx == 0) {
+					fprintf(stdout, "\n");
+				}
+				nqiv_cmd_print_indent(manager);
+				fprintf(stdout, "%s\n", keybind_str);
+			} else if(idx == 0 && idx == list_len - 1) {
+				fprintf(stdout, "%s", keybind_str);
+			} else if(idx == 0) {
+				fprintf(stdout, "%s\n", keybind_str);
+			} else if(idx == list_len - 1) {
+				fprintf(stdout, "%s%s", manager->print_settings.prefix, keybind_str);
+			} else {
+				fprintf(stdout, "%s%s\n", manager->print_settings.prefix, keybind_str);
+			}
 		}
 	}
 }
@@ -761,6 +862,9 @@ void nqiv_cmd_parser_print_repeat_delay(nqiv_cmd_manager* manager)
 	nqiv_key_action action;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
 		if(!manager->print_settings.dumpcfg) {
+			if(action == NQIV_KEY_ACTION_QUIT) {
+				fprintf(stdout, "\n");
+			}
 			nqiv_cmd_print_indent(manager);
 			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
 		} else if(action == NQIV_KEY_ACTION_QUIT) {
@@ -783,6 +887,9 @@ void nqiv_cmd_parser_print_start_delay(nqiv_cmd_manager* manager)
 	nqiv_key_action action;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
 		if(!manager->print_settings.dumpcfg) {
+			if(action == NQIV_KEY_ACTION_QUIT) {
+				fprintf(stdout, "\n");
+			}
 			nqiv_cmd_print_indent(manager);
 			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
 		} else if(action == NQIV_KEY_ACTION_QUIT) {
@@ -812,6 +919,9 @@ void nqiv_cmd_parser_print_send_on_down(nqiv_cmd_manager* manager)
 	nqiv_key_action action;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
 		if(!manager->print_settings.dumpcfg) {
+			if(action == NQIV_KEY_ACTION_QUIT) {
+				fprintf(stdout, "\n");
+			}
 			nqiv_cmd_print_indent(manager);
 			fprintf(stdout, "%s %s\n", nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_down]);
 		} else if(action == NQIV_KEY_ACTION_QUIT) {
@@ -834,6 +944,9 @@ void nqiv_cmd_parser_print_send_on_up(nqiv_cmd_manager* manager)
 	nqiv_key_action action;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
 		if(!manager->print_settings.dumpcfg) {
+			if(action == NQIV_KEY_ACTION_QUIT) {
+				fprintf(stdout, "\n");
+			}
 			nqiv_cmd_print_indent(manager);
 			fprintf(stdout, "%s %s\n", nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_up]);
 		} else if(action == NQIV_KEY_ACTION_QUIT) {
@@ -1026,7 +1139,7 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 							.name = "stream",
 							.description = "Log to the given stream.",
 							.store_value = nqiv_cmd_parser_append_log_stream,
-							.print_value = NULL,
+							.print_value = nqiv_cmd_parser_print_log_stream,
 							.args = {&nqiv_parser_arg_type_string_full, NULL},
 							.children = {NULL},
 						},
@@ -1047,7 +1160,7 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 					.name = "pruner",
 					.description = "Declaratively specified pruning instructions. Use help to get list of commands.",
 					.store_value = nqiv_cmd_parser_append_pruner,
-					.print_value = NULL,
+					.print_value = nqiv_cmd_parser_print_pruner,
 					.args = {&nqiv_parser_arg_type_pruner, NULL},
 					.children = {NULL},
 				},
@@ -1056,7 +1169,7 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 					.name = "extension",
 					.description = "Add an image extension to be accepted.",
 					.store_value = nqiv_cmd_parser_append_extension,
-					.print_value = NULL,
+					.print_value = nqiv_cmd_parser_print_extension,
 					.args = {&nqiv_parser_arg_type_string, NULL},
 					.children = {NULL},
 				},
@@ -1065,7 +1178,7 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 					.name = "keybind",
 					.description = "Add a keybind.",
 					.store_value = nqiv_cmd_parser_append_keybind,
-					.print_value = NULL,
+					.print_value = nqiv_cmd_parser_print_keybind,
 					.args = {&nqiv_parser_arg_type_keybind, NULL},
 					.children = {NULL},
 				},
@@ -1867,7 +1980,7 @@ void nqiv_cmd_print_single_arg( nqiv_cmd_manager* manager, const nqiv_cmd_arg_de
 		print_prefix(manager);
 		fprintf(stdout, "'self_opened' will check if the currently-selected image is loaded.\n");
 		print_prefix(manager);
-		fprintf(stdout, "'not_animated' will check if the currently-selected image is not animated.\n");
+		fprintf(stdout, "'not_animated' will check if the currently-selected image is not animated.");
 		break;
 	}
 }
@@ -1924,12 +2037,14 @@ void nqiv_cmd_print_help(nqiv_cmd_manager* manager, const nqiv_cmd_node* current
 {
 	nqiv_cmd_print_indent(manager);
 	fprintf(stdout, "%s: %s", current_node->name, current_node->description);
+	if(current_node->args[0] != NULL) {
+		fprintf(stdout, " - ");
+		nqiv_cmd_print_args(manager, (const nqiv_cmd_arg_desc* const*)(current_node->args), nqiv_cmd_print_indent);
+	}
 	if(current_node->print_value != NULL) {
 		fprintf(stdout, " - ");
 		current_node->print_value(manager);
 	}
-	fprintf(stdout, " - ");
-	nqiv_cmd_print_args(manager, (const nqiv_cmd_arg_desc* const*)(current_node->args), nqiv_cmd_print_indent);
 	fprintf(stdout, "\n");
 	if(!recurse) {
 		return;
