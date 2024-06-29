@@ -309,23 +309,45 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	nqiv_setup_montage(state);
 	struct optparse_long longopts[] = {
 		{"cmd-from-stdin", 's', OPTPARSE_NONE},
+		{"no-default-cfg", 'N', OPTPARSE_NONE},
 		{"cmd", 'c', OPTPARSE_REQUIRED},
 		{"cfg", 'C', OPTPARSE_REQUIRED},
 		{"help", 'h', OPTPARSE_NONE},
 		{0}
 	};
+	bool load_default = true;
 	struct optparse options;
-	optparse_init(&options, argv);
 	int option;
-	char default_config_path[PATH_MAX + 1] = {0};
-	if( !nqiv_get_default_cfg(default_config_path, PATH_MAX + 1) ) {
-        fprintf(stderr, "Failed to find default config path.\n");
-		return false;
+	optparse_init(&options, argv);
+    while ((option = optparse_long(&options, longopts, NULL)) != -1) {
+        switch (option) {
+		case 'N':
+			load_default = false;
+			break;
+		case 'h':
+			fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.\n");
+			fprintf(stderr, "-N/--no-default-cfg Do not try to load the default config file.\n");
+			fprintf(stderr, "-c/--cmd <cmd> Issue a single command to the image viewer's command processor. Also pass help to get information about commands.\n");
+			fprintf(stderr, "-C/--cfg <path> Specify a config file to be read by the image viewer's command processor.\n");
+			fprintf(stderr, "-h/--help Print this help message.\n");
+			return false;
+        case '?':
+            fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
+			return false;
+        }
+    }
+	if(load_default) {
+		char default_config_path[PATH_MAX + 1] = {0};
+		if( !nqiv_get_default_cfg(default_config_path, PATH_MAX + 1) ) {
+			fprintf(stderr, "Failed to find default config path.\n");
+			return false;
+		}
+		if( !nqiv_cmd_consume_stream_from_path(&state->cmds, default_config_path) ) {
+			fprintf(stderr, "Failed to read commands from default config path %s\n", default_config_path);
+			return false;
+		}
 	}
-	if( !nqiv_cmd_consume_stream_from_path(&state->cmds, default_config_path) ) {
-        fprintf(stderr, "Failed to read commands from default config path %s\n", default_config_path);
-		return false;
-	}
+	optparse_init(&options, argv);
     while ((option = optparse_long(&options, longopts, NULL)) != -1) {
         switch (option) {
 		case 's':
@@ -345,6 +367,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			break;
 		case 'h':
 			fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.\n");
+			fprintf(stderr, "-N/--no-default-cfg Do not try to load the default config file.\n");
 			fprintf(stderr, "-c/--cmd <cmd> Issue a single command to the image viewer's command processor. Also pass help to get information about commands.\n");
 			fprintf(stderr, "-C/--cfg <path> Specify a config file to be read by the image viewer's command processor.\n");
 			fprintf(stderr, "-h/--help Print this help message.\n");
