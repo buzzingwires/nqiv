@@ -338,13 +338,18 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
     }
 	if(load_default) {
 		char default_config_path[PATH_MAX + 1] = {0};
-		if( !nqiv_get_default_cfg(default_config_path, PATH_MAX + 1) ) {
-			fprintf(stderr, "Failed to find default config path.\n");
-			return false;
-		}
-		if( !nqiv_cmd_consume_stream_from_path(&state->cmds, default_config_path) ) {
-			fprintf(stderr, "Failed to read commands from default config path %s\n", default_config_path);
-			return false;
+		if( nqiv_get_default_cfg(default_config_path, PATH_MAX + 1) ) {
+			FILE* stream = fopen(default_config_path, "r");
+			if(stream != NULL) {
+				if( !nqiv_cmd_consume_stream(&state->cmds, stream) ) {
+					fprintf(stderr, "Failed to read commands from default config path %s\n", default_config_path);
+					fclose(stream);
+					return false;
+				}
+				fclose(stream);
+			} else {
+				fprintf(stderr, "Failed to open default config file path. Consider `nqiv -c \"dumpcfg\" > %s` to create it?\n", default_config_path);
+			}
 		}
 	}
 	optparse_init(&options, argv);
