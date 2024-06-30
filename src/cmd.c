@@ -763,19 +763,17 @@ void nqiv_cmd_parser_print_minimum_delay(nqiv_cmd_manager* manager)
 void nqiv_cmd_print_str_list(nqiv_cmd_manager* manager, nqiv_array* list)
 {
 	const int list_len = list->position / sizeof(char*);
+	bool taken = false;
 	int idx;
 	for(idx = 0; idx < list_len; ++idx) {
 		char* str = nqiv_array_get_char_ptr(list, idx);
 		if(str != NULL) {
+			taken = true;
 			if(!manager->print_settings.dumpcfg) {
 				if(idx == 0) {
 					fprintf(stdout, "\n");
 				}
 				nqiv_cmd_print_indent(manager);
-				fprintf(stdout, "%s\n", str);
-			} else if(idx == 0 && idx == list_len - 1) {
-				fprintf(stdout, "%s", str);
-			} else if(idx == 0) {
 				fprintf(stdout, "%s\n", str);
 			} else if(idx == list_len - 1) {
 				fprintf(stdout, "%s%s", manager->print_settings.prefix, str);
@@ -783,6 +781,9 @@ void nqiv_cmd_print_str_list(nqiv_cmd_manager* manager, nqiv_array* list)
 				fprintf(stdout, "%s%s\n", manager->print_settings.prefix, str);
 			}
 		}
+	}
+	if(!taken && manager->print_settings.dumpcfg) {
+		fprintf(stdout, "#%s", manager->print_settings.prefix);
 	}
 }
 
@@ -794,10 +795,12 @@ void nqiv_cmd_parser_print_log_stream(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_pruner(nqiv_cmd_manager* manager)
 {
 	const int list_len = manager->state->pruner.pruners->position / sizeof(nqiv_pruner_desc);
+	bool taken = false;
 	int idx;
 	for(idx = 0; idx < list_len; ++idx) {
 		nqiv_pruner_desc desc = {0};
 		if( nqiv_array_get_bytes(manager->state->pruner.pruners, idx, sizeof(nqiv_pruner_desc), &desc) ) {
+			taken = true;
 			char desc_str[NQIV_PRUNER_DESC_STRLEN] = {0};
 			nqiv_pruner_desc_to_string(&desc, desc_str);
 			if(!manager->print_settings.dumpcfg) {
@@ -806,16 +809,15 @@ void nqiv_cmd_parser_print_pruner(nqiv_cmd_manager* manager)
 				}
 				nqiv_cmd_print_indent(manager);
 				fprintf(stdout, "%s\n", desc_str);
-			} else if(idx == 0 && idx == list_len - 1) {
-				fprintf(stdout, "%s", desc_str);
-			} else if(idx == 0) {
-				fprintf(stdout, "%s\n", desc_str);
 			} else if(idx == list_len - 1) {
 				fprintf(stdout, "%s%s", manager->print_settings.prefix, desc_str);
 			} else {
 				fprintf(stdout, "%s%s\n", manager->print_settings.prefix, desc_str);
 			}
 		}
+	}
+	if(!taken && manager->print_settings.dumpcfg) {
+		fprintf(stdout, "#%s", manager->print_settings.prefix);
 	}
 }
 
@@ -827,10 +829,12 @@ void nqiv_cmd_parser_print_extension(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
 {
 	const int list_len = manager->state->keybinds.lookup->position / sizeof(nqiv_keybind_pair);
+	bool taken = false;
 	int idx;
 	for(idx = 0; idx < list_len; ++idx) {
 		nqiv_keybind_pair pair = {.key = {0}, .action = -1};
 		if( nqiv_array_get_bytes(manager->state->keybinds.lookup, idx, sizeof(nqiv_keybind_pair), &pair) ) {
+			taken = true;
 			char keybind_str[NQIV_KEYBIND_STRLEN] = {0};
 			nqiv_keybind_to_string(&pair, keybind_str);
 			if(!manager->print_settings.dumpcfg) {
@@ -839,16 +843,15 @@ void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
 				}
 				nqiv_cmd_print_indent(manager);
 				fprintf(stdout, "%s\n", keybind_str);
-			} else if(idx == 0 && idx == list_len - 1) {
-				fprintf(stdout, "%s", keybind_str);
-			} else if(idx == 0) {
-				fprintf(stdout, "%s\n", keybind_str);
 			} else if(idx == list_len - 1) {
 				fprintf(stdout, "%s%s", manager->print_settings.prefix, keybind_str);
 			} else {
 				fprintf(stdout, "%s%s\n", manager->print_settings.prefix, keybind_str);
 			}
 		}
+	}
+	if(!taken && manager->print_settings.dumpcfg) {
+		fprintf(stdout, "#%s", manager->print_settings.prefix);
 	}
 }
 
@@ -2013,7 +2016,9 @@ void nqiv_cmd_dumpcfg(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_no
 		nqiv_cmd_print_args(manager, (const nqiv_cmd_arg_desc* const*)(current_node->args), nqiv_cmd_print_comment_prefix);
 		fprintf(stdout, "\n");
 		if(current_node->print_value != NULL) {
-			fprintf(stdout, "%s", new_cmd);
+			if(strncmp( new_cmd, "append", strlen("append") ) != 0) {
+				fprintf(stdout, "%s", new_cmd);
+			}
 			manager->print_settings.prefix = new_cmd;
 			manager->print_settings.dumpcfg = true;
 			current_node->print_value(manager);
