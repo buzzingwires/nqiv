@@ -654,7 +654,7 @@ bool nqiv_image_manager_remove(nqiv_image_manager* manager, const int index)
 {
 	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Removing image from index %d from image manager.\n", index);
 	const int images_length = manager->images->position / sizeof(nqiv_image*);
-	if(index > images_length) {
+	if(index >= images_length) {
 		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Cannot remove image at index %d, greater than the length of the current images array %d.\n", index, images_length);
 		return false;
 	}
