@@ -406,7 +406,7 @@ bool nqiv_cmd_parser_append_extension(nqiv_cmd_manager* manager, nqiv_cmd_arg_to
 bool nqiv_cmd_parser_append_image(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	const char data_end = nqiv_cmd_tmpterm(tokens[0]->raw, tokens[0]->length);
-	bool output = false;
+	bool output = true;
 	if( nqiv_image_manager_has_path_extension(&manager->state->images, tokens[0]->raw) ) {
 		output = nqiv_image_manager_append(&manager->state->images, tokens[0]->raw);
 	}
@@ -430,7 +430,10 @@ bool nqiv_cmd_parser_append_log_stream(nqiv_cmd_manager* manager, nqiv_cmd_arg_t
 bool nqiv_cmd_parser_insert_image(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	const char data_end = nqiv_cmd_tmpterm(tokens[1]->raw, tokens[1]->length);
-	const bool output = nqiv_image_manager_insert(&manager->state->images, tokens[1]->raw, tokens[0]->value.as_int);
+	bool output = true;
+	if( nqiv_image_manager_has_path_extension(&manager->state->images, tokens[1]->raw) ) {
+		output = nqiv_image_manager_insert(&manager->state->images, tokens[1]->raw, tokens[0]->value.as_int);
+	}
 	nqiv_cmd_tmpret(tokens[1]->raw, tokens[1]->length, data_end);
 	return output;
 }
