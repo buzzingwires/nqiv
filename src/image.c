@@ -636,6 +636,7 @@ bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, co
 	}
 	const int images_length = manager->images->position / sizeof(nqiv_image*);
 	if(index > images_length) {
+		nqiv_image_destroy(image);
 		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Cannot insert image from path '%s' at index %d, greater than the length of the current images array %d.\n", path, index, images_length);
 		return false;
 	}
