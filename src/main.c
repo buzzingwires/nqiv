@@ -263,10 +263,15 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	char* arg_log_prefix = "#time:%Y-%m-%d_%H:%M:%S%z# #level#: ";
 	*/
 	state->queue_length = STARTING_QUEUE_LENGTH;
-	state->thread_count = omp_get_num_procs() / 4;
+	state->zoom_default = NQIV_ZOOM_DEFAULT_FIT;
+	state->no_resample_oversized = true;
+	state->thread_count = omp_get_num_procs() / 3;
+	state->thread_count = state->thread_count > 0 ? state->thread_count : 1;
+	state->vips_threads = omp_get_num_procs() / 2;
+	state->vips_threads = state->vips_threads > 0 ? state->vips_threads : 1;
 	state->thread_event_interval = 5;
-	state->prune_delay = 200;
-	state->extra_wakeup_delay = 0;
+	state->prune_delay = 500;
+	state->extra_wakeup_delay = 10;
 	vips_concurrency_set(state->vips_threads);
 	state->logger_stream_names = nqiv_array_create(state->queue_length);
 	if(state->logger_stream_names == NULL) {
@@ -277,6 +282,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	if( !nqiv_cmd_manager_init(&state->cmds, state) ) {
 		return false;
 	}
+	state->logger.level = NQIV_LOG_ERROR;
 	if( !nqiv_check_and_print_logger_error(&state->logger) ) {
 		return false;
 	}
@@ -326,7 +332,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			break;
 		case 'h':
 			fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.\n");
-			fprintf(stderr, "-N/--no-default-cfg Do not try to load the default config file.\n");
+			fprintf(stderr, "-N/--no-default-cfg Do not try to load the default config file (or settings if it does not exist).\n");
 			fprintf(stderr, "-c/--cmd <cmd> Issue a single command to the image viewer's command processor. Also pass help to get information about commands.\n");
 			fprintf(stderr, "-C/--cfg <path> Specify a config file to be read by the image viewer's command processor.\n");
 			fprintf(stderr, "-h/--help Print this help message.\n");
@@ -348,6 +354,70 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 				}
 				fclose(stream);
 			} else {
+				const char* cmds =
+				"append extension png\n"
+				"append extension mng\n"
+				"append extension jpg\n"
+				"append extension jpeg\n"
+				"append extension webp\n"
+				"append extension gif\n"
+				"append extension webp\n"
+				"append extension tiff\n"
+				"append keybind Q=quit\n"
+				"append keybind Home=montage_start\n"
+				"append keybind End=montage_end\n"
+				"append keybind PageUp=page_up\n"
+				"append keybind PageDown=page_down\n"
+				"append keybind Backspace=image_previous\n"
+				"append keybind Backspace=montage_left\n"
+				"append keybind Left=montage_left\n"
+				"append keybind Right=montage_right\n"
+				"append keybind Up=montage_up\n"
+				"append keybind Down=montage_down\n"
+				"append keybind Space=image_next\n"
+				"append keybind Space=montage_right\n"
+				"append keybind M+shift=set_montage\n"
+				"append keybind shift+ctrl+M=set_viewing\n"
+				"append keybind Enter=set_viewing\n"
+				"append keybind M=toggle_montage\n"
+				"append keybind Z=zoom_in\n"
+				"append keybind Z+shift=zoom_out\n"
+				"append keybind Left=pan_left\n"
+				"append keybind Up=pan_up\n"
+				"append keybind Right=pan_right\n"
+				"append keybind Down=pan_down\n"
+				"append keybind ctrl+Z=zoom_in_more\n"
+				"append keybind ctrl+Z+shift=zoom_out_more\n"
+				"append keybind ctrl+Left=pan_left_more\n"
+				"append keybind ctrl+Up=pan_up_more\n"
+				"append keybind ctrl+Right=pan_right_more\n"
+				"append keybind ctrl+Down=pan_down_more\n"
+				"append keybind S=toggle_stretch\n"
+				"append keybind shift+S=stretch\n"
+				"append keybind ctrl+S+shift=keep_aspect_ratio\n"
+				"append keybind '=image_mark_toggle\n"
+				"append keybind shift+'=image_mark\n"
+				"append keybind ;=image_mark\n"
+				"append keybind ;=montage_right\n"
+				"append keybind ;=image_next\n"
+				"append keybind ctrl+shift+'=image_unmark\n"
+				"append keybind shift+]=print_marked\n"
+				"append keybind R=reload\n"
+				"append keybind F=fit\n"
+				"append keybind A=actual_size\n"
+				"append keybind D=toggle_kept_zoom\n"
+				"append keybind shift+F=keep_fit\n"
+				"append keybind shift+A=keep_actual_size\n"
+				"append keybind shift+D=keep_current_zoom\n"
+				"append pruner or thumbnail no image texture self_opened unload surface raw vips\n"
+				"append pruner and no thumbnail image texture self_opened not_animated unload surface raw vips\n"
+				"append pruner or no thumbnail image texture self_opened unload surface raw\n"
+				"append pruner and thumbnail no image texture self_opened image no thumbnail not_animated hard unload image thumbnail surface raw vips\n"
+				"append pruner or thumbnail image texture loaded_behind 0 0 loaded_ahead 0 0 surface loaded_behind 0 0 loaded_ahead 0 0 raw loaded_behind 0 0 loaded_ahead 0 0 vips loaded_behind 0 0 loaded_ahead 0 0 hard unload texture surface raw vips\n"
+				"append pruner or sum 0 thumbnail image texture bytes_ahead 0 0 bytes_behind 0 0 surface bytes_ahead 0 0 bytes_behind 0 0 raw bytes_ahead 0 0 bytes_behind 0 0 vips bytes_ahead 0 0 bytes_behind 0 0 hard unload texture surface raw vips\n";
+				if( !nqiv_cmd_add_string(&state->cmds, cmds) || !nqiv_cmd_parse(&state->cmds) ) {
+					return false;
+				}
 				fprintf(stderr, "Failed to open default config file path. Consider `nqiv -c \"dumpcfg\" > %s` to create it?\n", default_config_path);
 			}
 		}

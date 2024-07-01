@@ -76,8 +76,8 @@ void nqiv_state_set_default_colors(nqiv_state* state)
 	state->error_color.b = 0;
 	state->error_color.a = 255;
 	state->loading_color.r = 0;
-	state->loading_color.g = 255;
-	state->loading_color.b = 255;
+	state->loading_color.g = 0;
+	state->loading_color.b = 0;
 	state->loading_color.a = 255;
 	state->selection_color.r = 255;
 	state->selection_color.g = 255;
