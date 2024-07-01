@@ -195,7 +195,7 @@ int nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair)
 	SDL_Scancode sc = tmpkey.scancode;
 	memset( &tmpkey, 0, sizeof(SDL_Keysym) );
 	for(idx = 0, section_start = 0; idx <= equal_start; ++idx) {
-		if(text[idx] == '+') {
+		if(text[idx] == '+' && idx < equal_start - 1) {
 			success = nqiv_text_to_keysym(text + section_start, idx - section_start, &tmpkey);
 			if(!success) {
 				break;
@@ -215,8 +215,10 @@ int nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair)
 	if(success) {
 		memcpy( &pair->key, &tmpkey, sizeof(SDL_Keysym) );
 		pair->action = action;
+		return equal_start + strlen(nqiv_keybind_action_names[action]) + 1;
+	} else {
+		return -1;
 	}
-	return equal_start + strlen(nqiv_keybind_action_names[action]) + 1;
 }
 
 bool nqiv_keybind_create_manager(nqiv_keybind_manager* manager, nqiv_log_ctx* logger, const int starting_array_length)
