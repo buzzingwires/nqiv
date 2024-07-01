@@ -356,6 +356,8 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 				fclose(stream);
 			} else {
 				const char* cmds =
+				"set log prefix #level# #time:%Y-%m-%d %T%z# \n"
+				"append log stream stderr\n"
 				"append extension png\n"
 				"append extension mng\n"
 				"append extension jpg\n"
