@@ -599,6 +599,9 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 	int pending_change_count = 0;
 	bool cleared = is_montage;
 	nqiv_image_form* form = is_thumbnail ? &image->thumbnail : &image->image;
+	if(is_montage) {
+		state->is_loading = false;
+	}
 	if(lock) {
 		nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 		if(!omp_test_lock(&image->lock)) {
@@ -612,6 +615,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 					memcpy( &tmp_dstrect, &form->master_dstrect, sizeof(SDL_Rect) );
 					tmp_dstrect_ptr = &tmp_dstrect;
 				}
+				state->is_loading = !is_montage;
 				bool clearedtmp = true;
 				if(form->master_dimensions_set && form->fallback_texture != NULL && form->master_srcrect.w > 0 && form->master_srcrect.h > 0 && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
 					nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &tmp_srcrect, &tmp_dstrect);
@@ -797,6 +801,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				}
 			}
 		} else {
+			state->is_loading = false;
 			if( !render_texture(&cleared, dstrect, state, state->texture_montage_error_background, NULL, dstrect_zoom_ptr == NULL ? dstrect : dstrect_zoom_ptr) ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
@@ -824,6 +829,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 			}
 		} else {
 			if(first_frame || hard) {
+				state->is_loading = true;
 				if( state->show_loading_indicator && !render_texture(&cleared, dstrect, state, state->texture_montage_unloaded_background, NULL, dstrect_zoom_ptr == NULL ? dstrect : dstrect_zoom_ptr) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
@@ -916,6 +922,7 @@ state->images.thumbnail.load
 			*/
 		}
 		if(form->texture != NULL) {
+			state->is_loading = false;
 			if( dstrect_zoom_ptr != NULL && !nqiv_state_update_alpha_background_dimensions(state, dstrect_zoom_ptr->w, dstrect_zoom_ptr->h) ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
@@ -994,6 +1001,9 @@ state->images.thumbnail.load
 	nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 	omp_unset_lock(&image->lock);
 	nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+	if(is_montage) {
+		state->is_loading = false;
+	}
 	return true;
 }
 
@@ -1072,6 +1082,7 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 		!state->in_montage ? nqiv_zoom_default_names[state->zoom_default] : "",
 		!state->in_montage ? ") - " : "",
 		image->marked ? "MARKED - " : "",
+		state->is_loading ? "LOADING - " : "",
 		image->image.path,
 		NULL
 	};

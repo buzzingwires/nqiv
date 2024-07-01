@@ -76,6 +76,7 @@ struct nqiv_state
 	size_t window_title_size;
 	bool no_resample_oversized;
 	bool show_loading_indicator;
+	bool is_loading;
 	SDL_Color background_color;
 	SDL_Color error_color;
 	SDL_Color loading_color;
