@@ -219,6 +219,12 @@ bool nqiv_cmd_parser_set_no_resample_oversized(nqiv_cmd_manager* manager, nqiv_c
 	return true;
 }
 
+bool nqiv_cmd_parser_set_show_loading_indicator(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->show_loading_indicator = tokens[0]->value.as_bool;
+	return true;
+}
+
 bool nqiv_cmd_parser_set_parse_error_quit(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->cmd_parse_error_quit = tokens[0]->value.as_bool;
@@ -590,6 +596,11 @@ void nqiv_cmd_parser_print_thumbnail_path(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_no_resample_oversized(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%s", manager->state->no_resample_oversized ? "true" : "false");
+}
+
+void nqiv_cmd_parser_print_show_loading_indicator(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%s", manager->state->show_loading_indicator ? "true" : "false");
 }
 
 void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
@@ -1737,6 +1748,26 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 					.print_value = nqiv_cmd_parser_print_no_resample_oversized,
 					.args = {&nqiv_parser_arg_type_bool, NULL},
 					.children = {NULL},
+				},
+				&(nqiv_cmd_node)
+				{
+					.name = "show",
+					.description = "Settings related to displaying optional entities.",
+					.store_value = NULL,
+					.print_value = NULL,
+					.args = {NULL},
+					.children = {
+						&(nqiv_cmd_node)
+						{
+							.name = "loading_indicator",
+							.description = "Determine whether the loading indicator is rendered in image mode (achieve the same in montage mode by setting `set color loading` to match `set color background`).",
+							.store_value = nqiv_cmd_parser_set_show_loading_indicator,
+							.print_value = nqiv_cmd_parser_print_show_loading_indicator,
+							.args = {&nqiv_parser_arg_type_bool, NULL},
+							.children = {NULL},
+						},
+						NULL
+					}
 				},
 				&(nqiv_cmd_node)
 				{

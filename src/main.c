@@ -265,6 +265,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	state->queue_length = STARTING_QUEUE_LENGTH;
 	state->zoom_default = NQIV_ZOOM_DEFAULT_FIT;
 	state->no_resample_oversized = true;
+	state->show_loading_indicator = true;
 	state->thread_count = omp_get_num_procs() / 3;
 	state->thread_count = state->thread_count > 0 ? state->thread_count : 1;
 	state->vips_threads = omp_get_num_procs() / 2;
@@ -815,7 +816,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 			}
 		} else {
 			if(first_frame || hard) {
-				if( !render_texture(&cleared, dstrect, state, state->texture_montage_unloaded_background, NULL, dstrect_zoom_ptr == NULL ? dstrect : dstrect_zoom_ptr) ) {
+				if( state->show_loading_indicator && !render_texture(&cleared, dstrect, state, state->texture_montage_unloaded_background, NULL, dstrect_zoom_ptr == NULL ? dstrect : dstrect_zoom_ptr) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );

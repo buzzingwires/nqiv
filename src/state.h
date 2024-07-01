@@ -75,6 +75,7 @@ struct nqiv_state
 	char* window_title;
 	size_t window_title_size;
 	bool no_resample_oversized;
+	bool show_loading_indicator;
 	SDL_Color background_color;
 	SDL_Color error_color;
 	SDL_Color loading_color;
