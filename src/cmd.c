@@ -1236,7 +1236,7 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 						&(nqiv_cmd_node)
 						{
 							.name = "count",
-							.description = "Set the number of worker threads used by the software. This does not count toward VIPs threads. See 'set vips threads' for that.",
+							.description = "Set the number of worker threads used by the software. Starts as the number of threads on the machine divided by three (or one). This does not count toward VIPs threads. See 'set vips threads' for that.",
 							.store_value = nqiv_cmd_parser_set_thread_count,
 							.print_value = nqiv_cmd_parser_print_thread_count,
 							.args = {&nqiv_parser_arg_type_int_positive, NULL},
@@ -1283,7 +1283,7 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 						&(nqiv_cmd_node)
 						{
 							.name = "threads",
-							.description = "Set the number of threads used by the VIPs library. 0 is the default, determined by the environment variable VIPS_CONCURRENCY, or if unset, the number of threads available on the machine.",
+							.description = "Set the number of threads used by the VIPs library. The default is the number of available threads divided by two (or one). If set to 0, it is determined by the environment variable VIPS_CONCURRENCY, or if unset, the number of threads available on the machine.",
 							.store_value = nqiv_cmd_parser_set_vips_threads,
 							.print_value = nqiv_cmd_parser_print_vips_threads,
 							.args = {&nqiv_parser_arg_type_int_natural, NULL},
@@ -1741,7 +1741,7 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 				&(nqiv_cmd_node)
 				{
 					.name = "queue_size",
-					.description = "Dynamic arrays in the software are backed by a given amount of memory. They will expand as needed, but it may improve performance to allocate memory all at once in advance.",
+					.description = "Dynamic arrays in the software are backed by a given amount of memory. They will expand as needed, but it may improve performance to allocate more memory in advance. This value is the default minimum.",
 					.store_value = nqiv_cmd_parser_set_queue_size,
 					.print_value = nqiv_cmd_parser_print_queue_size,
 					.args = {&nqiv_parser_arg_type_int_positive, NULL},
@@ -1960,6 +1960,8 @@ void nqiv_cmd_print_single_arg( nqiv_cmd_manager* manager, const nqiv_cmd_arg_de
 		fprintf(stdout, "'and' will use boolean and with the result of all checks to determine success.\n");
 		print_prefix(manager);
 		fprintf(stdout, "'unload' will cause specified image datatypes to be unloaded in the event of a failed check.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'hard' will cause 'unload' to always work. Otherwise, they will only be unloaded if the corresponding texture is not NULL (this can prevent prematurely unloading things needed for the texture).\n");
 		print_prefix(manager);
 		fprintf(stdout, "'thumbnail' will cause thumbnail images to be considered by the following checks.\n");
 		print_prefix(manager);
