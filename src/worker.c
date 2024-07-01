@@ -191,7 +191,7 @@ void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock
 					nqiv_log_write( logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", event.options.image_load.image->image.path, omp_get_thread_num() );
 					nqiv_worker_handle_image_load_form_clear_error(&event.options.image_load.thumbnail_options, &event.options.image_load.image->thumbnail);
 					nqiv_worker_handle_image_load_form_clear_error(&event.options.image_load.image_options, &event.options.image_load.image->image);
-					if(!event.options.image_load.image->thumbnail_attempted && event.options.image_load.set_thumbnail_path) {
+					if(!event.options.image_load.image->thumbnail_attempted && event.options.image_load.set_thumbnail_path && event.options.image_load.image->parent->thumbnail.root != NULL) {
 						if(event.options.image_load.image->thumbnail.path == NULL) {
 							if( !nqiv_thumbnail_calculate_path(event.options.image_load.image, &event.options.image_load.image->thumbnail.path, false) ) {
 								nqiv_log_write(event.options.image_load.image->parent->logger, NQIV_LOG_ERROR, "Failed to create thumbnail path for %s\n", event.options.image_load.image->image.path);
