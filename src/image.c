@@ -684,6 +684,9 @@ bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path)
 
 bool nqiv_image_manager_set_thumbnail_root(nqiv_image_manager* manager, const char* path)
 {
+	if(strlen(path) == 0) {
+		return false;
+	}
 	if(manager->thumbnail.root != NULL) {
 		free(manager->thumbnail.root);
 	}
