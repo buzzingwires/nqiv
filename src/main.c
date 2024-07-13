@@ -79,6 +79,9 @@ void nqiv_state_clear(nqiv_state* state)
 		nqiv_close_log_streams(state);
 		nqiv_log_destroy(&state->logger);
 	}
+	if(state->logger_stream_names != NULL) {
+		nqiv_array_destroy(state->logger_stream_names);
+	}
 	if(state->texture_background != NULL) {
 		SDL_DestroyTexture(state->texture_background);
 	}
@@ -366,6 +369,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 				"append extension gif\n"
 				"append extension webp\n"
 				"append extension tiff\n"
+				"append extension svg\n"
 				"append extension PNG\n"
 				"append extension MNG\n"
 				"append extension JPG\n"
@@ -374,6 +378,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 				"append extension GIF\n"
 				"append extension WEBP\n"
 				"append extension TIFF\n"
+				"append extension SVG\n"
 				"append keybind Q=quit\n"
 				"append keybind Home=montage_start\n"
 				"append keybind End=montage_end\n"
@@ -585,7 +590,6 @@ void nqiv_apply_zoom_default(nqiv_state* state, const bool first_frame)
 			assert(false);
 			break;
 		}
-		state->first_frame_pending = false;
 	}
 }
 
@@ -700,7 +704,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				form->srcrect.y = 0;
 				form->srcrect.w = form->width;
 				form->srcrect.h = form->height;
-				state->first_frame_pending = true;
 			} else {
 				srcrect.x = 0;
 				srcrect.y = 0;
@@ -718,8 +721,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr); /* TODO aspect ratio */
 			}
 		}
-	} else {
-		state->first_frame_pending = true;
 	}
 	if(!is_thumbnail && state->images.thumbnail.save) {
 		if(!image->thumbnail_attempted) {
@@ -943,6 +944,7 @@ state->images.thumbnail.load
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
 			}
+			state->first_frame_pending = false;
 			if(form->animation.exists && next_frame && !is_montage) {
 				nqiv_unload_image_form_texture(form);
 				form->animation.frame_rendered = true;
@@ -1126,7 +1128,7 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 }
 #undef INT_MAX_STRLEN
 
-bool render_montage(nqiv_state* state, const bool hard)
+bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 {
 	/*
 	bool read_from_stdin;
@@ -1153,15 +1155,15 @@ bool render_montage(nqiv_state* state, const bool hard)
 	if there's an error set, set error indicator, then quit
 	*/
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage.\n");
-	if(SDL_RenderClear(state->renderer) != 0) {
+	if(!preload_only && SDL_RenderClear(state->renderer) != 0) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to clear renderer for montage.\n");
 		return false;
 	}
-	if(SDL_RenderCopy(state->renderer, state->texture_background, NULL, NULL) != 0) {
+	if(!preload_only && SDL_RenderCopy(state->renderer, state->texture_background, NULL, NULL) != 0) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to copy texture background for montage.\n");
 		return false;
 	}
-	state->render_cleared = true;
+	state->render_cleared = !preload_only;
 	const int images_len = state->images.images->position / sizeof(nqiv_image*);
 	const int raw_start_idx = state->montage.positions.start - state->montage.preload.behind;
 	const int raw_end = state->montage.positions.end + state->montage.preload.ahead;
@@ -1175,7 +1177,7 @@ bool render_montage(nqiv_state* state, const bool hard)
 			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to get image %d for montage.\n", idx);
 			return false;
 		}
-		if(idx >= state->montage.positions.start && idx < state->montage.positions.end) {
+		if(idx >= state->montage.positions.start && idx < state->montage.positions.end && !preload_only) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n", image->image.path, idx);
 			SDL_Rect dstrect;
 			nqiv_montage_get_image_rect(&state->montage, idx, &dstrect);
@@ -1205,6 +1207,9 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	SDL_Rect dstrect = {0};
 	/* TODO RECT DONE BUT ASPECT RATIO */
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
+	if( !render_montage(state, false, true) ) {
+		return false;
+	}
 	if( !render_from_form(state, image, false, &dstrect, false, start, true, false, hard, true, 0) ) {
 		return false;
 	}
@@ -1239,7 +1244,7 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 		state->montage.range_changed = false;
 	}
 	if(state->in_montage) {
-		if( !render_montage(state, hard) ) {
+		if( !render_montage(state, hard, false) ) {
 			*running = false;
 			*result = false;
 		}
