@@ -731,7 +731,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 			event.options.image_load.set_thumbnail_path = true;
 			event.options.image_load.thumbnail_options.clear_error = true;
 			event.options.image_load.create_thumbnail = true;
-			if( !nqiv_send_thread_event(state, base_priority + 4, &event) ) {
+			if( !nqiv_send_thread_event(state, base_priority + NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO, &event) ) {
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -769,7 +769,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				event.options.image_load.set_thumbnail_path = true;
 				event.options.image_load.thumbnail_options.clear_error = state->images.thumbnail.save;
 				event.options.image_load.create_thumbnail = true;
-				if( !nqiv_send_thread_event(state, base_priority + 3, &event) ) {
+				if( !nqiv_send_thread_event(state, base_priority + NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_FAIL, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -792,7 +792,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 					event.options.image_load.thumbnail_options.file_soft = true;
 					event.options.image_load.thumbnail_options.vips_soft = true;
 				}
-				if( !nqiv_send_thread_event(state, base_priority + 3, &event) ) {
+				if( !nqiv_send_thread_event(state, base_priority + NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD_EPHEMERAL, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -865,7 +865,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				}
 				event.options.image_load.thumbnail_options.first_frame = first_frame;
 				event.options.image_load.thumbnail_options.next_frame = next_frame && !first_frame && form->animation.frame_rendered;
-				if( !nqiv_send_thread_event(state, base_priority + 3, &event) ) {
+				if( !nqiv_send_thread_event(state, base_priority + NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -895,7 +895,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				}
 				event.options.image_load.image_options.first_frame = first_frame;
 				event.options.image_load.image_options.next_frame = next_frame && !first_frame && form->animation.frame_rendered;
-				if( !nqiv_send_thread_event(state, base_priority + 3, &event) ) {
+				if( !nqiv_send_thread_event(state, base_priority + NQIV_EVENT_PRIORITY_IMAGE_LOAD, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
@@ -967,7 +967,7 @@ state->images.thumbnail.load
 				}
 				event.options.image_load.image_options.first_frame = first_frame;
 				event.options.image_load.image_options.next_frame = next_frame && !first_frame && form->animation.frame_rendered;
-				if( !nqiv_send_thread_event(state, base_priority + 1, &event) ) {
+				if( !nqiv_send_thread_event(state, base_priority + NQIV_EVENT_PRIORITY_IMAGE_LOAD_ANIMATION, &event) ) {
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
