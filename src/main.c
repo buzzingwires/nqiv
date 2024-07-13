@@ -1207,15 +1207,17 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	SDL_Rect dstrect = {0};
 	/* TODO RECT DONE BUT ASPECT RATIO */
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
-	if( !render_montage(state, false, true) ) {
+	if( !render_from_form(state, image, false, &dstrect, false, start, true, false, hard, true, 0) ) {
 		return false;
 	}
-	if( !render_from_form(state, image, false, &dstrect, false, start, true, false, hard, true, 0) ) {
+	const bool render_cleared = state->render_cleared;
+	if( !render_montage(state, false, true) ) {
 		return false;
 	}
 	if( !set_title(state, image) ) {
 		return false;
 	}
+	state->render_cleared = render_cleared;
 	return true;
 /* TODO */
 }
