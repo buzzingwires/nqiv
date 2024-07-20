@@ -750,6 +750,12 @@ void nqiv_image_manager_pan_down(nqiv_image_manager* manager)
 	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_vertical_shift, manager->zoom.pan_down_amount);
 }
 
+void nqiv_image_manager_pan_coordinates(nqiv_image_manager* manager, const SDL_Rect* coordinates)
+{
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_horizontal_shift, ( (double)coordinates->x / (double)coordinates->w ) * 2.0 * -1.0);
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_vertical_shift, ( (double)coordinates->y / (double)coordinates->h ) * 2.0 * -1.0);
+}
+
 void nqiv_image_manager_zoom_in(nqiv_image_manager* manager)
 {
 	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount);

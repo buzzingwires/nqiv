@@ -84,6 +84,7 @@ struct nqiv_state
 	bool stretch_images;
 	bool first_frame_pending;
 	nqiv_zoom_default zoom_default;
+	bool is_mouse_panning;
 	char* window_title;
 	size_t window_title_size;
 	bool no_resample_oversized;

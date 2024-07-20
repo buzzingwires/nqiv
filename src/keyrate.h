@@ -7,6 +7,13 @@
 
 #include "keybinds.h"
 
+typedef enum nqiv_keyrate_release_option
+{
+	NQIV_KEYRATE_ON_NONE = 0,
+	NQIV_KEYRATE_ON_DOWN = 1,
+	NQIV_KEYRATE_ON_UP   = 2
+} nqiv_keyrate_release_option;
+
 typedef enum nqiv_keyrate_press_action
 {
 	NQIV_KEYRATE_ON_MANAGER = 0,
@@ -53,6 +60,6 @@ typedef struct nqiv_keyrate_manager
 	bool send_on_up;
 } nqiv_keyrate_manager;
 
-bool nqiv_keyrate_filter_action(nqiv_keyrate_manager* manager, const nqiv_key_action action, const bool released);
+bool nqiv_keyrate_filter_action(nqiv_keyrate_manager* manager, const nqiv_key_action action, const nqiv_keyrate_release_option released);
 
 #endif /* NQIV_KEYRATE_H */

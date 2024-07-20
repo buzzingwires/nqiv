@@ -218,3 +218,16 @@ void nqiv_montage_get_image_rect(nqiv_montage_state* state, const int idx, SDL_R
 	rect->w = state->images->thumbnail.size;
 	rect->h = state->images->thumbnail.size;
 }
+
+int nqiv_montage_find_index_at_point(nqiv_montage_state* state, const int x, const int y)
+{
+	SDL_Rect rect = {0};
+	int idx;
+	for(idx = state->positions.start; idx < state->positions.end; ++idx) {
+		nqiv_montage_get_image_rect(state, idx, &rect);
+		if(x >= rect.x && x < rect.x + rect.w && y >= rect.y && y < rect.y + rect.h){
+			return idx;
+		}
+	}
+	return -1;
+}

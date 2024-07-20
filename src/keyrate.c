@@ -25,14 +25,18 @@ bool nqiv_keyrate_get_bool_setting(const bool* manager, const nqiv_keyrate_press
 	}
 }
 
-bool nqiv_keyrate_filter_action(nqiv_keyrate_manager* manager, const nqiv_key_action action, const bool released)
+bool nqiv_keyrate_filter_action(nqiv_keyrate_manager* manager, const nqiv_key_action action, const nqiv_keyrate_release_option released)
 {
 	bool output = false;
 	nqiv_keyrate_keystate* state = &manager->states[action];
-	if(released) {
+	if( (released & NQIV_KEYRATE_ON_UP) != 0 ) {
 		memset( &state->ephemeral, 0, sizeof(nqiv_keyrate_keystate_ephemeral) );
 		output = nqiv_keyrate_get_bool_setting(&manager->send_on_up, &state->send_on_up);
-	} else if( nqiv_keyrate_get_bool_setting(&manager->send_on_down, &state->send_on_down) ) {
+	}
+	if(output) {
+		return output;
+	}
+	if( (released & NQIV_KEYRATE_ON_DOWN) != 0 && nqiv_keyrate_get_bool_setting(&manager->send_on_down, &state->send_on_down) ) {
 		if(state->ephemeral.next_event_time == 0) {
 			const Uint64 start_delay = nqiv_keyrate_get_numerical_setting(&manager->settings.start_delay, &state->settings.start_delay);
 			const Uint64 consecutive_delay = nqiv_keyrate_get_numerical_setting(&manager->settings.consecutive_delay, &state->settings.consecutive_delay);

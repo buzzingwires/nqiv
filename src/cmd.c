@@ -416,7 +416,7 @@ bool nqiv_cmd_parser_append_image(nqiv_cmd_manager* manager, nqiv_cmd_arg_token*
 
 bool nqiv_cmd_parser_append_keybind(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
-	return nqiv_keybind_add(&manager->state->keybinds, &tokens[0]->value.as_keybind.key, tokens[0]->value.as_keybind.action);
+	return nqiv_keybind_add(&manager->state->keybinds, &tokens[0]->value.as_keybind.match, tokens[0]->value.as_keybind.action);
 }
 
 bool nqiv_cmd_parser_append_log_stream(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
@@ -846,7 +846,7 @@ void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
 	bool taken = false;
 	int idx;
 	for(idx = 0; idx < list_len; ++idx) {
-		nqiv_keybind_pair pair = {.key = {0}, .action = -1};
+		nqiv_keybind_pair pair = {.match = {0}, .action = -1};
 		if( nqiv_array_get_bytes(manager->state->keybinds.lookup, idx, sizeof(nqiv_keybind_pair), &pair) ) {
 			taken = true;
 			char keybind_str[NQIV_KEYBIND_STRLEN] = {0};
@@ -1977,7 +1977,33 @@ void nqiv_cmd_print_single_arg( nqiv_cmd_manager* manager, const nqiv_cmd_arg_de
 		}
 		break;
 	case NQIV_CMD_ARG_KEYBIND:
-		fprintf(stdout, "<SDL_key_sequence>=<key_action>");
+		fprintf(stdout, "<keybind>=<key_action>\n");
+		print_prefix(manager);
+		fprintf(stdout, "Options are separated by +\n");
+		print_prefix(manager);
+		fprintf(stdout, "SDL Scancode\n");
+		print_prefix(manager);
+		fprintf(stdout, "'mouse#' specifies pressing a mouse button. To specify double click, add 'double'. Example: 'mouse0_double'\n");
+		print_prefix(manager);
+		fprintf(stdout, "'scroll_left', 'scroll_right', 'scroll_forward', 'scroll_backward'\n");
+		print_prefix(manager);
+		fprintf(stdout, "Modifier keys:\n");
+		print_prefix(manager);
+		fprintf(stdout, "'lshift', 'rshift', or 'shift' for either.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'lctrl', 'rctrl', or 'ctrl' for either.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'lalt', 'ralt', or 'alt' for either.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'lgui', 'rgui', or 'gui' for either.\n");
+		print_prefix(manager);
+		fprintf(stdout, "num\n");
+		print_prefix(manager);
+		fprintf(stdout, "caps\n");
+		print_prefix(manager);
+		fprintf(stdout, "mode\n");
+		print_prefix(manager);
+		fprintf(stdout, "scroll");
 		break;
 	case NQIV_CMD_ARG_STRING:
 		fprintf(stdout, "STRING(%s)", arg->setting.of_string.spaceless ? "spaceless" : "spaces allowed");

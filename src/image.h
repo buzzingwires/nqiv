@@ -157,6 +157,7 @@ void nqiv_image_manager_pan_left(nqiv_image_manager* manager);
 void nqiv_image_manager_pan_right(nqiv_image_manager* manager);
 void nqiv_image_manager_pan_up(nqiv_image_manager* manager);
 void nqiv_image_manager_pan_down(nqiv_image_manager* manager);
+void nqiv_image_manager_pan_coordinates(nqiv_image_manager* manager, const SDL_Rect* coordinates);
 void nqiv_image_manager_zoom_in(nqiv_image_manager* manager);
 void nqiv_image_manager_zoom_out(nqiv_image_manager* manager);
 

@@ -147,6 +147,11 @@ void nqiv_set_keyrate_defaults(nqiv_keyrate_manager* manager)
 		NQIV_KEY_ACTION_MONTAGE_END,
 		NQIV_KEY_ACTION_IMAGE_MARK,
 		NQIV_KEY_ACTION_IMAGE_UNMARK,
+		NQIV_KEY_ACTION_START_MOUSE_PAN,
+		NQIV_KEY_ACTION_IMAGE_ZOOM_IN,
+		NQIV_KEY_ACTION_IMAGE_ZOOM_OUT,
+		NQIV_KEY_ACTION_IMAGE_ZOOM_IN_MORE,
+		NQIV_KEY_ACTION_IMAGE_ZOOM_OUT_MORE,
 		NQIV_KEY_ACTION_NONE
 	};
 	int idx;
@@ -423,6 +428,15 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 				"append keybind shift+F=keep_fit\n"
 				"append keybind shift+A=keep_actual_size\n"
 				"append keybind shift+D=keep_current_zoom\n"
+				"append keybind mouse1=montage_select_at_mouse\n"
+				"append keybind mouse1_double=set_viewing\n"
+				"append keybind shift+mouse1=image_mark_toggle_at_mouse\n"
+				"append keybind mouse1=start_mouse_pan\n"
+				"append keybind mouse1=end_mouse_pan\n"
+				"append keybind scroll_forward=image_zoom_in\n"
+				"append keybind scroll_backward=image_zoom_out\n"
+				"append keybind scroll_forward=montage_up\n"
+				"append keybind scroll_backward=montage_down\n"
 				"append pruner or thumbnail no image texture self_opened unload surface raw vips\n"
 				"append pruner and no thumbnail image texture self_opened not_animated unload surface raw vips\n"
 				"append pruner or no thumbnail image texture self_opened unload surface raw\n"
@@ -1263,11 +1277,11 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 }
 
 /* TODO Won't running simulated just also run the events on non-simulated events? */
-void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, const bool simulated, const bool key_up)
+void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, const bool simulated, const nqiv_keyrate_release_option released)
 {
 	nqiv_key_action action;
 	while( nqiv_queue_pop_front(&state->key_actions, sizeof(nqiv_key_action), &action) ) {
-		if( !simulated && !nqiv_keyrate_filter_action(&state->keystates, action, key_up) ) {
+		if( !simulated && !nqiv_keyrate_filter_action(&state->keystates, action, released) ) {
 			/* NOOP */
 		} else if(action == NQIV_KEY_ACTION_QUIT) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action quit.\n");
@@ -1510,13 +1524,90 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 				}
 			}
 			render_and_update(state, running, result, false, false);
+		} else if(action == NQIV_KEY_ACTION_MONTAGE_SELECT_AT_MOUSE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action montage select at mouse.\n");
+			if(state->in_montage) {
+				int x, y;
+				SDL_GetMouseState(&x, &y);
+				nqiv_montage_set_selection( &state->montage, nqiv_montage_find_index_at_point(&state->montage, x, y) );
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_IMAGE_MARK_AT_MOUSE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image mark at mouse.\n");
+			if(state->in_montage) {
+				int x, y;
+				SDL_GetMouseState(&x, &y);
+				nqiv_image* tmp_image;
+				if( nqiv_array_get_bytes(state->images.images, nqiv_montage_find_index_at_point(&state->montage, x, y), sizeof(nqiv_image*), &tmp_image) ) {
+					tmp_image->marked = true;
+					nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
+				}
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_IMAGE_UNMARK_AT_MOUSE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image unmark at mouse.\n");
+			if(state->in_montage) {
+				int x, y;
+				SDL_GetMouseState(&x, &y);
+				nqiv_image* tmp_image;
+				if( nqiv_array_get_bytes(state->images.images, nqiv_montage_find_index_at_point(&state->montage, x, y), sizeof(nqiv_image*), &tmp_image) ) {
+					tmp_image->marked = false;
+					nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
+				}
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_IMAGE_MARK_TOGGLE_AT_MOUSE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image unmark at mouse.\n");
+			if(state->in_montage) {
+				int x, y;
+				SDL_GetMouseState(&x, &y);
+				nqiv_image* tmp_image;
+				if( nqiv_array_get_bytes(state->images.images, nqiv_montage_find_index_at_point(&state->montage, x, y), sizeof(nqiv_image*), &tmp_image) ) {
+					tmp_image->marked = !tmp_image->marked;
+					nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
+				}
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_START_MOUSE_PAN) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action start mouse pan.\n");
+			if(!state->in_montage) {
+				state->is_mouse_panning = true;
+			}
+		} else if(action == NQIV_KEY_ACTION_END_MOUSE_PAN) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action end mouse pan.\n");
+			if(!state->in_montage) {
+				state->is_mouse_panning = false;
+			}
+		} else if (action == NQIV_KEY_ACTION_IMAGE_ZOOM_IN) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image zoom in.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_zoom_in(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if (action == NQIV_KEY_ACTION_IMAGE_ZOOM_OUT) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image zoom out.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_zoom_out(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if (action == NQIV_KEY_ACTION_IMAGE_ZOOM_IN_MORE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image zoom in more.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_zoom_in_more(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if (action == NQIV_KEY_ACTION_IMAGE_ZOOM_OUT_MORE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image zoom in out.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_zoom_out_more(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
 		} else if(action == NQIV_KEY_ACTION_RELOAD) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action reload.\n");
 			render_and_update(state, running, result, true, true);
 		}
 	}
 }
-
 
 bool nqiv_master_thread(nqiv_state* state)
 {
@@ -1525,7 +1616,7 @@ bool nqiv_master_thread(nqiv_state* state)
 	while(running) {
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Waiting on SDL event.\n");
 		SDL_PumpEvents();
-		SDL_Event input_event;
+		SDL_Event input_event = {0};
 		const int event_result = SDL_WaitEvent(&input_event);
 		if(event_result == 0) {
 			nqiv_log_write( &state->logger, NQIV_LOG_ERROR, "Failed to wait on an SDL event. SDL Error: %s\n", SDL_GetError() );
@@ -1565,7 +1656,7 @@ bool nqiv_master_thread(nqiv_state* state)
 						nqiv_priority_queue_unlock(&state->thread_queue);
 						render_and_update(state, &running, &result, false, false);
 					} else if( ( Uint32)input_event.user.code == state->cfg_event_number ) {
-						nqiv_handle_keyactions(state, &running, &result, false, false); /* TODO No simulated actions for now. */
+						nqiv_handle_keyactions(state, &running, &result, false, NQIV_KEYRATE_ON_DOWN); /* TODO No simulated actions for now. */
 						render_and_update(state, &running, &result, false, false);
 					}
 				}
@@ -1595,9 +1686,17 @@ bool nqiv_master_thread(nqiv_state* state)
 				SDL_Keysym
 				nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, const SDL_Keysym* key, nqiv_array* output);
 				*/
-				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received key up event.\n");
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received key event.\n");
 				{
-					const nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, &input_event.key.keysym, &state->key_actions);
+					nqiv_key_match match = {0};
+					if(input_event.key.keysym.scancode != SDL_SCANCODE_UNKNOWN) {
+						match.mode |= NQIV_KEY_MATCH_MODE_KEY;
+					}
+					if( (input_event.key.keysym.mod & ~KMOD_GUI & ~KMOD_SCROLL & ~KMOD_NUM) != 0 ) {
+						match.mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
+					}
+					memcpy( &match.data.key, &input_event.key.keysym, sizeof(SDL_Keysym) );
+					const nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, &match, &state->key_actions);
 					if(lookup_summary == NQIV_KEY_LOOKUP_FAILURE) {
 						running = false;
 						result = false;
@@ -1608,9 +1707,65 @@ bool nqiv_master_thread(nqiv_state* state)
 						bool nqiv_array_push_bytes(nqiv_array* array, void* ptr, const int count);
 						bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, void* ptr);
 						*/
-						nqiv_handle_keyactions(state, &running, &result, false, input_event.type == SDL_KEYUP ? true : false);
+						nqiv_handle_keyactions(state, &running, &result, false, input_event.type == SDL_KEYUP ? NQIV_KEYRATE_ON_UP : NQIV_KEYRATE_ON_DOWN);
 						render_and_update(state, &running, &result, false, false);
 					}
+				}
+				break;
+			case SDL_MOUSEBUTTONDOWN:
+			case SDL_MOUSEBUTTONUP:
+				assert(input_event.type == SDL_MOUSEBUTTONDOWN || input_event.type == SDL_MOUSEBUTTONUP);
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received mouse button event.\n");
+				{
+					nqiv_key_match match = {0};
+					match.mode |= NQIV_KEY_MATCH_MODE_MOUSE_BUTTON;
+					memcpy( &match.data.mouse_button, &input_event.button, sizeof(SDL_MouseButtonEvent) );
+					const nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, &match, &state->key_actions);
+					if(lookup_summary == NQIV_KEY_LOOKUP_FAILURE) {
+						running = false;
+						result = false;
+					} else if(lookup_summary == NQIV_KEY_LOOKUP_FOUND) {
+						nqiv_handle_keyactions(state, &running, &result, false, input_event.type == SDL_MOUSEBUTTONUP ? NQIV_KEYRATE_ON_UP : NQIV_KEYRATE_ON_DOWN);
+						render_and_update(state, &running, &result, false, false);
+					}
+				}
+				break;
+			case SDL_MOUSEWHEEL:
+				assert(input_event.type == SDL_MOUSEWHEEL);
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received mouse wheel event.\n");
+				{
+					nqiv_key_match match = {0};
+					if(input_event.wheel.x < 0) {
+						match.mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT;
+					}
+					if(input_event.wheel.x > 0) {
+						match.mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT;
+					}
+					if(input_event.wheel.y < 0) {
+						match.mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD;
+					}
+					if(input_event.wheel.y > 0) {
+						match.mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD;
+					}
+					const nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, &match, &state->key_actions);
+					if(lookup_summary == NQIV_KEY_LOOKUP_FAILURE) {
+						running = false;
+						result = false;
+					} else if(lookup_summary == NQIV_KEY_LOOKUP_FOUND) {
+						nqiv_handle_keyactions(state, &running, &result, false, NQIV_KEYRATE_ON_DOWN | NQIV_KEYRATE_ON_UP);
+						render_and_update(state, &running, &result, false, false);
+					}
+				}
+				break;
+			case SDL_MOUSEMOTION:
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received mouse motion event.\n");
+				if(state->is_mouse_panning && !state->in_montage) {
+					SDL_Rect coordinates = {0};
+					SDL_GetWindowSizeInPixels(state->window, &coordinates.w, &coordinates.h);
+					coordinates.x = input_event.motion.xrel;
+					coordinates.y = input_event.motion.yrel;
+					nqiv_image_manager_pan_coordinates(&state->images, &coordinates);
+					render_and_update(state, &running, &result, false, false);
 				}
 				break;
 		}

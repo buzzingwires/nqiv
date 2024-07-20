@@ -55,5 +55,6 @@ void nqiv_montage_next_selection_page(nqiv_montage_state* state);
 void nqiv_montage_previous_selection_page(nqiv_montage_state* state);
 void nqiv_montage_jump_selection_start(nqiv_montage_state* state);
 void nqiv_montage_jump_selection_end(nqiv_montage_state* state);
+int nqiv_montage_find_index_at_point(nqiv_montage_state* state, const int x, const int y);
 
 #endif /* NQIV_MONTAGE_H */
