@@ -88,6 +88,7 @@ const char* nqiv_keybind_action_names[] =
 	"pan_right_more",
 	"pan_up_more",
 	"pan_down_more",
+	"pan_center",
 	"image_previous",
 	"image_next",
 	"montage_left",

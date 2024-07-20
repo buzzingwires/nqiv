@@ -415,6 +415,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 				"append keybind ctrl+Up=pan_up_more\n"
 				"append keybind ctrl+Right=pan_right_more\n"
 				"append keybind ctrl+Down=pan_down_more\n"
+				"append keybind C=pan_center\n"
 				"append keybind S=toggle_stretch\n"
 				"append keybind '=image_mark_toggle\n"
 				"append keybind shift+'=print_marked\n"
@@ -1445,6 +1446,12 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan down more.\n");
 			if(!state->in_montage) {
 				nqiv_image_manager_pan_down_more(&state->images);
+				render_and_update(state, running, result, false, false);
+			}
+		} else if(action == NQIV_KEY_ACTION_PAN_CENTER) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan center.\n");
+			if(!state->in_montage) {
+				nqiv_image_manager_pan_center(&state->images);
 				render_and_update(state, running, result, false, false);
 			}
 		} else if(action == NQIV_KEY_ACTION_TOGGLE_STRETCH) {

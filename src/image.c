@@ -770,6 +770,12 @@ void nqiv_image_manager_zoom_out(nqiv_image_manager* manager)
 	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount);
 }
 
+void nqiv_image_manager_pan_center(nqiv_image_manager* manager)
+{
+	manager->zoom.viewport_horizontal_shift = 0.0;
+	manager->zoom.viewport_vertical_shift = 0.0;
+}
+
 void nqiv_image_manager_pan_left_more(nqiv_image_manager* manager)
 {
 	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_horizontal_shift, manager->zoom.pan_left_amount_more);
