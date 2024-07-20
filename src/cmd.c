@@ -179,6 +179,12 @@ bool nqiv_cmd_parser_set_thumbnail_size(nqiv_cmd_manager* manager, nqiv_cmd_arg_
 	return true;
 }
 
+bool nqiv_cmd_parser_set_default_frame_time(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->images.default_frame_time = tokens[0]->value.as_int;
+	return true;
+}
+
 bool nqiv_cmd_parser_set_thumbnail_zoom_amount(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->images.zoom.thumbnail_adjust = tokens[0]->value.as_int;
@@ -575,6 +581,11 @@ void nqiv_cmd_parser_print_thumbnail_save(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_thumbnail_size(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%d", manager->state->images.thumbnail.size);
+}
+
+void nqiv_cmd_parser_print_default_frame_time(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%d", manager->state->images.default_frame_time);
 }
 
 void nqiv_cmd_parser_print_thumbnail_zoom_amount(nqiv_cmd_manager* manager)
@@ -1498,6 +1509,15 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 						},
 						NULL,
 					}
+				},
+				&(nqiv_cmd_node)
+				{
+					.name = "default_frame_time",
+					.description = "If an animated image does not provide a frame time, use this.",
+					.store_value = nqiv_cmd_parser_set_default_frame_time,
+					.print_value = nqiv_cmd_parser_print_default_frame_time,
+					.args = {&nqiv_parser_arg_type_int_positive, NULL},
+					.children = {NULL},
 				},
 				&(nqiv_cmd_node)
 				{

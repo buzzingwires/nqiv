@@ -178,8 +178,8 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 		form->error = true;
 		return false;
 	} else if(delay_value == 0) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Delay for frame %d of '%s' is zero. Setting to default of %d\n", form->animation.frame, image->image.path, NQIV_IMAGE_DEFAULT_FRAME_DELAY);
-		form->animation.delay = NQIV_IMAGE_DEFAULT_FRAME_DELAY;
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Delay for frame %d of '%s' is zero. Setting to default of %d\n", form->animation.frame, image->image.path, image->parent->default_frame_time);
+		form->animation.delay = image->parent->default_frame_time;
 	}
 	else if(delay_value < 0) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid delay of %d for frame %d of '%s'.\n", delay_value, form->animation.frame, image->image.path);
@@ -582,6 +582,9 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, 
 	manager->zoom.thumbnail_adjust_more = 50;
 
 	manager->thumbnail.size = 256;
+
+	manager->default_frame_time = 100;
+
 	nqiv_log_write(logger, NQIV_LOG_INFO, "Successfully made image manager with starting length of: %d", starting_length);
 	return true;
 }

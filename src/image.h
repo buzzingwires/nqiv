@@ -9,8 +9,6 @@
 #include "array.h"
 #include "logging.h"
 
-#define NQIV_IMAGE_DEFAULT_FRAME_DELAY 100
-
 /*
  * thumbnail data
  * image data
@@ -140,6 +138,7 @@ struct nqiv_image_manager
 	nqiv_log_ctx* logger;
 	nqiv_image_manager_thumbnail_settings thumbnail;
 	nqiv_image_manager_zoom_settings zoom;
+	Uint32 default_frame_time;
 	nqiv_array* images;
 	nqiv_array* extensions;
 };
