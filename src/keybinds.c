@@ -185,29 +185,49 @@ bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_GUI;
 	} else if( strncmp(text, "scroll_forward", length) == 0 ) {
-		match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD;
-	} else if( strncmp(text, "scroll_backward", length) == 0 ) {
-		match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD;
-	} else if( strncmp(text, "scroll_left", length) == 0 ) {
-		match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT;
-	} else if( strncmp(text, "scroll_right", length) == 0 ) {
-		match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT;
-	} else if( (size_t)length > strlen("mouse") && strncmp( text, "mouse", strlen("mouse") ) == 0 ) {
-		char* end = NULL;
-		const int tmp = strtol(text + strlen("mouse"), &end, 10);
-		if(errno == ERANGE || end == NULL || tmp < 0 || tmp > 255 || end > text + length) {
+		if( ( match->mode & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY) ) != 0 ) {
 			success = false;
 		} else {
-			match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_BUTTON;
-			match->data.mouse_button.button = tmp;
-			match->data.mouse_button.clicks = 1;
-			if(end < text + length) {
-				if(end + strlen("_double") > text + length) {
-					success = false;
-				} else if(strncmp( end, "_double", strlen("_double") ) == 0) {
-					match->data.mouse_button.clicks = 2;
-				} else {
-					success = false;
+			match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD;
+		}
+	} else if( strncmp(text, "scroll_backward", length) == 0 ) {
+		if( ( match->mode & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY) ) != 0 ) {
+			success = false;
+		} else {
+			match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD;
+		}
+	} else if( strncmp(text, "scroll_left", length) == 0 ) {
+		if( ( match->mode & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY) ) != 0 ) {
+			success = false;
+		} else {
+			match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT;
+		}
+	} else if( strncmp(text, "scroll_right", length) == 0 ) {
+		if( ( match->mode & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY) ) != 0 ) {
+			success = false;
+		} else {
+			match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT;
+		}
+	} else if( (size_t)length > strlen("mouse") && strncmp( text, "mouse", strlen("mouse") ) == 0 ) {
+		if( ( match->mode & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY) ) != 0 ) {
+			success = false;
+		} else {
+			char* end = NULL;
+			const int tmp = strtol(text + strlen("mouse"), &end, 10);
+			if(errno == ERANGE || end == NULL || tmp < 0 || tmp > 255 || end > text + length) {
+				success = false;
+			} else {
+				match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_BUTTON;
+				match->data.mouse_button.button = tmp;
+				match->data.mouse_button.clicks = 1;
+				if(end < text + length) {
+					if(end + strlen("_double") > text + length) {
+						success = false;
+					} else if(strncmp( end, "_double", strlen("_double") ) == 0) {
+						match->data.mouse_button.clicks = 2;
+					} else {
+						success = false;
+					}
 				}
 			}
 		}
@@ -218,7 +238,7 @@ bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 		assert(length >= 0);
 		assert(strlen(text) == (size_t)length);
 		text[length] = endchar;
-		if(sc == SDL_SCANCODE_UNKNOWN) {
+		if(sc == SDL_SCANCODE_UNKNOWN || match->data.key.scancode != 0 || ( match->mode & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY) ) != 0) {
 			success = false;
 		} else {
 			match->mode |= NQIV_KEY_MATCH_MODE_KEY;
