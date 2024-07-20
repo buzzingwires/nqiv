@@ -147,6 +147,18 @@ bool nqiv_cmd_parser_set_zoom_up_amount_more(nqiv_cmd_manager* manager, nqiv_cmd
 	return true;
 }
 
+bool nqiv_cmd_parser_set_zoom_up_coordinate_x_times(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->images.zoom.pan_coordinate_x_multiplier = tokens[0]->value.as_double;
+	return true;
+}
+
+bool nqiv_cmd_parser_set_zoom_up_coordinate_y_times(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->images.zoom.pan_coordinate_y_multiplier = tokens[0]->value.as_double;
+	return true;
+}
+
 bool nqiv_cmd_parser_set_zoom_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	const char data_end = nqiv_cmd_tmpterm(tokens[0]->raw, tokens[0]->length);
@@ -561,6 +573,16 @@ void nqiv_cmd_parser_print_zoom_right_amount_more(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_zoom_up_amount_more(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%f", manager->state->images.zoom.pan_up_amount_more);
+}
+
+void nqiv_cmd_parser_print_zoom_up_coordinate_x_times(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%f", manager->state->images.zoom.pan_coordinate_x_multiplier);
+}
+
+void nqiv_cmd_parser_print_zoom_up_coordinate_y_times(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%f", manager->state->images.zoom.pan_coordinate_y_multiplier);
 }
 
 void nqiv_cmd_parser_print_zoom_default(nqiv_cmd_manager* manager)
@@ -1034,6 +1056,11 @@ nqiv_cmd_arg_desc nqiv_parser_arg_type_double_positive_one = {
 	.setting = { .of_double = {.min = DBL_MIN, .max = 1.0} },
 };
 
+nqiv_cmd_arg_desc nqiv_parser_arg_type_double = {
+	.type = NQIV_CMD_ARG_DOUBLE,
+	.setting = { .of_double = {.min = -DBL_MAX, .max = DBL_MAX} },
+};
+
 nqiv_cmd_arg_desc nqiv_parser_arg_type_bool = {
 	.type = NQIV_CMD_ARG_BOOL,
 	.setting = { {0} },
@@ -1413,6 +1440,24 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 							.store_value = nqiv_cmd_parser_set_zoom_up_amount_more,
 							.print_value = nqiv_cmd_parser_print_zoom_up_amount_more,
 							.args = {&nqiv_parser_arg_type_double_negative_one, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "up_coordinate_x_times",
+							.description = "This is multiplied against x axis panning caused by relative motion (like mouse panning)",
+							.store_value = nqiv_cmd_parser_set_zoom_up_coordinate_x_times,
+							.print_value = nqiv_cmd_parser_print_zoom_up_coordinate_x_times,
+							.args = {&nqiv_parser_arg_type_double, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "up_coordinate_y_times",
+							.description = "This is multiplied against y axis panning caused by relative motion (like mouse panning)",
+							.store_value = nqiv_cmd_parser_set_zoom_up_coordinate_y_times,
+							.print_value = nqiv_cmd_parser_print_zoom_up_coordinate_y_times,
+							.args = {&nqiv_parser_arg_type_double, NULL},
 							.children = {NULL},
 						},
 						&(nqiv_cmd_node)

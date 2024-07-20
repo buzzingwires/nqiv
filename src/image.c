@@ -577,6 +577,8 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, 
 	manager->zoom.pan_right_amount_more = 0.2;
 	manager->zoom.pan_up_amount_more = -0.2;
 	manager->zoom.pan_down_amount_more = 0.2;
+	manager->zoom.pan_coordinate_x_multiplier = -2.0;
+	manager->zoom.pan_coordinate_y_multiplier = -2.0;
 	manager->zoom.zoom_in_amount_more = -0.2;
 	manager->zoom.zoom_out_amount_more = 0.2;
 	manager->zoom.thumbnail_adjust_more = 50;
@@ -759,8 +761,8 @@ void nqiv_image_manager_pan_down(nqiv_image_manager* manager)
 
 void nqiv_image_manager_pan_coordinates(nqiv_image_manager* manager, const SDL_Rect* coordinates)
 {
-	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_horizontal_shift, ( (double)coordinates->x / (double)coordinates->w ) * 2.0 * -1.0);
-	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_vertical_shift, ( (double)coordinates->y / (double)coordinates->h ) * 2.0 * -1.0);
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_horizontal_shift, ( (double)coordinates->x / (double)coordinates->w ) * manager->zoom.pan_coordinate_x_multiplier);
+	nqiv_image_calculate_zoom_dimension(-1.0, true, 0.0, 1.0, true, &manager->zoom.viewport_vertical_shift, ( (double)coordinates->y / (double)coordinates->h ) * manager->zoom.pan_coordinate_y_multiplier);
 }
 
 void nqiv_image_manager_zoom_in(nqiv_image_manager* manager)

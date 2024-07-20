@@ -121,6 +121,8 @@ typedef struct nqiv_image_manager_zoom_settings
 	double pan_right_amount;
 	double pan_up_amount;
 	double pan_down_amount;
+	double pan_coordinate_x_multiplier;
+	double pan_coordinate_y_multiplier;
 	double zoom_in_amount;
 	double zoom_out_amount;
 	int thumbnail_adjust;
