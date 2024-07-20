@@ -173,17 +173,21 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 	}
 	const int delay_value = strtol(delay_string + idx, NULL, 10);
 	g_free(delay_string);
-	if(delay_value == 0 || errno == ERANGE) {
+	if(errno == ERANGE) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Delay for frame %d of '%s' is not a valid integer.\n", form->animation.frame, image->image.path);
 		form->error = true;
 		return false;
+	} else if(delay_value == 0) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Delay for frame %d of '%s' is zero. Setting to default of %d\n", form->animation.frame, image->image.path, NQIV_IMAGE_DEFAULT_FRAME_DELAY);
+		form->animation.delay = NQIV_IMAGE_DEFAULT_FRAME_DELAY;
 	}
-	if(delay_value < 0) {
+	else if(delay_value < 0) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "Invalid delay of %d for frame %d of '%s'.\n", delay_value, form->animation.frame, image->image.path);
 		form->error = true;
 		return false;
+	} else {
+		form->animation.delay = delay_value; /* Delay is in milliseconds for vips */
 	}
-	form->animation.delay = delay_value; /* Delay is in milliseconds for vips */
 	return true;
 }
 

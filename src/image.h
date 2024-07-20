@@ -9,6 +9,8 @@
 #include "array.h"
 #include "logging.h"
 
+#define NQIV_IMAGE_DEFAULT_FRAME_DELAY 100
+
 /*
  * thumbnail data
  * image data
