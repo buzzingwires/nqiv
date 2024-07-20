@@ -1609,6 +1609,17 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 	}
 }
 
+void nqiv_set_match_keymods(nqiv_key_match* match)
+{
+	const SDL_Keymod mods = SDL_GetModState();
+	if( (mods & ~KMOD_GUI & ~KMOD_SCROLL & ~KMOD_NUM) != 0 ) {
+		assert( (match->mode & NQIV_KEY_MATCH_MODE_KEY_MOD) == 0 );
+		assert(match->data.key.mod == 0);
+		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
+		match->data.key.mod = mods;
+	}
+}
+
 bool nqiv_master_thread(nqiv_state* state)
 {
 	bool result = true;
@@ -1720,6 +1731,7 @@ bool nqiv_master_thread(nqiv_state* state)
 					nqiv_key_match match = {0};
 					match.mode |= NQIV_KEY_MATCH_MODE_MOUSE_BUTTON;
 					memcpy( &match.data.mouse_button, &input_event.button, sizeof(SDL_MouseButtonEvent) );
+					nqiv_set_match_keymods(&match);
 					const nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, &match, &state->key_actions);
 					if(lookup_summary == NQIV_KEY_LOOKUP_FAILURE) {
 						running = false;
@@ -1747,6 +1759,7 @@ bool nqiv_master_thread(nqiv_state* state)
 					if(input_event.wheel.y > 0) {
 						match.mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD;
 					}
+					nqiv_set_match_keymods(&match);
 					const nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, &match, &state->key_actions);
 					if(lookup_summary == NQIV_KEY_LOOKUP_FAILURE) {
 						running = false;
