@@ -435,7 +435,7 @@ bool nqiv_compare_mod(const Uint16 a, const Uint16 b)
 bool nqiv_keybind_compare_match(const nqiv_key_match* a, const nqiv_key_match* b)
 {
 	return (a->mode == b->mode) &&
-		   ( (a->mode & NQIV_KEY_MATCH_MODE_KEY_MOD) == 0 || ( nqiv_compare_mod(a->data.key.mod, a->data.key.mod) ) ) &&
+		   ( (a->mode & NQIV_KEY_MATCH_MODE_KEY_MOD) == 0 || ( nqiv_compare_mod(a->data.key.mod, b->data.key.mod) ) ) &&
 		   ( (a->mode & NQIV_KEY_MATCH_MODE_KEY) == 0 || (a->data.key.scancode == b->data.key.scancode) ) &&
 		   ( (a->mode & NQIV_KEY_MATCH_MODE_MOUSE_BUTTON) == 0 || ( a->data.mouse_button.button == b->data.mouse_button.button && a->data.mouse_button.clicks == b->data.mouse_button.clicks ) );
 }
