@@ -767,12 +767,12 @@ void nqiv_image_manager_pan_coordinates(nqiv_image_manager* manager, const SDL_R
 
 void nqiv_image_manager_zoom_in(nqiv_image_manager* manager)
 {
-	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount);
+	nqiv_image_calculate_zoom_dimension(fabs(manager->zoom.zoom_in_amount), false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount);
 }
 
 void nqiv_image_manager_zoom_out(nqiv_image_manager* manager)
 {
-	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount);
+	nqiv_image_calculate_zoom_dimension(fabs(manager->zoom.zoom_in_amount), false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount);
 }
 
 void nqiv_image_manager_pan_center(nqiv_image_manager* manager)
@@ -803,12 +803,12 @@ void nqiv_image_manager_pan_down_more(nqiv_image_manager* manager)
 
 void nqiv_image_manager_zoom_in_more(nqiv_image_manager* manager)
 {
-	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount_more);
+	nqiv_image_calculate_zoom_dimension(fabs(manager->zoom.zoom_in_amount), false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount_more);
 }
 
 void nqiv_image_manager_zoom_out_more(nqiv_image_manager* manager)
 {
-	nqiv_image_calculate_zoom_dimension(0.0, false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount_more);
+	nqiv_image_calculate_zoom_dimension(fabs(manager->zoom.zoom_in_amount), false, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount_more);
 }
 
 /*
@@ -910,10 +910,18 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bo
 		}
 		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Fit - CanvasRect: %dx%d+%dx%d SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n", canvas_rect.w, canvas_rect.h, canvas_rect.x, canvas_rect.y, srcrect->w, srcrect->h, srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 	}
-	assert(dstrect->x >= 0);
-	assert(dstrect->y >= 0);
-	assert(dstrect->w > 0);
-	assert(dstrect->h > 0);
+	if(dstrect->x < 0) {
+		dstrect->x = 0;
+	}
+	if(dstrect->y < 0) {
+		dstrect->y = 0;
+	}
+	if(dstrect->w <= 0) {
+		dstrect->w = 1;
+	}
+	if(dstrect->h <= 0) {
+		dstrect->h = 1;
+	}
 }
 
 void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, const bool tight_fit, SDL_Rect* srcrect, SDL_Rect* dstrect)
