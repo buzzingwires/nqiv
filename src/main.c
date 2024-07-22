@@ -440,6 +440,8 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 				"append keybind scroll_backward=image_zoom_out\n"
 				"append keybind scroll_forward=montage_up\n"
 				"append keybind scroll_backward=montage_down\n"
+				"append keybind shift+scroll_forward=zoom_in\n"
+				"append keybind shift+scroll_backward=zoom_out\n"
 				"append pruner or thumbnail no image texture self_opened unload surface raw vips\n"
 				"append pruner and no thumbnail image texture self_opened not_animated unload surface raw vips\n"
 				"append pruner or no thumbnail image texture self_opened unload surface raw\n"
