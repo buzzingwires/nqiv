@@ -326,7 +326,7 @@ bool nqiv_keybind_add(nqiv_keybind_manager* manager, const nqiv_key_match* match
 int nqiv_key_match_element_to_string(char* buf, const char* suffix)
 {
 	int pos = 0;
-	strncpy( buf, suffix, strlen(suffix) );
+	memcpy( buf, suffix, strlen(suffix) );
 	pos += strlen(suffix);
 	buf[pos] = '+';
 	pos += 1;
@@ -419,7 +419,7 @@ void nqiv_keybind_to_string(nqiv_keybind_pair* pair, char* buf)
 	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT) != 0 ) {
 		pos += nqiv_key_match_element_to_string(buf + pos, "scroll_right");
 	}
-	strncpy( buf + pos, nqiv_keybind_action_names[pair->action], strlen(nqiv_keybind_action_names[pair->action]) );
+	memcpy( buf + pos, nqiv_keybind_action_names[pair->action], strlen(nqiv_keybind_action_names[pair->action]) );
 }
 
 bool nqiv_compare_mod(const Uint16 a, const Uint16 b)

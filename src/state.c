@@ -83,12 +83,12 @@ bool nqiv_add_logger_path(nqiv_state* state, const char* path)
 	if(stream == NULL) {
 		return false;
 	}
-	char* persistent_path = (char*)calloc( 1, strlen(path) );
+	char* persistent_path = (char*)calloc(1, strlen(path) + 1);
 	if(persistent_path == NULL) {
 		fclose(stream);
 		return false;
 	}
-	strncpy( persistent_path, path, strlen(path) );
+	memcpy( persistent_path, path, strlen(path) );
 	if( !nqiv_array_push_char_ptr(state->logger_stream_names, persistent_path) ) {
 		free(persistent_path);
 		fclose(stream);
