@@ -614,6 +614,14 @@ void nqiv_apply_zoom_default(nqiv_state* state, const bool first_frame)
 	}
 }
 
+void nqiv_apply_zoom_modifications(nqiv_state* state, const bool first_frame)
+{
+	nqiv_apply_zoom_default(state, first_frame);
+	if(state->images.zoom.image_to_viewport_ratio == state->images.zoom.fit_level) {
+		nqiv_image_manager_pan_center(&state->images);
+	}
+}
+
 /* TODO STEP FRAME? */
 /* TODO Reset frame */
 bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montage, const SDL_Rect* dstrect, const bool is_thumbnail, const bool first_frame, const bool next_frame, const bool selected, const bool hard, const bool lock, const int base_priority)
@@ -644,7 +652,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				bool clearedtmp = true;
 				if(form->master_dimensions_set && form->fallback_texture != NULL && form->master_srcrect.w > 0 && form->master_srcrect.h > 0 && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
 					nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &tmp_srcrect, &tmp_dstrect);
-					nqiv_apply_zoom_default(state, first_frame);
+					nqiv_apply_zoom_modifications(state, first_frame);
 					nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &tmp_srcrect, &tmp_dstrect); /* TODO aspect ratio */
 					if( !nqiv_state_update_alpha_background_dimensions(state, tmp_dstrect.w, tmp_dstrect.h) ) {
 						return false;
@@ -705,7 +713,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 		memcpy( &form->master_dstrect, &dstrect_zoom, sizeof(SDL_Rect) );
 		form->master_dimensions_set = true;
 		nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect, dstrect_zoom_ptr);
-		nqiv_apply_zoom_default(state, first_frame);
+		nqiv_apply_zoom_modifications(state, first_frame);
 		nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr); /* TODO aspect ratio */
 		if(!state->no_resample_oversized && (form->height > 16000 || form->width > 16000) )  {
 			if(form->srcrect.x != srcrect.x || form->srcrect.y != srcrect.y || form->srcrect.w != srcrect.w || form->srcrect.h != srcrect.h) {
@@ -738,7 +746,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				memcpy( &form->master_dstrect, &dstrect_zoom, sizeof(SDL_Rect) );
 				form->master_dimensions_set = true;
 				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect, dstrect_zoom_ptr);
-				nqiv_apply_zoom_default(state, first_frame);
+				nqiv_apply_zoom_modifications(state, first_frame);
 				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr); /* TODO aspect ratio */
 			}
 		}
