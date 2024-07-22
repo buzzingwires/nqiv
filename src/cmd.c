@@ -171,6 +171,19 @@ bool nqiv_cmd_parser_set_zoom_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_to
 	return true;
 }
 
+bool nqiv_cmd_parser_set_zoom_scale_mode(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	const char data_end = nqiv_cmd_tmpterm(tokens[0]->raw, tokens[0]->length);
+	SDL_ScaleMode sm;
+	const bool result = nqiv_text_to_scale_mode(tokens[0]->raw, &sm);
+	nqiv_cmd_tmpret(tokens[0]->raw, tokens[0]->length, data_end);
+	if(!result) {
+		return false;
+	}
+	manager->state->texture_scale_mode = sm;
+	return true;
+}
+
 bool nqiv_cmd_parser_set_thumbnail_load(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->images.thumbnail.load = tokens[0]->value.as_bool;
@@ -588,6 +601,11 @@ void nqiv_cmd_parser_print_zoom_up_coordinate_y_times(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_zoom_default(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%s", nqiv_zoom_default_names[manager->state->zoom_default]);
+}
+
+void nqiv_cmd_parser_print_zoom_scale_mode(nqiv_cmd_manager* manager)
+{
+	fprintf( stdout, "%s", nqiv_scale_mode_to_text(manager->state->texture_scale_mode) );
 }
 
 void nqiv_cmd_parser_print_thumbnail_load(nqiv_cmd_manager* manager)
@@ -1484,6 +1502,15 @@ nqiv_cmd_node nqiv_parser_nodes_root = {
 							.description = "Default zoom setting when loading an image- 'keep' old zoom, 'fit' to display, or set 'actual_size'.",
 							.store_value = nqiv_cmd_parser_set_zoom_default,
 							.print_value = nqiv_cmd_parser_print_zoom_default,
+							.args = {&nqiv_parser_arg_type_string, NULL},
+							.children = {NULL},
+						},
+						&(nqiv_cmd_node)
+						{
+							.name = "scale_mode",
+							.description = "Set scale mode used for SDL textures. Options are: 'nearest', 'linear', and 'best' or 'anisotropic'.",
+							.store_value = nqiv_cmd_parser_set_zoom_scale_mode,
+							.print_value = nqiv_cmd_parser_print_zoom_scale_mode,
 							.args = {&nqiv_parser_arg_type_string, NULL},
 							.children = {NULL},
 						},

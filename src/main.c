@@ -272,6 +272,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	*/
 	state->queue_length = STARTING_QUEUE_LENGTH;
 	state->zoom_default = NQIV_ZOOM_DEFAULT_FIT;
+	state->texture_scale_mode = SDL_ScaleModeBest;
 	state->no_resample_oversized = true;
 	state->show_loading_indicator = true;
 	state->thread_count = omp_get_num_procs() / 3;
@@ -426,6 +427,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 				"append keybind F=fit\n"
 				"append keybind A=actual_size\n"
 				"append keybind D=toggle_kept_zoom\n"
+				"append keybind T=toggle_scale_mode\n"
 				"append keybind shift+F=keep_fit\n"
 				"append keybind shift+A=keep_actual_size\n"
 				"append keybind shift+D=keep_current_zoom\n"
@@ -576,6 +578,10 @@ bool render_texture(bool* cleared, const SDL_Rect* cleardst, nqiv_state* state, 
 	}
 	if(cleardst != NULL && SDL_RenderCopy(state->renderer, state->texture_background, NULL, cleardst) != 0) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to clear rendering space using texture background.\n");
+		return false;
+	}
+	if(SDL_SetTextureScaleMode(texture, state->texture_scale_mode) != 0) {
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to set texture scale mode.\n");
 		return false;
 	}
 	if( SDL_RenderCopy(state->renderer, texture, srcrect, dstrect) != 0 ) {
@@ -1492,6 +1498,29 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 				state->zoom_default = NQIV_ZOOM_DEFAULT_KEEP;
 			} else {
 				state->zoom_default += 1;
+			}
+			render_and_update(state, running, result, false, false);
+		} else if (action == NQIV_KEY_ACTION_SCALE_MODE_NEAREST) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action scale_mode_nearest.\n");
+			state->texture_scale_mode = SDL_ScaleModeNearest;
+			render_and_update(state, running, result, false, false);
+		} else if (action == NQIV_KEY_ACTION_SCALE_MODE_LINEAR) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action scale_mode_linear.\n");
+			state->texture_scale_mode = SDL_ScaleModeLinear;
+			render_and_update(state, running, result, false, false);
+		} else if (action == NQIV_KEY_ACTION_SCALE_MODE_ANISOTROPIC) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action scale_mode_anisotropic.\n");
+			state->texture_scale_mode = SDL_ScaleModeBest;
+			render_and_update(state, running, result, false, false);
+		} else if (action == NQIV_KEY_ACTION_TOGGLE_SCALE_MODE) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action toggle_scale_mode.\n");
+			if(state->texture_scale_mode == SDL_ScaleModeNearest) {
+				state->texture_scale_mode = SDL_ScaleModeLinear;
+			} else if(state->texture_scale_mode == SDL_ScaleModeLinear) {
+				state->texture_scale_mode = SDL_ScaleModeBest;
+			} else {
+				assert(state->texture_scale_mode == SDL_ScaleModeBest);
+				state->texture_scale_mode = SDL_ScaleModeNearest;
 			}
 			render_and_update(state, running, result, false, false);
 		} else if(action == NQIV_KEY_ACTION_IMAGE_MARK_TOGGLE) {

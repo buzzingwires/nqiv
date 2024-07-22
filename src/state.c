@@ -10,6 +10,23 @@ const char* nqiv_zoom_default_names[] =
 	"actual"
 };
 
+const char* nqiv_texture_scale_mode_names[] =
+{
+	"nearest",
+	"linear",
+	"anisotropic",
+	"best",
+	NULL
+};
+
+const SDL_ScaleMode nqiv_texture_scale_modes[] =
+{
+	SDL_ScaleModeNearest,
+	SDL_ScaleModeLinear,
+	SDL_ScaleModeBest,
+	SDL_ScaleModeBest,
+};
+
 nqiv_zoom_default nqiv_text_to_zoom_default(const char* text)
 {
 	nqiv_zoom_default zd = NQIV_ZOOM_DEFAULT_UNKNOWN;
@@ -21,6 +38,28 @@ nqiv_zoom_default nqiv_text_to_zoom_default(const char* text)
 	return NQIV_ZOOM_DEFAULT_UNKNOWN;
 }
 
+bool nqiv_text_to_scale_mode(const char* text, SDL_ScaleMode* sm)
+{
+	int idx;
+	for(idx = 0; nqiv_texture_scale_mode_names[idx] != NULL; ++idx) {
+		if( strncmp( text, nqiv_texture_scale_mode_names[idx], strlen(nqiv_texture_scale_mode_names[idx]) ) == 0 && strlen(text) == strlen(nqiv_texture_scale_mode_names[idx]) ) {
+			*sm = nqiv_texture_scale_modes[idx];
+			return true;
+		}
+	}
+	return false;
+}
+
+const char* nqiv_scale_mode_to_text(const SDL_ScaleMode sm)
+{
+	int idx;
+	for(idx = 0; nqiv_texture_scale_mode_names[idx] != NULL; ++idx) {
+		if(nqiv_texture_scale_modes[idx] == sm) {
+			return nqiv_texture_scale_mode_names[idx];
+		}
+	}
+	return NULL;
+}
 
 bool nqiv_check_and_print_logger_error(nqiv_log_ctx* logger)
 {

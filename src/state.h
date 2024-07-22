@@ -44,6 +44,9 @@ typedef enum nqiv_zoom_default
 
 extern const char* nqiv_zoom_default_names[];
 
+extern const char* nqiv_texture_scale_mode_names[];
+extern const SDL_ScaleMode nqiv_texture_scale_modes[];
+
 struct nqiv_state
 {
 	nqiv_log_ctx logger;
@@ -66,6 +69,7 @@ struct nqiv_state
 	SDL_Texture* texture_montage_unloaded_background;
 	SDL_Texture* texture_montage_error_background;
 	SDL_Texture* texture_alpha_background;
+	SDL_ScaleMode texture_scale_mode;
 	int alpha_background_width;
 	int alpha_background_height;
 	Uint32 thread_event_number;
@@ -119,5 +123,7 @@ bool nqiv_state_recreate_error_texture(nqiv_state* state);
 bool nqiv_state_recreate_loading_texture(nqiv_state* state);
 bool nqiv_state_expand_queues(nqiv_state* state);
 nqiv_zoom_default nqiv_text_to_zoom_default(const char* text);
+bool nqiv_text_to_scale_mode(const char* text, SDL_ScaleMode* sm);
+const char* nqiv_scale_mode_to_text(const SDL_ScaleMode sm);
 
 #endif /* NQIV_STATE_H */
