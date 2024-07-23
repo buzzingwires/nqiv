@@ -61,7 +61,7 @@ const char* nqiv_scale_mode_to_text(const SDL_ScaleMode sm)
 	return NULL;
 }
 
-bool nqiv_check_and_print_logger_error(nqiv_log_ctx* logger)
+bool nqiv_check_and_print_logger_error(const nqiv_log_ctx* logger)
 {
 	if( nqiv_log_has_error(logger) ) {
 		fputs(logger->error_message, stderr);

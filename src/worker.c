@@ -30,7 +30,7 @@ typedef struct nqiv_event_image_load_options
 } nqiv_event_image_load_options;
  */
 
-void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* options, nqiv_image* image, nqiv_image_form* form)
+void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_options* options, nqiv_image* image, nqiv_image_form* form)
 {
 	if(options->unload) {
 		if( options->surface || (options->surface_soft && form->texture != NULL) ) {
@@ -126,7 +126,7 @@ void nqiv_worker_handle_image_load_form(nqiv_event_image_load_form_options* opti
 	}
 }
 
-void nqiv_worker_handle_image_load_form_clear_error(nqiv_event_image_load_form_options* options, nqiv_image_form* form)
+void nqiv_worker_handle_image_load_form_clear_error(const nqiv_event_image_load_form_options* options, nqiv_image_form* form)
 {
 	if(options->clear_error) {
 		form->error = false;

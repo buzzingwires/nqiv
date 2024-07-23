@@ -414,7 +414,7 @@ int nqiv_pruner_parse_check( nqiv_log_ctx* logger,
 	return nidx;
 }
 
-bool nqiv_pruner_append(nqiv_pruner* pruner, nqiv_pruner_desc* desc)
+bool nqiv_pruner_append(nqiv_pruner* pruner, const nqiv_pruner_desc* desc)
 {
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Adding desc to pruner list.\n");
 	if( !nqiv_array_push_bytes( pruner->pruners, desc, sizeof(nqiv_pruner_desc) ) ) {

@@ -52,7 +52,7 @@ bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, voi
 bool nqiv_array_pop_bytes(nqiv_array* array, const int count, void* ptr);
 */
 
-bool nqiv_queue_push(nqiv_queue* queue, const int count, void* entry)
+bool nqiv_queue_push(nqiv_queue* queue, const int count, const void* entry)
 {
 	assert(entry != NULL);
 	assert(queue != NULL);
@@ -69,7 +69,7 @@ bool nqiv_queue_push(nqiv_queue* queue, const int count, void* entry)
 	return result;
 }
 
-void nqiv_queue_push_force(nqiv_queue* queue, const int count, void* entry)
+void nqiv_queue_push_force(nqiv_queue* queue, const int count, const void* entry)
 {
 	assert(entry != NULL);
 	assert(queue != NULL);
@@ -160,7 +160,7 @@ bool nqiv_priority_queue_init(nqiv_priority_queue* queue, nqiv_log_ctx* logger, 
 	return true;
 }
 
-bool nqiv_priority_queue_push(nqiv_priority_queue* queue, const int level, const int count, void* entry)
+bool nqiv_priority_queue_push(nqiv_priority_queue* queue, const int level, const int count, const void* entry)
 {
 	assert(queue != NULL);
 	assert(level >= 0);
@@ -168,7 +168,7 @@ bool nqiv_priority_queue_push(nqiv_priority_queue* queue, const int level, const
 	return nqiv_queue_push(&(queue->bins[level]), count, entry);
 }
 
-void nqiv_priority_queue_push_force(nqiv_priority_queue* queue, const int level, const int count, void* entry)
+void nqiv_priority_queue_push_force(nqiv_priority_queue* queue, const int level, const int count, const void* entry)
 {
 	assert(queue != NULL);
 	assert(level >= 0);

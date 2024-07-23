@@ -333,7 +333,7 @@ int nqiv_key_match_element_to_string(char* buf, const char* suffix)
 	return pos;
 }
 
-int nqiv_keymod_to_string(nqiv_keybind_pair* pair, char* buf)
+int nqiv_keymod_to_string(const nqiv_keybind_pair* pair, char* buf)
 {
 	const Uint16 mods[] =
 	{

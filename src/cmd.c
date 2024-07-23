@@ -825,13 +825,13 @@ void nqiv_cmd_parser_print_minimum_delay(nqiv_cmd_manager* manager)
 	}
 }
 
-void nqiv_cmd_print_str_list(nqiv_cmd_manager* manager, nqiv_array* list)
+void nqiv_cmd_print_str_list(const nqiv_cmd_manager* manager, const nqiv_array* list)
 {
 	const int list_len = list->position / sizeof(char*);
 	bool taken = false;
 	int idx;
 	for(idx = 0; idx < list_len; ++idx) {
-		char* str = nqiv_array_get_char_ptr(list, idx);
+		const char* str = nqiv_array_get_char_ptr(list, idx);
 		if(str != NULL) {
 			taken = true;
 			if(!manager->print_settings.dumpcfg) {
@@ -2400,7 +2400,7 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager* manager, const nqiv_cmd_node* current
 	bool error = false;
 	int idx = start_idx;
 	int tidx = 0;
-	char* data = manager->buffer->data;
+	const char* data = manager->buffer->data;
 
 	while(current_node->args[tidx] != NULL) {
 		const int next_text_offset = nqiv_cmd_scan_not_whitespace(data, idx, eolpos, NULL);
@@ -2570,7 +2570,7 @@ bool nqiv_cmd_add_byte(nqiv_cmd_manager* manager, const char byte)
 	if( !nqiv_array_make_room(manager->buffer, NQIV_CMD_ADD_BYTE_BUFFER_LENGTH) ) {
 		return false;
 	}
-	char buf[NQIV_CMD_ADD_BYTE_BUFFER_LENGTH] = {byte};
+	const char buf[NQIV_CMD_ADD_BYTE_BUFFER_LENGTH] = {byte};
 	if( !nqiv_array_push_bytes(manager->buffer, buf, NQIV_CMD_ADD_BYTE_BUFFER_LENGTH) ) {
 		nqiv_log_write( &manager->state->logger, NQIV_LOG_ERROR, "Failed to append byte %c to nqiv command parser of length %d.\n", byte, manager->buffer->data_length );
 		nqiv_cmd_force_quit_main(manager);
@@ -2603,9 +2603,8 @@ bool nqiv_cmd_add_line_and_parse(nqiv_cmd_manager* manager, const char* str)
 
 bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream)
 {
-	int c;
 	while(true) {
-		c = fgetc(stream);
+		const int c = fgetc(stream);
 		if(c == EOF) {
 			break;
 		}

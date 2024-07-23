@@ -323,7 +323,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 		return false;
 	}
 	nqiv_setup_montage(state);
-	struct optparse_long longopts[] = {
+	const struct optparse_long longopts[] = {
 		{"cmd-from-stdin", 's', OPTPARSE_NONE},
 		{"no-default-cfg", 'N', OPTPARSE_NONE},
 		{"cmd", 'c', OPTPARSE_REQUIRED},
@@ -489,7 +489,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 		nqiv_state_clear(state);
 		return false;
 	}
-	char* arg;
+	const char* arg;
     while ( ( arg = optparse_arg(&options) ) ) {
 		if( nqiv_image_manager_has_path_extension(&state->images, arg) ) {
 			if( !nqiv_image_manager_append(&state->images, arg) ) {
@@ -989,13 +989,8 @@ state->images.thumbnail.load
 					event.options.image_load.image_options.file_soft = true;
 					event.options.image_load.image_options.vips_soft = true;
 				}
-				if( hard || next_frame || resample_zoom || (first_frame && image->thumbnail.vips != NULL && image->thumbnail.animation.frame != 0) ) {
-					event.options.image_load.image_options.raw = true;
-					event.options.image_load.image_options.surface = true;
-				} else {
-					event.options.image_load.image_options.raw_soft = true;
-					event.options.image_load.image_options.surface_soft = true;
-				}
+				event.options.image_load.image_options.raw = true;
+				event.options.image_load.image_options.surface = true;
 				event.options.image_load.image_options.first_frame = first_frame;
 				event.options.image_load.image_options.next_frame = next_frame && !first_frame && form->animation.frame_rendered;
 				if( !nqiv_send_thread_event(state, base_priority + NQIV_EVENT_PRIORITY_IMAGE_LOAD_ANIMATION, &event) ) {
@@ -1090,7 +1085,7 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 	char height_string[INT_MAX_STRLEN] = {0};
 	char zoom_string[INT_MAX_STRLEN] = {0};
 	snprintf(idx_string, INT_MAX_STRLEN, "%d", state->montage.positions.selection + 1);
-	snprintf( count_string, INT_MAX_STRLEN, "%lu", state->images.images->position / sizeof(nqiv_image*) );
+	snprintf( count_string, INT_MAX_STRLEN, "%zu", state->images.images->position / sizeof(nqiv_image*) );
 	const bool do_dimensions = image->image.width > 0 && image->image.height > 0;
 	if(do_dimensions) {
 		snprintf(width_string, INT_MAX_STRLEN, "%d", image->image.width);

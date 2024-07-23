@@ -38,7 +38,7 @@ void nqiv_log_clear_error(nqiv_log_ctx* ctx)
 	memset(ctx->error_message, 0, NQIV_LOG_ERROR_MESSAGE_LEN);
 }
 
-bool nqiv_log_has_error(nqiv_log_ctx* ctx)
+bool nqiv_log_has_error(const nqiv_log_ctx* ctx)
 {
 	assert(ctx != NULL);
 	return strlen(ctx->error_message) != 0;
@@ -113,7 +113,7 @@ void write_prefix_timeinfo(FILE* stream, const char* fmt, const int formatter_st
 {
 	time_t rawtime;
 	time(&rawtime);
-	struct tm* timeinfo;
+	const struct tm* timeinfo;
 	timeinfo = localtime(&rawtime);
 	char fmtbuf[NQIV_LOG_PREFIX_FORMAT_LEN];
 	memset(fmtbuf, 0, NQIV_LOG_PREFIX_FORMAT_LEN);

@@ -153,7 +153,7 @@ bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, co
 bool nqiv_image_manager_remove(nqiv_image_manager* manager, const int index);
 bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path);
 bool nqiv_image_manager_set_thumbnail_root(nqiv_image_manager* manager, const char* path);
-bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, char* extension);
+bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, const char* extension);
 bool nqiv_image_manager_has_path_extension(nqiv_image_manager* manager, const char* path);
 
 void nqiv_image_manager_pan_left(nqiv_image_manager* manager);
@@ -173,7 +173,7 @@ void nqiv_image_manager_zoom_in_more(nqiv_image_manager* manager);
 void nqiv_image_manager_zoom_out_more(nqiv_image_manager* manager);
 
 void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bool do_zoom, const bool do_stretch, SDL_Rect* srcrect, SDL_Rect* dstrect);
-void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, const bool tight_fit, SDL_Rect* srcrect, SDL_Rect* dstrect);
+void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, const bool tight_fit, const SDL_Rect* srcrect, const SDL_Rect* dstrect);
 int nqiv_image_manager_get_zoom_percent(nqiv_image_manager* manager);
 
 void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size);

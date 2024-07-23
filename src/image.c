@@ -219,8 +219,6 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 	form->animation.frame = 0;
 	form->animation.exists = false;
 
-	VipsImage* old_vips;
-
 	if(form->animation.frame_count > 1) {
 		form->animation.exists = true;
 		if( !nqiv_image_form_set_frame_delay(image, form) ) {
@@ -228,9 +226,8 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 			form->error = true;
 			return false;
 		}
-		old_vips = form->vips;
+		g_object_unref(form->vips);
 		form->vips = vips_image_new_from_file( form->path, "n", form->animation.frame_count, NULL );
-		g_object_unref(old_vips);
 		if(form->vips == NULL) {
 			nqiv_log_vips_exception(image->parent->logger, form->path);
 			form->error = true;
@@ -505,9 +502,8 @@ void nqiv_image_manager_destroy(nqiv_image_manager* manager)
 	}
 	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Destroying image manager.\n");
 
-	nqiv_image* current_image;
 	while(true) {
-		current_image = nqiv_array_pop_ptr(manager->images);
+		nqiv_image* current_image = nqiv_array_pop_ptr(manager->images);
 		if(current_image == NULL) {
 			break;
 		}
@@ -607,7 +603,7 @@ void nqiv_array_remove_nqiv_image_ptr(nqiv_array* array, const int idx)
 	nqiv_array_remove_ptr(array, idx);
 }
 
-nqiv_image* nqiv_array_get_nqiv_image_ptr(nqiv_array* array, const int idx)
+nqiv_image* nqiv_array_get_nqiv_image_ptr(const nqiv_array* array, const int idx)
 {
 	return (nqiv_image*)nqiv_array_get_ptr(array, idx);
 }
@@ -710,7 +706,7 @@ bool nqiv_image_manager_set_thumbnail_root(nqiv_image_manager* manager, const ch
 	return true;
 }
 
-bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, char* extension)
+bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, const char* extension)
 {
 	char* new_extension = (char*)calloc(1, strlen(extension) + 1);
 	memcpy( new_extension, extension, strlen(extension) );
@@ -924,7 +920,7 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager, const bo
 	}
 }
 
-void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, const bool tight_fit, SDL_Rect* srcrect, SDL_Rect* dstrect)
+void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, const bool tight_fit, const SDL_Rect* srcrect, const SDL_Rect* dstrect)
 {
 	assert(manager != NULL);
 	assert(srcrect != NULL);
@@ -988,7 +984,6 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager, c
 		ever_set = true;
 	}
 	manager->zoom.image_to_viewport_ratio = original_ratio;
-	manager->zoom.image_to_viewport_ratio_max = current_ratio;
 	if(manager->zoom.actual_size_level > manager->zoom.fit_level) {
 		manager->zoom.image_to_viewport_ratio_max = manager->zoom.actual_size_level;
 	} else {

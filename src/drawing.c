@@ -17,7 +17,6 @@ void nqiv_fill_checked_rect(SDL_Surface* surface, const SDL_Rect* rect, const in
 	int x;
 	const SDL_Color* color = color_one;
 	const SDL_Color* row_start_color = color;
-	int x_square_count = 0;
 	int y_square_count = 0;
 	for(y = rect->y; y < rect->h; ++y) {
 		if(y_square_count == y_check_size) {
@@ -25,7 +24,7 @@ void nqiv_fill_checked_rect(SDL_Surface* surface, const SDL_Rect* rect, const in
 			y_square_count = 0;
 		}
 		color = row_start_color;
-		x_square_count = 0;
+		int x_square_count = 0;
 		for(x = rect->x; x < rect->w; ++x) {
 			assert( sizeof(Uint8*) == sizeof(void*) );
 			Uint8* pixel = (Uint8*)(surface->pixels) + y * surface->pitch + x * surface->format->BytesPerPixel;

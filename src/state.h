@@ -106,7 +106,7 @@ struct nqiv_state
 };
 
 
-bool nqiv_check_and_print_logger_error(nqiv_log_ctx* logger);
+bool nqiv_check_and_print_logger_error(const nqiv_log_ctx* logger);
 bool nqiv_add_logger_path(nqiv_state* state, const char* path);
 void nqiv_state_set_default_colors(nqiv_state* state);
 bool nqiv_state_create_thumbnail_selection_texture(nqiv_state* state);

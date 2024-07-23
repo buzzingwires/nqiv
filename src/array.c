@@ -58,7 +58,7 @@ bool nqiv_array_make_room(nqiv_array* array, const int size)
 	return true;
 }
 
-bool nqiv_array_insert_bytes(nqiv_array* array, void* ptr, const int count, const int idx)
+bool nqiv_array_insert_bytes(nqiv_array* array, const void* ptr, const int count, const int idx)
 {
 	assert(idx >= 0);
 	assert(count > 0);
@@ -97,13 +97,13 @@ void nqiv_array_remove_bytes(nqiv_array* array, const int idx, const int count)
 	assert(array->position >= 0);
 }
 
-bool nqiv_array_push_bytes(nqiv_array* array, void* ptr, const int count)
+bool nqiv_array_push_bytes(nqiv_array* array, const void* ptr, const int count)
 {
 	assert(array->position % count == 0);
 	return nqiv_array_insert_bytes(array, ptr, count, array->position / count);
 }
 
-bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, void* ptr)
+bool nqiv_array_get_bytes(const nqiv_array* array, const int idx, const int count, void* ptr)
 {
 	assert(count != 0);
 	if(array == NULL) {
@@ -119,7 +119,7 @@ bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, voi
 	if(offset >= array->position) {
 		return false;
 	}
-	char* data = array->data;
+	const char* data = array->data;
 	memcpy(ptr, &data[offset], count);
 	return true;
 }
@@ -159,7 +159,7 @@ bool nqiv_array_push_ptr(nqiv_array* array, void* ptr)
 	return nqiv_array_insert_ptr( array, ptr, array->position / sizeof(void*) );
 }
 
-void* nqiv_array_get_ptr(nqiv_array* array, const int idx)
+void* nqiv_array_get_ptr(const nqiv_array* array, const int idx)
 {
 	void* ptr = NULL;
 	nqiv_array_get_bytes(array, idx, sizeof(void*), &ptr);
@@ -188,7 +188,7 @@ bool nqiv_array_push_char_ptr(nqiv_array* array, char* ptr)
 	return nqiv_array_push_ptr( array, (void*)ptr );
 }
 
-char* nqiv_array_get_char_ptr(nqiv_array* array, const int idx)
+char* nqiv_array_get_char_ptr(const nqiv_array* array, const int idx)
 {
 	return (char*)nqiv_array_get_ptr(array, idx);
 }
@@ -213,7 +213,7 @@ bool nqiv_array_push_FILE_ptr(nqiv_array* array, FILE* ptr)
 	return nqiv_array_push_ptr( array, (void*)ptr );
 }
 
-FILE* nqiv_array_get_FILE_ptr(nqiv_array* array, const int idx)
+FILE* nqiv_array_get_FILE_ptr(const nqiv_array* array, const int idx)
 {
 	return (FILE*)nqiv_array_get_ptr(array, idx);
 }

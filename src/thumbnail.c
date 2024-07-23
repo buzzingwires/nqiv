@@ -36,7 +36,7 @@ bool nqiv_thumbnail_render_uri(nqiv_image* image, char* uri)
 	return true;
 }
 
-void nqiv_thumbnail_get_type(nqiv_image_manager* images, const bool failed, char* typeseg, size_t* typelen_ptr)
+void nqiv_thumbnail_get_type(const nqiv_image_manager* images, const bool failed, char* typeseg, size_t* typelen_ptr)
 {
 	const char* typefail = "fail/";
 	const char* typelarge = "large/";
@@ -47,7 +47,7 @@ void nqiv_thumbnail_get_type(nqiv_image_manager* images, const bool failed, char
 	if(failed) {
 		typeptr = typefail;
 		typelen = strlen(typefail);
-	} else if(images->thumbnail.size >= 128 || images->thumbnail.size >= 128) {
+	} else if(images->thumbnail.size >= 128) {
 		typeptr = typelarge;
 		typelen = strlen(typelarge);
 	} else {
