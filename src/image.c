@@ -347,7 +347,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		if(used_vips != form->vips) {
 			g_object_unref(used_vips);
 		}
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to extract raw image data at path %s.", form->path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to extract raw image data at path %s.\n", form->path);
 		form->error = true;
 		return false;
 	}
@@ -359,7 +359,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		if(used_vips != form->vips) {
 			g_object_unref(used_vips);
 		}
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to extract raw image data at path %s.", form->path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to allocate memory for raw image data at path %s.\n", form->path);
 		form->error = true;
 		return false;
 	}
