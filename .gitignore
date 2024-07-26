@@ -15,3 +15,5 @@ configure
 depcomp
 install-sh
 missing
+AppDir
+nqiv-x86_64.AppImage
