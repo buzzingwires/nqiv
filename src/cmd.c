@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <float.h>
+#include <inttypes.h>
 
 #include <SDL2/SDL.h>
 #include <omp.h>
@@ -520,7 +521,7 @@ void nqiv_cmd_parser_print_vips_threads(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_prune_delay(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%lu", manager->state->prune_delay);
+	fprintf(stdout, "%" PRIu64, manager->state->prune_delay);
 }
 
 void nqiv_cmd_parser_print_extra_wakeup_delay(nqiv_cmd_manager* manager)
@@ -789,20 +790,20 @@ void nqiv_cmd_parser_print_delay_accel(nqiv_cmd_manager* manager)
 				fprintf(stdout, "\n");
 			}
 			nqiv_cmd_print_indent(manager);
-			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
+			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
 		} else if(action == NQIV_KEY_ACTION_QUIT) {
-			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
+			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
 		} else if(action != NQIV_KEY_ACTION_MAX) {
-			fprintf(stdout, "%s%s %lu\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
+			fprintf(stdout, "%s%s %" PRIu64 "\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
 		} else {
-			fprintf(stdout, "%s%s %lu", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
+			fprintf(stdout, "%s%s %" PRIu64, manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
 		}
 	}
 }
 
 void nqiv_cmd_parser_print_delay_accel_default(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%lu", manager->state->keystates.settings.delay_accel);
+	fprintf(stdout, "%" PRIu64, manager->state->keystates.settings.delay_accel);
 }
 
 void nqiv_cmd_parser_print_minimum_delay(nqiv_cmd_manager* manager)
@@ -814,13 +815,13 @@ void nqiv_cmd_parser_print_minimum_delay(nqiv_cmd_manager* manager)
 				fprintf(stdout, "\n");
 			}
 			nqiv_cmd_print_indent(manager);
-			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
+			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
 		} else if(action == NQIV_KEY_ACTION_QUIT) {
-			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
+			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
 		} else if(action != NQIV_KEY_ACTION_MAX) {
-			fprintf(stdout, "%s%s %lu\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
+			fprintf(stdout, "%s%s %" PRIu64 "\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
 		} else {
-			fprintf(stdout, "%s%s %lu", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
+			fprintf(stdout, "%s%s %" PRIu64, manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
 		}
 	}
 }
@@ -922,7 +923,7 @@ void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_minimum_delay_default(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%lu", manager->state->keystates.settings.minimum_delay);
+	fprintf(stdout, "%" PRIu64, manager->state->keystates.settings.minimum_delay);
 }
 
 void nqiv_cmd_parser_print_repeat_delay(nqiv_cmd_manager* manager)
@@ -934,20 +935,20 @@ void nqiv_cmd_parser_print_repeat_delay(nqiv_cmd_manager* manager)
 				fprintf(stdout, "\n");
 			}
 			nqiv_cmd_print_indent(manager);
-			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
+			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
 		} else if(action == NQIV_KEY_ACTION_QUIT) {
-			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
+			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
 		} else if(action != NQIV_KEY_ACTION_MAX) {
-			fprintf(stdout, "%s%s %lu\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
+			fprintf(stdout, "%s%s %" PRIu64 "\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
 		} else {
-			fprintf(stdout, "%s%s %lu", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
+			fprintf(stdout, "%s%s %" PRIu64, manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
 		}
 	}
 }
 
 void nqiv_cmd_parser_print_repeat_delay_default(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%lu", manager->state->keystates.settings.consecutive_delay);
+	fprintf(stdout, "%" PRIu64, manager->state->keystates.settings.consecutive_delay);
 }
 
 void nqiv_cmd_parser_print_start_delay(nqiv_cmd_manager* manager)
@@ -959,20 +960,20 @@ void nqiv_cmd_parser_print_start_delay(nqiv_cmd_manager* manager)
 				fprintf(stdout, "\n");
 			}
 			nqiv_cmd_print_indent(manager);
-			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
+			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
 		} else if(action == NQIV_KEY_ACTION_QUIT) {
-			fprintf(stdout, "%s %lu\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
+			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
 		} else if(action != NQIV_KEY_ACTION_MAX) {
-			fprintf(stdout, "%s%s %lu\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
+			fprintf(stdout, "%s%s %" PRIu64 "\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
 		} else {
-			fprintf(stdout, "%s%s %lu", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
+			fprintf(stdout, "%s%s %" PRIu64, manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
 		}
 	}
 }
 
 void nqiv_cmd_parser_print_start_delay_default(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%lu", manager->state->keystates.settings.start_delay);
+	fprintf(stdout, "%" PRIu64, manager->state->keystates.settings.start_delay);
 }
 
 const char* nqiv_press_action_names[] =
@@ -2023,7 +2024,7 @@ void nqiv_cmd_print_single_arg( nqiv_cmd_manager* manager, const nqiv_cmd_arg_de
 		fprintf(stdout, "DOUBLE(%f-%f)", arg->setting.of_double.min, arg->setting.of_double.max);
 		break;
 	case NQIV_CMD_ARG_UINT64:
-		fprintf(stdout, "UINT64(%lu-%lu)", arg->setting.of_Uint64.min, arg->setting.of_Uint64.max);
+		fprintf(stdout, "UINT64(%" PRIu64 "-%" PRIu64 ")", arg->setting.of_Uint64.min, arg->setting.of_Uint64.max);
 		break;
 	case NQIV_CMD_ARG_UINT8:
 		fprintf(stdout, "UINT8(0-255)");

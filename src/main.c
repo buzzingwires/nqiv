@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <assert.h>
 
 #include <vips/vips.h>

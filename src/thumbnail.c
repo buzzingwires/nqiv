@@ -4,6 +4,7 @@
 #include <time.h>
 #include <assert.h>
 #include <limits.h>
+#include <inttypes.h>
 #include <errno.h>
 
 #include <vips/vips.h>
