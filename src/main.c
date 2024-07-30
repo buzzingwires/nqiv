@@ -521,7 +521,7 @@ void nqiv_unlock_threads(nqiv_state* state, const int count)
 	}
 }
 
-bool nqiv_send_thread_event_base(nqiv_state* state, const int level, nqiv_event* event, const bool force, const bool unlock_threads)
+bool nqiv_send_thread_event_base(nqiv_state* state, const int level, const nqiv_event* event, const bool force, const bool unlock_threads)
 {
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Sending event.\n");
 	bool event_sent;
