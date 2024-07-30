@@ -207,19 +207,19 @@ void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, omp_lock
 								if(event.options.image_load.image->image.vips == NULL) {
 									if( nqiv_image_load_vips(event.options.image_load.image, &event.options.image_load.image->image) ) {
 										if( !nqiv_thumbnail_matches_image(event.options.image_load.image) ) {
-											event.options.image_load.image->thumbnail.thumbnail_load_failed = event.options.image_load.image->thumbnail.thumbnail_load_failed && !nqiv_thumbnail_create(event.options.image_load.image);
+											event.options.image_load.image->thumbnail.thumbnail_load_failed = !nqiv_thumbnail_create(event.options.image_load.image) && event.options.image_load.image->thumbnail.thumbnail_load_failed;
 										}
 									}
 								} else if( !nqiv_thumbnail_matches_image(event.options.image_load.image) ) {
-									event.options.image_load.image->thumbnail.thumbnail_load_failed = event.options.image_load.image->thumbnail.thumbnail_load_failed && !nqiv_thumbnail_create(event.options.image_load.image);
+									event.options.image_load.image->thumbnail.thumbnail_load_failed = !nqiv_thumbnail_create(event.options.image_load.image) && event.options.image_load.image->thumbnail.thumbnail_load_failed;
 								}
 						} else {
 							if(event.options.image_load.image->image.vips == NULL) {
 								if( nqiv_image_load_vips(event.options.image_load.image, &event.options.image_load.image->image) ) {
-									event.options.image_load.image->thumbnail.thumbnail_load_failed = event.options.image_load.image->thumbnail.thumbnail_load_failed && !nqiv_thumbnail_create(event.options.image_load.image);
+									event.options.image_load.image->thumbnail.thumbnail_load_failed = !nqiv_thumbnail_create(event.options.image_load.image) && event.options.image_load.image->thumbnail.thumbnail_load_failed;
 								}
 							} else {
-								event.options.image_load.image->thumbnail.thumbnail_load_failed = event.options.image_load.image->thumbnail.thumbnail_load_failed && !nqiv_thumbnail_create(event.options.image_load.image);
+								event.options.image_load.image->thumbnail.thumbnail_load_failed = !nqiv_thumbnail_create(event.options.image_load.image) && event.options.image_load.image->thumbnail.thumbnail_load_failed;
 							}
 						}
 						event.options.image_load.image->thumbnail_attempted = true;
