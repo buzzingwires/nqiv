@@ -4,6 +4,7 @@ Makefile
 Makefile.in
 test/tester
 src/nqiv
+src/nqiv.exe
 .dirstamp
 .deps
 aclocal.m4
