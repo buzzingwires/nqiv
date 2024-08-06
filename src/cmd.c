@@ -233,7 +233,9 @@ bool nqiv_cmd_parser_set_thumbnail_path(nqiv_cmd_manager* manager, nqiv_cmd_arg_
 
 bool nqiv_cmd_parser_set_log_level(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
+	const char data_end = nqiv_cmd_tmpterm(tokens[0]->raw, tokens[0]->length);
 	manager->state->logger.level = tokens[0]->value.as_log_level;
+	nqiv_cmd_tmpret(tokens[0]->raw, tokens[0]->length, data_end);
 	return true;
 }
 

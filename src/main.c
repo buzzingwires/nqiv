@@ -265,6 +265,99 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	return true;
 }
 
+bool nqiv_load_builtin_config(nqiv_state* state, const char* default_config_path)
+{
+	const char* cmds =
+	"set log prefix #level# #time:%Y-%m-%d %T%z# \n"
+	"append log stream stderr\n"
+	"append extension png\n"
+	"append extension mng\n"
+	"append extension jpg\n"
+	"append extension jpeg\n"
+	"append extension webp\n"
+	"append extension gif\n"
+	"append extension webp\n"
+	"append extension tiff\n"
+	"append extension svg\n"
+	"append extension PNG\n"
+	"append extension MNG\n"
+	"append extension JPG\n"
+	"append extension JPEG\n"
+	"append extension WEBP\n"
+	"append extension GIF\n"
+	"append extension WEBP\n"
+	"append extension TIFF\n"
+	"append extension SVG\n"
+	"append keybind Q=quit\n"
+	"append keybind Home=montage_start\n"
+	"append keybind End=montage_end\n"
+	"append keybind PageUp=page_up\n"
+	"append keybind PageDown=page_down\n"
+	"append keybind Backspace=image_previous\n"
+	"append keybind Backspace=montage_left\n"
+	"append keybind Left=montage_left\n"
+	"append keybind Right=montage_right\n"
+	"append keybind Up=montage_up\n"
+	"append keybind Down=montage_down\n"
+	"append keybind Space=image_next\n"
+	"append keybind Space=montage_right\n"
+	"append keybind Return=set_viewing\n"
+	"append keybind M=toggle_montage\n"
+	"append keybind Left=pan_left\n"
+	"append keybind Up=pan_up\n"
+	"append keybind Right=pan_right\n"
+	"append keybind Down=pan_down\n"
+	"append keybind Z=zoom_in\n"
+	"append keybind Z+shift=zoom_out\n"
+	"append keybind ctrl+Z=zoom_in_more\n"
+	"append keybind ctrl+Z+shift=zoom_out_more\n"
+	"append keybind Keypad +=zoom_in\n"
+	"append keybind Keypad -=zoom_out\n"
+	"append keybind shift+Keypad +=zoom_in_more\n"
+	"append keybind shift+Keypad -=zoom_out_more\n"
+	"append keybind ctrl+Left=pan_left_more\n"
+	"append keybind ctrl+Up=pan_up_more\n"
+	"append keybind ctrl+Right=pan_right_more\n"
+	"append keybind ctrl+Down=pan_down_more\n"
+	"append keybind C=pan_center\n"
+	"append keybind S=toggle_stretch\n"
+	"append keybind '=image_mark_toggle\n"
+	"append keybind shift+'=print_marked\n"
+	"append keybind ;=image_mark\n"
+	"append keybind ;=montage_right\n"
+	"append keybind ;=image_next\n"
+	"append keybind R=reload\n"
+	"append keybind F=fit\n"
+	"append keybind A=actual_size\n"
+	"append keybind D=toggle_kept_zoom\n"
+	"append keybind T=toggle_scale_mode\n"
+	"append keybind shift+F=keep_fit\n"
+	"append keybind shift+A=keep_actual_size\n"
+	"append keybind shift+D=keep_current_zoom\n"
+	"append keybind mouse1=montage_select_at_mouse\n"
+	"append keybind mouse1_double=set_viewing\n"
+	"append keybind shift+mouse1=image_mark_toggle_at_mouse\n"
+	"append keybind mouse1=start_mouse_pan\n"
+	"append keybind mouse1=end_mouse_pan\n"
+	"append keybind scroll_forward=image_zoom_in\n"
+	"append keybind scroll_backward=image_zoom_out\n"
+	"append keybind scroll_forward=montage_up\n"
+	"append keybind scroll_backward=montage_down\n"
+	"append keybind shift+scroll_forward=zoom_in\n"
+	"append keybind shift+scroll_backward=zoom_out\n"
+	"append pruner or thumbnail no image texture self_opened unload surface raw vips\n"
+	"append pruner and no thumbnail image texture self_opened not_animated unload surface raw vips\n"
+	"append pruner or no thumbnail image texture self_opened unload surface raw\n"
+	"append pruner and thumbnail no image texture self_opened image no thumbnail not_animated hard unload image thumbnail surface raw vips\n"
+	"append pruner or thumbnail image texture loaded_behind 0 0 loaded_ahead 0 0 surface loaded_behind 0 0 loaded_ahead 0 0 raw loaded_behind 0 0 loaded_ahead 0 0 vips loaded_behind 0 0 loaded_ahead 0 0 hard unload texture surface raw vips\n"
+	"append pruner or sum 0 thumbnail image texture bytes_ahead 0 0 bytes_behind 0 0 surface bytes_ahead 0 0 bytes_behind 0 0 raw bytes_ahead 0 0 bytes_behind 0 0 vips bytes_ahead 0 0 bytes_behind 0 0 hard unload texture surface raw vips\n";
+	if( !nqiv_cmd_add_string(&state->cmds, cmds) || !nqiv_cmd_parse(&state->cmds) ) {
+		return false;
+	}
+	fprintf(stderr, "Failed to load default config file path. Consider `nqiv -c \"dumpcfg\" > %s` to create it?\n", default_config_path);
+	return true;
+}
+
 bool nqiv_parse_args(char *argv[], nqiv_state* state)
 {
 	/*
@@ -358,101 +451,24 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 		if( nqiv_get_default_cfg(default_config_path, PATH_MAX + 1) ) {
 			FILE* stream = fopen(default_config_path, "r");
 			if(stream != NULL) {
-				if( !nqiv_cmd_consume_stream(&state->cmds, stream) ) {
-					fprintf(stderr, "Failed to read commands from default config path %s\n", default_config_path);
-					fclose(stream);
-					return false;
+				const int c = fgetc(stream);
+				if(c == EOF) {
+					if( !nqiv_load_builtin_config(state, default_config_path) ) {
+						return false;
+					}
+				} else {
+				    ungetc(c, stream);
+					if( !nqiv_cmd_consume_stream(&state->cmds, stream) ) {
+						fprintf(stderr, "Failed to read commands from default config path %s\n", default_config_path);
+						fclose(stream);
+						return false;
+					}
 				}
 				fclose(stream);
 			} else {
-				const char* cmds =
-				"set log prefix #level# #time:%Y-%m-%d %T%z# \n"
-				"append log stream stderr\n"
-				"append extension png\n"
-				"append extension mng\n"
-				"append extension jpg\n"
-				"append extension jpeg\n"
-				"append extension webp\n"
-				"append extension gif\n"
-				"append extension webp\n"
-				"append extension tiff\n"
-				"append extension svg\n"
-				"append extension PNG\n"
-				"append extension MNG\n"
-				"append extension JPG\n"
-				"append extension JPEG\n"
-				"append extension WEBP\n"
-				"append extension GIF\n"
-				"append extension WEBP\n"
-				"append extension TIFF\n"
-				"append extension SVG\n"
-				"append keybind Q=quit\n"
-				"append keybind Home=montage_start\n"
-				"append keybind End=montage_end\n"
-				"append keybind PageUp=page_up\n"
-				"append keybind PageDown=page_down\n"
-				"append keybind Backspace=image_previous\n"
-				"append keybind Backspace=montage_left\n"
-				"append keybind Left=montage_left\n"
-				"append keybind Right=montage_right\n"
-				"append keybind Up=montage_up\n"
-				"append keybind Down=montage_down\n"
-				"append keybind Space=image_next\n"
-				"append keybind Space=montage_right\n"
-				"append keybind Return=set_viewing\n"
-				"append keybind M=toggle_montage\n"
-				"append keybind Left=pan_left\n"
-				"append keybind Up=pan_up\n"
-				"append keybind Right=pan_right\n"
-				"append keybind Down=pan_down\n"
-				"append keybind Z=zoom_in\n"
-				"append keybind Z+shift=zoom_out\n"
-				"append keybind ctrl+Z=zoom_in_more\n"
-				"append keybind ctrl+Z+shift=zoom_out_more\n"
-				"append keybind Keypad +=zoom_in\n"
-				"append keybind Keypad -=zoom_out\n"
-				"append keybind shift+Keypad +=zoom_in_more\n"
-				"append keybind shift+Keypad -=zoom_out_more\n"
-				"append keybind ctrl+Left=pan_left_more\n"
-				"append keybind ctrl+Up=pan_up_more\n"
-				"append keybind ctrl+Right=pan_right_more\n"
-				"append keybind ctrl+Down=pan_down_more\n"
-				"append keybind C=pan_center\n"
-				"append keybind S=toggle_stretch\n"
-				"append keybind '=image_mark_toggle\n"
-				"append keybind shift+'=print_marked\n"
-				"append keybind ;=image_mark\n"
-				"append keybind ;=montage_right\n"
-				"append keybind ;=image_next\n"
-				"append keybind R=reload\n"
-				"append keybind F=fit\n"
-				"append keybind A=actual_size\n"
-				"append keybind D=toggle_kept_zoom\n"
-				"append keybind T=toggle_scale_mode\n"
-				"append keybind shift+F=keep_fit\n"
-				"append keybind shift+A=keep_actual_size\n"
-				"append keybind shift+D=keep_current_zoom\n"
-				"append keybind mouse1=montage_select_at_mouse\n"
-				"append keybind mouse1_double=set_viewing\n"
-				"append keybind shift+mouse1=image_mark_toggle_at_mouse\n"
-				"append keybind mouse1=start_mouse_pan\n"
-				"append keybind mouse1=end_mouse_pan\n"
-				"append keybind scroll_forward=image_zoom_in\n"
-				"append keybind scroll_backward=image_zoom_out\n"
-				"append keybind scroll_forward=montage_up\n"
-				"append keybind scroll_backward=montage_down\n"
-				"append keybind shift+scroll_forward=zoom_in\n"
-				"append keybind shift+scroll_backward=zoom_out\n"
-				"append pruner or thumbnail no image texture self_opened unload surface raw vips\n"
-				"append pruner and no thumbnail image texture self_opened not_animated unload surface raw vips\n"
-				"append pruner or no thumbnail image texture self_opened unload surface raw\n"
-				"append pruner and thumbnail no image texture self_opened image no thumbnail not_animated hard unload image thumbnail surface raw vips\n"
-				"append pruner or thumbnail image texture loaded_behind 0 0 loaded_ahead 0 0 surface loaded_behind 0 0 loaded_ahead 0 0 raw loaded_behind 0 0 loaded_ahead 0 0 vips loaded_behind 0 0 loaded_ahead 0 0 hard unload texture surface raw vips\n"
-				"append pruner or sum 0 thumbnail image texture bytes_ahead 0 0 bytes_behind 0 0 surface bytes_ahead 0 0 bytes_behind 0 0 raw bytes_ahead 0 0 bytes_behind 0 0 vips bytes_ahead 0 0 bytes_behind 0 0 hard unload texture surface raw vips\n";
-				if( !nqiv_cmd_add_string(&state->cmds, cmds) || !nqiv_cmd_parse(&state->cmds) ) {
+				if( !nqiv_load_builtin_config(state, default_config_path) ) {
 					return false;
 				}
-				fprintf(stderr, "Failed to open default config file path. Consider `nqiv -c \"dumpcfg\" > %s` to create it?\n", default_config_path);
 			}
 		}
 	}

@@ -406,7 +406,7 @@ void nqiv_keybind_to_string(nqiv_keybind_pair* pair, char* buf)
 	}
 	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_BUTTON) != 0 ) {
 		assert(pair->match.data.mouse_button.clicks == 1 || pair->match.data.mouse_button.clicks == 2);
-		pos += snprintf(buf + pos, NQIV_KEYBIND_STRLEN - pos, "mouse%d%s", pair->match.data.mouse_button.button, pair->match.data.mouse_button.clicks == 2 ? "double" : "");
+		pos += snprintf(buf + pos, NQIV_KEYBIND_STRLEN - pos, "mouse%d%s+", pair->match.data.mouse_button.button, pair->match.data.mouse_button.clicks == 2 ? "_double" : "");
 	}
 	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD) != 0 ) {
 		pos += nqiv_key_match_element_to_string(buf + pos, "scroll_forward");
@@ -420,6 +420,9 @@ void nqiv_keybind_to_string(nqiv_keybind_pair* pair, char* buf)
 	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT) != 0 ) {
 		pos += nqiv_key_match_element_to_string(buf + pos, "scroll_right");
 	}
+	assert(pos > 0);
+	assert(buf[pos - 1] == '+');
+	buf[pos - 1] = '=';
 	memcpy( buf + pos, nqiv_keybind_action_names[pair->action], strlen(nqiv_keybind_action_names[pair->action]) );
 }
 
