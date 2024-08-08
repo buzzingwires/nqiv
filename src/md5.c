@@ -37,6 +37,11 @@
 
 #ifndef HAVE_OPENSSL
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-align"
+#endif
+
 #include <string.h>
 
 #include "md5.h"
@@ -287,5 +292,9 @@ void MD5_Final(unsigned char *result, MD5_CTX *ctx)
 
 	memset(ctx, 0, sizeof(*ctx));
 }
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#endif
 
 #endif
