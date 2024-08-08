@@ -122,7 +122,7 @@ void write_prefix_timeinfo(FILE* stream, const char* fmt, const int formatter_st
 	char timebuf[NQIV_LOG_STRFTIME_LEN];
 	memset(timebuf, 0, NQIV_LOG_STRFTIME_LEN);
 	strftime(timebuf, NQIV_LOG_STRFTIME_LEN, fmtbuf, timeinfo);
-	fprintf(stream, timebuf);
+	fprintf(stream, "%s", timebuf);
 }
 
 void write_prefix_level(FILE* stream, const nqiv_log_level level)
@@ -158,7 +158,7 @@ void write_prefix_clean_slice(char* slice, int* slice_idx)
 void write_prefix_flush_slice(FILE* stream, char* slice, int* slice_idx)
 {
 	if(*slice_idx != 0) {
-		fprintf(stream, slice);
+		fprintf(stream, "%s", slice);
 	}
 	write_prefix_clean_slice(slice, slice_idx);
 }
@@ -197,7 +197,7 @@ void write_prefix(nqiv_log_ctx* ctx, const nqiv_log_level level, FILE* stream)
 				} else if(formatter_len == 0) {
 					fprintf(stream, "#");
 				} else {
-					fprintf(stream, slice);
+					fprintf(stream, "%s", slice);
 				}
 				formatter_start = -1;
 				formatter_end = -1;
