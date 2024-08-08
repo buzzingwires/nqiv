@@ -3,10 +3,18 @@ L_CFLAGS_DEBUG_OPTS=-O0 -g
 L_CFLAGS_RELEASE_OPTS=-DNDEBUG -O2 -flto=auto 
 
 if ISCROSS
+if USEJEMALLOC
 L_JEMALLOC_LIBS=`pkg-config jemalloc --libs --define-prefix` 
+else
+L_JEMALLOC_LIBS= 
+endif
 L_CFLAGS_STANDARDS+=-mconsole 
 else
+if USEJEMALLOC
 L_JEMALLOC_LIBS=-L`jemalloc-config --libdir` -Wl,-rpath,`jemalloc-config --libdir` -ljemalloc `jemalloc-config --libs` 
+else
+L_JEMALLOC_LIBS= 
+endif
 endif
 
 default-optimization:

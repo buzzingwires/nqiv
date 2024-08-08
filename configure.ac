@@ -8,6 +8,12 @@ AC_ARG_ENABLE([cross-compile],
 					 [test "$enable_cross_compile" = "no"], [],
 					 [AC_MSG_ERROR([Bad value ${enable_cross_compile} for --enable-cross-compile], [])])],
 			  [enable_cross_compiler=no])
+AC_ARG_ENABLE([no-jemalloc],
+			  AS_HELP_STRING([--enable-no-jemalloc], [Do not look for or use the jemalloc allocator. This is especially useful on FreeBSD systems where jemalloc is already the default allocator.]),
+			  [AS_IF([test "$enable_no_jemalloc" = "yes"], [],
+					 [AC_MSG_ERROR([Bad value ${enable_no_jemalloc} for --enable-no-jemalloc], [])])],
+			  [enable_no_jemalloc=no])
 AM_CONDITIONAL([ISCROSS], [test "$enable_cross_compile" = "yes"])
+AM_CONDITIONAL([USEJEMALLOC], [test "$enable_no_jemalloc" = "no"])
 AC_CONFIG_FILES([Makefile src/Makefile test/Makefile])
 AC_OUTPUT
