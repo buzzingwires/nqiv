@@ -82,7 +82,6 @@ struct nqiv_state
 	Uint64 prune_delay;
 	int extra_wakeup_delay;
 	omp_lock_t thread_event_transaction_group_lock;
-	omp_lock_t** thread_locks;
 	bool render_cleared;
 	bool in_montage;
 	bool stretch_images;

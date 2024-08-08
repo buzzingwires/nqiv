@@ -40,24 +40,6 @@ void nqiv_close_log_streams(nqiv_state* state)
 	}
 }
 
-void nqiv_state_clear_thread_locks(nqiv_state* state)
-{
-	if(state->thread_locks != NULL) {
-		int idx;
-		for(idx = 0; idx < state->thread_count; ++idx) {
-			if(state->thread_locks[idx] != NULL) {
-				omp_unset_lock(state->thread_locks[idx]);
-				omp_destroy_lock(state->thread_locks[idx]);
-				memset( state->thread_locks[idx], 0, sizeof(omp_lock_t) );
-				free(state->thread_locks[idx]);
-			}
-		}
-		memset(state->thread_locks, 0, sizeof(omp_lock_t*) * state->thread_count);
-		free(state->thread_locks);
-		state->thread_locks = NULL;
-	}
-}
-
 void nqiv_state_clear(nqiv_state* state)
 {
 	nqiv_priority_queue_destroy(&state->thread_queue);
@@ -103,9 +85,6 @@ void nqiv_state_clear(nqiv_state* state)
 	}
 	if(state->SDL_inited) {
 		SDL_Quit();
-	}
-	if(state->thread_locks != NULL) {
-		nqiv_state_clear_thread_locks(state);
 	}
 	omp_destroy_lock(&state->thread_event_transaction_group_lock);
 	if(state->window_title != NULL) {
@@ -229,39 +208,12 @@ void nqiv_setup_montage(nqiv_state* state)
 	nqiv_montage_calculate_dimensions(&state->montage);
 }
 
-void nqiv_act_on_thread_locks( nqiv_state* state, void (*action)(omp_lock_t *lock) )
-{
-	int idx;
-	for(idx = 0; idx < state->thread_count; ++idx) {
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Acted on worker thread %d.\n", idx);
-		action(state->thread_locks[idx]);
-	}
-}
-
 bool nqiv_setup_thread_info(nqiv_state* state)
 {
 	if(state->thread_count == 0) {
 		state->thread_count = 1;
 	}
-	if(state->thread_locks != NULL) {
-		nqiv_state_clear_thread_locks(state);
-	}
-	state->thread_locks = (omp_lock_t**)calloc( state->thread_count, sizeof(omp_lock_t*) );
-	if(state->thread_locks == NULL) {
-		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to allocate memory for %d thread locks.\n", state->thread_count);
-		return false;
-	}
 	omp_init_lock(&state->thread_event_transaction_group_lock);
-	int thread;
-	for(thread = 0; thread < state->thread_count; ++thread) {
-		state->thread_locks[thread] = (omp_lock_t*)calloc( 1, sizeof(omp_lock_t) );
-		if(state->thread_locks[thread] == NULL) {
-			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to allocate memory for thread lock %d.\n", thread);
-			nqiv_state_clear_thread_locks(state);
-			return false;
-		}
-	}
-	nqiv_act_on_thread_locks(state, omp_init_lock);
 	return true;
 }
 
@@ -521,23 +473,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	return true;
 } /* parse_args */
 
-void nqiv_unlock_threads(nqiv_state* state, const int count)
-{
-	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocking threads.\n");
-	int idx;
-	int unlocked;
-	for(idx = 0, unlocked = count; idx < state->thread_count && unlocked > 0; ++idx) {
-		if( !omp_test_lock(state->thread_locks[idx]) ) {
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocking worker thread %d.\n", idx);
-			--unlocked;
-		} else {
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Already unlocked worker thread %d.\n", idx);
-		}
-		omp_unset_lock(state->thread_locks[idx]);
-	}
-}
-
-bool nqiv_send_thread_event_base(nqiv_state* state, const int level, const nqiv_event* event, const bool force, const bool unlock_threads)
+bool nqiv_send_thread_event_base(nqiv_state* state, const int level, const nqiv_event* event, const bool force)
 {
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Sending event.\n");
 	bool event_sent;
@@ -557,10 +493,6 @@ bool nqiv_send_thread_event_base(nqiv_state* state, const int level, const nqiv_
 		return false;
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent successfully.\n");
-	if(unlock_threads) {
-		nqiv_unlock_threads(state, 1);
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for event.\n");
-	}
 	return true;
 }
 
@@ -569,13 +501,13 @@ bool nqiv_send_thread_event(nqiv_state* state, const int level, nqiv_event* even
 	omp_set_lock(&state->thread_event_transaction_group_lock);
 	event->transaction_group = state->thread_event_transaction_group;
 	omp_unset_lock(&state->thread_event_transaction_group_lock);
-	return nqiv_send_thread_event_base(state, level, event, false, false);
+	return nqiv_send_thread_event_base(state, level, event, false);
 }
 
 bool nqiv_send_thread_event_force(nqiv_state* state, const int level, nqiv_event* event)
 {
 	event->transaction_group = -1;
-	return nqiv_send_thread_event_base(state, level, event, true, true);
+	return nqiv_send_thread_event_base(state, level, event, true);
 }
 
 bool render_texture(bool* cleared, const SDL_Rect* cleardst, nqiv_state* state, SDL_Texture* texture, SDL_Rect* srcrect, const SDL_Rect* dstrect)
@@ -648,7 +580,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 	/* TODO Srcrect easily can make this work for both views DONE */
 	/* TODO Merge load/save thumbnail, or have an short load to check for the thumbnail before saving  DONE*/
 	/* TODO Use load thumbnail for is_thumbnail? */
-	int pending_change_count = 0;
 	bool cleared = is_montage;
 	nqiv_image_form* form = is_thumbnail ? &image->thumbnail : &image->image;
 	if(is_montage) {
@@ -784,8 +715,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				omp_unset_lock(&image->lock);
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
-			} else {
-				pending_change_count += 1;
 			}
 		/* TODO Signal to create thumbnail from main image, set thumbnail attempted after DONE */
 		} else {
@@ -822,8 +751,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					return false;
-				} else {
-					pending_change_count += 1;
 				}
 				/* TODO Signal to create thumbnail from main image, set thumbnail attempted after */
 				/* TODO UNSET ERROR */
@@ -845,8 +772,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					return false;
-				} else {
-					pending_change_count += 1;
 				}
 			}
 		} else {
@@ -918,8 +843,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					return false;
-				} else {
-					pending_change_count += 1;
 				}
 				/* TODO Signal to load thumbnail image if it's available, otherwise use main */
 			} else {
@@ -948,8 +871,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					return false;
-				} else {
-					pending_change_count += 1;
 				}
 				/* TODO Signal to use main image as thumbnail */
 			}
@@ -1015,8 +936,6 @@ state->images.thumbnail.load
 					omp_unset_lock(&image->lock);
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					return false;
-				} else {
-					pending_change_count += 1;
 				}
 			}
 		}
@@ -1036,12 +955,6 @@ state->images.thumbnail.load
 			nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 			return false;
 		}
-	}
-	form->pending_change_count += pending_change_count;
-	nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Pending change count Image: %d Thumbnail: %d, from main thread %d.\n", image->image.pending_change_count, image->thumbnail.pending_change_count, omp_get_thread_num() );
-	if(form->pending_change_count > 0) {
-		nqiv_unlock_threads(state, pending_change_count);
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for update.\n");
 	}
 	nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 	omp_unset_lock(&image->lock);
@@ -1275,9 +1188,6 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 		if(prune_count == -1) {
 			*running = false;
 			*result = false;
-		} else if(prune_count > 0) {
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Prune count %d.\n", prune_count);
-			nqiv_unlock_threads(state, prune_count);
 		}
 	}
 	if(state->montage.range_changed) {
@@ -1707,22 +1617,6 @@ bool nqiv_master_thread(nqiv_state* state)
 						omp_set_lock(input_event.user.data1);
 						nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locked thread from master.\n");
 						*/
-						nqiv_priority_queue_lock(&state->thread_queue);
-						int queue_length = 0;
-						int idx;
-						for(idx = 0; idx < state->thread_queue.bin_count; ++idx) {
-							queue_length += state->thread_queue.bins[idx].array->position / sizeof(nqiv_event*);
-						}
-						if(queue_length == 0) {
-							if( omp_test_lock(input_event.user.data1) ) {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locked thread from master.\n");
-							} else {
-								nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Thread already locked from master.\n");
-							}
-						} else {
-							nqiv_unlock_threads(state, queue_length);
-						}
-						nqiv_priority_queue_unlock(&state->thread_queue);
 						render_and_update(state, &running, &result, false, false);
 					} else if( ( Uint32)input_event.user.code == state->cfg_event_number ) {
 						nqiv_handle_keyactions(state, &running, &result, false, NQIV_KEYRATE_ON_DOWN); /* TODO No simulated actions for now. */
@@ -1849,7 +1743,6 @@ bool nqiv_master_thread(nqiv_state* state)
 		output_event.type = NQIV_EVENT_WORKER_STOP;
 		nqiv_send_thread_event_force(state, 0, &output_event);
 	}
-	nqiv_unlock_threads(state, state->thread_count);
 	return result;
 }
 
@@ -1860,21 +1753,19 @@ bool nqiv_run(nqiv_state* state)
 	const int thread_count = state->thread_count;
 	const int thread_event_interval = state->thread_event_interval;
 	const int extra_wakeup_delay = state->extra_wakeup_delay;
-	omp_lock_t** thread_locks = state->thread_locks;
 	nqiv_log_ctx* logger = &state->logger;
 	nqiv_priority_queue* thread_queue = &state->thread_queue;
 	const int64_t* thread_event_transaction_group = &state->thread_event_transaction_group;
 	omp_lock_t* thread_event_transaction_group_lock = &state->thread_event_transaction_group_lock;
 	const Uint32 event_code = state->thread_event_number;
-	#pragma omp parallel default(none) firstprivate(state, logger, thread_count, extra_wakeup_delay, thread_event_interval, thread_locks, thread_queue, event_code, result_ptr, thread_event_transaction_group, thread_event_transaction_group_lock)
+	#pragma omp parallel default(none) firstprivate(state, logger, thread_count, extra_wakeup_delay, thread_event_interval, thread_queue, event_code, result_ptr, thread_event_transaction_group, thread_event_transaction_group_lock)
 	{
 		#pragma omp master
 		{
 			int thread;
 			for(thread = 0; thread < thread_count; ++thread) {
-				omp_lock_t* lock = thread_locks[thread];
-				#pragma omp task default(none) firstprivate(logger, thread_queue, lock, extra_wakeup_delay, thread_event_interval, event_code, thread_event_transaction_group, thread_event_transaction_group_lock)
-				nqiv_worker_main(logger, thread_queue, lock, extra_wakeup_delay, thread_event_interval, event_code, thread_event_transaction_group, thread_event_transaction_group_lock);
+				#pragma omp task default(none) firstprivate(logger, thread_queue, extra_wakeup_delay, thread_event_interval, event_code, thread_event_transaction_group, thread_event_transaction_group_lock)
+				nqiv_worker_main(logger, thread_queue, extra_wakeup_delay, thread_event_interval, event_code, thread_event_transaction_group, thread_event_transaction_group_lock);
 			}
 			*result_ptr = nqiv_master_thread(state);
 		}
