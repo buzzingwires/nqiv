@@ -1848,8 +1848,8 @@ bool nqiv_master_thread(nqiv_state* state)
 		nqiv_event output_event = {0};
 		output_event.type = NQIV_EVENT_WORKER_STOP;
 		nqiv_send_thread_event_force(state, 0, &output_event);
-		nqiv_unlock_threads(state, state->thread_count);
 	}
+	nqiv_unlock_threads(state, state->thread_count);
 	return result;
 }
 
