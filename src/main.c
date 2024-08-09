@@ -1762,7 +1762,7 @@ bool nqiv_run(nqiv_state* state)
 	const int64_t* thread_event_transaction_group = &state->thread_event_transaction_group;
 	omp_lock_t* thread_event_transaction_group_lock = &state->thread_event_transaction_group_lock;
 	const Uint32 event_code = state->thread_event_number;
-	#pragma omp parallel default(none) firstprivate(state, logger, thread_count, extra_wakeup_delay, thread_event_interval, thread_queue, event_code, result_ptr, thread_event_transaction_group, thread_event_transaction_group_lock)
+	#pragma omp parallel default(none) firstprivate(state, logger, thread_count, extra_wakeup_delay, thread_event_interval, thread_queue, event_code, result_ptr, thread_event_transaction_group, thread_event_transaction_group_lock) num_threads(thread_count + 1)
 	{
 		#pragma omp master
 		{
