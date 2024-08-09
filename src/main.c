@@ -86,7 +86,9 @@ void nqiv_state_clear(nqiv_state* state)
 	if(state->SDL_inited) {
 		SDL_Quit();
 	}
-	omp_destroy_lock(&state->thread_event_transaction_group_lock);
+	if(state->thread_event_transaction_group > 0) {
+		omp_destroy_lock(&state->thread_event_transaction_group_lock);
+	}
 	if(state->window_title != NULL) {
 		free(state->window_title);
 	}
@@ -214,6 +216,8 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 		state->thread_count = 1;
 	}
 	omp_init_lock(&state->thread_event_transaction_group_lock);
+	assert(state->thread_event_transaction_group == 0);
+	state->thread_event_transaction_group = 1;
 	return true;
 }
 
