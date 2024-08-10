@@ -1,13 +1,15 @@
+#include "platform.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <limits.h>
 #include <assert.h>
 
 #include <vips/vips.h>
 #include <SDL2/SDL.h>
 #include <omp.h>
 
-#include "platform.h"
 #include "logging.h"
 #include "image.h"
 #include "worker.h"

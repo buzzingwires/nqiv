@@ -1,6 +1,12 @@
 #ifndef NQIV_PLATFORM_H
 #define NQIV_PLATFORM_H
 
+#if !defined(__unix__) && !defined(__linux__) && !defined(__gnu_linux__) && !defined(__MINGW32__)
+	#error "Currently, only Unix, Linux, and windows through MinGW are supported."
+#else
+	#define _GNU_SOURCE
+#endif
+
 #include <stdbool.h>
 #include <time.h>
 

@@ -1,3 +1,5 @@
+#include "platform.h"
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -12,7 +14,6 @@
 #include "image.h"
 #include "md5.h"
 #include "thumbnail.h"
-#include "platform.h"
 
 void nqiv_thumbnail_digest_to_string(char* output, const unsigned char* md5raw)
 {

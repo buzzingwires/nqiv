@@ -1,9 +1,3 @@
-#if !defined(__unix__) && !defined(__linux__) && !defined(__gnu_linux__) && !defined(__MINGW32__)
-	#error "Currently, only Unix, Linux, and windows through MinGW are supported."
-#else
-	#define _GNU_SOURCE
-#endif
-
 #include "platform.h"
 
 #if defined(__MINGW32__)
