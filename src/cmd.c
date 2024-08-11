@@ -1059,27 +1059,27 @@ nqiv_cmd_arg_desc nqiv_parser_arg_type_Uint8 = {
 
 nqiv_cmd_arg_desc nqiv_parser_arg_type_double_positive = {
 	.type = NQIV_CMD_ARG_DOUBLE,
-	.setting = { .of_double = {.min = DBL_MIN, .max = DBL_MAX} },
+	.setting = { .of_double = {.min = NQIV_CMD_ARG_FLOAT_MIN, .max = NQIV_CMD_ARG_FLOAT_MAX} },
 };
 
 nqiv_cmd_arg_desc nqiv_parser_arg_type_double_negative = {
 	.type = NQIV_CMD_ARG_DOUBLE,
-	.setting = { .of_double = {.min = -DBL_MAX, .max = -DBL_MIN} },
+	.setting = { .of_double = {.min = -NQIV_CMD_ARG_FLOAT_MAX, .max = -NQIV_CMD_ARG_FLOAT_MIN} },
 };
 
 nqiv_cmd_arg_desc nqiv_parser_arg_type_double_negative_one = {
 	.type = NQIV_CMD_ARG_DOUBLE,
-	.setting = { .of_double = {.min = -1.0, .max = -DBL_MIN} },
+	.setting = { .of_double = {.min = -1.0, .max = -NQIV_CMD_ARG_FLOAT_MIN} },
 };
 
 nqiv_cmd_arg_desc nqiv_parser_arg_type_double_positive_one = {
 	.type = NQIV_CMD_ARG_DOUBLE,
-	.setting = { .of_double = {.min = DBL_MIN, .max = 1.0} },
+	.setting = { .of_double = {.min = NQIV_CMD_ARG_FLOAT_MIN, .max = 1.0} },
 };
 
 nqiv_cmd_arg_desc nqiv_parser_arg_type_double = {
 	.type = NQIV_CMD_ARG_DOUBLE,
-	.setting = { .of_double = {.min = -DBL_MAX, .max = DBL_MAX} },
+	.setting = { .of_double = {.min = -NQIV_CMD_ARG_FLOAT_MAX, .max = NQIV_CMD_ARG_FLOAT_MAX} },
 };
 
 nqiv_cmd_arg_desc nqiv_parser_arg_type_bool = {
