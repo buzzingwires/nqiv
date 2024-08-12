@@ -331,9 +331,9 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	state->thread_count = state->thread_count > 0 ? state->thread_count : 1;
 	state->vips_threads = omp_get_num_procs() / 2;
 	state->vips_threads = state->vips_threads > 0 ? state->vips_threads : 1;
-	state->thread_event_interval = 5;
-	state->prune_delay = 500;
-	state->extra_wakeup_delay = 100;
+	state->thread_event_interval = state->thread_count * 3;
+	state->extra_wakeup_delay = state->thread_count * 20;
+	state->prune_delay = 50000 / state->extra_wakeup_delay;
 	vips_concurrency_set(state->vips_threads);
 	state->logger_stream_names = nqiv_array_create(state->queue_length);
 	if(state->logger_stream_names == NULL) {
