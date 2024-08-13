@@ -83,7 +83,7 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state)
 		state->positions.start = state->positions.selection;
 	}
 	state->positions.end = state->positions.start + state->dimensions.count;
-	const int images_len = state->images->images->position / sizeof(nqiv_image*);
+	const int images_len = nqiv_array_get_units_count(state->images->images);
 	while(state->positions.selection >= state->positions.end) {
 		state->positions.start++;
 		state->positions.end = state->positions.start + state->dimensions.count;
@@ -104,7 +104,7 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 	nqiv_montage_state original = {0};
 	memcpy( &original, state, sizeof(nqiv_montage_state) );
 	int new_idx = idx;
-	const int images_len = state->images->images->position / sizeof(nqiv_image*);
+	const int images_len = nqiv_array_get_units_count(state->images->images);
 	if(new_idx >= images_len) {
 		new_idx = images_len - 1;
 	}
@@ -191,13 +191,13 @@ void nqiv_montage_jump_selection_start(nqiv_montage_state* state)
 
 void nqiv_montage_jump_selection_end(nqiv_montage_state* state)
 {
-	nqiv_montage_set_selection(state, state->images->images->position / sizeof(nqiv_image*) - 1);
+	nqiv_montage_set_selection( state, nqiv_array_get_last_idx(state->images->images) );
 }
 
 void nqiv_montage_get_image_rect(nqiv_montage_state* state, const int idx, SDL_Rect* rect)
 {
 	assert(idx >= 0);
-	assert( idx < state->images->images->position / (int)sizeof(nqiv_image*) );
+	assert( idx < nqiv_array_get_units_count(state->images->images) );
 	/*
 	if(idx < 0) {
 		return;

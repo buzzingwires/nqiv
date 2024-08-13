@@ -123,7 +123,7 @@ void nqiv_key_print_actions(FILE* stream);
 nqiv_key_action nqiv_text_to_key_action(const char* text);
 int nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair);
 bool nqiv_keybind_add(nqiv_keybind_manager* manager, const nqiv_key_match* key, const nqiv_key_action action);
-void nqiv_keybind_to_string(nqiv_keybind_pair* pair, char* buf);
+void nqiv_keybind_to_string(const nqiv_keybind_pair* pair, char* buf);
 nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manager* manager, const nqiv_key_match* match, nqiv_queue* output);
 /*nqiv_key_lookup_summary nqiv_keybind_lookup_text(nqiv_keybind_manager* manager, const char* key);*/
 void nqiv_keybind_destroy_manager(nqiv_keybind_manager* manager);

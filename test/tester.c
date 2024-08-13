@@ -165,17 +165,16 @@ test_set* create_tests(void)
 	if(add_test(logging, &test_counter, "logging_nulls", logging_test_nulls) == NULL) { goto cleanup; }
 
 	test_set* array = add_test_subset(root, &test_counter, "array"); if(array == NULL) { goto cleanup; }
-	if(add_test(array, &test_counter, "array_bytes", array_test_bytes) == NULL) { goto cleanup; }
-	if(add_test(array, &test_counter, "array_ptr", array_test_ptr) == NULL) { goto cleanup; }
-	if(add_test(array, &test_counter, "array_char_ptr", array_test_char_ptr) == NULL) { goto cleanup; }
-	if(add_test(array, &test_counter, "array_FILE_ptr", array_test_FILE_ptr) == NULL) { goto cleanup; }
+	if(add_test(array, &test_counter, "array_test_default", array_test_default) == NULL) { goto cleanup; }
+	if(add_test(array, &test_counter, "array_test_strbuild", array_test_strbuild) == NULL) { goto cleanup; }
 
 	test_set* pruner = add_test_subset(root, &test_counter, "pruner"); if(pruner == NULL) { goto cleanup; }
-	if(add_test(array, &test_counter, "pruner_default", pruner_test_default) == NULL) { goto cleanup; }
+	if(add_test(pruner, &test_counter, "pruner_default", pruner_test_default) == NULL) { goto cleanup; }
 
 	goto done;
 	cleanup:
 		destroy_test_set(root);
+		root = NULL;
 	done:
 		return root;
 }

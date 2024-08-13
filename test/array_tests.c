@@ -1,122 +1,75 @@
+#include <string.h>
 #include <assert.h>
 
 #include "../src/array.h"
 
 #include "array_tests.h"
 
-void array_test_bytes(void)
+void array_test_default(void)
 {
-	nqiv_array* array = nqiv_array_create(1);
+	int idx = -1;
+	nqiv_array* array = nqiv_array_create(sizeof(int), 1);
 	assert(array != NULL);
+	assert(array->position == 0);
+	assert( array->data_length == sizeof(int) );
+	assert( array->max_data_length == sizeof(int) );
+	assert( array->unit_length == sizeof(int) );
+	assert(nqiv_array_get_units_count(array) == 0);
+	assert(nqiv_array_get_last_idx(array) == 0);
+	assert( nqiv_array_push_count(array, &idx, 1) );
+	assert( !nqiv_array_push_count(array, &idx, 1) );
+	nqiv_array_unlimit_data(array);
+	assert( nqiv_array_push_count(array, &idx, 1) );
+	assert(nqiv_array_get_units_count(array) == 2);
+	assert(nqiv_array_get_last_idx(array) == 1);
+	nqiv_array_clear(array);
+	assert(nqiv_array_get_units_count(array) == 0);
+	assert(array->data_length == sizeof(int) * 2);
+	assert(array->max_data_length == 0);
 	int times;
 	for(times = 0; times < 2; ++times) {
-		int idx;
 		for(idx = 0; idx < 5; ++idx) {
-			assert( nqiv_array_push_bytes( array, &idx, sizeof(int) ) );
-			assert( nqiv_array_insert_bytes(array, &idx, sizeof(int), idx) );
+			assert( nqiv_array_push( array, &idx) );
+			assert( nqiv_array_insert(array, &idx, idx) );
 		}
+		assert(nqiv_array_get_units_count(array) == 10);
+		int to_compare[] = {0, 1, 2, 3, 4, 0, 1, 2, 3, 4};
+		assert(memcmp(to_compare, array->data, 10) == 0);
 		int gotten = -1;
 		int popped = -1;
 		for(idx = 4; idx >= 0; --idx) {
-			assert( nqiv_array_get_bytes(array, idx, sizeof(int), &gotten) );
-			nqiv_array_remove_bytes( array, idx, sizeof(int) );
-			assert( nqiv_array_pop_bytes(array, sizeof(int), &popped) );
+			assert( nqiv_array_get(array, idx, &gotten) );
+			nqiv_array_remove(array, idx);
+			assert( nqiv_array_pop(array, &popped) );
 			assert(gotten == popped);
 			assert(gotten == idx);
 		}
-		assert( !nqiv_array_get_bytes(array, idx, sizeof(int), &gotten) );
-		nqiv_array_remove_bytes( array, idx, sizeof(int) );
-		assert( !nqiv_array_pop_bytes(array, sizeof(int), &popped) );
 	}
 	nqiv_array_clear(array);
 	assert(array->position == 0);
-	int idx;
 	for(idx = 0; idx < array->data_length; ++idx) {
 		assert( ( (char*)(array->data) )[idx] == 0 );
 	}
 	nqiv_array_destroy(array);
 }
 
-void array_test_ptr(void)
+void array_test_strbuild(void)
 {
-	nqiv_array* array = nqiv_array_create(1);
-	assert(array != NULL);
-	int times;
-	for(times = 0; times < 2; ++times) {
-		int idx;
-		for(idx = 0; idx < 5; ++idx) {
-			assert( nqiv_array_push_ptr(array, (char*)0 + idx) );
-			assert( nqiv_array_insert_ptr(array, (char*)0 + idx, idx) );
-		}
-		/* XXX: We intentionally use an unsafe cast here, since the pointer should be the same. */
-		int* gotten = (int*)-1;
-		int* popped = (int*)-1;
-		for(idx = 4; idx >= 0; --idx) {
-			gotten = nqiv_array_get_ptr(array, idx);
-			assert(gotten != NULL || idx == 0);
-			nqiv_array_remove_ptr(array, idx);
-			popped = nqiv_array_pop_ptr(array);
-			assert(gotten == popped);
-			assert( (char*)gotten == (char*)0 + idx );
-		}
-		assert(nqiv_array_get_ptr(array, idx) == NULL);
-		assert(nqiv_array_pop_ptr(array) == NULL);
-	}
-	nqiv_array_destroy(array);
-}
-
-void array_test_char_ptr(void)
-{
-	nqiv_array* array = nqiv_array_create(1);
-	assert(array != NULL);
-	int times;
-	for(times = 0; times < 2; ++times) {
-		int idx;
-		for(idx = 0; idx < 5; ++idx) {
-			assert( nqiv_array_push_char_ptr(array, (char*)0 + idx) );
-			assert( nqiv_array_insert_char_ptr(array, (char*)0 + idx, idx) );
-		}
-		/* XXX: We intentionally use an unsafe cast here, since the pointer should be the same. */
-		char* gotten = (char*)-1;
-		char* popped = (char*)-1;
-		for(idx = 4; idx >= 0; --idx) {
-			gotten = nqiv_array_get_char_ptr(array, idx);
-			assert(gotten != NULL || idx == 0);
-			nqiv_array_remove_char_ptr(array, idx);
-			popped = nqiv_array_pop_char_ptr(array);
-			assert(gotten == popped);
-			assert(gotten == (char*)0 + idx);
-		}
-		assert(nqiv_array_get_char_ptr(array, idx) == NULL);
-		assert(nqiv_array_pop_char_ptr(array) == NULL);
-	}
-	nqiv_array_destroy(array);
-}
-
-void array_test_FILE_ptr(void)
-{
-	nqiv_array* array = nqiv_array_create(1);
-	assert(array != NULL);
-	int times;
-	for(times = 0; times < 2; ++times) {
-		int idx;
-		for(idx = 0; idx < 5; ++idx) {
-			assert( nqiv_array_push_FILE_ptr(array, (FILE*)0 + idx) );
-			assert( nqiv_array_insert_FILE_ptr(array, (FILE*)0 + idx, idx) );
-		}
-		/* XXX: We intentionally use an unsafe cast here, since the pointer should be the same. */
-		FILE* gotten = (FILE*)-1;
-		FILE* popped = (FILE*)-1;
-		for(idx = 4; idx >= 0; --idx) {
-			gotten = nqiv_array_get_FILE_ptr(array, idx);
-			assert(gotten != NULL || idx == 0);
-			nqiv_array_remove_FILE_ptr(array, idx);
-			popped = nqiv_array_pop_FILE_ptr(array);
-			assert(gotten == popped);
-			assert( (FILE*)gotten == (FILE*)0 + idx );
-		}
-		assert(nqiv_array_get_FILE_ptr(array, idx) == NULL);
-		assert(nqiv_array_pop_FILE_ptr(array) == NULL);
-	}
-	nqiv_array_destroy(array);
+	char str[13 * sizeof(char)];
+	nqiv_array array;
+	nqiv_array_inherit(&array, str, sizeof(char), 13);
+	nqiv_array_clear(&array);
+	assert( nqiv_array_push_str(&array, "Hello ") );
+	assert(strcmp(array.data, "Hello ") == 0);
+	assert( nqiv_array_push_str(&array, "World") );
+	assert(strcmp(array.data, "Hello World") == 0);
+	assert( !nqiv_array_push_str(&array, " Earth!") );
+	assert(strcmp(array.data, "Hello World") == 0);
+	assert( nqiv_array_push_str(&array, "!") );
+	assert(strcmp(array.data, "Hello World!") == 0);
+	assert( !nqiv_array_push_str(&array, "!") );
+	assert(strcmp(array.data, "Hello World!") == 0);
+	assert(nqiv_array_get_units_count(&array) == 12);
+	assert(str == array.data);
+	assert(strcmp(str, array.data) == 0);
 }

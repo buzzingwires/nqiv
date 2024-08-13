@@ -502,25 +502,21 @@ void nqiv_image_manager_destroy(nqiv_image_manager* manager)
 	}
 	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Destroying image manager.\n");
 
-	while(true) {
-		nqiv_image* current_image = nqiv_array_pop_ptr(manager->images);
-		if(current_image == NULL) {
-			break;
-		}
-		nqiv_image_destroy(current_image);
-	}
-
 	if(manager->images != NULL) {
+		const int num_images = nqiv_array_get_units_count(manager->images);
+		nqiv_image** images = manager->images->data;
+		int idx;
+		for(idx = 0; idx < num_images; ++idx) {
+			nqiv_image_destroy(images[idx]);
+		}
 		nqiv_array_destroy(manager->images);
 	}
 	if(manager->extensions != NULL) {
-		const int num_extensions = manager->extensions->position / sizeof(char*);
+		const int num_extensions = nqiv_array_get_units_count(manager->extensions);
+		char** extensions = manager->extensions->data;
 		int idx;
 		for(idx = 0; idx < num_extensions; ++idx) {
-			char* ext = nqiv_array_get_char_ptr(manager->extensions, idx);
-			if(ext != NULL) {
-				free(ext);
-			}
+			free(extensions[idx]);
 		}
 		nqiv_array_destroy(manager->extensions);
 	}
@@ -540,12 +536,13 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, 
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Cannot make image manager with starting length of: %d", starting_length);
 		return false;
 	}
-	nqiv_array* images = nqiv_array_create(starting_length);
+	nqiv_array* images = nqiv_array_create(sizeof(nqiv_array*), starting_length);
 	if(images == NULL) {
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Cannot make image manager images array with starting length of: %d", starting_length);
 		return false;
 	}
-	nqiv_array* extensions = nqiv_array_create(starting_length);
+	nqiv_array_unlimit_data(images);
+	nqiv_array* extensions = nqiv_array_create(sizeof(char*), starting_length);
 	assert(images != extensions);
 	if(extensions == NULL) {
 		nqiv_array_destroy(images);
@@ -587,46 +584,23 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, 
 	return true;
 }
 
-/* HELPERS */
-bool nqiv_array_push_nqiv_image_ptr(nqiv_array* array, nqiv_image* image)
-{
-	return nqiv_array_push_ptr( array, (void*)image );
-}
-
-bool nqiv_array_insert_nqiv_image_ptr(nqiv_array* array, nqiv_image* image, const int idx)
-{
-	return nqiv_array_insert_ptr(array, (void*)image, idx);
-}
-
-void nqiv_array_remove_nqiv_image_ptr(nqiv_array* array, const int idx)
-{
-	nqiv_array_remove_ptr(array, idx);
-}
-
-nqiv_image* nqiv_array_get_nqiv_image_ptr(const nqiv_array* array, const int idx)
-{
-	return (nqiv_image*)nqiv_array_get_ptr(array, idx);
-}
-/* HELPERS END */
-
 bool nqiv_image_manager_has_path_extension(nqiv_image_manager* manager, const char* path)
 {
 	assert(manager != NULL);
 	assert(manager->extensions != NULL);
 
 	const size_t path_len = strlen(path);
-	const int num_extensions = manager->extensions->position / sizeof(char*);
+	const int num_extensions = nqiv_array_get_units_count(manager->extensions);
+	const char** extensions = manager->extensions->data;
 	int idx;
 	for(idx = 0; idx < num_extensions; ++idx) {
-		char* ext;
-		if( nqiv_array_get_bytes(manager->extensions, idx, sizeof(char*), &ext) ) {
-			const size_t extlen = strlen(ext);
-			if(extlen > path_len) {
-				continue;
-			}
-			if(strcmp(path + path_len - extlen, ext) == 0) {
-				return true;
-			}
+		const char* ext = extensions[idx];
+		const size_t extlen = strlen(ext);
+		if(extlen > path_len) {
+			continue;
+		}
+		if(strcmp(path + path_len - extlen, ext) == 0) {
+			return true;
 		}
 	}
 	return false;
@@ -639,13 +613,13 @@ bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, co
 		// nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Failed to generate image at path '%s'. Success: %s", path, "false");
 		return false;
 	}
-	const int images_length = manager->images->position / sizeof(nqiv_image*);
+	const int images_length = nqiv_array_get_units_count(manager->images);
 	if(index > images_length) {
 		nqiv_image_destroy(image);
 		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Cannot insert image from path '%s' at index %d, greater than the length of the current images array %d.\n", path, index, images_length);
 		return false;
 	}
-	if(!nqiv_array_insert_nqiv_image_ptr(manager->images, image, index)) {
+	if( !nqiv_array_insert(manager->images, &image, index) ) {
 		nqiv_image_destroy(image);
 		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Failed to add image at path '%s' to image manager at index %d.\n", path, index);
 		return false;
@@ -659,13 +633,15 @@ bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, co
 bool nqiv_image_manager_remove(nqiv_image_manager* manager, const int index)
 {
 	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Removing image from index %d from image manager.\n", index);
-	const int images_length = manager->images->position / sizeof(nqiv_image*);
+	const int images_length = nqiv_array_get_units_count(manager->images);
 	if(index >= images_length) {
 		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Cannot remove image at index %d, greater than the length of the current images array %d.\n", index, images_length);
 		return false;
 	}
-	nqiv_image_destroy( nqiv_array_get_nqiv_image_ptr(manager->images, index) );
-	nqiv_array_remove_nqiv_image_ptr(manager->images, index);
+	nqiv_image* image = NULL;
+	nqiv_array_get(manager->images, index, &image);
+	nqiv_image_destroy(image);
+	nqiv_array_remove(manager->images, index);
 	return true;
 }
 
@@ -676,7 +652,7 @@ bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path)
 		// nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Failed to generate image at path '%s'. Success: %s", path, "false");
 		return false;
 	}
-	if(!nqiv_array_push_nqiv_image_ptr(manager->images, image)) {
+	if( !nqiv_array_push(manager->images, &image) ) {
 		nqiv_image_destroy(image);
 		nqiv_log_write(manager->logger, NQIV_LOG_ERROR, "Failed to add image at path '%s' to image manager.", path);
 		return false;
@@ -710,7 +686,7 @@ bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, const char* e
 {
 	char* new_extension = (char*)calloc(1, strlen(extension) + 1);
 	memcpy( new_extension, extension, strlen(extension) );
-	const bool outcome = new_extension != NULL && nqiv_array_push_char_ptr(manager->extensions, new_extension);
+	const bool outcome = new_extension != NULL && nqiv_array_push(manager->extensions, &new_extension);
 	nqiv_log_write(manager->logger, outcome?NQIV_LOG_INFO:NQIV_LOG_ERROR, "Adding extension '%s' to image manager. Success: %s\n", new_extension, outcome?"true":"false");
 	return outcome;
 }
@@ -1012,13 +988,11 @@ void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const 
 	if(old_size > 128 || manager->thumbnail.size <= 128) {
 		return;
 	}
-	const int num_images = manager->images->position / sizeof(nqiv_image*);
+	const int num_images = nqiv_array_get_units_count(manager->images);
+	nqiv_image** images = manager->images->data;
 	int idx;
 	for(idx = 0; idx < num_images; ++idx) {
-		nqiv_image* image;
-		if( nqiv_array_get_bytes(manager->images, idx, sizeof(nqiv_image*), &image) ) {
-			image->thumbnail_attempted = false;
-		}
+		images[idx]->thumbnail_attempted = false;
 	}
 }
 

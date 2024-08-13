@@ -89,14 +89,14 @@ bool nqiv_add_logger_path(nqiv_state* state, const char* path)
 		return false;
 	}
 	memcpy( persistent_path, path, strlen(path) );
-	if( !nqiv_array_push_char_ptr(state->logger_stream_names, persistent_path) ) {
+	if( !nqiv_array_push(state->logger_stream_names, &persistent_path) ) {
 		free(persistent_path);
 		fclose(stream);
 		return false;
 	}
 	nqiv_log_add_stream(&state->logger, stream);
 	if( !nqiv_check_and_print_logger_error(&state->logger) ) {
-		nqiv_array_pop_char_ptr(state->logger_stream_names);
+		nqiv_array_pop(state->logger_stream_names, NULL);
 		fclose(stream);
 		free(persistent_path);
 		return false;
@@ -305,13 +305,13 @@ bool nqiv_state_recreate_loading_texture(nqiv_state* state)
 
 bool nqiv_state_expand_queues(nqiv_state* state)
 {
-	if(!nqiv_array_grow(state->keybinds.lookup, state->queue_length) ||
-	   !nqiv_array_grow(state->images.images, state->queue_length) ||
-	   !nqiv_array_grow(state->images.extensions, state->queue_length) ||
-	   !nqiv_array_grow(state->logger_stream_names, state->queue_length) ||
+	if(!nqiv_array_grow(state->keybinds.lookup, state->queue_length, true) ||
+	   !nqiv_array_grow(state->images.images, state->queue_length, true) ||
+	   !nqiv_array_grow(state->images.extensions, state->queue_length, true) ||
+	   !nqiv_array_grow(state->logger_stream_names, state->queue_length, true) ||
 	   !nqiv_priorty_queue_grow( &(state->thread_queue), state->queue_length) ||
-	   !nqiv_array_grow(state->key_actions.array, state->queue_length) ||
-	   !nqiv_array_grow(state->cmds.buffer, state->queue_length) ) {
+	   !nqiv_array_grow(state->key_actions.array, state->queue_length, true) ||
+	   !nqiv_array_grow(state->cmds.buffer, state->queue_length, true) ) {
 		return false;
 	}
 	return true;

@@ -29,7 +29,7 @@ void nqiv_cmd_alert_main(nqiv_cmd_manager* manager)
 void nqiv_cmd_force_quit_main(nqiv_cmd_manager* manager)
 {
 	nqiv_key_action action = NQIV_KEY_ACTION_QUIT;
-	nqiv_queue_push_force(&manager->state->key_actions, sizeof(nqiv_key_action), &action);
+	nqiv_queue_push_force(&manager->state->key_actions, &action);
 	nqiv_cmd_alert_main(manager);
 }
 
@@ -479,7 +479,7 @@ bool nqiv_cmd_parser_remove_image_index(nqiv_cmd_manager* manager, nqiv_cmd_arg_
 
 bool nqiv_cmd_parser_sendkey(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
-	return nqiv_queue_push(&manager->state->key_actions, sizeof(nqiv_key_action), &tokens[0]->value.as_key_action);
+	return nqiv_queue_push(&manager->state->key_actions, &tokens[0]->value.as_key_action);
 }
 
 bool nqiv_cmd_parser_set_queue_size(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
@@ -830,11 +830,12 @@ void nqiv_cmd_parser_print_minimum_delay(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_print_str_list(const nqiv_cmd_manager* manager, const nqiv_array* list)
 {
-	const int list_len = list->position / sizeof(char*);
+	const int list_len = nqiv_array_get_units_count(list);
+	const char** strs = list->data;
 	bool taken = false;
 	int idx;
 	for(idx = 0; idx < list_len; ++idx) {
-		const char* str = nqiv_array_get_char_ptr(list, idx);
+		const char* str = strs[idx];
 		if(str != NULL) {
 			taken = true;
 			if(!manager->print_settings.dumpcfg) {
@@ -862,26 +863,25 @@ void nqiv_cmd_parser_print_log_stream(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_pruner(nqiv_cmd_manager* manager)
 {
-	const int list_len = manager->state->pruner.pruners->position / sizeof(nqiv_pruner_desc);
+	const int list_len = nqiv_array_get_units_count(manager->state->pruner.pruners);
+	nqiv_pruner_desc* pruners = manager->state->pruner.pruners->data;
 	bool taken = false;
 	int idx;
 	for(idx = 0; idx < list_len; ++idx) {
-		nqiv_pruner_desc desc = {0};
-		if( nqiv_array_get_bytes(manager->state->pruner.pruners, idx, sizeof(nqiv_pruner_desc), &desc) ) {
-			taken = true;
-			char desc_str[NQIV_PRUNER_DESC_STRLEN] = {0};
-			nqiv_pruner_desc_to_string(&desc, desc_str);
-			if(!manager->print_settings.dumpcfg) {
-				if(idx == 0) {
-					fprintf(stdout, "\n");
-				}
-				nqiv_cmd_print_indent(manager);
-				fprintf(stdout, "%s\n", desc_str);
-			} else if(idx == list_len - 1) {
-				fprintf(stdout, "%s%s", manager->print_settings.prefix, desc_str);
-			} else {
-				fprintf(stdout, "%s%s\n", manager->print_settings.prefix, desc_str);
+		const nqiv_pruner_desc* desc = &pruners[idx];
+		taken = true;
+		char desc_str[NQIV_PRUNER_DESC_STRLEN] = {0};
+		nqiv_pruner_desc_to_string(desc, desc_str);
+		if(!manager->print_settings.dumpcfg) {
+			if(idx == 0) {
+				fprintf(stdout, "\n");
 			}
+			nqiv_cmd_print_indent(manager);
+			fprintf(stdout, "%s\n", desc_str);
+		} else if(idx == list_len - 1) {
+			fprintf(stdout, "%s%s", manager->print_settings.prefix, desc_str);
+		} else {
+			fprintf(stdout, "%s%s\n", manager->print_settings.prefix, desc_str);
 		}
 	}
 	if(!taken && manager->print_settings.dumpcfg) {
@@ -896,26 +896,25 @@ void nqiv_cmd_parser_print_extension(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
 {
-	const int list_len = manager->state->keybinds.lookup->position / sizeof(nqiv_keybind_pair);
+	const int list_len = nqiv_array_get_units_count(manager->state->keybinds.lookup);
+	nqiv_keybind_pair* pairs = manager->state->keybinds.lookup->data;
 	bool taken = false;
 	int idx;
 	for(idx = 0; idx < list_len; ++idx) {
-		nqiv_keybind_pair pair = {.match = {0}, .action = -1};
-		if( nqiv_array_get_bytes(manager->state->keybinds.lookup, idx, sizeof(nqiv_keybind_pair), &pair) ) {
-			taken = true;
-			char keybind_str[NQIV_KEYBIND_STRLEN] = {0};
-			nqiv_keybind_to_string(&pair, keybind_str);
-			if(!manager->print_settings.dumpcfg) {
-				if(idx == 0) {
-					fprintf(stdout, "\n");
-				}
-				nqiv_cmd_print_indent(manager);
-				fprintf(stdout, "%s\n", keybind_str);
-			} else if(idx == list_len - 1) {
-				fprintf(stdout, "%s%s", manager->print_settings.prefix, keybind_str);
-			} else {
-				fprintf(stdout, "%s%s\n", manager->print_settings.prefix, keybind_str);
+		const nqiv_keybind_pair* pair = &pairs[idx];
+		taken = true;
+		char keybind_str[NQIV_KEYBIND_STRLEN] = {0};
+		nqiv_keybind_to_string(pair, keybind_str);
+		if(!manager->print_settings.dumpcfg) {
+			if(idx == 0) {
+				fprintf(stdout, "\n");
 			}
+			nqiv_cmd_print_indent(manager);
+			fprintf(stdout, "%s\n", keybind_str);
+		} else if(idx == list_len - 1) {
+			fprintf(stdout, "%s%s", manager->print_settings.prefix, keybind_str);
+		} else {
+			fprintf(stdout, "%s%s\n", manager->print_settings.prefix, keybind_str);
 		}
 	}
 	if(!taken && manager->print_settings.dumpcfg) {
@@ -2476,7 +2475,7 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 	char* data = manager->buffer->data;
 	int idx = nqiv_cmd_scan_not_whitespace_and_eol(data, 0, manager->buffer->position, NULL);
 	if(idx == -1) {
-		nqiv_array_remove_bytes(manager->buffer, 0, manager->buffer->position);
+		nqiv_array_clear(manager->buffer);
 		return true; /* The entire string must be whitespace- nothing to do. */
 	}
 	const int eolpos = nqiv_cmd_scan_eol(data, idx, manager->buffer->position, NULL);
@@ -2487,7 +2486,7 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 		const char eolc = nqiv_cmd_tmpterm(data, eolpos);
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd skipping input %s\n", data + idx);
 		nqiv_cmd_tmpret(data, eolpos, eolc);
-		nqiv_array_remove_bytes(manager->buffer, 0, eolpos);
+		nqiv_array_remove_count(manager->buffer, 0, eolpos);
 		return true; /* This line is a comment- ignore it. */
 	}
 	const char eolc = nqiv_cmd_tmpterm(data, eolpos);
@@ -2554,7 +2553,7 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 			error = false;
 		}
 	}
-	nqiv_array_remove_bytes(manager->buffer, 0, eolpos + 1);
+	nqiv_array_remove_count(manager->buffer, 0, eolpos + 1);
 	return !error;
 }
 
@@ -2570,11 +2569,8 @@ bool nqiv_cmd_parse(nqiv_cmd_manager* manager)
 
 bool nqiv_cmd_add_byte(nqiv_cmd_manager* manager, const char byte)
 {
-	if( !nqiv_array_make_room(manager->buffer, NQIV_CMD_ADD_BYTE_BUFFER_LENGTH) ) {
-		return false;
-	}
 	const char buf[NQIV_CMD_ADD_BYTE_BUFFER_LENGTH] = {byte};
-	if( !nqiv_array_push_bytes(manager->buffer, buf, NQIV_CMD_ADD_BYTE_BUFFER_LENGTH) ) {
+	if( !nqiv_array_push_count(manager->buffer, buf, NQIV_CMD_ADD_BYTE_BUFFER_LENGTH) ) {
 		nqiv_log_write( &manager->state->logger, NQIV_LOG_ERROR, "Failed to append byte %c to nqiv command parser of length %d.\n", byte, manager->buffer->data_length );
 		nqiv_cmd_force_quit_main(manager);
 		return false;
@@ -2638,7 +2634,7 @@ void nqiv_cmd_manager_destroy(nqiv_cmd_manager* manager)
 bool nqiv_cmd_manager_init(nqiv_cmd_manager* manager, nqiv_state* state)
 {
 	nqiv_cmd_manager_destroy(manager);
-	manager->buffer = nqiv_array_create(NQIV_CMD_READ_BUFFER_LENGTH);
+	manager->buffer = nqiv_array_create(sizeof(char), NQIV_CMD_READ_BUFFER_LENGTH);
 	if(manager->buffer == NULL) {
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR, "Failed to allocate memory to create cmd buffer of length %d\n", state->queue_length);
 		return false;

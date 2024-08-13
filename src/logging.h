@@ -40,7 +40,7 @@ bool nqiv_log_has_error(const nqiv_log_ctx* ctx);
 void nqiv_log_set_prefix_format(nqiv_log_ctx* ctx, const char* fmt);
 void nqiv_log_destroy(nqiv_log_ctx* ctx);
 void nqiv_log_init(nqiv_log_ctx* ctx);
-void nqiv_log_add_stream(nqiv_log_ctx* ctx, FILE* stream);
+void nqiv_log_add_stream(nqiv_log_ctx* ctx, const FILE* stream);
 void nqiv_log_write(nqiv_log_ctx* ctx,
 	const nqiv_log_level level,
 	const char* format,

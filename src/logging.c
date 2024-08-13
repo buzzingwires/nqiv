@@ -8,6 +8,7 @@
 #include <omp.h>
 
 #include "array.h"
+#include "state.h"
 #include "logging.h"
 
 const char* nqiv_log_level_names[] =
@@ -78,7 +79,7 @@ void nqiv_log_init(nqiv_log_ctx* ctx)
 		return;
 	}
 	nqiv_log_destroy(ctx);
-	ctx->streams = nqiv_array_create( 1 * sizeof(FILE*) );
+	ctx->streams = nqiv_array_create(sizeof(FILE*), STARTING_QUEUE_LENGTH);
 	if(ctx->streams == NULL) {
 		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN,
 			"Failed to allocate starting streams memory.\n");
@@ -88,7 +89,7 @@ void nqiv_log_init(nqiv_log_ctx* ctx)
 }
 
 /* Test with null CTX, test with null stream, test with NULL streams */
-void nqiv_log_add_stream(nqiv_log_ctx* ctx, FILE* stream)
+void nqiv_log_add_stream(nqiv_log_ctx* ctx, const FILE* stream)
 {
 	if(ctx == NULL) {
 		return;
@@ -103,7 +104,7 @@ void nqiv_log_add_stream(nqiv_log_ctx* ctx, FILE* stream)
 			"Cannot add stream without available memory.\n");
 		return;
 	}
-	if( !nqiv_array_push_FILE_ptr(ctx->streams, stream) ) {
+	if( !nqiv_array_push(ctx->streams, &stream) ) {
 		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN,
 			"Could not allocate memory for new stream.\n");
 	}
@@ -237,19 +238,16 @@ void nqiv_log_write(nqiv_log_ctx* ctx,
 		omp_unset_lock(&ctx->lock);
 		return;
 	}
-	int idx = 0;
-	FILE* stream = NULL;
-	while(true) {
-		stream = nqiv_array_get_FILE_ptr(ctx->streams, idx);
-		if(stream == NULL) {
-			break;
-		}
+	const int num_streams = nqiv_array_get_units_count(ctx->streams);
+	FILE** streams = ctx->streams->data;
+	int idx;
+	for(idx = 0; idx < num_streams; ++idx) {
+		FILE* stream = streams[idx];
 		va_list args;
 		va_start(args, format);
 		write_prefix(ctx, level, stream);
 		vfprintf(stream, format, args);
 		va_end(args);
-		++idx;
 	}
 	omp_unset_lock(&ctx->lock);
 }

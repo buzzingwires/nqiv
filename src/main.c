@@ -28,17 +28,14 @@
 
 void nqiv_close_log_streams(nqiv_state* state)
 {
-	const int streams_len = state->logger.streams->position / sizeof(FILE*);
+	const int streams_len = nqiv_array_get_units_count(state->logger.streams);
+	assert( streams_len == nqiv_array_get_units_count(state->logger_stream_names) );
+	FILE** fileptrs = state->logger.streams->data;
+	char** nameptrs = state->logger_stream_names->data;
 	int idx;
 	for(idx = 0; idx < streams_len; ++idx) {
-		FILE* fileptr;
-		if( nqiv_array_get_bytes(state->logger.streams, idx, sizeof(FILE*), &fileptr) && fileptr != stderr && fileptr != stdout ) {
-			fclose(fileptr);
-		}
-		char* nameptr;
-		if( nqiv_array_get_bytes(state->logger_stream_names, idx, sizeof(char*), &nameptr) ) {
-			free(nameptr);
-		}
+		fclose(fileptrs[idx]);
+		free(nameptrs[idx]);
 	}
 }
 
@@ -335,7 +332,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	state->extra_wakeup_delay = state->thread_count * 20;
 	state->prune_delay = 50000 / state->extra_wakeup_delay;
 	vips_concurrency_set(state->vips_threads);
-	state->logger_stream_names = nqiv_array_create(state->queue_length);
+	state->logger_stream_names = nqiv_array_create(sizeof(char*), state->queue_length);
 	if(state->logger_stream_names == NULL) {
 		fputs("Failed to initialize logger stream names list.\n", stderr);
 		return false;
@@ -361,11 +358,11 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 		return false;
 	}
 	nqiv_set_keyrate_defaults(&state->keystates);
-	if( !nqiv_priority_queue_init(&state->thread_queue, &state->logger, STARTING_QUEUE_LENGTH, THREAD_QUEUE_BIN_COUNT) ) {
+	if( !nqiv_priority_queue_init(&state->thread_queue, &state->logger, sizeof(nqiv_event), STARTING_QUEUE_LENGTH, THREAD_QUEUE_BIN_COUNT) ) {
 		fputs("Failed to initialize thread queue.\n", stderr);
 		return false;
 	}
-	if( !nqiv_queue_init(&state->key_actions, &state->logger, STARTING_QUEUE_LENGTH) ) {
+	if( !nqiv_queue_init(&state->key_actions, &state->logger, sizeof(nqiv_key_action), STARTING_QUEUE_LENGTH) ) {
 		fputs("Failed to initialize key action queue.\n", stderr);
 		return false;
 	}
@@ -473,7 +470,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 		}
 	}
 	state->first_frame_pending = true;
-	if(state->images.images->position / sizeof(nqiv_image*) > 1) {
+	if(nqiv_array_get_units_count(state->images.images) > 1) {
 		state->in_montage = true;
 	}
 	return true;
@@ -484,10 +481,10 @@ bool nqiv_send_thread_event_base(nqiv_state* state, const int level, const nqiv_
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Sending event.\n");
 	bool event_sent;
 	if(force) {
-		nqiv_priority_queue_push_force(&state->thread_queue, level, sizeof(nqiv_event), event);
+		nqiv_priority_queue_push_force(&state->thread_queue, level, event);
 		event_sent = true;
 	} else {
-		event_sent = nqiv_priority_queue_push(&state->thread_queue, level, sizeof(nqiv_event), event);
+		event_sent = nqiv_priority_queue_push(&state->thread_queue, level, event);
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent attempted, status: %s.\n", event_sent ? "Success" : "Failure");
 	if(!event_sent) {
@@ -1021,7 +1018,7 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 	char height_string[INT_MAX_STRLEN] = {0};
 	char zoom_string[INT_MAX_STRLEN] = {0};
 	snprintf(idx_string, INT_MAX_STRLEN, "%d", state->montage.positions.selection + 1);
-	snprintf( count_string, INT_MAX_STRLEN, "%zu", state->images.images->position / sizeof(nqiv_image*) );
+	snprintf( count_string, INT_MAX_STRLEN, "%d", nqiv_array_get_units_count(state->images.images) );
 	const bool do_dimensions = image->image.width > 0 && image->image.height > 0;
 	if(do_dimensions) {
 		snprintf(width_string, INT_MAX_STRLEN, "%d", image->image.width);
@@ -1126,19 +1123,16 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 		return false;
 	}
 	state->render_cleared = !preload_only;
-	const int images_len = state->images.images->position / sizeof(nqiv_image*);
+	const int images_len = nqiv_array_get_units_count(state->images.images);
 	const int raw_start_idx = state->montage.positions.start - state->montage.preload.behind;
 	const int raw_end = state->montage.positions.end + state->montage.preload.ahead;
 	const int start_idx = raw_start_idx >= 0 ? raw_start_idx : 0;
 	const int end = raw_end <= images_len ? raw_end : images_len;
+	nqiv_image** images = state->logger.streams->data;
 	int idx;
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Preload Start: %d Preload End: %d Montage Start: %d Montage Selection: %d Montage End %d\n", start_idx, end, state->montage.positions.start, state->montage.positions.selection, state->montage.positions.end);
 	for(idx = start_idx; idx < end; ++idx) {
-		nqiv_image* image;
-		if( !nqiv_array_get_bytes(state->images.images, idx, sizeof(nqiv_image*), &image) ) {
-			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to get image %d for montage.\n", idx);
-			return false;
-		}
+		nqiv_image* image = images[idx];
 		if(idx >= state->montage.positions.start && idx < state->montage.positions.end && !preload_only) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n", image->image.path, idx);
 			SDL_Rect dstrect;
@@ -1161,11 +1155,8 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 bool render_image(nqiv_state* state, const bool start, const bool hard)
 {
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering selected image.\n");
-	nqiv_image* image;
-	if( !nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &image) ) {
-		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to get image index %d.\n", state->montage.positions.selection);
-		return false;
-	}
+	nqiv_image* image = ( (nqiv_image**)state->images.images->data )[state->montage.positions.selection];
+	assert( state->montage.positions.selection < nqiv_array_get_units_count(state->images.images) );
 	SDL_Rect dstrect = {0};
 	/* TODO RECT DONE BUT ASPECT RATIO */
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
@@ -1225,7 +1216,11 @@ void render_and_update(nqiv_state* state, bool* running, bool* result, const boo
 void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, const bool simulated, const nqiv_keyrate_release_option released)
 {
 	nqiv_key_action action;
-	while( nqiv_queue_pop_front(&state->key_actions, sizeof(nqiv_key_action), &action) ) {
+	while( nqiv_queue_pop_front(&state->key_actions, &action) ) {
+		const int images_count = nqiv_array_get_units_count(state->images.images);
+		assert(state->montage.positions.selection < images_count);
+		nqiv_image** images = state->images.images->data;
+		nqiv_image* image = images[state->montage.positions.selection];
 		if( !simulated && !nqiv_keyrate_filter_action(&state->keystates, action, released) ) {
 			/* NOOP */
 		} else if(action == NQIV_KEY_ACTION_QUIT) {
@@ -1463,38 +1458,25 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 			render_and_update(state, running, result, false, false);
 		} else if(action == NQIV_KEY_ACTION_IMAGE_MARK_TOGGLE) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image mark.\n");
-			nqiv_image* tmp_image;
-			if( nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &tmp_image) ) {
-				tmp_image->marked = !tmp_image->marked;
-				nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
-			}
+			image->marked = !image->marked;
+			nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", image->marked ? "Unm" : "M", image->image.path);
 			render_and_update(state, running, result, false, false);
 		} else if(action == NQIV_KEY_ACTION_IMAGE_MARK) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image mark.\n");
-			nqiv_image* tmp_image;
-			if( nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &tmp_image) ) {
-				tmp_image->marked = true;
-				nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
-			}
+			image->marked = true;
+			nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", image->marked ? "Unm" : "M", image->image.path);
 			render_and_update(state, running, result, false, false);
 		} else if(action == NQIV_KEY_ACTION_IMAGE_UNMARK) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image unmark.\n");
-			nqiv_image* tmp_image;
-			if( nqiv_array_get_bytes(state->images.images, state->montage.positions.selection, sizeof(nqiv_image*), &tmp_image) ) {
-				tmp_image->marked = false;
-				nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
-			}
+			image->marked = false;
+			nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", image->marked ? "Unm" : "M", image->image.path);
 			render_and_update(state, running, result, false, false);
 		} else if(action == NQIV_KEY_ACTION_PRINT_MARKED) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image print marked.\n");
-			const int num_images = state->images.images->position / sizeof(nqiv_image*);
 			int iidx;
-			for(iidx = 0; iidx < num_images; ++iidx) {
-				nqiv_image* image;
-				if( nqiv_array_get_bytes(state->images.images, iidx, sizeof(nqiv_image*), &image) ) {
-					if(image->marked) {
-						fprintf(stdout, "%s\n", image->image.path);
-					}
+			for(iidx = 0; iidx < images_count; ++iidx) {
+				if(images[iidx]->marked) {
+					fprintf(stdout, "%s\n", images[iidx]->image.path);
 				}
 			}
 			render_and_update(state, running, result, false, false);
@@ -1511,11 +1493,9 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 			if(state->in_montage) {
 				int x, y;
 				SDL_GetMouseState(&x, &y);
-				nqiv_image* tmp_image;
-				if( nqiv_array_get_bytes(state->images.images, nqiv_montage_find_index_at_point(&state->montage, x, y), sizeof(nqiv_image*), &tmp_image) ) {
-					tmp_image->marked = true;
-					nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
-				}
+				nqiv_image* tmp_image = images[nqiv_montage_find_index_at_point(&state->montage, x, y)];
+				tmp_image->marked = true;
+				nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
 				render_and_update(state, running, result, false, false);
 			}
 		} else if(action == NQIV_KEY_ACTION_IMAGE_UNMARK_AT_MOUSE) {
@@ -1523,11 +1503,9 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 			if(state->in_montage) {
 				int x, y;
 				SDL_GetMouseState(&x, &y);
-				nqiv_image* tmp_image;
-				if( nqiv_array_get_bytes(state->images.images, nqiv_montage_find_index_at_point(&state->montage, x, y), sizeof(nqiv_image*), &tmp_image) ) {
-					tmp_image->marked = false;
-					nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
-				}
+				nqiv_image* tmp_image = images[nqiv_montage_find_index_at_point(&state->montage, x, y)];
+				tmp_image->marked = false;
+				nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
 				render_and_update(state, running, result, false, false);
 			}
 		} else if(action == NQIV_KEY_ACTION_IMAGE_MARK_TOGGLE_AT_MOUSE) {
@@ -1535,11 +1513,9 @@ void nqiv_handle_keyactions(nqiv_state* state, bool* running, bool* result, cons
 			if(state->in_montage) {
 				int x, y;
 				SDL_GetMouseState(&x, &y);
-				nqiv_image* tmp_image;
-				if( nqiv_array_get_bytes(state->images.images, nqiv_montage_find_index_at_point(&state->montage, x, y), sizeof(nqiv_image*), &tmp_image) ) {
-					tmp_image->marked = !tmp_image->marked;
-					nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
-				}
+				nqiv_image* tmp_image = images[nqiv_montage_find_index_at_point(&state->montage, x, y)];
+				tmp_image->marked = !tmp_image->marked;
+				nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
 				render_and_update(state, running, result, false, false);
 			}
 		} else if(action == NQIV_KEY_ACTION_START_MOUSE_PAN) {

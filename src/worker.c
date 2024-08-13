@@ -143,7 +143,7 @@ void nqiv_worker_main(nqiv_log_ctx* logger, nqiv_priority_queue* queue, const in
 		bool event_found = false;
 		if(events_processed < event_interval || event_interval == 0) {
 			while(true) {
-				event_found = nqiv_priority_queue_pop(queue, sizeof(nqiv_event), &event);
+				event_found = nqiv_priority_queue_pop(queue, &event);
 				if(!event_found || event.transaction_group == -1) {
 					break;
 				}

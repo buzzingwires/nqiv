@@ -304,7 +304,7 @@ bool nqiv_keybind_create_manager(nqiv_keybind_manager* manager, nqiv_log_ctx* lo
 {
 	assert(manager != NULL);
 	nqiv_log_write(logger, NQIV_LOG_INFO, "Creating keybind manager.\n");
-	nqiv_array* arrayptr = nqiv_array_create( starting_array_length * sizeof(nqiv_keybind_pair) );
+	nqiv_array* arrayptr = nqiv_array_create(sizeof(nqiv_keybind_pair), starting_array_length);
 	if(arrayptr == NULL) {
 		return false;
 	}
@@ -321,7 +321,7 @@ bool nqiv_keybind_add(nqiv_keybind_manager* manager, const nqiv_key_match* match
 	nqiv_keybind_pair pair;
 	memcpy( &pair.match, match, sizeof(nqiv_key_match) );
 	pair.action = action;
-	return nqiv_array_push_bytes( manager->lookup, &pair, sizeof(nqiv_keybind_pair) );
+	return nqiv_array_push(manager->lookup, &pair);
 }
 
 int nqiv_key_match_element_to_string(char* buf, const char* suffix)
@@ -397,7 +397,7 @@ int nqiv_keymod_to_string(const nqiv_keybind_pair* pair, char* buf)
 	return pos;
 }
 
-void nqiv_keybind_to_string(nqiv_keybind_pair* pair, char* buf)
+void nqiv_keybind_to_string(const nqiv_keybind_pair* pair, char* buf)
 {
 	int pos = 0;
 	pos = nqiv_keymod_to_string(pair, buf + pos);
@@ -455,13 +455,13 @@ nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manager* manager, const
 	assert(match != NULL);
 
 	nqiv_key_lookup_summary result = NQIV_KEY_LOOKUP_NOT_FOUND;
-	const int lookup_len = manager->lookup->position / sizeof(nqiv_keybind_pair);
+	const int lookup_len = nqiv_array_get_units_count(manager->lookup);
+	nqiv_keybind_pair* lookup = manager->lookup->data;
 	int idx;
 	for(idx = 0; idx < lookup_len; ++idx) {
-		nqiv_keybind_pair pair = {.match = {0}, .action = -1};
-		if( nqiv_array_get_bytes(manager->lookup, idx, sizeof(nqiv_keybind_pair), &pair) &&
-			nqiv_keybind_compare_match(&pair.match, match) ) {
-			if( output == NULL || !nqiv_queue_push(output, sizeof(nqiv_key_action), &pair.action) ) {
+		const nqiv_keybind_pair* pair = &lookup[idx];
+		if( nqiv_keybind_compare_match(&pair->match, match) ) {
+			if( output == NULL || !nqiv_queue_push(output, &pair->action) ) {
 				result |= NQIV_KEY_LOOKUP_FAILURE;
 			} else {
 				result |= NQIV_KEY_LOOKUP_FOUND;
