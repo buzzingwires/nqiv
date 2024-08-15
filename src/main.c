@@ -1128,7 +1128,7 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 	const int raw_end = state->montage.positions.end + state->montage.preload.ahead;
 	const int start_idx = raw_start_idx >= 0 ? raw_start_idx : 0;
 	const int end = raw_end <= images_len ? raw_end : images_len;
-	nqiv_image** images = state->logger.streams->data;
+	nqiv_image** images = state->images.images->data;
 	int idx;
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Preload Start: %d Preload End: %d Montage Start: %d Montage Selection: %d Montage End %d\n", start_idx, end, state->montage.positions.start, state->montage.positions.selection, state->montage.positions.end);
 	for(idx = start_idx; idx < end; ++idx) {
@@ -1154,9 +1154,13 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 
 bool render_image(nqiv_state* state, const bool start, const bool hard)
 {
+	assert( state->montage.positions.selection <= nqiv_array_get_units_count(state->images.images) );
+	if( state->montage.positions.selection == nqiv_array_get_units_count(state->images.images) ) {
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to get image index %d.\n", state->montage.positions.selection);
+		return false;
+	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering selected image.\n");
 	nqiv_image* image = ( (nqiv_image**)state->images.images->data )[state->montage.positions.selection];
-	assert( state->montage.positions.selection < nqiv_array_get_units_count(state->images.images) );
 	SDL_Rect dstrect = {0};
 	/* TODO RECT DONE BUT ASPECT RATIO */
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);

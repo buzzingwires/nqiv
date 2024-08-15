@@ -338,4 +338,5 @@ void pruner_test_default(void)
 	assert(!desc.unload_thumbnail_vips_soft);
 	assert(!desc.unload_thumbnail_raw_soft);
 	assert(!desc.unload_thumbnail_surface_soft);
+	nqiv_log_destroy(&logger);
 }
