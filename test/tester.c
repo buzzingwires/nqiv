@@ -167,6 +167,7 @@ test_set* create_tests(void)
 	test_set* array = add_test_subset(root, &test_counter, "array"); if(array == NULL) { goto cleanup; }
 	if(add_test(array, &test_counter, "array_test_default", array_test_default) == NULL) { goto cleanup; }
 	if(add_test(array, &test_counter, "array_test_strbuild", array_test_strbuild) == NULL) { goto cleanup; }
+	if(add_test(array, &test_counter, "array_test_alloc", array_test_alloc) == NULL) { goto cleanup; }
 
 	test_set* pruner = add_test_subset(root, &test_counter, "pruner"); if(pruner == NULL) { goto cleanup; }
 	if(add_test(pruner, &test_counter, "pruner_default", pruner_test_default) == NULL) { goto cleanup; }
