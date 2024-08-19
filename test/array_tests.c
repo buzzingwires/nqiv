@@ -74,28 +74,25 @@ void array_test_strbuild(void)
 	assert(strcmp(str, array.data) == 0);
 }
 
-
 void array_test_alloc(void)
 {
-	nqiv_array* array = nqiv_array_create(1, 1);
-	assert(array != NULL);
-	nqiv_array_unlimit_data(array);
+	char buf[18 * sizeof(char)] = {0};
+	nqiv_array array;
+	nqiv_array_inherit(&array, buf, sizeof(char), 18);
 
-	int* iptr = (int*)nqiv_array_alloc( array, sizeof(int) );
+	int* iptr = (int*)nqiv_array_alloc( &array, sizeof(int) );
 	assert(iptr != NULL);
 	*iptr = INT_MAX;
 
-	char* sptr = (char*)nqiv_array_alloc( array, strlen("Hello world!") + 1 );
+	char* sptr = (char*)nqiv_array_alloc( &array, strlen("Hello world!") + 1 );
 	assert(sptr != NULL);
 	memcpy( sptr, "Hello world!", strlen("Hello world!") );
 
-	unsigned char* ucptr = (unsigned char*)nqiv_array_alloc( array, sizeof(unsigned char) );
+	unsigned char* ucptr = (unsigned char*)nqiv_array_alloc( &array, sizeof(unsigned char) );
 	assert(ucptr != NULL);
 	*ucptr = 0xff;
 
 	assert(*iptr == INT_MAX);
 	assert(strcmp(sptr, "Hello world!") == 0);
 	assert(*ucptr == 0xff);
-
-	nqiv_array_destroy(array);
 }

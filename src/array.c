@@ -213,6 +213,7 @@ bool nqiv_array_pop(nqiv_array* array, void* ptr)
 
 void* nqiv_array_alloc(nqiv_array* array, const int count)
 {
+	assert(array->max_data_length > 0);
 	assert(array->unit_length == 1);
 	const int block_size = array->unit_length * count;
 	assert(block_size > 0);
