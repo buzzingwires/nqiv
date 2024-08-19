@@ -33,7 +33,7 @@ void array_test_default(void)
 			assert( nqiv_array_insert(array, &idx, idx) );
 		}
 		assert(nqiv_array_get_units_count(array) == 10);
-		int to_compare[] = {0, 1, 2, 3, 4, 0, 1, 2, 3, 4};
+		const int to_compare[] = {0, 1, 2, 3, 4, 0, 1, 2, 3, 4};
 		assert(memcmp(to_compare, array->data, 10) == 0);
 		int gotten = -1;
 		int popped = -1;
