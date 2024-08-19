@@ -88,9 +88,6 @@ void nqiv_state_clear(nqiv_state* state)
 	if(state->thread_event_transaction_group > 0) {
 		omp_destroy_lock(&state->thread_event_transaction_group_lock);
 	}
-	if(state->window_title != NULL) {
-		free(state->window_title);
-	}
 	memset( state, 0, sizeof(nqiv_state) );
 	vips_shutdown();
 }
@@ -1047,42 +1044,17 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 		image->image.path,
 		NULL
 	};
-	size_t title_len = 0;
-	int idx = 0;
-	while(path_components[idx] != NULL) {
-		title_len += strlen(path_components[idx]);
-		++idx;
-	}
-	title_len += 1; /* For the NUL */
-	if(state->window_title == NULL) {
-		state->window_title = (char*)calloc(1, title_len);
-		if(state->window_title == NULL) {
-			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to allocate %d bytes for new window title.\n", title_len);
+	char window_title[WINDOW_TITLE_LEN] = {0};
+	nqiv_array builder;
+	nqiv_array_inherit(&builder, window_title, sizeof(char), WINDOW_TITLE_LEN);
+	int idx;
+	for(idx = 0; path_components[idx] != NULL; ++idx){
+		if( !nqiv_array_push_str(&builder, path_components[idx]) ) {
+			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Window title of %d is longer than limit of %d This is probably a bug.\n", nqiv_array_get_units_count(&builder) + strlen(path_components[idx]), WINDOW_TITLE_LEN);
 			return false;
 		}
-		state->window_title_size = title_len;
-	} else if(title_len > state->window_title_size) {
-		char* new_title = (char*)realloc(state->window_title, title_len);
-		if(new_title == NULL) {
-			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to reallocate %d bytes for window title.\n", title_len);
-			return false;
-		}
-		state->window_title = new_title;
-		state->window_title_size = title_len;
-		memset(state->window_title, 0, state->window_title_size);
-	} else {
-		memset(state->window_title, 0, state->window_title_size);
 	}
-	char* title_ptr = state->window_title;
-	idx = 0;
-	while(path_components[idx] != NULL) {
-		const char* item = path_components[idx];
-		const size_t item_len = strlen(item);
-		memcpy(title_ptr, item, item_len);
-		title_ptr += item_len;
-		++idx;
-	}
-	SDL_SetWindowTitle(state->window, state->window_title);
+	SDL_SetWindowTitle(state->window, window_title);
 	return true;
 }
 #undef INT_MAX_STRLEN

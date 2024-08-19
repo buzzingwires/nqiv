@@ -41,6 +41,7 @@
 	#include <sys/types.h>
 	#include <sys/stat.h>
 	#include "platform.h"
+	#include "array.h"
 	bool nqiv_stat(const char* path, nqiv_stat_data* data)
 	{
 		assert(data != NULL);
@@ -54,25 +55,19 @@
 	}
 	bool nqiv_write_path_from_env(char* output, const size_t length, const char* env_name, const char* sub_path)
 	{
-		size_t available_length = length;
-		size_t position = 0;
-		if( available_length <= 1 + strlen(sub_path) ) {
-			return false;
-		}
-		available_length -= ( 1 + strlen(sub_path) );
+		assert(length < INT_MAX);
+		nqiv_array builder;
+		nqiv_array_inherit(&builder, output, sizeof(char), length);
 		const char* raw_env = getenv(env_name);
 		if(raw_env == NULL) {
 			return false;
 		}
 		char base_path[PATH_MAX + 1] = {0};
-		if( nqiv_realpath(raw_env, base_path) == NULL || strlen(base_path) > available_length ) {
+		if(nqiv_realpath(raw_env, base_path) == NULL) {
 			return false;
 		}
-		memcpy( output, base_path, strlen(base_path) );
-		available_length -= strlen(base_path);
-		position += strlen(base_path);
-		memcpy( output + position, sub_path, strlen(sub_path) );
-		return true;
+		return nqiv_array_push_str(&builder, base_path) &&
+			   nqiv_array_push_str(&builder, sub_path);
 	}
 #endif
 

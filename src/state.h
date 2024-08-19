@@ -1,9 +1,12 @@
 #ifndef NQIV_STATE_H
 #define NQIV_STATE_H
 
+#include "platform.h"
+
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <limits.h>
 
 #include "typedefs.h"
 #include "logging.h"
@@ -21,6 +24,7 @@
 #define STARTING_QUEUE_LENGTH 512
 #define THREAD_QUEUE_BIN_COUNT 9
 #define ALPHA_BACKGROUND_CHECKER_PROPORTION 32
+#define WINDOW_TITLE_LEN (1024 + PATH_MAX)
 
 typedef enum nqiv_event_priority
 {
@@ -88,8 +92,6 @@ struct nqiv_state
 	bool first_frame_pending;
 	nqiv_zoom_default zoom_default;
 	bool is_mouse_panning;
-	char* window_title;
-	size_t window_title_size;
 	bool no_resample_oversized;
 	bool show_loading_indicator;
 	bool is_loading;

@@ -56,21 +56,21 @@ void array_test_default(void)
 
 void array_test_strbuild(void)
 {
-	char str[13 * sizeof(char)];
+	char str[25 * sizeof(char)] = {0};
 	nqiv_array array;
-	nqiv_array_inherit(&array, str, sizeof(char), 13);
+	nqiv_array_inherit(&array, str, sizeof(char), 24);
 	nqiv_array_clear(&array);
 	assert( nqiv_array_push_str(&array, "Hello ") );
 	assert(strcmp(array.data, "Hello ") == 0);
 	assert( nqiv_array_push_str(&array, "World") );
 	assert(strcmp(array.data, "Hello World") == 0);
-	assert( !nqiv_array_push_str(&array, " Earth!") );
-	assert(strcmp(array.data, "Hello World") == 0);
 	assert( nqiv_array_push_str(&array, "!") );
 	assert(strcmp(array.data, "Hello World!") == 0);
-	assert( !nqiv_array_push_str(&array, "!") );
-	assert(strcmp(array.data, "Hello World!") == 0);
 	assert(nqiv_array_get_units_count(&array) == 12);
+	assert( nqiv_array_push_sprintf(&array, " ") );
+	assert( nqiv_array_push_sprintf(&array, "Hello %s!", "Moon") );
+	assert( !nqiv_array_push_str(&array, "!") );
+	assert(strcmp(str, "Hello World! Hello Moon!") == 0);
 	assert(str == array.data);
 	assert(strcmp(str, array.data) == 0);
 }

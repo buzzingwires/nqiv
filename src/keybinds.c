@@ -324,17 +324,13 @@ bool nqiv_keybind_add(nqiv_keybind_manager* manager, const nqiv_key_match* match
 	return nqiv_array_push(manager->lookup, &pair);
 }
 
-int nqiv_key_match_element_to_string(char* buf, const char* suffix)
+bool nqiv_key_match_element_to_string(nqiv_array* builder, const char* suffix)
 {
-	int pos = 0;
-	memcpy( buf, suffix, strlen(suffix) );
-	pos += strlen(suffix);
-	buf[pos] = '+';
-	pos += 1;
-	return pos;
+	return nqiv_array_push_str(builder, suffix) &&
+		   nqiv_array_push_str(builder, "+");
 }
 
-int nqiv_keymod_to_string(const nqiv_keybind_pair* pair, char* buf)
+bool nqiv_keymod_to_string(const nqiv_keybind_pair* pair, nqiv_array* builder)
 {
 	const Uint16 mods[] =
 	{
@@ -388,42 +384,45 @@ int nqiv_keymod_to_string(const nqiv_keybind_pair* pair, char* buf)
 		NULL
 	};
 	int idx;
-	int pos = 0;
+	bool success = true;
 	for(idx = 0; mod_names[idx] != NULL; ++idx) {
 		if( (pair->match.data.key.mod & mods[idx]) == mods[idx] && (pair->match.data.key.mod & anti_mods[idx]) == 0 ) {
-			pos += nqiv_key_match_element_to_string(buf + pos, mod_names[idx]);
+			success = success && nqiv_key_match_element_to_string(builder, mod_names[idx]);
 		}
 	}
-	return pos;
+	return success;
 }
 
-void nqiv_keybind_to_string(const nqiv_keybind_pair* pair, char* buf)
+bool nqiv_keybind_to_string(const nqiv_keybind_pair* pair, char* buf)
 {
-	int pos = 0;
-	pos = nqiv_keymod_to_string(pair, buf + pos);
+	nqiv_array builder;
+	nqiv_array_inherit(&builder, buf, sizeof(char), NQIV_KEYBIND_STRLEN);
+	bool success = true;
+	success = success && nqiv_keymod_to_string(pair, &builder);
 	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_KEY) != 0 ) {
-		pos += nqiv_key_match_element_to_string(buf + pos, SDL_GetScancodeName(pair->match.data.key.scancode) );
+		success = success && nqiv_key_match_element_to_string(&builder, SDL_GetScancodeName(pair->match.data.key.scancode) );
 	}
 	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_BUTTON) != 0 ) {
 		assert(pair->match.data.mouse_button.clicks == 1 || pair->match.data.mouse_button.clicks == 2);
-		pos += snprintf(buf + pos, NQIV_KEYBIND_STRLEN - pos, "mouse%d%s+", pair->match.data.mouse_button.button, pair->match.data.mouse_button.clicks == 2 ? "_double" : "");
+		success = success && nqiv_array_push_sprintf(&builder, "mouse%d%s+", pair->match.data.mouse_button.button, pair->match.data.mouse_button.clicks == 2 ? "_double" : "");
 	}
 	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD) != 0 ) {
-		pos += nqiv_key_match_element_to_string(buf + pos, "scroll_forward");
+		success = success && nqiv_key_match_element_to_string(&builder, "scroll_forward");
 	}
 	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD) != 0 ) {
-		pos += nqiv_key_match_element_to_string(buf + pos, "scroll_backward");
+		success = success && nqiv_key_match_element_to_string(&builder, "scroll_backward");
 	}
 	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT) != 0 ) {
-		pos += nqiv_key_match_element_to_string(buf + pos, "scroll_left");
+		success = success && nqiv_key_match_element_to_string(&builder, "scroll_left");
 	}
 	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT) != 0 ) {
-		pos += nqiv_key_match_element_to_string(buf + pos, "scroll_right");
+		success = success && nqiv_key_match_element_to_string(&builder, "scroll_right");
 	}
-	assert(pos > 0);
-	assert(buf[pos - 1] == '+');
-	buf[pos - 1] = '=';
-	memcpy( buf + pos, nqiv_keybind_action_names[pair->action], strlen(nqiv_keybind_action_names[pair->action]) );
+	assert(nqiv_array_get_last_idx(&builder) > 0);
+	assert(buf[nqiv_array_get_last_idx(&builder)] == '+');
+	buf[nqiv_array_get_last_idx(&builder)] = '=';
+	success = success && nqiv_array_push_str(&builder, nqiv_keybind_action_names[pair->action]);
+	return success;
 }
 
 bool nqiv_compare_mod(const Uint16 a, const Uint16 b)

@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <float.h>
 #include <inttypes.h>
+#include <assert.h>
 
 #include <SDL2/SDL.h>
 #include <omp.h>
@@ -871,7 +872,9 @@ void nqiv_cmd_parser_print_pruner(nqiv_cmd_manager* manager)
 		const nqiv_pruner_desc* desc = &pruners[idx];
 		taken = true;
 		char desc_str[NQIV_PRUNER_DESC_STRLEN] = {0};
-		nqiv_pruner_desc_to_string(desc, desc_str);
+		const bool result = nqiv_pruner_desc_to_string(desc, desc_str);
+		assert(result);
+		(void) result;
 		if(!manager->print_settings.dumpcfg) {
 			if(idx == 0) {
 				fprintf(stdout, "\n");
@@ -904,7 +907,9 @@ void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
 		const nqiv_keybind_pair* pair = &pairs[idx];
 		taken = true;
 		char keybind_str[NQIV_KEYBIND_STRLEN] = {0};
-		nqiv_keybind_to_string(pair, keybind_str);
+		const bool result = nqiv_keybind_to_string(pair, keybind_str);
+		assert(result);
+		(void) result;
 		if(!manager->print_settings.dumpcfg) {
 			if(idx == 0) {
 				fprintf(stdout, "\n");
@@ -2159,14 +2164,15 @@ void nqiv_cmd_print_args( nqiv_cmd_manager* manager, const nqiv_cmd_arg_desc* co
 void nqiv_cmd_dumpcfg(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_node, const bool recurse, const char* current_cmd)
 {
 	char new_cmd[NQIV_CMD_DUMPCFG_BUFFER_LENGTH] = {0};
-	int new_position = strlen(current_cmd);
-	memcpy(new_cmd, current_cmd, new_position);
+	nqiv_array new_cmd_builder;
+	nqiv_array_inherit(&new_cmd_builder, new_cmd, sizeof(char), NQIV_CMD_DUMPCFG_BUFFER_LENGTH);
+	bool new_cmd_success = true;
+	new_cmd_success = new_cmd_success && nqiv_array_push_str(&new_cmd_builder, current_cmd);
 	if(current_node != &nqiv_parser_nodes_root) {
-		memcpy( new_cmd + new_position, current_node->name, strlen(current_node->name) );
-		new_position += strlen(current_node->name);
-		new_cmd[new_position] = ' ';
-		new_position += sizeof(char);
+		new_cmd_success = new_cmd_success && nqiv_array_push_str(&new_cmd_builder, current_node->name);
+		new_cmd_success = new_cmd_success && nqiv_array_push_str(&new_cmd_builder, " ");
 	}
+	assert(new_cmd_success);
 	if(current_node->print_value != NULL || current_node->store_value != NULL) {
 		fprintf(stdout, "#%s\n#", current_node->description);
 		nqiv_cmd_print_args(manager, (const nqiv_cmd_arg_desc* const*)(current_node->args), nqiv_cmd_print_comment_prefix);
@@ -2467,7 +2473,9 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 {
 	memset( &manager->print_settings, 0, sizeof(nqiv_cmd_manager_print_settings) );
 	char current_cmd[NQIV_CMD_DUMPCFG_BUFFER_LENGTH] = {0};
-	int current_cmd_position = 0;
+	bool current_cmd_success = true;
+	nqiv_array current_cmd_builder;
+	nqiv_array_inherit(&current_cmd_builder, current_cmd, sizeof(char), NQIV_CMD_DUMPCFG_BUFFER_LENGTH);
 	bool error = false;
 	bool help = false;
 	bool recurse_help = false;
@@ -2527,10 +2535,8 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 				current_node = current_node->children[cidx];
 				idx = data_end;
 				found_node = true;
-				memcpy( current_cmd + current_cmd_position, current_node->name, strlen(current_node->name) );
-				current_cmd_position += strlen(current_node->name);
-				current_cmd[current_cmd_position] = ' ';
-				current_cmd_position += sizeof(char);
+				current_cmd_success = current_cmd_success && nqiv_array_push_str(&current_cmd_builder, current_node->name);
+				current_cmd_success = current_cmd_success && nqiv_array_push_str(&current_cmd_builder, " ");
 				break;
 			}
 			++cidx;
@@ -2554,6 +2560,7 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 		}
 	}
 	nqiv_array_remove_count(manager->buffer, 0, eolpos + 1);
+	assert(current_cmd_success);
 	return !error;
 }
 

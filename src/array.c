@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #include <limits.h>
 #include <assert.h>
 
@@ -89,6 +90,9 @@ bool nqiv_array_make_room(nqiv_array* array, const int add_count)
 
 bool nqiv_array_insert_count(nqiv_array* array, const void* ptr, const int idx, const int count)
 {
+	if(count == 0) {
+		return true;
+	}
 	assert(idx >= 0);
 	assert( idx <= nqiv_array_get_units_count(array) );
 	const int add_length = array->unit_length * count;
@@ -149,12 +153,25 @@ bool nqiv_array_push(nqiv_array* array, const void* ptr)
 	return nqiv_array_push_count(array, ptr, 1);
 }
 
+bool nqiv_array_push_str_count(nqiv_array* array, const char* ptr, const int count)
+{
+	assert( (size_t)array->unit_length == sizeof(char) );
+	return nqiv_array_push_count(array, ptr, count);
+}
+
 bool nqiv_array_push_str(nqiv_array* array, const char* ptr)
 {
-	assert( array->unit_length == sizeof(char) );
-	const size_t len = strlen(ptr);
-	return len > INT_MAX || array->unit_length * len + array->position >= (size_t)array->max_data_length ?
-		   false : nqiv_array_push_count(array, ptr, len);
+	return nqiv_array_push_str_count( array, ptr, strlen(ptr) );
+}
+
+bool nqiv_array_push_sprintf(nqiv_array* array, const char* format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	char output[NQIV_ARRAY_SPRINTF_BUFLEN + 1] = {0};
+	const int result = vsnprintf(output, NQIV_ARRAY_SPRINTF_BUFLEN, format, args);
+	va_end(args);
+	return result >= 0 && result < NQIV_ARRAY_SPRINTF_BUFLEN && nqiv_array_push_str(array, output);
 }
 
 bool nqiv_array_get_count(const nqiv_array* array, const int idx, void* ptr, const int count)

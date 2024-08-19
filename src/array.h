@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#define NQIV_ARRAY_SPRINTF_BUFLEN 4096
+
 typedef struct nqiv_array
 {
 	void* data;
@@ -25,7 +27,9 @@ void nqiv_array_remove_count(nqiv_array* array, const int idx, const int count);
 void nqiv_array_remove(nqiv_array* array, const int idx);
 bool nqiv_array_push_count(nqiv_array* array, const void* ptr, const int count);
 bool nqiv_array_push(nqiv_array* array, const void* ptr);
+bool nqiv_array_push_str_count(nqiv_array* array, const char* ptr, const int count);
 bool nqiv_array_push_str(nqiv_array* array, const char* ptr);
+bool nqiv_array_push_sprintf(nqiv_array* array, const char* format, ...);
 bool nqiv_array_get_count(const nqiv_array* array, const int idx, void* ptr, const int count);
 bool nqiv_array_get(const nqiv_array* array, const int idx, void* ptr);
 bool nqiv_array_pop_count(nqiv_array* array, void* ptr, const int count);
