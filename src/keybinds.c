@@ -418,7 +418,7 @@ bool nqiv_keybind_to_string(const nqiv_keybind_pair* pair, char* buf)
 	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT) != 0 ) {
 		success = success && nqiv_key_match_element_to_string(&builder, "scroll_right");
 	}
-	assert(nqiv_array_get_last_idx(&builder) > 0);
+	assert(nqiv_array_get_units_count(&builder) > 0);
 	assert(buf[nqiv_array_get_last_idx(&builder)] == '+');
 	buf[nqiv_array_get_last_idx(&builder)] = '=';
 	success = success && nqiv_array_push_str(&builder, nqiv_keybind_action_names[pair->action]);

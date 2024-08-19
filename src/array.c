@@ -17,7 +17,8 @@ int nqiv_array_get_units_count(const nqiv_array* array)
 int nqiv_array_get_last_idx(const nqiv_array* array)
 {
 	const int units_count = nqiv_array_get_units_count(array);
-	return units_count > 0 ? units_count - 1 : 0;
+	assert(units_count > 0);
+	return units_count - 1;
 }
 
 nqiv_array* nqiv_array_create(const int unit_size, const int unit_count)

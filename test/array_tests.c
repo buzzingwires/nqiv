@@ -16,7 +16,6 @@ void array_test_default(void)
 	assert( array->max_data_length == sizeof(int) );
 	assert( array->unit_length == sizeof(int) );
 	assert(nqiv_array_get_units_count(array) == 0);
-	assert(nqiv_array_get_last_idx(array) == 0);
 	assert( nqiv_array_push_count(array, &idx, 1) );
 	assert( !nqiv_array_push_count(array, &idx, 1) );
 	nqiv_array_unlimit_data(array);
