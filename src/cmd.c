@@ -1131,820 +1131,6 @@ nqiv_cmd_arg_desc nqiv_parser_arg_type_pruner = {
 	.setting = { {0} },
 };
 
-nqiv_cmd_node nqiv_parser_nodes_root = {
-	.name = "root",
-	.description = "Root of parsing tree. Prefix help to get help messages on commands, helptree to do the same recursively, or dumpcfg to dump functional commands to set the current configuration. Lines can also be commented by prefixing with #",
-	.store_value = NULL,
-	.print_value = NULL,
-	.args = {NULL},
-	.children = {
-		&(nqiv_cmd_node)
-		{
-			.name = "sendkey",
-			.description = "Issue a simulated keyboard action to the program.",
-			.store_value = nqiv_cmd_parser_sendkey,
-			.print_value = NULL,
-			.args = {&nqiv_parser_arg_type_key_action, NULL},
-			.children = {NULL},
-		},
-		&(nqiv_cmd_node)
-		{
-			.name = "insert",
-			.description = "Add a value to a particular location.",
-			.store_value = NULL,
-			.print_value = NULL,
-			.args = {NULL},
-			.children = {
-				&(nqiv_cmd_node)
-				{
-					.name = "image",
-					.description = "Insert an image path to be opened at a particular index.",
-					.store_value = nqiv_cmd_parser_insert_image,
-					.print_value = NULL,
-					.args = {&nqiv_parser_arg_type_int_natural, &nqiv_parser_arg_type_string_full, NULL},
-					.children = {NULL},
-				},
-				NULL,
-			},
-		},
-		&(nqiv_cmd_node)
-		{
-			.name = "remove",
-			.description = "Remove a value from a particular location.",
-			.store_value = NULL,
-			.print_value = NULL,
-			.args = {NULL},
-			.children = {
-				&(nqiv_cmd_node)
-				{
-					.name = "image",
-					.description = "Remove an image to be opened.",
-					.store_value = NULL,
-					.print_value = NULL,
-					.args = {NULL},
-					.children = {
-						&(nqiv_cmd_node)
-						{
-							.name = "index",
-							.description = "Delete the image from the given index.",
-							.store_value = nqiv_cmd_parser_remove_image_index,
-							.print_value = NULL,
-							.args = {&nqiv_parser_arg_type_int_natural, NULL},
-							.children = {NULL},
-						},
-						NULL,
-					}
-				},
-				NULL,
-			},
-		},
-		&(nqiv_cmd_node)
-		{
-			.name = "append",
-			.description = "Add a value to the end of an existing series.",
-			.store_value = NULL,
-			.print_value = NULL,
-			.args = {NULL},
-			.children = {
-				&(nqiv_cmd_node)
-				{
-					.name = "log",
-					.description = "Append operations related to logging.",
-					.store_value = NULL,
-					.print_value = NULL,
-					.args = {NULL},
-					.children = {
-						&(nqiv_cmd_node)
-						{
-							.name = "stream",
-							.description = "Log to the given stream.",
-							.store_value = nqiv_cmd_parser_append_log_stream,
-							.print_value = nqiv_cmd_parser_print_log_stream,
-							.args = {&nqiv_parser_arg_type_string_full, NULL},
-							.children = {NULL},
-						},
-						NULL,
-					}
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "image",
-					.description = "Add an image path to the be opened.",
-					.store_value = nqiv_cmd_parser_append_image,
-					.print_value = NULL,
-					.args = {&nqiv_parser_arg_type_string_full, NULL},
-					.children = {NULL},
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "pruner",
-					.description = "Declaratively specified pruning instructions. Use help to get list of commands.",
-					.store_value = nqiv_cmd_parser_append_pruner,
-					.print_value = nqiv_cmd_parser_print_pruner,
-					.args = {&nqiv_parser_arg_type_pruner, NULL},
-					.children = {NULL},
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "extension",
-					.description = "Add an image extension to be accepted.",
-					.store_value = nqiv_cmd_parser_append_extension,
-					.print_value = nqiv_cmd_parser_print_extension,
-					.args = {&nqiv_parser_arg_type_string, NULL},
-					.children = {NULL},
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "keybind",
-					.description = "Add a keybind.",
-					.store_value = nqiv_cmd_parser_append_keybind,
-					.print_value = nqiv_cmd_parser_print_keybind,
-					.args = {&nqiv_parser_arg_type_keybind, NULL},
-					.children = {NULL},
-				},
-				NULL,
-			},
-		},
-		&(nqiv_cmd_node)
-		{
-			.name = "set",
-			.description = "Alter a singular value.",
-			.store_value = NULL,
-			.print_value = NULL,
-			.args = {NULL},
-			.children = {
-				&(nqiv_cmd_node)
-				{
-					.name = "log",
-					.description = "Set operations related to logging.",
-					.store_value = NULL,
-					.print_value = NULL,
-					.args = {NULL},
-					.children = {
-						&(nqiv_cmd_node)
-						{
-							.name = "level",
-							.description = "Log messages this level or lower are printed.",
-							.store_value = nqiv_cmd_parser_set_log_level,
-							.print_value = nqiv_cmd_parser_print_log_level,
-							.args = {&nqiv_parser_arg_type_log_level, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "prefix",
-							.description = "Log message format. Special messages are delimited by #. ## produces a literal #. #time:<strftime format># prints the time. #level# prints the log level.",
-							.store_value = nqiv_cmd_parser_set_log_prefix,
-							.print_value = nqiv_cmd_parser_print_log_prefix,
-							.args = {&nqiv_parser_arg_type_string_full, NULL},
-							.children = {NULL},
-						},
-						NULL,
-					}
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "thread",
-					.description = "Settings related to thread behavior.",
-					.store_value = NULL,
-					.print_value = NULL,
-					.args = {NULL},
-					.children = {
-						&(nqiv_cmd_node)
-						{
-							.name = "count",
-							.description = "Set the number of worker threads used by the software. Starts as the number of threads on the machine divided by three (or one). This does not count toward VIPs threads. See 'set vips threads' for that.",
-							.store_value = nqiv_cmd_parser_set_thread_count,
-							.print_value = nqiv_cmd_parser_print_thread_count,
-							.args = {&nqiv_parser_arg_type_int_positive, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "event_interval",
-							.description = "Threads will update the master after processing this many events. 0 to process all.",
-							.store_value = nqiv_cmd_parser_set_thread_event_interval,
-							.print_value = nqiv_cmd_parser_print_thread_event_interval,
-							.args = {&nqiv_parser_arg_type_int_natural, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "prune_delay",
-							.description = "A pruning cycle will be allowed to run after this many milliseconds since the last one. 0 always allow prune cycles.",
-							.store_value = nqiv_cmd_parser_set_prune_delay,
-							.print_value = nqiv_cmd_parser_print_prune_delay,
-							.args = {&nqiv_parser_arg_type_Uint64, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "extra_wakeup_delay",
-							.description = "In addition to an internal algorithm, wait this long to wait to let the master thread lock a worker. Longer times might produce longer loading delays, but help improve UI responsiveness.",
-							.store_value = nqiv_cmd_parser_set_extra_wakeup_delay,
-							.print_value = nqiv_cmd_parser_print_extra_wakeup_delay,
-							.args = {&nqiv_parser_arg_type_int_natural, NULL},
-							.children = {NULL},
-						},
-						NULL
-					}
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "vips",
-					.description = "Settings related to the VIPS library.",
-					.store_value = NULL,
-					.print_value = NULL,
-					.args = {NULL},
-					.children = {
-						&(nqiv_cmd_node)
-						{
-							.name = "threads",
-							.description = "Set the number of threads used by the VIPs library. The default is the number of available threads divided by two (or one). If set to 0, it is determined by the environment variable VIPS_CONCURRENCY, or if unset, the number of threads available on the machine.",
-							.store_value = nqiv_cmd_parser_set_vips_threads,
-							.print_value = nqiv_cmd_parser_print_vips_threads,
-							.args = {&nqiv_parser_arg_type_int_natural, NULL},
-							.children = {NULL},
-						},
-						NULL
-					}
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "zoom",
-					.description = "Set operations related to zooming.",
-					.store_value = NULL,
-					.print_value = NULL,
-					.args = {NULL},
-					.children = {
-						&(nqiv_cmd_node)
-						{
-							.name = "left_amount",
-							.description = "Amount to pan the zoom left with each action",
-							.store_value = nqiv_cmd_parser_set_zoom_left_amount,
-							.print_value = nqiv_cmd_parser_print_zoom_left_amount,
-							.args = {&nqiv_parser_arg_type_double_negative_one, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "right_amount",
-							.description = "Amount to pan the zoom right with each action",
-							.store_value = nqiv_cmd_parser_set_zoom_right_amount,
-							.print_value = nqiv_cmd_parser_print_zoom_right_amount,
-							.args = {&nqiv_parser_arg_type_double_positive_one, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "down_amount",
-							.description = "Amount to pan the zoom down with each action",
-							.store_value = nqiv_cmd_parser_set_zoom_down_amount,
-							.print_value = nqiv_cmd_parser_print_zoom_down_amount,
-							.args = {&nqiv_parser_arg_type_double_positive_one, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "up_amount",
-							.description = "Amount to pan the zoom up with each action",
-							.store_value = nqiv_cmd_parser_set_zoom_up_amount,
-							.print_value = nqiv_cmd_parser_print_zoom_up_amount,
-							.args = {&nqiv_parser_arg_type_double_negative_one, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "out_amount",
-							.description = "Amount to pan the zoom out with each action",
-							.store_value = nqiv_cmd_parser_set_zoom_out_amount,
-							.print_value = nqiv_cmd_parser_print_zoom_out_amount,
-							.args = {&nqiv_parser_arg_type_double_positive, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "in_amount",
-							.description = "Amount to pan the zoom in with each action",
-							.store_value = nqiv_cmd_parser_set_zoom_in_amount,
-							.print_value = nqiv_cmd_parser_print_zoom_in_amount,
-							.args = {&nqiv_parser_arg_type_double_negative, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "left_amount_more",
-							.description = "Higher amount to pan the zoom left with each action",
-							.store_value = nqiv_cmd_parser_set_zoom_left_amount_more,
-							.print_value = nqiv_cmd_parser_print_zoom_left_amount_more,
-							.args = {&nqiv_parser_arg_type_double_negative_one, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "right_amount_more",
-							.description = "Higher amount to pan the zoom right with each action",
-							.store_value = nqiv_cmd_parser_set_zoom_right_amount_more,
-							.print_value = nqiv_cmd_parser_print_zoom_right_amount_more,
-							.args = {&nqiv_parser_arg_type_double_positive_one, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "down_amount_more",
-							.description = "Higher amount to pan the zoom down with each action",
-							.store_value = nqiv_cmd_parser_set_zoom_down_amount_more,
-							.print_value = nqiv_cmd_parser_print_zoom_down_amount_more,
-							.args = {&nqiv_parser_arg_type_double_positive_one, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "up_amount_more",
-							.description = "Higher amount to pan the zoom up with each action",
-							.store_value = nqiv_cmd_parser_set_zoom_up_amount_more,
-							.print_value = nqiv_cmd_parser_print_zoom_up_amount_more,
-							.args = {&nqiv_parser_arg_type_double_negative_one, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "up_coordinate_x_times",
-							.description = "This is multiplied against x axis panning caused by relative motion (like mouse panning)",
-							.store_value = nqiv_cmd_parser_set_zoom_up_coordinate_x_times,
-							.print_value = nqiv_cmd_parser_print_zoom_up_coordinate_x_times,
-							.args = {&nqiv_parser_arg_type_double, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "up_coordinate_y_times",
-							.description = "This is multiplied against y axis panning caused by relative motion (like mouse panning)",
-							.store_value = nqiv_cmd_parser_set_zoom_up_coordinate_y_times,
-							.print_value = nqiv_cmd_parser_print_zoom_up_coordinate_y_times,
-							.args = {&nqiv_parser_arg_type_double, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "out_amount_more",
-							.description = "Higher amount to pan the zoom out with each action",
-							.store_value = nqiv_cmd_parser_set_zoom_out_amount_more,
-							.print_value = nqiv_cmd_parser_print_zoom_out_amount_more,
-							.args = {&nqiv_parser_arg_type_double_positive, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "in_amount_more",
-							.description = "Higher amount to pan the zoom in with each action",
-							.store_value = nqiv_cmd_parser_set_zoom_in_amount_more,
-							.print_value = nqiv_cmd_parser_print_zoom_in_amount_more,
-							.args = {&nqiv_parser_arg_type_double_negative, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "default",
-							.description = "Default zoom setting when loading an image- 'keep' old zoom, 'fit' to display, or set 'actual_size'.",
-							.store_value = nqiv_cmd_parser_set_zoom_default,
-							.print_value = nqiv_cmd_parser_print_zoom_default,
-							.args = {&nqiv_parser_arg_type_string, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "scale_mode",
-							.description = "Set scale mode used for SDL textures. Options are: 'nearest', 'linear', and 'best' or 'anisotropic'.",
-							.store_value = nqiv_cmd_parser_set_zoom_scale_mode,
-							.print_value = nqiv_cmd_parser_print_zoom_scale_mode,
-							.args = {&nqiv_parser_arg_type_string, NULL},
-							.children = {NULL},
-						},
-						NULL,
-					}
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "thumbnail",
-					.description = "Set operations related to thumbnails.",
-					.store_value = NULL,
-					.print_value = NULL,
-					.args = {NULL},
-					.children = {
-						&(nqiv_cmd_node)
-						{
-							.name = "path",
-							.description = "Path thumbnails are stored under. This directory must exist.",
-							.store_value = nqiv_cmd_parser_set_thumbnail_path,
-							.print_value = nqiv_cmd_parser_print_thumbnail_path,
-							.args = {&nqiv_parser_arg_type_string_full, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "size_adjust",
-							.description = "Number of pixels to resize thumbnails by with 'zoom' action in montage mode.",
-							.store_value = nqiv_cmd_parser_set_thumbnail_zoom_amount,
-							.print_value = nqiv_cmd_parser_print_thumbnail_zoom_amount,
-							.args = {&nqiv_parser_arg_type_int_positive, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "size_adjust_more",
-							.description = "Higher number of pixels to resize thumbnails by with 'zoom' action in montage mode.",
-							.store_value = nqiv_cmd_parser_set_thumbnail_zoom_amount_more,
-							.print_value = nqiv_cmd_parser_print_thumbnail_zoom_amount_more,
-							.args = {&nqiv_parser_arg_type_int_positive, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "load",
-							.description = "Whether to read thumbnails from the disk.",
-							.store_value = nqiv_cmd_parser_set_thumbnail_load,
-							.print_value = nqiv_cmd_parser_print_thumbnail_load,
-							.args = {&nqiv_parser_arg_type_bool, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "save",
-							.description = "Whether to save thumbnails to the disk. Note that if thumbnail_load is not set to true, then thumbnails will always be saved, even if they are up to date on the disk.",
-							.store_value = nqiv_cmd_parser_set_thumbnail_save,
-							.print_value = nqiv_cmd_parser_print_thumbnail_save,
-							.args = {&nqiv_parser_arg_type_bool, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "size",
-							.description = "Width and height of thumbnails are the same value.",
-							.store_value = nqiv_cmd_parser_set_thumbnail_size,
-							.print_value = nqiv_cmd_parser_print_thumbnail_size,
-							.args = {&nqiv_parser_arg_type_int_positive, NULL},
-							.children = {NULL},
-						},
-						NULL,
-					}
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "default_frame_time",
-					.description = "If an animated image does not provide a frame time, use this.",
-					.store_value = nqiv_cmd_parser_set_default_frame_time,
-					.print_value = nqiv_cmd_parser_print_default_frame_time,
-					.args = {&nqiv_parser_arg_type_int_positive, NULL},
-					.children = {NULL},
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "keypress",
-					.description = "Settings for delaying and registering keypresses.",
-					.store_value = NULL,
-					.print_value = NULL,
-					.args = {NULL},
-					.children =  {
-						&(nqiv_cmd_node)
-						{
-							.name = "action",
-							.description = "Key action specific settings for delaying and registering keypresses.",
-							.store_value = NULL,
-							.print_value = NULL,
-							.args = {NULL},
-							.children =  {
-								&(nqiv_cmd_node)
-								{
-									.name = "start_delay",
-									.description = "Before a key is registered, it must be pressed for this long.",
-									.store_value = nqiv_cmd_parser_set_start_delay,
-									.print_value = nqiv_cmd_parser_print_start_delay,
-									.args = {&nqiv_parser_arg_type_key_action_brief, &nqiv_parser_arg_type_Uint64, NULL},
-									.children = {NULL},
-								},
-								&(nqiv_cmd_node)
-								{
-									.name = "repeat_delay",
-									.description = "This is the starting delay for repeating a key.",
-									.store_value = nqiv_cmd_parser_set_repeat_delay,
-									.print_value = nqiv_cmd_parser_print_repeat_delay,
-									.args = {&nqiv_parser_arg_type_key_action_brief, &nqiv_parser_arg_type_Uint64, NULL},
-									.children = {NULL},
-								},
-								&(nqiv_cmd_node)
-								{
-									.name = "delay_accel",
-									.description = "The repeat delay will be reduced by this amount for each repetition.",
-									.store_value = nqiv_cmd_parser_set_delay_accel,
-									.print_value = nqiv_cmd_parser_print_delay_accel,
-									.args = {&nqiv_parser_arg_type_key_action_brief, &nqiv_parser_arg_type_Uint64, NULL},
-									.children = {NULL},
-								},
-								&(nqiv_cmd_node)
-								{
-									.name = "minimum_delay",
-									.description = "The delay will never be less than this.",
-									.store_value = nqiv_cmd_parser_set_minimum_delay,
-									.print_value = nqiv_cmd_parser_print_minimum_delay,
-									.args = {&nqiv_parser_arg_type_key_action_brief, &nqiv_parser_arg_type_Uint64, NULL},
-									.children = {NULL},
-								},
-								&(nqiv_cmd_node)
-								{
-									.name = "send_on_up",
-									.description = "Register releasing of the key.",
-									.store_value = nqiv_cmd_parser_set_send_on_up,
-									.print_value = nqiv_cmd_parser_print_send_on_up,
-									.args = {&nqiv_parser_arg_type_key_action_brief, &nqiv_parser_arg_type_press_action, NULL},
-									.children = {NULL},
-								},
-								&(nqiv_cmd_node)
-								{
-									.name = "send_on_down",
-									.description = "Register pressing of the key.",
-									.store_value = nqiv_cmd_parser_set_send_on_down,
-									.print_value = nqiv_cmd_parser_print_send_on_down,
-									.args = {&nqiv_parser_arg_type_key_action_brief, &nqiv_parser_arg_type_press_action, NULL},
-									.children = {NULL},
-								},
-								NULL
-							},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "default",
-							.description = "Default settings for delaying and registering keypresses.",
-							.store_value = NULL,
-							.print_value = NULL,
-							.args = {NULL},
-							.children =  {
-								&(nqiv_cmd_node)
-								{
-									.name = "start_delay",
-									.description = "Before a key is registered, it must be pressed for this long.",
-									.store_value = nqiv_cmd_parser_set_start_delay_default,
-									.print_value = nqiv_cmd_parser_print_start_delay_default,
-									.args = {&nqiv_parser_arg_type_Uint64, NULL},
-									.children = {NULL},
-								},
-								&(nqiv_cmd_node)
-								{
-									.name = "repeat_delay",
-									.description = "This is the starting delay for repeating a key.",
-									.store_value = nqiv_cmd_parser_set_repeat_delay_default,
-									.print_value = nqiv_cmd_parser_print_repeat_delay_default,
-									.args = {&nqiv_parser_arg_type_Uint64, NULL},
-									.children = {NULL},
-								},
-								&(nqiv_cmd_node)
-								{
-									.name = "delay_accel",
-									.description = "The repeat delay will be reduced by this amount for each repetition.",
-									.store_value = nqiv_cmd_parser_set_delay_accel_default,
-									.print_value = nqiv_cmd_parser_print_delay_accel_default,
-									.args = {&nqiv_parser_arg_type_Uint64, NULL},
-									.children = {NULL},
-								},
-								&(nqiv_cmd_node)
-								{
-									.name = "minimum_delay",
-									.description = "The delay will never be less than this.",
-									.store_value = nqiv_cmd_parser_set_minimum_delay_default,
-									.print_value = nqiv_cmd_parser_print_minimum_delay_default,
-									.args = {&nqiv_parser_arg_type_Uint64, NULL},
-									.children = {NULL},
-								},
-								&(nqiv_cmd_node)
-								{
-									.name = "send_on_up",
-									.description = "Register releasing of the key.",
-									.store_value = nqiv_cmd_parser_set_send_on_up_default,
-									.print_value = nqiv_cmd_parser_print_send_on_up_default,
-									.args = {&nqiv_parser_arg_type_bool, NULL},
-									.children = {NULL},
-								},
-								&(nqiv_cmd_node)
-								{
-									.name = "send_on_down",
-									.description = "Register pressing of the key.",
-									.store_value = nqiv_cmd_parser_set_send_on_down_default,
-									.print_value = nqiv_cmd_parser_print_send_on_down_default,
-									.args = {&nqiv_parser_arg_type_bool, NULL},
-									.children = {NULL},
-								},
-								NULL
-							}
-						},
-						NULL
-					},
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "color",
-					.description = "Set operations related to color.",
-					.store_value = NULL,
-					.print_value = NULL,
-					.args = {NULL},
-					.children = {
-						&(nqiv_cmd_node)
-						{
-							.name = "background",
-							.description = "Color of background.",
-							.store_value = nqiv_cmd_parser_set_background_color,
-							.print_value = nqiv_cmd_parser_print_background_color,
-							.args = {&nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "error",
-							.description = "Color of image area when there's an error loading.",
-							.store_value = nqiv_cmd_parser_set_error_color,
-							.print_value = nqiv_cmd_parser_print_error_color,
-							.args = {&nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "loading",
-							.description = "Color of image area when image is still loading.",
-							.store_value = nqiv_cmd_parser_set_loading_color,
-							.print_value = nqiv_cmd_parser_print_loading_color,
-							.args = {&nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "selection",
-							.description = "Color of box around selected image.",
-							.store_value = nqiv_cmd_parser_set_selection_color,
-							.print_value = nqiv_cmd_parser_print_selection_color,
-							.args = {&nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "mark",
-							.description = "Color of dashed box around marked image.",
-							.store_value = nqiv_cmd_parser_set_mark_color,
-							.print_value = nqiv_cmd_parser_print_mark_color,
-							.args = {&nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "alpha_background_one",
-							.description = "The background of a transparent image is rendered as checkers. This is the first color.",
-							.store_value = nqiv_cmd_parser_set_alpha_background_color_one,
-							.print_value = nqiv_cmd_parser_print_alpha_background_color_one,
-							.args = {&nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "alpha_background_two",
-							.description = "The background of a transparent image is rendered as checkers. This is the second color.",
-							.store_value = nqiv_cmd_parser_set_alpha_background_color_two,
-							.print_value = nqiv_cmd_parser_print_alpha_background_color_two,
-							.args = {&nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, NULL},
-							.children = {NULL},
-						},
-						NULL,
-					}
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "preload",
-					.description = "Set options related to preloading images not yet in view.",
-					.store_value = NULL,
-					.print_value = NULL,
-					.args = {NULL},
-					.children = {
-						&(nqiv_cmd_node)
-						{
-							.name = "ahead",
-							.description = "This number of images ahead of the current montage are loaded.",
-							.store_value = nqiv_cmd_parser_set_preload_ahead,
-							.print_value = nqiv_cmd_parser_print_preload_ahead,
-							.args = {&nqiv_parser_arg_type_int_natural, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "behind",
-							.description = "This number of images ahead of the current montage are loaded.",
-							.store_value = nqiv_cmd_parser_set_preload_behind,
-							.print_value = nqiv_cmd_parser_print_preload_behind,
-							.args = {&nqiv_parser_arg_type_int_natural, NULL},
-							.children = {NULL},
-						},
-						NULL,
-					}
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "no_resample_oversized",
-					.description = "Normally, if the image is larger than 16k by 16k pixels, it will be reloaded for each zoom. This keeps the normal behavior with the entire image downsized.",
-					.store_value = nqiv_cmd_parser_set_no_resample_oversized,
-					.print_value = nqiv_cmd_parser_print_no_resample_oversized,
-					.args = {&nqiv_parser_arg_type_bool, NULL},
-					.children = {NULL},
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "show",
-					.description = "Settings related to displaying optional entities.",
-					.store_value = NULL,
-					.print_value = NULL,
-					.args = {NULL},
-					.children = {
-						&(nqiv_cmd_node)
-						{
-							.name = "loading_indicator",
-							.description = "Determine whether the loading indicator is rendered in image mode (achieve the same in montage mode by setting `set color loading` to match `set color background`).",
-							.store_value = nqiv_cmd_parser_set_show_loading_indicator,
-							.print_value = nqiv_cmd_parser_print_show_loading_indicator,
-							.args = {&nqiv_parser_arg_type_bool, NULL},
-							.children = {NULL},
-						},
-						NULL
-					}
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "queue_size",
-					.description = "Dynamic arrays in the software are backed by a given amount of memory. They will expand as needed, but it may improve performance to allocate more memory in advance. This value is the default minimum.",
-					.store_value = nqiv_cmd_parser_set_queue_size,
-					.print_value = nqiv_cmd_parser_print_queue_size,
-					.args = {&nqiv_parser_arg_type_int_positive, NULL},
-					.children = {NULL},
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "window",
-					.description = "Set operations related to the window.",
-					.store_value = NULL,
-					.print_value = NULL,
-					.args = {NULL},
-					.children = {
-						&(nqiv_cmd_node)
-						{
-							.name = "width",
-							.description = "Set the width of the program window",
-							.store_value = nqiv_cmd_parser_set_window_width,
-							.print_value = nqiv_cmd_parser_print_window_width,
-							.args = {&nqiv_parser_arg_type_int_positive, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "height",
-							.description = "Set the height of the program window",
-							.store_value = nqiv_cmd_parser_set_window_height,
-							.print_value = nqiv_cmd_parser_print_window_height,
-							.args = {&nqiv_parser_arg_type_int_positive, NULL},
-							.children = {NULL},
-						},
-						NULL,
-					}
-				},
-				&(nqiv_cmd_node)
-				{
-					.name = "cmd",
-					.description = "Set operations related to the commands.",
-					.store_value = NULL,
-					.print_value = NULL,
-					.args = {NULL},
-					.children = {
-						&(nqiv_cmd_node)
-						{
-							.name = "parse_error_quit",
-							.description = "Quit if there are errors parsing commands.",
-							.store_value = nqiv_cmd_parser_set_parse_error_quit,
-							.print_value = nqiv_cmd_parser_print_parse_error_quit,
-							.args = {&nqiv_parser_arg_type_bool, NULL},
-							.children = {NULL},
-						},
-						&(nqiv_cmd_node)
-						{
-							.name = "apply_error_quit",
-							.description = "Quit if there are errors applying correctly-parsed commands.",
-							.store_value = nqiv_cmd_parser_set_apply_error_quit,
-							.print_value = nqiv_cmd_parser_print_apply_error_quit,
-							.args = {&nqiv_parser_arg_type_bool, NULL},
-							.children = {NULL},
-						},
-						NULL,
-					}
-				},
-				NULL,
-			}
-		},
-		NULL
-	}
-};
-
 bool nqiv_keyrate_press_action_from_string(const char* data, nqiv_keyrate_press_action* output)
 {
 	nqiv_keyrate_press_action action;
@@ -2168,7 +1354,7 @@ void nqiv_cmd_dumpcfg(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_no
 	nqiv_array_inherit(&new_cmd_builder, new_cmd, sizeof(char), NQIV_CMD_DUMPCFG_BUFFER_LENGTH);
 	bool new_cmd_success = true;
 	new_cmd_success = new_cmd_success && nqiv_array_push_str(&new_cmd_builder, current_cmd);
-	if(current_node != &nqiv_parser_nodes_root) {
+	if(current_node != manager->root_node) {
 		new_cmd_success = new_cmd_success && nqiv_array_push_str(&new_cmd_builder, current_node->name);
 		new_cmd_success = new_cmd_success && nqiv_array_push_str(&new_cmd_builder, " ");
 	}
@@ -2193,10 +1379,10 @@ void nqiv_cmd_dumpcfg(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_no
 	if(!recurse) {
 		return;
 	}
-	int cidx = 0;
-	while(current_node->children[cidx] != NULL) {
-		nqiv_cmd_dumpcfg(manager, current_node->children[cidx], recurse, new_cmd);
-		++cidx;
+	nqiv_cmd_node* child = current_node->child;
+	while(child != NULL) {
+		nqiv_cmd_dumpcfg(manager, child, recurse, new_cmd);
+		child = child->peer;
 	}
 }
 
@@ -2204,7 +1390,7 @@ void nqiv_cmd_print_help(nqiv_cmd_manager* manager, const nqiv_cmd_node* current
 {
 	nqiv_cmd_print_indent(manager);
 	fprintf(stdout, "%s: %s", current_node->name, current_node->description);
-	if(current_node->args[0] != NULL) {
+	if(current_node->args != NULL) {
 		fprintf(stdout, " - ");
 		nqiv_cmd_print_args(manager, (const nqiv_cmd_arg_desc* const*)(current_node->args), nqiv_cmd_print_indent);
 	}
@@ -2217,10 +1403,10 @@ void nqiv_cmd_print_help(nqiv_cmd_manager* manager, const nqiv_cmd_node* current
 		return;
 	}
 	manager->print_settings.indent += 1;
-	int cidx = 0;
-	while(current_node->children[cidx] != NULL) {
-		nqiv_cmd_print_help(manager, current_node->children[cidx], recurse);
-		++cidx;
+	nqiv_cmd_node* child = current_node->child;
+	while(child != NULL) {
+		nqiv_cmd_print_help(manager, child, recurse);
+		child = child->peer;
 	}
 	manager->print_settings.indent -= 1;
 }
@@ -2411,6 +1597,7 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager* manager, const nqiv_cmd_node* current
 	const char* data = manager->buffer->data;
 
 	while(current_node->args[tidx] != NULL) {
+		assert(tidx < NQIV_CMD_MAX_ARGS);
 		const int next_text_offset = nqiv_cmd_scan_not_whitespace(data, idx, eolpos, NULL);
 		if(next_text_offset != -1) {
 			idx = next_text_offset;
@@ -2513,33 +1700,33 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 		idx += strlen("dumpcfg");
 		dumpcfg = true;
 	}
-	nqiv_cmd_node* current_node = &nqiv_parser_nodes_root;
+	nqiv_cmd_node* current_node = manager->root_node;
 	while(idx < eolpos) {
 		const int next_text_offset = nqiv_cmd_scan_not_whitespace(data, idx, eolpos, NULL);
 		if(next_text_offset != -1) {
 			idx = next_text_offset;
-		} else if(help || current_node != &nqiv_parser_nodes_root) {
+		} else if(help || current_node != manager->root_node) {
 			break;
 		}
 		bool found_node = false;
-		int cidx = 0;
-		while(current_node->children[cidx] != NULL) {
+		nqiv_cmd_node* child = current_node->child;
+		while(child != NULL) {
 			const char tmp = nqiv_cmd_tmpterm(data, eolpos);
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking token %s child %s for input %s\n", current_node->name, current_node->children[cidx]->name, data + idx);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking token %s child %s for input %s\n", current_node->name, child->name, data + idx);
 			nqiv_cmd_tmpret(data, eolpos, tmp);
 			int data_end = nqiv_cmd_scan_whitespace(data, idx, eolpos, NULL);
 			if(data_end == -1 || data_end > eolpos) {
 				data_end = eolpos;
 			}
-			if(strncmp( &data[idx], current_node->children[cidx]->name, data_end - idx) == 0 && strlen(current_node->children[cidx]->name) == (size_t)(data_end - idx) ) {
-				current_node = current_node->children[cidx];
+			if(strncmp( &data[idx], child->name, data_end - idx) == 0 && strlen(child->name) == (size_t)(data_end - idx) ) {
+				current_node = child;
 				idx = data_end;
 				found_node = true;
 				current_cmd_success = current_cmd_success && nqiv_array_push_str(&current_cmd_builder, current_node->name);
 				current_cmd_success = current_cmd_success && nqiv_array_push_str(&current_cmd_builder, " ");
 				break;
 			}
-			++cidx;
+			child = child->peer;
 		}
 		if(!found_node) {
 			break;
@@ -2630,8 +1817,322 @@ bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream)
 	return true;
 }
 
+nqiv_cmd_node* nqiv_cmd_get_last_peer(nqiv_cmd_node* first_peer)
+{
+	assert(first_peer != NULL);
+	nqiv_cmd_node* current_peer;
+	nqiv_cmd_node* last_peer = first_peer;
+	for(current_peer = first_peer->peer; current_peer != NULL; current_peer = current_peer->peer) {
+		last_peer = current_peer;
+	}
+	return last_peer;
+}
+
+/* TODO: Why can't we const this? */
+int nqiv_cmd_get_args_list_length(nqiv_cmd_arg_desc** args)
+{
+	assert(args != NULL);
+	int count;
+	for(count = 0; args[count] != NULL; ++count) {}
+	assert(count > 0);
+	return count + 1;
+}
+
+int nqiv_cmd_get_args_length(const nqiv_cmd_node* node)
+{
+	assert(node != NULL);
+	return nqiv_cmd_get_args_list_length(node->args);
+}
+
+void nqiv_cmd_add_child_node(nqiv_cmd_node* parent, nqiv_cmd_node* child)
+{
+	assert(parent != NULL);
+	if(child != NULL) {
+		assert(parent->child == NULL);
+		parent->child = child;
+	}
+}
+
+void nqiv_cmd_add_peer_node(nqiv_cmd_node* first_peer, nqiv_cmd_node* new_peer)
+{
+	if(new_peer != NULL) {
+		nqiv_cmd_get_last_peer(first_peer)->peer = new_peer;
+	}
+}
+
+void nqiv_cmd_add_child_or_peer(nqiv_cmd_node* parent, nqiv_cmd_node* node)
+{
+	if(parent->child != NULL) {
+		nqiv_cmd_add_peer_node(parent->child, node);
+	} else {
+		nqiv_cmd_add_child_node(parent, node);
+	}
+}
+
+void nqiv_cmd_destroy_node(nqiv_cmd_node* node)
+{
+	assert(node != NULL);
+	assert(node->name != NULL);
+	assert(node->description != NULL);
+	memset( node->name, 0, strlen(node->name) );
+	free(node->name);
+	memset( node->description, 0, strlen(node->description) );
+	free(node->description);
+	if(node->args != NULL) {
+		memset( node->args, 0, nqiv_cmd_get_args_length(node) );
+		free(node->args);
+	}
+	if(node->child != NULL) {
+		nqiv_cmd_destroy_node(node->child);
+	}
+	if(node->peer != NULL) {
+		nqiv_cmd_destroy_node(node->peer);
+	}
+	memset( node, 0, sizeof(nqiv_cmd_node) );
+	free(node);
+}
+
+nqiv_cmd_node* nqiv_cmd_make_base_node(bool* status, const char* name, const char* description)
+{
+	nqiv_cmd_node* node = (nqiv_cmd_node*)calloc( 1, sizeof(nqiv_cmd_node) );
+	if(node == NULL) {
+		*status = *status && false;
+		return NULL;
+	}
+	node->name = (char*)calloc( strlen(name) + 1, sizeof(char) );
+	if(node->name == NULL) {
+		free(node);
+		*status = *status && false;
+		return NULL;
+	}
+	node->description = (char*)calloc( strlen(description) + 1, sizeof(char) );
+	if(node->description == NULL) {
+		free(node->name);
+		free(node);
+		*status = *status && false;
+		return NULL;
+	}
+	memcpy( node->name, name, strlen(name) );
+	memcpy( node->description, description, strlen(description) );
+	*status = *status && true;
+	return node;
+}
+
+nqiv_cmd_node* nqiv_cmd_make_leaf_node(bool* status, const char* name, const char* description, bool (*store_value)(nqiv_cmd_manager*, nqiv_cmd_arg_token**), void (*print_value)(nqiv_cmd_manager*), nqiv_cmd_arg_desc** args)
+{
+	assert(store_value != NULL);
+	assert(args != NULL);
+	nqiv_cmd_node* node = nqiv_cmd_make_base_node(status, name, description);
+	if(node == NULL) {
+		*status = *status && false;
+		return NULL;
+	}
+	assert(store_value != NULL || print_value != NULL);
+	node->store_value = store_value;
+	node->print_value = print_value;
+	const int arg_count = nqiv_cmd_get_args_list_length(args);
+	node->args = (nqiv_cmd_arg_desc**)calloc( arg_count, sizeof(nqiv_cmd_arg_desc*) );
+	if(node->args == NULL) {
+		nqiv_cmd_destroy_node(node);
+		*status = *status && false;
+		return NULL;
+	}
+	memcpy( node->args, args, arg_count * sizeof(nqiv_cmd_arg_desc*) );
+	*status = *status && true;
+	return node;
+}
+
+nqiv_cmd_node* nqiv_cmd_add_child_branch_node(bool* status, nqiv_cmd_node* parent, const char* name, const char* description)
+{
+	if(parent == NULL || !*status) {
+		return NULL;
+	}
+	nqiv_cmd_node* node = nqiv_cmd_make_base_node(status, name, description);
+	nqiv_cmd_add_child_or_peer(parent, node);
+	return node;
+}
+
+nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool* status, nqiv_cmd_node* parent, const char* name, const char* description, bool (*store_value)(nqiv_cmd_manager*, nqiv_cmd_arg_token**), void (*print_value)(nqiv_cmd_manager*), nqiv_cmd_arg_desc** args)
+{
+	if(parent == NULL || !*status) {
+		return NULL;
+	}
+	nqiv_cmd_node* node = nqiv_cmd_make_leaf_node(status, name, description, store_value, print_value, args);
+	nqiv_cmd_add_child_or_peer(parent, node);
+	return node;
+}
+
+/* TODO How to write this? */
+#define STACKLEN 16
+#define SET_CURRENT assert(nqiv_array_get_units_count(&stack) > 0); \
+					assert(nqiv_array_get_units_count(&stack) < STACKLEN); \
+					current_node = NULL; \
+					nqiv_array_get(&stack, nqiv_array_get_last_idx(&stack), &current_node); \
+					assert(current_node != NULL);
+#define B(NAME, DESCRIPTION) SET_CURRENT; \
+							 assert(tmp_node == NULL); \
+							 tmp_node = nqiv_cmd_add_child_branch_node( &status, current_node, (NAME), (DESCRIPTION) ); \
+							 nqiv_array_push(&stack, &tmp_node); \
+							 tmp_node = NULL;
+#define L(NAME, DESCRIPTION, STORE_VALUE, PRINT_VALUE, ARGS) SET_CURRENT; \
+															 assert(nqiv_cmd_get_args_list_length(ARGS) < NQIV_CMD_MAX_ARGS); \
+															 nqiv_cmd_add_child_leaf_node( &status, current_node, (NAME), (DESCRIPTION), (STORE_VALUE), (PRINT_VALUE), (ARGS) );
+#define POP assert(nqiv_array_get_units_count(&stack) > 0); \
+			nqiv_array_pop(&stack, NULL); \
+			SET_CURRENT;
+bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
+{
+	nqiv_cmd_arg_desc* sendkey_args[] = {&nqiv_parser_arg_type_key_action, NULL};
+	nqiv_cmd_arg_desc* idxname_args[] = {&nqiv_parser_arg_type_int_natural, &nqiv_parser_arg_type_string_full, NULL};
+	nqiv_cmd_arg_desc* natural_args[] = {&nqiv_parser_arg_type_int_natural, NULL};
+	nqiv_cmd_arg_desc* positive_args[] = {&nqiv_parser_arg_type_int_positive, NULL};
+	nqiv_cmd_arg_desc* uint64_args[] = {&nqiv_parser_arg_type_Uint64, NULL};
+	nqiv_cmd_arg_desc* keyactionbrief_uint64_args[] = {&nqiv_parser_arg_type_key_action_brief, &nqiv_parser_arg_type_Uint64, NULL};
+	nqiv_cmd_arg_desc* keyactionbrief_pressaction_args[] = {&nqiv_parser_arg_type_key_action_brief, &nqiv_parser_arg_type_press_action, NULL};
+	nqiv_cmd_arg_desc* stringfull_args[] = {&nqiv_parser_arg_type_string_full, NULL};
+	nqiv_cmd_arg_desc* string_args[] = {&nqiv_parser_arg_type_string, NULL};
+	nqiv_cmd_arg_desc* pruner_args[] = {&nqiv_parser_arg_type_pruner, NULL};
+	nqiv_cmd_arg_desc* keybind_args[] = {&nqiv_parser_arg_type_keybind, NULL};
+	nqiv_cmd_arg_desc* loglevel_args[] = {&nqiv_parser_arg_type_log_level, NULL};
+	nqiv_cmd_arg_desc* doublepositiveone_args[] = {&nqiv_parser_arg_type_double_positive_one, NULL};
+	nqiv_cmd_arg_desc* doublenegativeone_args[] = {&nqiv_parser_arg_type_double_negative_one, NULL};
+	nqiv_cmd_arg_desc* doublepositive_args[] = {&nqiv_parser_arg_type_double_positive, NULL};
+	nqiv_cmd_arg_desc* doublenegative_args[] = {&nqiv_parser_arg_type_double_negative, NULL};
+	nqiv_cmd_arg_desc* double_args[] = {&nqiv_parser_arg_type_double, NULL};
+	nqiv_cmd_arg_desc* intpositive_args[] = {&nqiv_parser_arg_type_int_positive, NULL};
+	nqiv_cmd_arg_desc* bool_args[] = {&nqiv_parser_arg_type_bool, NULL};
+	nqiv_cmd_arg_desc* color_args[] = {&nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, NULL};
+	nqiv_cmd_node* stack_data[STACKLEN] = {0};
+	nqiv_array stack;
+	nqiv_array_inherit(&stack, stack_data, sizeof(nqiv_cmd_node*), STACKLEN);
+	bool status = true;
+	nqiv_cmd_node* root_node = nqiv_cmd_make_base_node(&status, "root", "Root of parsing tree. Prefix help to get help messages on commands, helptree to do the same recursively, or dumpcfg to dump functional commands to set the current configuration. Lines can also be commented by prefixing with #");
+	nqiv_cmd_node* current_node;
+	nqiv_cmd_node* tmp_node = NULL;
+	nqiv_array_push(&stack, &root_node);
+
+	L("sendkey", "Issue a simulated keyboard action to the program.", nqiv_cmd_parser_sendkey, NULL, sendkey_args);
+	B("insert", "Add a value to a particular location.");
+		L("image", "Insert an image path to be opened at a particular index.", nqiv_cmd_parser_insert_image, NULL, idxname_args);
+	POP;
+	B("remove", "Remove a value from a particular location.");
+		B("image", "Remove an image from the list to be opened.");
+			L("index", "Delete the image from the given index.", nqiv_cmd_parser_remove_image_index, NULL, natural_args);
+		POP;
+	POP;
+	B("append", "Add a value to the end of an existing series.");
+		B("log", "Append operations related to logging.");
+			L("stream", "Log to the given stream.", nqiv_cmd_parser_append_log_stream, nqiv_cmd_parser_print_log_stream, stringfull_args);
+		POP;
+		L("image", "Add an image path to the be opened.", nqiv_cmd_parser_append_image, NULL, stringfull_args);
+		L("pruner", "Declaratively specified pruning instructions. Use help to get list of commands.", nqiv_cmd_parser_append_pruner, nqiv_cmd_parser_print_pruner, pruner_args);
+		L("extension", "Add an image extension to be accepted.", nqiv_cmd_parser_append_extension, nqiv_cmd_parser_print_extension, string_args);
+		L("keybind", "Add a keybind.", nqiv_cmd_parser_append_keybind, nqiv_cmd_parser_print_keybind, keybind_args);
+	POP;
+	B("set", "Alter a singular value.");
+		B("log", "Set operations related to logging.");
+			L("level", "Log messages this level or lower are printed.", nqiv_cmd_parser_set_log_level, nqiv_cmd_parser_print_log_level, loglevel_args);
+			L("prefix", "Log message format. Special messages are delimited by #. ## produces a literal #. #time:<strftime format># prints the time. #level# prints the log level.", nqiv_cmd_parser_set_log_prefix, nqiv_cmd_parser_print_log_prefix, stringfull_args);
+		POP;
+		B("thread", "Settings related to thread behavior.");
+			L("count", "Set the number of worker threads used by the software. Starts as the number of threads on the machine divided by three (or one). This does not count toward VIPs threads. See 'set vips threads' for that.", nqiv_cmd_parser_set_thread_count, nqiv_cmd_parser_print_thread_count, positive_args);
+			L("event_interval", "Threads will update the master after processing this many events. 0 to process all.", nqiv_cmd_parser_set_thread_event_interval, nqiv_cmd_parser_print_thread_event_interval, natural_args);
+			L("prune_delay", "A pruning cycle will be allowed to run after this many milliseconds since the last one. 0 always allow prune cycles.", nqiv_cmd_parser_set_prune_delay, nqiv_cmd_parser_print_prune_delay, uint64_args);
+			L("extra_wakeup_delay", "In addition to an internal algorithm, wait this long to wait to let the master thread lock a worker. Longer times might produce longer loading delays, but help improve UI responsiveness.", nqiv_cmd_parser_set_extra_wakeup_delay, nqiv_cmd_parser_print_extra_wakeup_delay, natural_args);
+		POP;
+		B("vips", "Settings related to the VIPS library.");
+			L("threads", "Set the number of threads used by the VIPs library. The default is the number of available threads divided by two (or one). If set to 0, it is determined by the environment variable VIPS_CONCURRENCY, or if unset, the number of threads available on the machine.", nqiv_cmd_parser_set_vips_threads, nqiv_cmd_parser_print_vips_threads, natural_args);
+		POP;
+		B("zoom", "Set operations related to zooming.");
+			L("left_amount", "Amount to pan the zoom left with each action.", nqiv_cmd_parser_set_zoom_left_amount, nqiv_cmd_parser_print_zoom_left_amount, doublenegativeone_args);
+			L("right_amount", "Amount to pan the zoom right with each action", nqiv_cmd_parser_set_zoom_right_amount, nqiv_cmd_parser_print_zoom_right_amount, doublepositiveone_args);
+			L("down_amount", "Amount to pan the zoom down with each action", nqiv_cmd_parser_set_zoom_down_amount, nqiv_cmd_parser_print_zoom_down_amount, doublepositiveone_args);
+			L("up_amount", "Amount to pan the zoom up with each action", nqiv_cmd_parser_set_zoom_up_amount, nqiv_cmd_parser_print_zoom_up_amount, doublenegativeone_args);
+			L("out_amount", "Amount to pan the zoom out with each action", nqiv_cmd_parser_set_zoom_out_amount, nqiv_cmd_parser_print_zoom_out_amount, doublepositive_args);
+			L("in_amount", "Amount to pan the zoom in with each action", nqiv_cmd_parser_set_zoom_in_amount, nqiv_cmd_parser_print_zoom_in_amount, doublenegative_args);
+			L("left_amount_more",  "Higher amount to pan the zoom left with each action.", nqiv_cmd_parser_set_zoom_left_amount_more,  nqiv_cmd_parser_print_zoom_left_amount_more,  doublenegativeone_args);
+			L("right_amount_more", "Higher amount to pan the zoom right with each action", nqiv_cmd_parser_set_zoom_right_amount_more, nqiv_cmd_parser_print_zoom_right_amount_more, doublepositiveone_args);
+			L("down_amount_more",  "Higher amount to pan the zoom down with each action", nqiv_cmd_parser_set_zoom_down_amount_more,  nqiv_cmd_parser_print_zoom_down_amount_more,  doublepositiveone_args);
+			L("up_amount_more",    "Higher amount to pan the zoom up with each action", nqiv_cmd_parser_set_zoom_up_amount_more,    nqiv_cmd_parser_print_zoom_up_amount_more,    doublenegativeone_args);
+			L("out_amount_more",   "Higher amount to pan the zoom out with each action", nqiv_cmd_parser_set_zoom_out_amount_more,   nqiv_cmd_parser_print_zoom_out_amount_more,   doublepositive_args);
+			L("in_amount_more",    "Higher amount to pan the zoom in with each action", nqiv_cmd_parser_set_zoom_in_amount_more,    nqiv_cmd_parser_print_zoom_in_amount_more,    doublenegative_args);
+			L("up_coordinate_x_times", "This is multiplied against x axis panning caused by relative motion (like mouse panning)", nqiv_cmd_parser_set_zoom_up_coordinate_x_times, nqiv_cmd_parser_print_zoom_up_coordinate_x_times, double_args);
+			L("up_coordinate_y_times", "This is multiplied against y axis panning caused by relative motion (like mouse panning)", nqiv_cmd_parser_set_zoom_up_coordinate_y_times, nqiv_cmd_parser_print_zoom_up_coordinate_y_times, double_args);
+			L("default", "Default zoom setting when loading an image- 'keep' old zoom, 'fit' to display, or set 'actual_size'.", nqiv_cmd_parser_set_zoom_default, nqiv_cmd_parser_print_zoom_default, string_args);
+			L("scale_mode", "Set scale mode used for SDL textures. Options are: 'nearest', 'linear', and 'best' or 'anisotropic'.", nqiv_cmd_parser_set_zoom_scale_mode, nqiv_cmd_parser_print_zoom_scale_mode, string_args);
+		POP;
+		B("thumbnail", "Set operations related to thumbnails.");
+			L("path", "Path thumbnails are stored under. This directory must exist.", nqiv_cmd_parser_set_thumbnail_path, nqiv_cmd_parser_print_thumbnail_path, stringfull_args);
+			L("size_adjust", "Number of pixels to resize thumbnails by with 'zoom' action in montage mode.", nqiv_cmd_parser_set_thumbnail_zoom_amount, nqiv_cmd_parser_print_thumbnail_zoom_amount, intpositive_args);
+			L("size_adjust_more", "Higher number of pixels to resize thumbnails by with 'zoom' action in montage mode.", nqiv_cmd_parser_set_thumbnail_zoom_amount_more, nqiv_cmd_parser_print_thumbnail_zoom_amount_more, intpositive_args);
+			L("load", "Whether to read thumbnails from the disk.", nqiv_cmd_parser_set_thumbnail_load, nqiv_cmd_parser_print_thumbnail_load, bool_args);
+			L("save", "Whether to save thumbnails to the disk. Note that if thumbnail_load is not set to true, then thumbnails will always be saved, even if they are up to date on the disk.", nqiv_cmd_parser_set_thumbnail_save, nqiv_cmd_parser_print_thumbnail_save, bool_args);
+			L("size", "Width and height of thumbnails are the same value.", nqiv_cmd_parser_set_thumbnail_size, nqiv_cmd_parser_print_thumbnail_size, intpositive_args);
+		POP;
+		L("default_frame_time", "If an animated image does not provide a frame time, use this.", nqiv_cmd_parser_set_default_frame_time, nqiv_cmd_parser_print_default_frame_time, intpositive_args);
+		B("keypress", "Settings for delaying and registering keypresses.");
+			B("action", "Key action specific settings for delaying and registering keypresses.");
+				L("start_delay", "Before a key is registered, it must be pressed for this long.", nqiv_cmd_parser_set_start_delay, nqiv_cmd_parser_print_start_delay, keyactionbrief_uint64_args);
+				L("repeat_delay", "This is the starting delay for repeating a key.", nqiv_cmd_parser_set_repeat_delay, nqiv_cmd_parser_print_repeat_delay, keyactionbrief_uint64_args);
+				L("delay_accel", "The repeat delay will be reduced by this amount for each repetition.", nqiv_cmd_parser_set_delay_accel, nqiv_cmd_parser_print_delay_accel, keyactionbrief_uint64_args);
+				L("minimum_delay", "The delay will never be less than this.", nqiv_cmd_parser_set_minimum_delay, nqiv_cmd_parser_print_minimum_delay, keyactionbrief_uint64_args);
+				L("send_on_up", "Register releasing of the key.", nqiv_cmd_parser_set_send_on_up, nqiv_cmd_parser_print_send_on_up, keyactionbrief_pressaction_args);
+				L("send_on_down", "Register pressing of the key.", nqiv_cmd_parser_set_send_on_down, nqiv_cmd_parser_print_send_on_down, keyactionbrief_pressaction_args);
+			POP;
+			B("default", "Default settings for delaying and registering keypresses.");
+				L("start_delay", "Before a key is registered, it must be pressed for this long.", nqiv_cmd_parser_set_start_delay_default, nqiv_cmd_parser_print_start_delay_default, uint64_args);
+				L("repeat_delay", "This is the starting delay for repeating a key.", nqiv_cmd_parser_set_repeat_delay_default, nqiv_cmd_parser_print_repeat_delay_default, uint64_args);
+				L("delay_accel", "The repeat delay will be reduced by this amount for each repetition.", nqiv_cmd_parser_set_delay_accel_default, nqiv_cmd_parser_print_delay_accel_default, uint64_args);
+				L("minimum_delay", "The delay will never be less than this.", nqiv_cmd_parser_set_minimum_delay_default, nqiv_cmd_parser_print_minimum_delay_default, uint64_args);
+				L("send_on_up", "Register releasing of the key.", nqiv_cmd_parser_set_send_on_up_default, nqiv_cmd_parser_print_send_on_up_default, bool_args);
+				L("send_on_down", "Register pressing of the key.", nqiv_cmd_parser_set_send_on_down_default, nqiv_cmd_parser_print_send_on_down_default, bool_args);
+			POP;
+			/*L("", "", nqiv_cmd_parser_set_, nqiv_cmd_parser_print_, _args);*/
+		POP;
+		B("color", "Set operations related to color.");
+			L("background", "Color of background.", nqiv_cmd_parser_set_background_color, nqiv_cmd_parser_print_background_color, color_args);
+			L("error", "Color of image area when there's an error loading.", nqiv_cmd_parser_set_error_color, nqiv_cmd_parser_print_error_color, color_args);
+			L("loading", "Color of image area when image is still loading.", nqiv_cmd_parser_set_loading_color, nqiv_cmd_parser_print_loading_color, color_args);
+			L("selection", "Color of box around selected image.", nqiv_cmd_parser_set_selection_color, nqiv_cmd_parser_print_selection_color, color_args);
+			L("mark", "Color of dashed box around marked image.", nqiv_cmd_parser_set_mark_color, nqiv_cmd_parser_print_mark_color, color_args);
+			L("alpha_background_one", "The background of a transparent image is rendered as checkers. This is the first color.", nqiv_cmd_parser_set_alpha_background_color_one, nqiv_cmd_parser_print_alpha_background_color_one, color_args);
+			L("alpha_background_two", "The background of a transparent image is rendered as checkers. This is the second color.", nqiv_cmd_parser_set_alpha_background_color_two, nqiv_cmd_parser_print_alpha_background_color_two, color_args);
+		POP;
+		B("preload", "Set options related to preloading images not yet in view.");
+			L("ahead", "This number of images ahead of the current montage are loaded.", nqiv_cmd_parser_set_preload_ahead, nqiv_cmd_parser_print_preload_ahead, natural_args);
+			L("behind", "This number of images behind of the current montage are loaded.", nqiv_cmd_parser_set_preload_behind, nqiv_cmd_parser_print_preload_behind, natural_args);
+		POP;
+		L("no_resample_oversized", "Normally, if the image is larger than 16k by 16k pixels, it will be reloaded for each zoom. This keeps the normal behavior with the entire image downsized.", nqiv_cmd_parser_set_no_resample_oversized, nqiv_cmd_parser_print_no_resample_oversized, bool_args);
+		B("show", "Settings related to displaying optional entities.");
+			L("loading_indicator", "Determine whether the loading indicator is rendered in image mode (achieve the same in montage mode by setting `set color loading` to match `set color background`).", nqiv_cmd_parser_set_show_loading_indicator, nqiv_cmd_parser_print_show_loading_indicator, bool_args);
+		POP;
+		L("queue_size", "Dynamic arrays in the software are backed by a given amount of memory. They will expand as needed, but it may improve performance to allocate more memory in advance. This value is the default minimum.", nqiv_cmd_parser_set_queue_size, nqiv_cmd_parser_print_queue_size, intpositive_args);
+		B("window", "Set operations related to the window.");
+			L("width", "Set the width of the program window.", nqiv_cmd_parser_set_window_width, nqiv_cmd_parser_print_window_width, intpositive_args);
+			L("height", "Set the height of the program window.", nqiv_cmd_parser_set_window_height, nqiv_cmd_parser_print_window_height, intpositive_args);
+		POP;
+		B("cmd", "Set operations related to the commands.");
+			L("parse_error_quit", "Quit if there are errors parsing commands.", nqiv_cmd_parser_set_parse_error_quit, nqiv_cmd_parser_print_parse_error_quit, bool_args);
+			L("apply_error_quit", "Quit if there are errors applying correctly-parsed commands.", nqiv_cmd_parser_set_apply_error_quit, nqiv_cmd_parser_print_apply_error_quit, bool_args);
+		POP;
+	POP;
+
+	if(status) {
+		manager->root_node = root_node;
+	}
+	return status;
+}
+#undef POP
+#undef B
+#undef L
+#undef SET_CURRENT
+#undef STACKLEN
+
 void nqiv_cmd_manager_destroy(nqiv_cmd_manager* manager)
 {
+	if(manager->root_node != NULL) {
+		nqiv_cmd_destroy_node(manager->root_node);
+	}
 	if(manager->buffer != NULL) {
 		nqiv_array_destroy(manager->buffer);
 	}
@@ -2644,6 +2145,11 @@ bool nqiv_cmd_manager_init(nqiv_cmd_manager* manager, nqiv_state* state)
 	manager->buffer = nqiv_array_create(sizeof(char), NQIV_CMD_READ_BUFFER_LENGTH);
 	if(manager->buffer == NULL) {
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR, "Failed to allocate memory to create cmd buffer of length %d\n", state->queue_length);
+		return false;
+	}
+	if( !nqiv_cmd_manager_build_cmdtree(manager) ) {
+		nqiv_cmd_manager_destroy(manager);
+		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR, "Failed to build cmd parsing tree.\n");
 		return false;
 	}
 	manager->state = state;

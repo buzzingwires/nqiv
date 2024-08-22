@@ -13,7 +13,6 @@
 #include "pruner.h"
 
 #define NQIV_CMD_MAX_ARGS 8
-#define NQIV_CMD_MAX_CHILDREN 18
 #define NQIV_CMD_DUMPCFG_BUFFER_LENGTH 1024
 #define NQIV_CMD_ADD_BYTE_BUFFER_LENGTH (sizeof(char) * 1)
 #define NQIV_CMD_READ_BUFFER_LENGTH 131072
@@ -107,15 +106,17 @@ typedef struct nqiv_cmd_manager_print_settings
 	char* prefix;
 } nqiv_cmd_manager_print_settings;
 
+typedef struct nqiv_cmd_node nqiv_cmd_node;
+
 struct nqiv_cmd_manager
 {
 	nqiv_state* state;
 	nqiv_array* buffer;
 	nqiv_cmd_manager_print_settings print_settings;
+	nqiv_cmd_node* root_node;
 };
 
 /*Read characters until we get an EOL. Then, begin by traversing the tree to find the name of the node. Once we no longer find names, we begin grabbing the parameters. We do paremeters by seeing if they match whatever format. Then we create an array of structs, with a type enum, pointer to the string, a union with the raw data, if relevant. Whenever we're finished with text, we can traverse the string forward.*/
-typedef struct nqiv_cmd_node nqiv_cmd_node;
 
 /* TODO Stifle repeated events? */
 struct nqiv_cmd_node
@@ -124,8 +125,9 @@ struct nqiv_cmd_node
 	char* description;
 	bool (*store_value)(nqiv_cmd_manager*, nqiv_cmd_arg_token**);
 	void (*print_value)(nqiv_cmd_manager*);
-	nqiv_cmd_arg_desc* args[NQIV_CMD_MAX_ARGS];
-	nqiv_cmd_node* children[NQIV_CMD_MAX_CHILDREN];
+	nqiv_cmd_arg_desc** args;
+	nqiv_cmd_node* peer;
+	nqiv_cmd_node* child;
 };
 
 bool nqiv_cmd_add_line_and_parse(nqiv_cmd_manager* manager, const char* str);
