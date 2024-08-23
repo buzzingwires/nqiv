@@ -128,6 +128,7 @@ struct nqiv_cmd_node
 	nqiv_cmd_arg_desc** args;
 	nqiv_cmd_node* peer;
 	nqiv_cmd_node* child;
+	bool deprecated;
 };
 
 bool nqiv_cmd_add_line_and_parse(nqiv_cmd_manager* manager, const char* str);

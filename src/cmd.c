@@ -1349,6 +1349,9 @@ void nqiv_cmd_print_args( nqiv_cmd_manager* manager, const nqiv_cmd_arg_desc* co
 
 void nqiv_cmd_dumpcfg(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_node, const bool recurse, const char* current_cmd)
 {
+	if(current_node->deprecated) {
+		return;
+	}
 	char new_cmd[NQIV_CMD_DUMPCFG_BUFFER_LENGTH] = {0};
 	nqiv_array new_cmd_builder;
 	nqiv_array_inherit(&new_cmd_builder, new_cmd, sizeof(char), NQIV_CMD_DUMPCFG_BUFFER_LENGTH);
@@ -1388,6 +1391,9 @@ void nqiv_cmd_dumpcfg(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_no
 
 void nqiv_cmd_print_help(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_node, const bool recurse)
 {
+	if(current_node->deprecated && manager->print_settings.indent > 0) {
+		return;
+	}
 	nqiv_cmd_print_indent(manager);
 	fprintf(stdout, "%s: %s", current_node->name, current_node->description);
 	if(current_node->args != NULL) {
@@ -1969,14 +1975,21 @@ nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool* status, nqiv_cmd_node* parent,
 					current_node = NULL; \
 					nqiv_array_get(&stack, nqiv_array_get_last_idx(&stack), &current_node); \
 					assert(current_node != NULL);
+#define DEPRECATE deprecated = true;
+#define APPLY_DEPRECATE tmp_node->deprecated = deprecated; \
+						deprecated = false;
 #define B(NAME, DESCRIPTION) SET_CURRENT; \
 							 assert(tmp_node == NULL); \
 							 tmp_node = nqiv_cmd_add_child_branch_node( &status, current_node, (NAME), (DESCRIPTION) ); \
+							 APPLY_DEPRECATE; \
 							 nqiv_array_push(&stack, &tmp_node); \
 							 tmp_node = NULL;
 #define L(NAME, DESCRIPTION, STORE_VALUE, PRINT_VALUE, ARGS) SET_CURRENT; \
 															 assert(nqiv_cmd_get_args_list_length(ARGS) < NQIV_CMD_MAX_ARGS); \
-															 nqiv_cmd_add_child_leaf_node( &status, current_node, (NAME), (DESCRIPTION), (STORE_VALUE), (PRINT_VALUE), (ARGS) );
+															 assert(tmp_node == NULL); \
+															 tmp_node = nqiv_cmd_add_child_leaf_node( &status, current_node, (NAME), (DESCRIPTION), (STORE_VALUE), (PRINT_VALUE), (ARGS) ); \
+															 APPLY_DEPRECATE; \
+															 tmp_node = NULL;
 #define POP assert(nqiv_array_get_units_count(&stack) > 0); \
 			nqiv_array_pop(&stack, NULL); \
 			SET_CURRENT;
@@ -2009,6 +2022,7 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 	nqiv_cmd_node* root_node = nqiv_cmd_make_base_node(&status, "root", "Root of parsing tree. Prefix help to get help messages on commands, helptree to do the same recursively, or dumpcfg to dump functional commands to set the current configuration. Lines can also be commented by prefixing with #");
 	nqiv_cmd_node* current_node;
 	nqiv_cmd_node* tmp_node = NULL;
+	bool deprecated = false;
 	nqiv_array_push(&stack, &root_node);
 
 	L("sendkey", "Issue a simulated keyboard action to the program.", nqiv_cmd_parser_sendkey, NULL, sendkey_args);
