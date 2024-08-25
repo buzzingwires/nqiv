@@ -57,15 +57,34 @@ void nqiv_array_unlimit_data(nqiv_array* array)
 	array->max_data_length = 0;
 }
 
+int nqiv_array_calculate_potential_length(const nqiv_array* array, const int units)
+{
+	const int length = array->unit_length * units;
+	if(length < array->unit_length || length < units) {
+		return -1;
+	}
+	return length;
+}
+
 bool nqiv_array_grow(nqiv_array* array, const int new_count, const bool force)
 {
-	const int length = array->unit_length * new_count;
-	if(length < array->unit_length || length < new_count) {
+	int length = nqiv_array_calculate_potential_length(array, new_count);
+	if(length < 0) {
 		return false;
 	}
 	assert(force || array->max_data_length == 0 || array->data_length <= array->max_data_length);
 	if(length <= array->data_length) {
 		return true;
+	}
+	if(array->min_add_count > 0) {
+		const int needed_units = new_count - nqiv_array_get_units_count(array);
+		assert(needed_units > 0);
+		if(needed_units < array->min_add_count) {
+			length = nqiv_array_calculate_potential_length(array, nqiv_array_get_units_count(array) + array->min_add_count);
+			if(length < 0) {
+				return false;
+			}
+		}
 	}
 	if(!force && array->max_data_length > 0 && length > array->max_data_length) {
 		return false;
@@ -84,6 +103,7 @@ bool nqiv_array_grow(nqiv_array* array, const int new_count, const bool force)
 
 bool nqiv_array_make_room(nqiv_array* array, const int add_count)
 {
+	assert(add_count > 0);
 	const int minimum_count = nqiv_array_get_units_count(array) + add_count;
 	if( !nqiv_array_grow(array, minimum_count, false) ) {
 		return false;

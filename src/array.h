@@ -12,6 +12,7 @@ typedef struct nqiv_array
 	int data_length;
 	int max_data_length;
 	int unit_length;
+	int min_add_count;
 	int position;
 } nqiv_array;
 

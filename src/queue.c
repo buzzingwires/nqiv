@@ -207,13 +207,45 @@ void nqiv_priority_queue_unlock(nqiv_priority_queue* queue)
 	}
 }
 
-bool nqiv_priorty_queue_grow(nqiv_priority_queue* queue, const int new_count)
+bool nqiv_queue_set_max_data_length(nqiv_queue* queue, const int length)
+{
+	queue->array->max_data_length = length;
+	return true;
+}
+
+bool nqiv_queue_set_min_add_count(nqiv_queue* queue, const int count)
+{
+	queue->array->min_add_count = count;
+	return true;
+}
+
+bool nqiv_queue_grow(nqiv_queue* queue, const int new_count)
+{
+	return nqiv_array_grow(queue->array, new_count, true);
+}
+
+bool nqiv_priority_queue_apply_int(nqiv_priority_queue* queue, bool (*op)(nqiv_queue*, int), const int value)
 {
 	int idx;
 	for(idx = 0; idx < queue->bin_count; ++idx) {
-		if( !nqiv_array_grow(queue->bins[idx].array, new_count, true) ) {
+		if( !op(&(queue->bins[idx]), value) ) {
 			return false;
 		}
 	}
 	return true;
+}
+
+bool nqiv_priority_queue_grow(nqiv_priority_queue* queue, const int new_count)
+{
+	return nqiv_priority_queue_apply_int(queue, nqiv_queue_grow, new_count);
+}
+
+bool nqiv_priority_queue_set_max_data_length(nqiv_priority_queue* queue, const int length)
+{
+	return nqiv_priority_queue_apply_int(queue, nqiv_queue_set_max_data_length, length);
+}
+
+bool nqiv_priority_queue_set_min_add_count(nqiv_priority_queue* queue, const int count)
+{
+	return nqiv_priority_queue_apply_int(queue, nqiv_queue_set_min_add_count, count);
 }

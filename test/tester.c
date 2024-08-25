@@ -162,6 +162,7 @@ test_set* create_tests(void)
 
 	test_set* array = add_test_subset(root, &test_counter, "array"); if(array == NULL) { goto cleanup; }
 	if(add_test(array, &test_counter, "array_test_default", array_test_default) == NULL) { goto cleanup; }
+	if(add_test(array, &test_counter, "array_test_inherit", array_test_inherit) == NULL) { goto cleanup; }
 	if(add_test(array, &test_counter, "array_test_strbuild", array_test_strbuild) == NULL) { goto cleanup; }
 	if(add_test(array, &test_counter, "array_test_alloc", array_test_alloc) == NULL) { goto cleanup; }
 
