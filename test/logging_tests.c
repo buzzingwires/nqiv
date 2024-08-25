@@ -92,8 +92,6 @@ void logging_test_nulls(void)
 	nqiv_log_add_stream(NULL, NULL);
 	nqiv_log_add_stream(&ctx, NULL);
 	assert( strcmp(ctx.error_message, "Cannot add NULL stream.\n") == 0 );
-	/*nqiv_log_add_stream(&ctx, (void*)12345);*/
-	/*assert( strcmp(ctx.error_message, "Cannot add stream without available memory.\n") == 0 );*/
 	nqiv_log_set_prefix_format(NULL, "TEST");
 	nqiv_log_set_prefix_format(&ctx, "TEST");
 	assert( strcmp(ctx.prefix_format, "TEST") == 0 );

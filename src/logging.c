@@ -57,7 +57,6 @@ void nqiv_log_set_prefix_format(nqiv_log_ctx* ctx, const char* fmt)
 	memcpy(ctx->prefix_format, fmt, NQIV_LOG_PREFIX_FORMAT_LEN);
 }
 
-/* test null ctx */
 void nqiv_log_destroy(nqiv_log_ctx* ctx)
 {
 	if(ctx == NULL) {
@@ -72,7 +71,6 @@ void nqiv_log_destroy(nqiv_log_ctx* ctx)
 	memset( ctx, 0, sizeof(nqiv_log_ctx) );
 }
 
-/* test null ctx */
 void nqiv_log_init(nqiv_log_ctx* ctx)
 {
 	if(ctx == NULL) {
@@ -88,7 +86,6 @@ void nqiv_log_init(nqiv_log_ctx* ctx)
 	omp_init_lock(&ctx->lock);
 }
 
-/* Test with null CTX, test with null stream, test with NULL streams */
 void nqiv_log_add_stream(nqiv_log_ctx* ctx, const FILE* stream)
 {
 	if(ctx == NULL) {
@@ -215,7 +212,6 @@ void write_prefix(nqiv_log_ctx* ctx, const nqiv_log_level level, FILE* stream)
 	write_prefix_flush_slice(stream, slice, &slice_idx);
 }
 
-/* Test with null CTX, test with NULL streams, test with null format, test with higher level, */
 void nqiv_log_write(nqiv_log_ctx* ctx,
 	const nqiv_log_level level,
 	const char* format,

@@ -10,26 +10,6 @@
 #include "thumbnail.h"
 #include "worker.h"
 
-/*
-typedef struct nqiv_event_image_load_form_options
-{
-	bool unload;
-	bool file;
-	bool wand;
-	bool frame;
-	bool raw;
-	bool surface;
-} nqiv_event_image_load_form_options;
-
-typedef struct nqiv_event_image_load_options
-{
-	nqiv_image* image;
-	bool create_thumbnail;
-	nqiv_event_image_load_form_options image;
-	nqiv_event_image_load_form_options thumbnail;
-} nqiv_event_image_load_options;
- */
-
 void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_options* options, nqiv_image* image, nqiv_image_form* form)
 {
 	if(options->unload) {

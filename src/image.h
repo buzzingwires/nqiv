@@ -180,24 +180,5 @@ void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager);
 void nqiv_image_manager_decrement_thumbnail_size(nqiv_image_manager* manager);
 void nqiv_image_manager_increment_thumbnail_size_more(nqiv_image_manager* manager);
 void nqiv_image_manager_decrement_thumbnail_size_more(nqiv_image_manager* manager);
-/* REMOVE? */
-/* Dynamic array? */
-/* convert to dynamic */
-/* remove OMP preprocessor */
-/* Better pointer arithmetic */
-/* int types */
-/* better checks */
-/* assertions */
-/* better naming */
-/* int array ttransactons */
-/* event representation */
-/* pointer types */
-/* clear all with memset */
-/* free and clear */
-/* some other generic */
-/* allocator */
-/* log for array */
-/* rename from emlib */
-/* headers */
 
 #endif /* NQIV_IMAGE_H */

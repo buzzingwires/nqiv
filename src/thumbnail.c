@@ -182,7 +182,6 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 {
 	assert(image != NULL);
 	assert(image->parent != NULL);
-	/* assert(image->thumbnail.path == NULL); */
 
 	if(image->thumbnail.path == NULL) {
 		return false;

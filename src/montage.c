@@ -8,34 +8,6 @@
 
 /* TODO LOGGING AND CHECKS */
 
-/*
-typedef struct nqiv_montage_dimensions
-{
-	double horizontal_margin;
-	double vertical_margin;
-	double column_space;
-	double row_space;
-	int row_count;
-	int count;
-} nqiv_montage_dimensions;
-
-typedef struct nqiv_montage_positions
-{
-	int start;
-	int selection;
-	int end;
-} nqiv_montage_positions;
-
-typedef struct nqiv_montage_state
-{
-	nqiv_log_ctx* logger;
-	SDL_Window* window;
-	nqiv_image_manager* images;
-	nqiv_montage_dimensions dimensions;
-	nqiv_montage_positions positions;
-} nqiv_montage_state;
-*/
-
 double nqiv_montage_calculate_axis(int* counter, const double ratio)
 {
 	*counter = 0;
@@ -198,14 +170,6 @@ void nqiv_montage_get_image_rect(nqiv_montage_state* state, const int idx, SDL_R
 {
 	assert(idx >= 0);
 	assert( idx < nqiv_array_get_units_count(state->images->images) );
-	/*
-	if(idx < 0) {
-		return;
-	}
-	if(idx >= images_len) {
-		return;
-	}
-	*/
 	const int horizontal_margin_pixels = (int)(state->dimensions.horizontal_margin * (double)state->dimensions.window_width);
 	const int vertical_margin_pixels = (int)(state->dimensions.vertical_margin * (double)state->dimensions.window_height);
 	const int column_space_pixels = (int)(state->dimensions.column_space * (double)state->dimensions.window_width);

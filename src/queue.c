@@ -46,12 +46,6 @@ bool nqiv_queue_init(nqiv_queue* queue, nqiv_log_ctx* logger, const int unit_siz
 	return true;
 }
 
-/*
-bool nqiv_array_push_bytes(nqiv_array* array, void* ptr, const int count);
-bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, void* ptr);
-bool nqiv_array_pop_bytes(nqiv_array* array, const int count, void* ptr);
-*/
-
 bool nqiv_queue_push(nqiv_queue* queue, const void* entry)
 {
 	assert(entry != NULL);

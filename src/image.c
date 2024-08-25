@@ -125,10 +125,8 @@ void nqiv_log_vips_exception(nqiv_log_ctx* logger,  const char* path)
 	g_free(error);
 }
 
-/* TODO to thumbnail */
 /* TODO step frame */
 /* TODO input cleanup */
-/* TODO unload */
 /* TODO Add twice */
 /* TODO Detect change */
 
@@ -199,7 +197,6 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 	assert(form->vips == NULL);
 	if(form->path == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "No path for form in image %s.\n", image->image.path);
-		/*nqiv_set_invalid_image_form(form);*/
 		form->error = true;
 		return false;
 	}

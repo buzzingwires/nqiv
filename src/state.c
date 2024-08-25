@@ -188,7 +188,6 @@ bool nqiv_create_border_rect_texture(nqiv_log_ctx* logger, SDL_Renderer* rendere
 
 bool nqiv_create_alpha_background_texture(nqiv_state* state, const SDL_Rect* rect, const int thickness, SDL_Texture** texture)
 {
-	/*nqiv_log_ctx* logger, SDL_Renderer* renderer*/
 	SDL_Surface* surface;
 	if( !nqiv_create_sdl_drawing_surface(&state->logger, rect->w, rect->h, &surface) ) {
 		return false;

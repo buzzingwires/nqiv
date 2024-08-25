@@ -10,47 +10,6 @@
 #include "queue.h"
 #include "keybinds.h"
 
-/*
-typedef enum nqiv_key_action
-{
-	NQIV_KEY_ACTION_QUIT = 0,
-	NQIV_KEY_ACTION_NEXT,
-	NQIV_KEY_ACTION_PREVIOUS,
-	NQIV_KEY_ACTION_PAGE_UP,
-	NQIV_KEY_ACTION_PAGE_DOWN,
-	NQIV_KEY_ACTION_TOGGLE_MONTAGE,
-	NQIV_KEY_ACTION_SET_MONTAGE,
-	NQIV_KEY_ACTION_SET_VIEWING,
-	NQIV_KEY_ACTION_ZOOM_IN,
-	NQIV_KEY_ACTION_ZOOM_OUT,
-	NQIV_KEY_ACTION_LEFT,
-	NQIV_KEY_ACTION_RIGHT,
-	NQIV_KEY_ACTION_UP,
-	NQIV_KEY_ACTION_DOWN,
-	NQIV_KEY_ACTION_TOGGLE_STRETCH,
-	NQIV_KEY_ACTION_STRETCH,
-	NQIV_KEY_ACTION_KEEP_ASPECT_RATIO,
-	NQIV_KEY_ACTION_RELOAD,
-} nqiv_key_action;
-
-typedef struct nqiv_keybind_pair
-{
-	SDL_Keysym key;
-	nqiv_key_action action;
-} nqiv_keybind_pair;
-
-typedef struct nqiv_keybind_manager
-{
-	nqiv_log_ctx* logger;
-	nqiv_array* lookup;
-} nqiv_keybind_manager;
-
-
-bool nqiv_keybind_add_from_text(nqiv_keybind_manager* manager, const char* key, const char* action);
-nqiv_key_action nqiv_keybind_lookup_text(nqiv_keybind_manager* manager, const char* key);
-
-*/
-
 int nqiv_findchar(const char* text, const char query, const int start, const int stop)
 {
 	assert(text != NULL);

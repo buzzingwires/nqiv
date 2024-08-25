@@ -6,41 +6,6 @@
 
 #include "pruner_tests.h"
 
-/*
- 	nqiv_pruner_count_op counter;
-	nqiv_pruner_state state_check;
-	nqiv_pruner_desc_dataset vips_set;
-	nqiv_pruner_desc_dataset raw_set;
-	nqiv_pruner_desc_dataset surface_set;
-	nqiv_pruner_desc_dataset texture_set;
-	nqiv_pruner_desc_dataset thumbnail_vips_set;
-	nqiv_pruner_desc_dataset thumbnail_raw_set;
-	nqiv_pruner_desc_dataset thumbnail_surface_set;
-	nqiv_pruner_desc_dataset thumbnail_texture_set;
-	bool unload_vips;
-	bool unload_raw;
-	bool unload_surface;
-	bool unload_texture;
-	bool unload_thumbnail_vips;
-	bool unload_thumbnail_raw;
-	bool unload_thumbnail_surface;
-	bool unload_thumbnail_texture;
-	bool unload_vips_soft;
-	bool unload_raw_soft;
-	bool unload_surface_soft;
-	bool unload_thumbnail_vips_soft;
-	bool unload_thumbnail_raw_soft;
-	bool unload_thumbnail_surface_soft;
-	assert( memcmp( &desc.vips_set, &empty_dataset, sizeof(nqiv_pruner_desc) ) );
-	assert( memcmp( &desc.raw_set, &empty_dataset, sizeof(nqiv_pruner_desc) ) );
-	assert( memcmp( &desc.surface_set, &empty_dataset, sizeof(nqiv_pruner_desc) ) );
-	assert( memcmp( &desc.texture_set, &empty_dataset, sizeof(nqiv_pruner_desc) ) );
-	assert( memcmp( &desc.thumbnail_vips_set, &empty_dataset, sizeof(nqiv_pruner_desc) ) );
-	assert( memcmp( &desc.thumbnail_raw_set, &empty_dataset, sizeof(nqiv_pruner_desc) ) );
-	assert( memcmp( &desc.thumbnail_surface_set, &empty_dataset, sizeof(nqiv_pruner_desc) ) );
-	assert( memcmp( &desc.thumbnail_texture_set, &empty_dataset, sizeof(nqiv_pruner_desc) ) );
- */
-
 void pruner_test_default(void)
 {
 	nqiv_log_ctx logger = {0};

@@ -312,10 +312,6 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* default_config_path
 
 bool nqiv_parse_args(char *argv[], nqiv_state* state)
 {
-	/*
-	nqiv_log_level arg_log_level = NQIV_LOG_WARNING;
-	char* arg_log_prefix = "#time:%Y-%m-%d_%H:%M:%S%z# #level#: ";
-	*/
 	state->zoom_default = NQIV_ZOOM_DEFAULT_FIT;
 	state->texture_scale_mode = SDL_ScaleModeBest;
 	state->no_resample_oversized = true;
@@ -487,10 +483,6 @@ bool nqiv_send_thread_event_base(nqiv_state* state, const int level, const nqiv_
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent attempted, status: %s.\n", event_sent ? "Success" : "Failure");
 	if(!event_sent) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to send event.\n");
-		/*
-		nqiv_unlock_threads(state);
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Unlocked threads for event.\n");
-		*/
 		return false;
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent successfully.\n");
@@ -578,8 +570,6 @@ void nqiv_apply_zoom_modifications(nqiv_state* state, const bool first_frame)
 /* TODO Reset frame */
 bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montage, const SDL_Rect* dstrect, const bool is_thumbnail, const bool first_frame, const bool next_frame, const bool selected, const bool hard, const bool lock, const int base_priority)
 {
-	/* TODO Srcrect easily can make this work for both views DONE */
-	/* TODO Merge load/save thumbnail, or have an short load to check for the thumbnail before saving  DONE*/
 	/* TODO Use load thumbnail for is_thumbnail? */
 	bool cleared = is_montage;
 	nqiv_image_form* form = is_thumbnail ? &image->thumbnail : &image->image;
@@ -604,7 +594,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				if(form->master_dimensions_set && form->fallback_texture != NULL && form->master_srcrect.w > 0 && form->master_srcrect.h > 0 && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
 					nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &tmp_srcrect, &tmp_dstrect);
 					nqiv_apply_zoom_modifications(state, first_frame);
-					nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &tmp_srcrect, &tmp_dstrect); /* TODO aspect ratio */
+					nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &tmp_srcrect, &tmp_dstrect);
 					if( !nqiv_state_update_alpha_background_dimensions(state, tmp_dstrect.w, tmp_dstrect.h) ) {
 						return false;
 					}
@@ -665,7 +655,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 		form->master_dimensions_set = true;
 		nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect, dstrect_zoom_ptr);
 		nqiv_apply_zoom_modifications(state, first_frame);
-		nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr); /* TODO aspect ratio */
+		nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr);
 		if(!state->no_resample_oversized && (form->height > 16000 || form->width > 16000) )  {
 			if(form->srcrect.x != srcrect.x || form->srcrect.y != srcrect.y || form->srcrect.w != srcrect.w || form->srcrect.h != srcrect.h) {
 				resample_zoom = true;
@@ -698,7 +688,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				form->master_dimensions_set = true;
 				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect, dstrect_zoom_ptr);
 				nqiv_apply_zoom_modifications(state, first_frame);
-				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr); /* TODO aspect ratio */
+				nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr);
 			}
 		}
 	}
@@ -717,19 +707,9 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 				nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 				return false;
 			}
-		/* TODO Signal to create thumbnail from main image, set thumbnail attempted after DONE */
-		} else {
-		/* TODO Signal to unload thumbnail from the image, make sure not to unload twice??? */
 		}
 	}
-	/*
-	if(!is_Thumbnail && !image->thumbnail_attempted && state->images.thumbnail.save) {
-	}
-	if(!is_Thumbnail && image->thumbnail_attempted && state->images.thumbnail.save) {
-	}
-	*/
 	if(form->error) {
-		/* TODO We check this because we try to load a non-existent thumbnail */
 		if(is_thumbnail && !image->image.error) {
 			if(first_frame || hard) {
 				if( !render_texture(&cleared, dstrect, state, state->texture_montage_unloaded_background, NULL, dstrect_zoom_ptr == NULL ? dstrect : dstrect_zoom_ptr) ) {
@@ -753,8 +733,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					return false;
 				}
-				/* TODO Signal to create thumbnail from main image, set thumbnail attempted after */
-				/* TODO UNSET ERROR */
 			} else {
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Generating ephemeral thumbnail for image.\n");
 				nqiv_event event = {0};
@@ -815,7 +793,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 			if(is_thumbnail) {
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading thumbnail.\n");
 				nqiv_event event = {0};
-				/* TODO SOFTEN EVENTS */
 				event.type = NQIV_EVENT_IMAGE_LOAD;
 				event.options.image_load.image = image;
 				event.options.image_load.set_thumbnail_path = true;
@@ -845,7 +822,6 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					return false;
 				}
-				/* TODO Signal to load thumbnail image if it's available, otherwise use main */
 			} else {
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading image %s.\n", image->image.path);
 				nqiv_event event = {0};
@@ -873,24 +849,7 @@ bool render_from_form(nqiv_state* state, nqiv_image* image, const bool is_montag
 					nqiv_log_write( &state->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 					return false;
 				}
-				/* TODO Signal to use main image as thumbnail */
 			}
-			/* TODO Else if try to save thumbnail if not attempted yet??? */
-			/*
-			if(is_thumbnail) {
-state->images.thumbnail.load
-
-			}
-			if(state->images.thumbnail.load && state->images.thumbnail.save) {
-
-			}
-			nqiv_event event;
-			event.type = NQIV_EVENT_IMAGE_LOAD;
-			event.options.image_load.image = image;
-			if( nqiv_send_thread_event(state, &event) ) {
-				return false;
-			}
-			*/
 		}
 		if(form->texture != NULL) {
 			state->is_loading = false;
@@ -966,46 +925,6 @@ state->images.thumbnail.load
 	return true;
 }
 
-/*
-bool render_montage_item_from_image(nqiv_state* state, nqiv_image* image, const SDL_Rect* dstrect)
-{
-	* TODO PRobably delete this *
-}
-*/
-
-/*
-bool render_montage_item(nqiv_state* state, nqiv_image* image, const SDL_Rect* dstrect)
-{
-	* TODO Most of this is handled from rendering from form, maybe it can even be removed *
-	if(state->images->thumbnail.load) {
-		if(image->thumbnail.error) {
-			* TODO MAin image *
-			if( SDL_RenderCopy(state->renderer, texture_montage_error_background, NULL, dstrect) != 0 ) {
-				return false;
-			}
-		} else if(image->thumbnail.texture != NULL) {
-			if( SDL_RenderCopy(state->renderer, state->texture_montage_alpha_background, NULL, dstrect) != 0 ) {
-				return false;
-			}
-			if( SDL_RenderCopy(state->renderer, image->thumbnail.texture, NULL, dstrect) != 0 ) {
-				return false;
-			}
-		} else if(state->images->thumbnail.save) {
-			* TODO complete event and set loading indicator *
-			nqiv_event event = {0};
-			event.type = NQIV_EVENT_WORKER_STOP;
-			if( nqiv_send_thread_event(state, &event) ) {
-				return false;
-			}
-		} else {
-			* TODO MAin image *
-		}
-	} else {
-		* TODO Use main image, set error, or load main image *
-	}
-}
-*/
-
 /*2305843009213693951\0*/
 #define INT_MAX_STRLEN 20
 bool set_title(nqiv_state* state, nqiv_image* image)
@@ -1062,30 +981,6 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 
 bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 {
-	/*
-	bool read_from_stdin;
-	nqiv_log_ctx logger;
-	nqiv_image_manager images;
-	nqiv_keybind_manager keybinds;
-	nqiv_montage_state montage;
-	nqiv_queue thread_queue;
-	bool SDL_inited;
-	SDL_Window* window;
-	SDL_Renderer* renderer;
-	SDL_Texture* texture_background;
-	SDL_Texture* texture_montage_selection;
-	SDL_Texture* texture_montage_alpha_background;
-	SDL_Texture* texture_alpha_background;
-	Uint32 thread_event_number;
-	int thread_count;
-	omp_lock_t* thread_locks;
-	void nqiv_montage_get_image_rect(nqiv_montage_state* state, const int idx, SDL_Rect* rect)
-
-	if load thumbnail and thumbnail available, use that
-	if not load thubmnail, thumbnail should not be available
-	if load thumbnail and thumbnail not available, set loading indicator, send load thumbnail and quit
-	if there's an error set, set error indicator, then quit
-	*/
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage.\n");
 	if(!preload_only && SDL_RenderClear(state->renderer) != 0) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to clear renderer for montage.\n");
@@ -1135,7 +1030,6 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering selected image.\n");
 	nqiv_image* image = ( (nqiv_image**)state->images.images->data )[state->montage.positions.selection];
 	SDL_Rect dstrect = {0};
-	/* TODO RECT DONE BUT ASPECT RATIO */
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
 	if( !render_from_form(state, image, false, &dstrect, false, start, true, false, hard, true, 0) ) {
 		return false;
@@ -1149,7 +1043,6 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	}
 	state->render_cleared = render_cleared;
 	return true;
-/* TODO */
 }
 
 void render_and_update(nqiv_state* state, bool* running, bool* result, const bool first_render, const bool hard)
@@ -1564,18 +1457,11 @@ bool nqiv_master_thread(nqiv_state* state)
 			break;
 		}
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received SDL event.\n");
-		/*nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manger* manager, const SDL_Keysym* key, nqiv_array* output);*/
-		/* TODO mousebuttonevent */
 		switch(input_event.type) {
 			case SDL_USEREVENT:
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received response from worker thread.\n");
 				if(input_event.user.code >= 0) {
 					if( (Uint32)input_event.user.code == state->thread_event_number ) {
-						/*
-						nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locking thread from master.\n");
-						omp_set_lock(input_event.user.data1);
-						nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Locked thread from master.\n");
-						*/
 						render_and_update(state, &running, &result, false, false);
 					} else if( ( Uint32)input_event.user.code == state->cfg_event_number ) {
 						nqiv_handle_keyactions(state, &running, &result, false, NQIV_KEYRATE_ON_DOWN); /* TODO No simulated actions for now. */
@@ -1603,11 +1489,6 @@ bool nqiv_master_thread(nqiv_state* state)
 			case SDL_KEYDOWN:
 			case SDL_KEYUP:
 				assert(input_event.type == SDL_KEYDOWN || input_event.type == SDL_KEYUP);
-				/*
-				 * TODO
-				SDL_Keysym
-				nqiv_key_lookup_summary lookup_summary = nqiv_keybind_lookup(&state->keybinds, const SDL_Keysym* key, nqiv_array* output);
-				*/
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received key event.\n");
 				{
 					nqiv_key_match match = {0};
@@ -1623,12 +1504,6 @@ bool nqiv_master_thread(nqiv_state* state)
 						running = false;
 						result = false;
 					} else if(lookup_summary == NQIV_KEY_LOOKUP_FOUND) {
-						/*
-						bool nqiv_array_insert_bytes(nqiv_array* array, void* ptr, const int count, const int idx);
-						void nqiv_array_remove_bytes(nqiv_array* array, const int idx, const int count);
-						bool nqiv_array_push_bytes(nqiv_array* array, void* ptr, const int count);
-						bool nqiv_array_get_bytes(nqiv_array* array, const int idx, const int count, void* ptr);
-						*/
 						nqiv_handle_keyactions(state, &running, &result, false, input_event.type == SDL_KEYUP ? NQIV_KEYRATE_ON_UP : NQIV_KEYRATE_ON_DOWN);
 						render_and_update(state, &running, &result, false, false);
 					}
@@ -1750,24 +1625,6 @@ int main(int argc, char *argv[])
 		nqiv_state_clear(&state);
 		return 1;
 	}
-
-	/* TODO
-	 *
-	 * In other files:
-	 * Logging everywhere
-	 * Synchronize functions
-	 * Proper includes
-	 * Appropriate asserts
-	 *
-	 * -Setup montage info
-	 * -Setup SDL
-	 * -Create templates
-	 * -Create locks
-	 * -Start threads
-	 * -Start main event loop
-	 * -changed status for image or return the image itself or just redraw all of them?
-	 * -Write image to rect
-	 */
 
 	const bool result = nqiv_run(&state);
 	nqiv_state_clear(&state);

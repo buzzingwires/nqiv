@@ -11,14 +11,6 @@
 
 #define NQIV_PRUNER_DESC_STRLEN 2048
 
-/*
-SUM OR AND
-thumbnail_vips thumbnail_data thumbnail_surface thumbnail_texture vips data surface texture
-loaded_ahead INTEGER loaded_behind INTEGER bytes_ahead INTEGER bytes_behind INTEGER self
-UNLOAD
-vips data surface texture
-*/
-
 typedef enum nqiv_pruner_count_op
 {
 	NQIV_PRUNER_COUNT_OP_UNKNOWN = 0,

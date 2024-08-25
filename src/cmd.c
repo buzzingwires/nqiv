@@ -1027,8 +1027,6 @@ void nqiv_cmd_parser_print_send_on_up_default(nqiv_cmd_manager* manager)
 	fprintf(stdout, "%s", manager->state->keystates.send_on_up ? "true" : "false");
 }
 
-/* TODO Setup cmds function in main */
-
 nqiv_cmd_arg_desc nqiv_parser_arg_type_int_natural = {
 	.type = NQIV_CMD_ARG_INT,
 	.setting = { .of_int = {.min = 0, .max = INT_MAX} },
@@ -1956,7 +1954,6 @@ nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool* status, nqiv_cmd_node* parent,
 	return node;
 }
 
-/* TODO How to write this? */
 #define STACKLEN 16
 #define SET_CURRENT assert(nqiv_array_get_units_count(&stack) > 0); \
 					assert(nqiv_array_get_units_count(&stack) < STACKLEN); \

@@ -33,28 +33,6 @@ bool nqiv_pruner_init(nqiv_pruner* pruner, nqiv_log_ctx* logger, const int queue
 	return true;
 }
 
-/*
-typedef union nqiv_pruner_desc_datapoint_content
-{
-	int as_int;
-	int as_int_pair[2];
-	bool as_bool;
-} nqiv_pruner_desc_datapoint_content;
-
-typedef struct nqiv_pruner_desc_datapoint
-{
-	bool active;
-	nqiv_pruner_desc_datapoint_content condition;
-	nqiv_pruner_desc_datapoint_content value;
-} nqiv_pruner_desc_datapoint;
-
-	nqiv_pruner_desc_datapoint loaded_self;
-	nqiv_pruner_desc_datapoint loaded_ahead;
-	nqiv_pruner_desc_datapoint loaded_behind;
-	nqiv_pruner_desc_datapoint bytes_ahead;
-	nqiv_pruner_desc_datapoint bytes_behind;
-*/
-
 void nqiv_pruner_update_state_boolean(nqiv_pruner* pruner, const bool value)
 {
 	if(!pruner->state.and_is_set) {
@@ -150,10 +128,6 @@ void nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqi
 	/* CHeck loaded ahead, pruner, datapoint ( param 1 (point to start counting), param 2 (max count) ), void ptr */
 	/* CHeck bytes ahead, pruner, form (param), datapoint ( param 1 (point to start counting), param 2 (max count) ), void ptr */
 	/* CHeck bytes behind, pruner, form (param), datapoint ( param 1 (point to start counting), param 2 (max count) ), void ptr */
-	/*
-	if(dataset->loaded_self.active) {
-		if(dataset->loaded_self)
-	}*/
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking vips_set\n");
 	nqiv_pruner_run_set(pruner, &(desc->vips_set), &image->image, image->image.vips, image->image.effective_width * image->image.effective_height * 4);
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking raw_set\n");
@@ -294,11 +268,6 @@ int nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_image
 }
 
 /*
-int nqiv_cmd_scan_not_whitespace(const char* data, const int start, const int end, int* length)
-{
-	const char* whitespace[] = {" ", "\t", NULL};
-	return nqiv_cmd_scan_subs(data, start, end, true, whitespace, length);
-}
 SUM OR AND
 thumbnail_vips thumbnail_data thumbnail_surface thumbnail_texture vips data surface texture
 loaded_ahead INTEGER loaded_behind INTEGER bytes_ahead INTEGER bytes_behind INTEGER self
