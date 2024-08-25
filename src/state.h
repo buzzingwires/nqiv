@@ -23,6 +23,8 @@
 
 #define STARTING_QUEUE_LENGTH 512
 #define THREAD_QUEUE_BIN_COUNT 9
+#define THREAD_QUEUE_ADD_COUNT  10000
+#define THREAD_QUEUE_MAX_LENGTH 1000000
 #define ALPHA_BACKGROUND_CHECKER_PROPORTION 32
 #define WINDOW_TITLE_LEN (1024 + PATH_MAX)
 
@@ -61,7 +63,6 @@ struct nqiv_state
 	nqiv_keyrate_manager keystates;
 	nqiv_montage_state montage;
 	nqiv_cmd_manager cmds;
-	int queue_length;
 	nqiv_priority_queue thread_queue;
 	nqiv_queue key_actions;
 	bool SDL_inited;
@@ -122,7 +123,6 @@ bool nqiv_state_recreate_single_color_texture(nqiv_state* state, const SDL_Color
 bool nqiv_state_recreate_background_texture(nqiv_state* state);
 bool nqiv_state_recreate_error_texture(nqiv_state* state);
 bool nqiv_state_recreate_loading_texture(nqiv_state* state);
-bool nqiv_state_expand_queues(nqiv_state* state);
 nqiv_zoom_default nqiv_text_to_zoom_default(const char* text);
 bool nqiv_text_to_scale_mode(const char* text, SDL_ScaleMode* sm);
 const char* nqiv_scale_mode_to_text(const SDL_ScaleMode sm);

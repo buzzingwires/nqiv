@@ -303,21 +303,6 @@ bool nqiv_state_recreate_loading_texture(nqiv_state* state)
 	return nqiv_state_recreate_single_color_texture(state, &state->loading_color, &state->texture_montage_unloaded_background);
 }
 
-bool nqiv_state_expand_queues(nqiv_state* state)
-{
-	if(!nqiv_array_grow(state->keybinds.lookup, state->queue_length, true) ||
-	   !nqiv_array_grow(state->images.images, state->queue_length, true) ||
-	   !nqiv_array_grow(state->images.extensions, state->queue_length, true) ||
-	   !nqiv_array_grow(state->logger_stream_names, state->queue_length, true) ||
-	   !nqiv_priorty_queue_grow( &(state->thread_queue), state->queue_length) ||
-	   !nqiv_array_grow(state->key_actions.array, state->queue_length, true) ||
-	   !nqiv_array_grow(state->cmds.buffer, state->queue_length, true) ) {
-		return false;
-	}
-	return true;
-}
-
-
 bool nqiv_state_recreate_all_alpha_background_textures(nqiv_state* state)
 {
 	if(state->alpha_background_width == 0 || state->alpha_background_height == 0) {

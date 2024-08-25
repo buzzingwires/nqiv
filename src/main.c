@@ -316,7 +316,6 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	nqiv_log_level arg_log_level = NQIV_LOG_WARNING;
 	char* arg_log_prefix = "#time:%Y-%m-%d_%H:%M:%S%z# #level#: ";
 	*/
-	state->queue_length = STARTING_QUEUE_LENGTH;
 	state->zoom_default = NQIV_ZOOM_DEFAULT_FIT;
 	state->texture_scale_mode = SDL_ScaleModeBest;
 	state->no_resample_oversized = true;
@@ -329,7 +328,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	state->extra_wakeup_delay = state->thread_count * 20;
 	state->prune_delay = 50000 / state->extra_wakeup_delay;
 	vips_concurrency_set(state->vips_threads);
-	state->logger_stream_names = nqiv_array_create(sizeof(char*), state->queue_length);
+	state->logger_stream_names = nqiv_array_create(sizeof(char*), STARTING_QUEUE_LENGTH);
 	if(state->logger_stream_names == NULL) {
 		fputs("Failed to initialize logger stream names list.\n", stderr);
 		return false;
@@ -355,7 +354,9 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 		return false;
 	}
 	nqiv_set_keyrate_defaults(&state->keystates);
-	if( !nqiv_priority_queue_init(&state->thread_queue, &state->logger, sizeof(nqiv_event), STARTING_QUEUE_LENGTH, THREAD_QUEUE_BIN_COUNT) ) {
+	if( !nqiv_priority_queue_init(&state->thread_queue, &state->logger, sizeof(nqiv_event), STARTING_QUEUE_LENGTH, THREAD_QUEUE_BIN_COUNT) ||
+		!nqiv_priority_queue_set_max_data_length(&state->thread_queue, THREAD_QUEUE_MAX_LENGTH) ||
+		!nqiv_priority_queue_set_min_add_count(&state->thread_queue, THREAD_QUEUE_ADD_COUNT) ) {
 		fputs("Failed to initialize thread queue.\n", stderr);
 		return false;
 	}

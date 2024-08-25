@@ -46,6 +46,13 @@ void nqiv_cmd_tmpret(char* data, const int pos, const char value)
 	data[pos] = value;
 }
 
+bool nqiv_cmd_parser_set_none(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	(void) manager;
+	(void) tokens;
+	return true;
+}
+
 bool nqiv_cmd_parser_set_thread_count(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->thread_count = tokens[0]->value.as_int;
@@ -483,22 +490,6 @@ bool nqiv_cmd_parser_sendkey(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tok
 	return nqiv_queue_push(&manager->state->key_actions, &tokens[0]->value.as_key_action);
 }
 
-bool nqiv_cmd_parser_set_queue_size(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	if(tokens[0]->value.as_int < manager->state->queue_length) {
-		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Can't set queue length of %d, as it's less than %d.\n", tokens[0]->value.as_int, manager->state->queue_length);
-		return false;
-	}
-	const int old_queue_length = manager->state->queue_length;
-	manager->state->queue_length = tokens[0]->value.as_int;
-	if( !nqiv_state_expand_queues(manager->state) ) {
-		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Failed to set queue new queue length of %d, from %d.\n", tokens[0]->value.as_int, manager->state->queue_length);
-		manager->state->queue_length = old_queue_length;
-		return false;
-	}
-	return true;
-}
-
 void nqiv_cmd_print_indent(const nqiv_cmd_manager* manager)
 {
 	int indent_count;
@@ -666,8 +657,6 @@ void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 	if(!manager->print_settings.dumpcfg) {
 		fprintf(stdout, "\n");
 		nqiv_cmd_print_indent(manager);
-		fprintf(stdout, "%d\n", manager->state->queue_length);
-		nqiv_cmd_print_indent(manager);
 		fprintf(stdout, "Keybinds: %d\n", manager->state->keybinds.lookup->data_length);
 		nqiv_cmd_print_indent(manager);
 		fprintf(stdout, "Images: %d\n", manager->state->images.images->data_length);
@@ -685,7 +674,6 @@ void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 		nqiv_cmd_print_indent(manager);
 		fprintf(stdout, "Cmd Buffer: %d\n", manager->state->cmds.buffer->data_length);
 	} else {
-		fprintf(stdout, "%d\n", manager->state->queue_length);
 		fprintf(stdout, "#Keybinds: %d\n", manager->state->keybinds.lookup->data_length);
 		fprintf(stdout, "#Images: %d\n", manager->state->images.images->data_length);
 		fprintf(stdout, "#Image extensions: %d\n", manager->state->images.extensions->data_length);
@@ -2120,7 +2108,7 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		B("show", "Settings related to displaying optional entities.");
 			L("loading_indicator", "Determine whether the loading indicator is rendered in image mode (achieve the same in montage mode by setting `set color loading` to match `set color background`).", nqiv_cmd_parser_set_show_loading_indicator, nqiv_cmd_parser_print_show_loading_indicator, bool_args);
 		POP;
-		L("queue_size", "Dynamic arrays in the software are backed by a given amount of memory. They will expand as needed, but it may improve performance to allocate more memory in advance. This value is the default minimum.", nqiv_cmd_parser_set_queue_size, nqiv_cmd_parser_print_queue_size, intpositive_args);
+		DEPRECATE L("queue_size", "(DEPRECATED: Sizes can still be printed, but not set. For now, this is handled by an internal algorithm.) Dynamic arrays in the software are backed by a given amount of memory. They will expand as needed, but it may improve performance to allocate more memory in advance. This value is the default minimum.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_queue_size, intpositive_args);
 		B("window", "Set operations related to the window.");
 			L("width", "Set the width of the program window.", nqiv_cmd_parser_set_window_width, nqiv_cmd_parser_print_window_width, intpositive_args);
 			L("height", "Set the height of the program window.", nqiv_cmd_parser_set_window_height, nqiv_cmd_parser_print_window_height, intpositive_args);
@@ -2158,9 +2146,11 @@ bool nqiv_cmd_manager_init(nqiv_cmd_manager* manager, nqiv_state* state)
 	nqiv_cmd_manager_destroy(manager);
 	manager->buffer = nqiv_array_create(sizeof(char), NQIV_CMD_READ_BUFFER_LENGTH);
 	if(manager->buffer == NULL) {
-		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR, "Failed to allocate memory to create cmd buffer of length %d\n", state->queue_length);
+		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR, "Failed to allocate memory to create cmd buffer of length %d\n", NQIV_CMD_READ_BUFFER_LENGTH);
 		return false;
 	}
+	manager->buffer->max_data_length = NQIV_CMD_READ_BUFFER_LENGTH_MAX;
+	manager->buffer->min_add_count = NQIV_CMD_READ_BUFFER_LENGTH;
 	if( !nqiv_cmd_manager_build_cmdtree(manager) ) {
 		nqiv_cmd_manager_destroy(manager);
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR, "Failed to build cmd parsing tree.\n");

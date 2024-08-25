@@ -10,6 +10,7 @@
 
 #include "array.h"
 #include "image.h"
+#include "state.h"
 
 /* Image */
 void nqiv_unload_image_form_vips(nqiv_image_form* form)
@@ -542,6 +543,7 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, 
 		return false;
 	}
 	nqiv_array_unlimit_data(images);
+	images->min_add_count = STARTING_QUEUE_LENGTH;
 	nqiv_array* extensions = nqiv_array_create(sizeof(char*), starting_length);
 	assert(images != extensions);
 	if(extensions == NULL) {
