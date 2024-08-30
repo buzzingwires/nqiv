@@ -1836,7 +1836,8 @@ nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool* status, nqiv_cmd_node* parent,
 					current_node = NULL; \
 					nqiv_array_get(&stack, nqiv_array_get_last_idx(&stack), &current_node); \
 					assert(current_node != NULL);
-#define DEPRECATE deprecated = true;
+#define DEPRECATE assert(deprecated == false); \
+	deprecated = true;
 #define APPLY_DEPRECATE tmp_node->deprecated = deprecated; \
 						deprecated = false;
 #define B(NAME, DESCRIPTION) SET_CURRENT; \
