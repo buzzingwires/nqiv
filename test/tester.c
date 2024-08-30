@@ -7,6 +7,7 @@
 #include "logging_tests.h"
 #include "array_tests.h"
 #include "pruner_tests.h"
+#include "keybind_tests.h"
 
 #define TEST_NAME_LEN 50
 
@@ -172,6 +173,9 @@ test_set* create_tests(void)
 
 	test_set* pruner = add_test_subset(root, &test_counter, "pruner"); if(pruner == NULL) { goto cleanup; }
 	if(add_test(pruner, &test_counter, "pruner_default", pruner_test_default) == NULL) { goto cleanup; }
+
+	test_set* keybind = add_test_subset(root, &test_counter, "keybind"); if(keybind == NULL) { goto cleanup; }
+	if(add_test(keybind, &test_counter, "keybind_parse_print", keybind_test_parse_print) == NULL) { goto cleanup; }
 
 	goto done;
 	cleanup:

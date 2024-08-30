@@ -8,6 +8,7 @@
 #include "logging.h"
 #include "array.h"
 #include "queue.h"
+#include "keyrate.h"
 #include "keybinds.h"
 
 int nqiv_findchar(const char* text, const char query, const int start, const int stop)
@@ -87,11 +88,11 @@ const char* nqiv_keybind_action_names[] =
 	"reload"
 };
 
-nqiv_key_action nqiv_text_to_key_action(const char* text)
+nqiv_key_action nqiv_text_to_key_action(const char* text, const int length)
 {
 	nqiv_key_action action = NQIV_KEY_ACTION_NONE;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		if( strncmp( text, nqiv_keybind_action_names[action], strlen(nqiv_keybind_action_names[action]) ) == 0 && strlen(text) == strlen(nqiv_keybind_action_names[action]) ) {
+		if( strncmp(text, nqiv_keybind_action_names[action], length) == 0 && (size_t)length == strlen(nqiv_keybind_action_names[action]) ) {
 			return action;
 		}
 	}
@@ -213,6 +214,40 @@ bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 	return success;
 }
 
+bool nqiv_text_to_keystate_numerical(char* text, const int length, const char* prefix, Uint64* output)
+{
+	bool success = false;
+	if(*output == 0 && (size_t)length > strlen(prefix) && strncmp( text, prefix, strlen(prefix) ) == 0) {
+		char* end = NULL;
+		const int tmp = strtol(text + strlen(prefix), &end, 10);
+		if(errno != ERANGE && end != NULL && tmp > 0 && end <= text + length) {
+			success = true;
+			*output = (Uint64)tmp;
+		}
+	}
+	return success;
+}
+
+bool nqiv_text_to_keystate(char* text, const int length, nqiv_keyrate_keystate* state)
+{
+	bool success = true;
+	if(strncmp(text, "allow_on_up", length) == 0 && state->send_on_up == NQIV_KEYRATE_ON_MANAGER) {
+		state->send_on_up = NQIV_KEYRATE_ALLOW;
+	} else if(strncmp(text, "allow_on_down", length) == 0 && state->send_on_down == NQIV_KEYRATE_ON_MANAGER) {
+		state->send_on_down = NQIV_KEYRATE_ALLOW;
+	} else if(strncmp(text, "deny_on_up", length) == 0 && state->send_on_up == NQIV_KEYRATE_ON_MANAGER) {
+		state->send_on_up = NQIV_KEYRATE_DENY;
+	} else if(strncmp(text, "deny_on_down", length) == 0 && state->send_on_down == NQIV_KEYRATE_ON_MANAGER) {
+		state->send_on_down = NQIV_KEYRATE_DENY;
+	} else if( !nqiv_text_to_keystate_numerical( text, length, "start_delay_", &(state->settings.start_delay) ) &&
+			   !nqiv_text_to_keystate_numerical( text, length, "consecutive_delay_", &(state->settings.consecutive_delay) ) &&
+			   !nqiv_text_to_keystate_numerical( text, length, "delay_accel_", &(state->settings.delay_accel) ) &&
+			   !nqiv_text_to_keystate_numerical( text, length, "minimum_delay_", &(state->settings.minimum_delay) ) ) {
+		success = false;
+	}
+	return success;
+}
+
 int nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair)
 {
 	const size_t textlen = strlen(text);
@@ -223,37 +258,51 @@ int nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair)
 	if( equal_start == -1 || textlen <= (size_t)equal_start + 1 ) {
 		return -1;
 	}
-	const nqiv_key_action action = nqiv_text_to_key_action(text + equal_start + 1);
-	if(action == NQIV_KEY_ACTION_NONE) {
-		return -1;
-	}
+	nqiv_keybind_pair tmp = {0};
+	tmp.action = NQIV_KEY_ACTION_NONE;
 	int idx;
 	int section_start;
 	bool success = true;
-	nqiv_key_match match = {0};
 	for(idx = 0, section_start = 0; idx <= equal_start; ++idx) {
-		if(text[idx] == '+') {
-			int plus_start = idx;
+		if(text[idx] == '+' || (idx == equal_start && idx > section_start) ) {
+			int section_end = idx;
 			if(idx + 1 == equal_start || text[idx + 1] == '+') {
-				plus_start += 1;
+				section_end += 1;
 			}
-			success = nqiv_text_to_key_match(text + section_start, plus_start - section_start, &match);
+			success = nqiv_text_to_key_match(text + section_start, section_end - section_start, &tmp.match);
 			if(!success) {
 				break;
 			}
-			section_start = plus_start + 1;
-		} else if(idx == equal_start && idx > section_start) {
-			success = nqiv_text_to_key_match(text + section_start, idx - section_start, &match);
-			break;
+			section_start = section_end + 1;
 		}
 	}
-	if(match.mode == NQIV_KEY_MATCH_MODE_KEY_MOD) {
+	for(idx = equal_start + 1, section_start = idx; (size_t)idx <= textlen; ++idx) {
+		if( text[idx] == '+' || ( (size_t)idx == textlen && idx > section_start ) ) {
+			int section_end = idx;
+			if( (size_t)idx + 1 == textlen || text[idx + 1] == '+' ) {
+				section_end += 1;
+			}
+			const int section_length = section_end - section_start;
+			if( !nqiv_text_to_keystate(text + section_start, section_length, &tmp.keyrate) ) {
+				if(tmp.action != NQIV_KEY_ACTION_NONE) {
+					success = false;
+					break;
+				}
+				tmp.action = nqiv_text_to_key_action(text + section_start, section_length);
+				if(tmp.action == NQIV_KEY_ACTION_NONE) {
+					success = false;
+					break;
+				}
+			}
+			section_start = section_end + 1;
+		}
+	}
+	if(tmp.match.mode == NQIV_KEY_MATCH_MODE_KEY_MOD) {
 		success = false;
 	}
 	if(success) {
-		memcpy( &pair->match, &match, sizeof(nqiv_key_match) );
-		pair->action = action;
-		return equal_start + strlen(nqiv_keybind_action_names[action]) + 1;
+		memcpy( pair, &tmp, sizeof(nqiv_keybind_pair) );
+		return textlen;
 	} else {
 		return -1;
 	}
@@ -272,15 +321,17 @@ bool nqiv_keybind_create_manager(nqiv_keybind_manager* manager, nqiv_log_ctx* lo
 	return true;
 }
 
-bool nqiv_keybind_add(nqiv_keybind_manager* manager, const nqiv_key_match* match, const nqiv_key_action action)
+bool nqiv_keybind_add(nqiv_keybind_manager* manager, const nqiv_keybind_pair* pair)
 {
 	assert(manager != NULL);
 	assert(manager->lookup != NULL);
-	assert(match != NULL);
-	nqiv_keybind_pair pair;
-	memcpy( &pair.match, match, sizeof(nqiv_key_match) );
-	pair.action = action;
-	return nqiv_array_push(manager->lookup, &pair);
+	assert(pair != NULL);
+	nqiv_keybind_pair tmp = {0};
+	memcpy( &tmp.match, &pair->match, sizeof(nqiv_key_match) );
+	memcpy( &tmp.keyrate, &pair->keyrate, sizeof(nqiv_keyrate_keystate) );
+	memset( &tmp.keyrate.ephemeral, 0, sizeof(nqiv_keyrate_keystate_ephemeral) );
+	tmp.action = pair->action;
+	return nqiv_array_push(manager->lookup, &tmp);
 }
 
 bool nqiv_key_match_element_to_string(nqiv_array* builder, const char* suffix)
@@ -352,6 +403,36 @@ bool nqiv_keymod_to_string(const nqiv_keybind_pair* pair, nqiv_array* builder)
 	return success;
 }
 
+bool nqiv_keyrate_to_string(nqiv_array* builder, const nqiv_keyrate_keystate* state)
+{
+	bool success = true;
+	if(state->send_on_down == NQIV_KEYRATE_ALLOW) {
+		success = success && nqiv_array_push_str(builder, "allow_on_down+");
+	}
+	if(state->send_on_up == NQIV_KEYRATE_ALLOW) {
+		success = success && nqiv_array_push_str(builder, "allow_on_up+");
+	}
+	if(state->send_on_down == NQIV_KEYRATE_DENY) {
+		success = success && nqiv_array_push_str(builder, "deny_on_down+");
+	}
+	if(state->send_on_up == NQIV_KEYRATE_DENY) {
+		success = success && nqiv_array_push_str(builder, "deny_on_up+");
+	}
+	if(state->settings.start_delay != 0) {
+		success = success &&  nqiv_array_push_sprintf(builder, "start_delay_%d+", state->settings.start_delay);
+	}
+	if(state->settings.consecutive_delay != 0) {
+		success = success &&  nqiv_array_push_sprintf(builder, "consecutive_delay_%d+", state->settings.consecutive_delay);
+	}
+	if(state->settings.delay_accel != 0) {
+		success = success &&  nqiv_array_push_sprintf(builder, "delay_accel_%d+", state->settings.delay_accel);
+	}
+	if(state->settings.minimum_delay != 0) {
+		success = success &&  nqiv_array_push_sprintf(builder, "minimum_delay_%d+", state->settings.minimum_delay);
+	}
+	return success;
+}
+
 bool nqiv_keybind_to_string(const nqiv_keybind_pair* pair, char* buf)
 {
 	nqiv_array builder;
@@ -380,6 +461,7 @@ bool nqiv_keybind_to_string(const nqiv_keybind_pair* pair, char* buf)
 	assert(nqiv_array_get_units_count(&builder) > 0);
 	assert(buf[nqiv_array_get_last_idx(&builder)] == '+');
 	buf[nqiv_array_get_last_idx(&builder)] = '=';
+	success = success && nqiv_keyrate_to_string( &builder, &(pair->keyrate) );
 	success = success && nqiv_array_push_str(&builder, nqiv_keybind_action_names[pair->action]);
 	return success;
 }
@@ -419,7 +501,7 @@ nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manager* manager, const
 	for(idx = 0; idx < lookup_len; ++idx) {
 		const nqiv_keybind_pair* pair = &lookup[idx];
 		if( nqiv_keybind_compare_match(&pair->match, match) ) {
-			if( output == NULL || !nqiv_queue_push(output, &pair->action) ) {
+			if( output == NULL || !nqiv_queue_push(output, &pair) ) {
 				result |= NQIV_KEY_LOOKUP_FAILURE;
 			} else {
 				result |= NQIV_KEY_LOOKUP_FOUND;

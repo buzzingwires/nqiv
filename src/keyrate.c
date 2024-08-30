@@ -3,7 +3,6 @@
 
 #include <SDL2/SDL.h>
 
-#include "keybinds.h"
 #include "keyrate.h"
 
 Uint64 nqiv_keyrate_get_numerical_setting(const Uint64* manager, const Uint64* state)
@@ -26,10 +25,9 @@ bool nqiv_keyrate_get_bool_setting(const bool* manager, const nqiv_keyrate_press
 	}
 }
 
-bool nqiv_keyrate_filter_action(nqiv_keyrate_manager* manager, const nqiv_key_action action, const nqiv_keyrate_release_option released)
+bool nqiv_keyrate_filter_action(const nqiv_keyrate_manager* manager, nqiv_keyrate_keystate* state, const nqiv_keyrate_release_option released)
 {
 	bool output = false;
-	nqiv_keyrate_keystate* state = &manager->states[action];
 	if( (released & NQIV_KEYRATE_ON_UP) != 0 ) {
 		memset( &state->ephemeral, 0, sizeof(nqiv_keyrate_keystate_ephemeral) );
 		output = nqiv_keyrate_get_bool_setting(&manager->send_on_up, &state->send_on_up);

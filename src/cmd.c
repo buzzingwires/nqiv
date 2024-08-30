@@ -360,21 +360,9 @@ bool nqiv_cmd_parser_set_window_width(nqiv_cmd_manager* manager, nqiv_cmd_arg_to
 	return true;
 }
 
-bool nqiv_cmd_parser_set_minimum_delay(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->keystates.states[tokens[0]->value.as_key_action].settings.minimum_delay = tokens[1]->value.as_Uint64;
-	return true;
-}
-
 bool nqiv_cmd_parser_set_minimum_delay_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->keystates.settings.minimum_delay = tokens[0]->value.as_Uint64;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_repeat_delay(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->keystates.states[tokens[0]->value.as_key_action].settings.consecutive_delay = tokens[1]->value.as_Uint64;
 	return true;
 }
 
@@ -384,21 +372,9 @@ bool nqiv_cmd_parser_set_repeat_delay_default(nqiv_cmd_manager* manager, nqiv_cm
 	return true;
 }
 
-bool nqiv_cmd_parser_set_send_on_down(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->keystates.states[tokens[0]->value.as_key_action].send_on_down = tokens[1]->value.as_press_action;
-	return true;
-}
-
 bool nqiv_cmd_parser_set_send_on_down_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->keystates.send_on_down = tokens[0]->value.as_bool;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_send_on_up(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->keystates.states[tokens[0]->value.as_key_action].send_on_up = tokens[1]->value.as_press_action;
 	return true;
 }
 
@@ -408,21 +384,9 @@ bool nqiv_cmd_parser_set_send_on_up_default(nqiv_cmd_manager* manager, nqiv_cmd_
 	return true;
 }
 
-bool nqiv_cmd_parser_set_start_delay(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->keystates.states[tokens[0]->value.as_key_action].settings.start_delay = tokens[1]->value.as_Uint64;
-	return true;
-}
-
 bool nqiv_cmd_parser_set_start_delay_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->keystates.settings.start_delay = tokens[0]->value.as_Uint64;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_delay_accel(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->keystates.states[tokens[0]->value.as_key_action].settings.delay_accel = tokens[1]->value.as_Uint64;
 	return true;
 }
 
@@ -458,7 +422,7 @@ bool nqiv_cmd_parser_append_image(nqiv_cmd_manager* manager, nqiv_cmd_arg_token*
 
 bool nqiv_cmd_parser_append_keybind(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
-	return nqiv_keybind_add(&manager->state->keybinds, &tokens[0]->value.as_keybind.match, tokens[0]->value.as_keybind.action);
+	return nqiv_keybind_add(&manager->state->keybinds, &tokens[0]->value.as_keybind);
 }
 
 bool nqiv_cmd_parser_append_log_stream(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
@@ -496,6 +460,12 @@ void nqiv_cmd_print_indent(const nqiv_cmd_manager* manager)
 	for(indent_count = manager->print_settings.indent; indent_count > 0; --indent_count) {
 		fprintf(stdout, "\t");
 	}
+}
+
+void nqiv_cmd_parser_print_none(nqiv_cmd_manager* manager)
+{
+	(void) manager;
+	fprintf(stdout, "NONE");
 }
 
 void nqiv_cmd_parser_print_thread_count(nqiv_cmd_manager* manager)
@@ -772,49 +742,9 @@ void nqiv_cmd_parser_print_window_width(nqiv_cmd_manager* manager)
 	fprintf(stdout, "%d", w);
 }
 
-void nqiv_cmd_parser_print_delay_accel(nqiv_cmd_manager* manager)
-{
-	nqiv_key_action action;
-	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		if(!manager->print_settings.dumpcfg) {
-			if(action == NQIV_KEY_ACTION_QUIT) {
-				fprintf(stdout, "\n");
-			}
-			nqiv_cmd_print_indent(manager);
-			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
-		} else if(action == NQIV_KEY_ACTION_QUIT) {
-			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
-		} else if(action != NQIV_KEY_ACTION_MAX) {
-			fprintf(stdout, "%s%s %" PRIu64 "\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
-		} else {
-			fprintf(stdout, "%s%s %" PRIu64, manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.delay_accel);
-		}
-	}
-}
-
 void nqiv_cmd_parser_print_delay_accel_default(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%" PRIu64, manager->state->keystates.settings.delay_accel);
-}
-
-void nqiv_cmd_parser_print_minimum_delay(nqiv_cmd_manager* manager)
-{
-	nqiv_key_action action;
-	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		if(!manager->print_settings.dumpcfg) {
-			if(action == NQIV_KEY_ACTION_QUIT) {
-				fprintf(stdout, "\n");
-			}
-			nqiv_cmd_print_indent(manager);
-			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
-		} else if(action == NQIV_KEY_ACTION_QUIT) {
-			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
-		} else if(action != NQIV_KEY_ACTION_MAX) {
-			fprintf(stdout, "%s%s %" PRIu64 "\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
-		} else {
-			fprintf(stdout, "%s%s %" PRIu64, manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.minimum_delay);
-		}
-	}
 }
 
 void nqiv_cmd_print_str_list(const nqiv_cmd_manager* manager, const nqiv_array* list)
@@ -920,49 +850,9 @@ void nqiv_cmd_parser_print_minimum_delay_default(nqiv_cmd_manager* manager)
 	fprintf(stdout, "%" PRIu64, manager->state->keystates.settings.minimum_delay);
 }
 
-void nqiv_cmd_parser_print_repeat_delay(nqiv_cmd_manager* manager)
-{
-	nqiv_key_action action;
-	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		if(!manager->print_settings.dumpcfg) {
-			if(action == NQIV_KEY_ACTION_QUIT) {
-				fprintf(stdout, "\n");
-			}
-			nqiv_cmd_print_indent(manager);
-			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
-		} else if(action == NQIV_KEY_ACTION_QUIT) {
-			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
-		} else if(action != NQIV_KEY_ACTION_MAX) {
-			fprintf(stdout, "%s%s %" PRIu64 "\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
-		} else {
-			fprintf(stdout, "%s%s %" PRIu64, manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.consecutive_delay);
-		}
-	}
-}
-
 void nqiv_cmd_parser_print_repeat_delay_default(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%" PRIu64, manager->state->keystates.settings.consecutive_delay);
-}
-
-void nqiv_cmd_parser_print_start_delay(nqiv_cmd_manager* manager)
-{
-	nqiv_key_action action;
-	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		if(!manager->print_settings.dumpcfg) {
-			if(action == NQIV_KEY_ACTION_QUIT) {
-				fprintf(stdout, "\n");
-			}
-			nqiv_cmd_print_indent(manager);
-			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
-		} else if(action == NQIV_KEY_ACTION_QUIT) {
-			fprintf(stdout, "%s %" PRIu64 "\n", nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
-		} else if(action != NQIV_KEY_ACTION_MAX) {
-			fprintf(stdout, "%s%s %" PRIu64 "\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
-		} else {
-			fprintf(stdout, "%s%s %" PRIu64, manager->print_settings.prefix, nqiv_keybind_action_names[action], manager->state->keystates.states[action].settings.start_delay);
-		}
-	}
 }
 
 void nqiv_cmd_parser_print_start_delay_default(nqiv_cmd_manager* manager)
@@ -977,49 +867,9 @@ const char* nqiv_press_action_names[] =
 	"deny"
 };
 
-void nqiv_cmd_parser_print_send_on_down(nqiv_cmd_manager* manager)
-{
-	nqiv_key_action action;
-	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		if(!manager->print_settings.dumpcfg) {
-			if(action == NQIV_KEY_ACTION_QUIT) {
-				fprintf(stdout, "\n");
-			}
-			nqiv_cmd_print_indent(manager);
-			fprintf(stdout, "%s %s\n", nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_down]);
-		} else if(action == NQIV_KEY_ACTION_QUIT) {
-			fprintf(stdout, "%s %s\n", nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_down]);
-		} else if(action != NQIV_KEY_ACTION_MAX) {
-			fprintf(stdout, "%s%s %s\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_down]);
-		} else {
-			fprintf(stdout, "%s%s %s", manager->print_settings.prefix, nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_down]);
-		}
-	}
-}
-
 void nqiv_cmd_parser_print_send_on_down_default(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%s", manager->state->keystates.send_on_down ? "true" : "false");
-}
-
-void nqiv_cmd_parser_print_send_on_up(nqiv_cmd_manager* manager)
-{
-	nqiv_key_action action;
-	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		if(!manager->print_settings.dumpcfg) {
-			if(action == NQIV_KEY_ACTION_QUIT) {
-				fprintf(stdout, "\n");
-			}
-			nqiv_cmd_print_indent(manager);
-			fprintf(stdout, "%s %s\n", nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_up]);
-		} else if(action == NQIV_KEY_ACTION_QUIT) {
-			fprintf(stdout, "%s %s\n", nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_up]);
-		} else if(action != NQIV_KEY_ACTION_MAX) {
-			fprintf(stdout, "%s%s %s\n", manager->print_settings.prefix, nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_up]);
-		} else {
-			fprintf(stdout, "%s%s %s", manager->print_settings.prefix, nqiv_keybind_action_names[action], nqiv_press_action_names[manager->state->keystates.states[action].send_on_up]);
-		}
-	}
 }
 
 void nqiv_cmd_parser_print_send_on_up_default(nqiv_cmd_manager* manager)
@@ -1252,6 +1102,8 @@ void nqiv_cmd_print_single_arg( nqiv_cmd_manager* manager, const nqiv_cmd_arg_de
 		print_prefix(manager);
 		fprintf(stdout, "Options are separated by +\n");
 		print_prefix(manager);
+		fprintf(stdout, "<keybind> options:\n");
+		print_prefix(manager);
 		fprintf(stdout, "SDL Scancode\n");
 		print_prefix(manager);
 		fprintf(stdout, "'mouse#' specifies pressing a mouse button. To specify double click, add 'double'. Example: 'mouse0_double'\n");
@@ -1274,7 +1126,33 @@ void nqiv_cmd_print_single_arg( nqiv_cmd_manager* manager, const nqiv_cmd_arg_de
 		print_prefix(manager);
 		fprintf(stdout, "mode\n");
 		print_prefix(manager);
-		fprintf(stdout, "scroll");
+		fprintf(stdout, "scroll\n");
+		print_prefix(manager);
+		fprintf(stdout, "<key_action> options:\n");
+		print_prefix(manager);
+		fprintf(stdout, "Key action such as for `help sendkey`\n");
+		print_prefix(manager);
+		fprintf(stdout, "Normal behavior is to follow behavior specified by `helptree set keypress default`\n");
+		print_prefix(manager);
+		fprintf(stdout, "Overrides:\n");
+		print_prefix(manager);
+		fprintf(stdout, "'allow_on_up'\n");
+		print_prefix(manager);
+		fprintf(stdout, "'deny_on_up'\n");
+		print_prefix(manager);
+		fprintf(stdout, "'allow_on_down'\n");
+		print_prefix(manager);
+		fprintf(stdout, "'deny_on_down'\n");
+		print_prefix(manager);
+		fprintf(stdout, "'<int>' is 0 or greater.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'start_delay_<int>'\n");
+		print_prefix(manager);
+		fprintf(stdout, "'consecutive_delay_<int>'\n");
+		print_prefix(manager);
+		fprintf(stdout, "'delay_accel_<int>'\n");
+		print_prefix(manager);
+		fprintf(stdout, "'minimum_delay_<int>'\n");
 		break;
 	case NQIV_CMD_ARG_STRING:
 		fprintf(stdout, "STRING(%s)", arg->setting.of_string.spaceless ? "spaceless" : "spaces allowed");
@@ -1517,8 +1395,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager* manager, const nqiv_cmd_node* cur
 			if(arg_end == -1 || arg_end > eolpos) {
 				arg_end = eolpos;
 			}
-			const char arg_end_char = nqiv_cmd_tmpterm(mutdata, arg_end);
-			const nqiv_key_action tmp = nqiv_text_to_key_action(data);
+			const nqiv_key_action tmp = nqiv_text_to_key_action(data, arg_end - start_idx);
 			if(tmp != NQIV_KEY_ACTION_NONE) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd key action arg at %d for token %s is %s for input %s\n", tidx, current_node->name, nqiv_keybind_action_names[tmp], data);
 				token->value.as_key_action = tmp;
@@ -1526,13 +1403,12 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager* manager, const nqiv_cmd_node* cur
 			} else {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Cmd error parsing key action arg at %d for token %s with input %s\n", tidx, current_node->name, data);
 			}
-			nqiv_cmd_tmpret(mutdata, arg_end, arg_end_char);
 		}
 		break;
 	case NQIV_CMD_ARG_KEYBIND:
 		{
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd checking keybind arg at %d for token %s for input %s\n", tidx, current_node->name, data);
-			nqiv_keybind_pair tmp;
+			nqiv_keybind_pair tmp = {0};
 			const int length = nqiv_keybind_text_to_keybind(mutdata_start, &tmp);
 			if(length != -1) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd keybind arg at %d for token %s for input %s\n", tidx, current_node->name, data);
@@ -2070,13 +1946,13 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		POP;
 		L("default_frame_time", "If an animated image does not provide a frame time, use this.", nqiv_cmd_parser_set_default_frame_time, nqiv_cmd_parser_print_default_frame_time, intpositive_args);
 		B("keypress", "Settings for delaying and registering keypresses.");
-			B("action", "Key action specific settings for delaying and registering keypresses.");
-				L("start_delay", "Before a key is registered, it must be pressed for this long.", nqiv_cmd_parser_set_start_delay, nqiv_cmd_parser_print_start_delay, keyactionbrief_uint64_args);
-				L("repeat_delay", "This is the starting delay for repeating a key.", nqiv_cmd_parser_set_repeat_delay, nqiv_cmd_parser_print_repeat_delay, keyactionbrief_uint64_args);
-				L("delay_accel", "The repeat delay will be reduced by this amount for each repetition.", nqiv_cmd_parser_set_delay_accel, nqiv_cmd_parser_print_delay_accel, keyactionbrief_uint64_args);
-				L("minimum_delay", "The delay will never be less than this.", nqiv_cmd_parser_set_minimum_delay, nqiv_cmd_parser_print_minimum_delay, keyactionbrief_uint64_args);
-				L("send_on_up", "Register releasing of the key.", nqiv_cmd_parser_set_send_on_up, nqiv_cmd_parser_print_send_on_up, keyactionbrief_pressaction_args);
-				L("send_on_down", "Register pressing of the key.", nqiv_cmd_parser_set_send_on_down, nqiv_cmd_parser_print_send_on_down, keyactionbrief_pressaction_args);
+			DEPRECATE B("action", "(DEPRECATED: These settings are essentially part of the keybind implementation, now. Using these settings now will have no effect, nor will they print any information. This may cause some breakage of old key actions.) Key action specific settings for delaying and registering keypresses.");
+				L("start_delay", "Before a key is registered, it must be pressed for this long.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, keyactionbrief_uint64_args);
+				L("repeat_delay", "This is the starting delay for repeating a key.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, keyactionbrief_uint64_args);
+				L("delay_accel", "The repeat delay will be reduced by this amount for each repetition.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, keyactionbrief_uint64_args);
+				L("minimum_delay", "The delay will never be less than this.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, keyactionbrief_uint64_args);
+				L("send_on_up", "Register releasing of the key.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, keyactionbrief_pressaction_args);
+				L("send_on_down", "Register pressing of the key.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, keyactionbrief_pressaction_args);
 			POP;
 			B("default", "Default settings for delaying and registering keypresses.");
 				L("start_delay", "Before a key is registered, it must be pressed for this long.", nqiv_cmd_parser_set_start_delay_default, nqiv_cmd_parser_print_start_delay_default, uint64_args);

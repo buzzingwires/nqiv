@@ -5,8 +5,6 @@
 
 #include <SDL2/SDL.h>
 
-#include "keybinds.h"
-
 typedef enum nqiv_keyrate_release_option
 {
 	NQIV_KEYRATE_ON_NONE = 0,
@@ -53,13 +51,12 @@ typedef struct nqiv_keyrate_keystate
 
 typedef struct nqiv_keyrate_manager
 {
-	nqiv_keyrate_keystate states[NQIV_KEY_ACTION_MAX + 1];
 	/* Defaults for each state */
 	nqiv_keyrate_keystate_settings settings;
 	bool send_on_down;
 	bool send_on_up;
 } nqiv_keyrate_manager;
 
-bool nqiv_keyrate_filter_action(nqiv_keyrate_manager* manager, const nqiv_key_action action, const nqiv_keyrate_release_option released);
+bool nqiv_keyrate_filter_action(const nqiv_keyrate_manager* manager, nqiv_keyrate_keystate* state, const nqiv_keyrate_release_option released);
 
 #endif /* NQIV_KEYRATE_H */
