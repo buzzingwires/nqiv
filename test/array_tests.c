@@ -29,7 +29,13 @@ void array_test_standard(nqiv_array* array, const int start_length, const int en
 	if(unlimit) {
 		nqiv_array_unlimit_data(array);
 		assert( nqiv_array_push_count(array, &idx, 1) );
+		const int last_length = array->data_length;
+		assert( !nqiv_array_push_count(array, &idx, INT_MAX) );
 		assert(array->max_data_length == 0);
+		assert(array->data_length == last_length);
+		assert( nqiv_array_push_count(array, &idx, 0) );
+		assert(array->data_length == last_length);
+		assert( !nqiv_array_get_count(array, INT_MAX, &idx, INT_MAX) );
 	}
 	nqiv_array_clear(array);
 	assert(nqiv_array_get_units_count(array) == 0);

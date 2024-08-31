@@ -60,7 +60,7 @@ void nqiv_array_unlimit_data(nqiv_array* array)
 int nqiv_array_calculate_potential_length(const nqiv_array* array, const int units)
 {
 	const int length = array->unit_length * units;
-	if(length < array->unit_length || length < units) {
+	if(length < array->unit_length || length < units || units <= 0) {
 		return -1;
 	}
 	return length;
@@ -202,7 +202,7 @@ bool nqiv_array_get_count(const nqiv_array* array, const int idx, void* ptr, con
 	assert(idx >= 0);
 	const int offset = idx * array->unit_length;
 	const int amount = count * array->unit_length;
-	if(offset >= array->position) {
+	if(offset >= array->position || offset < 0) {
 		return false;
 	}
 	assert(offset + amount <= array->position);
@@ -264,9 +264,7 @@ void nqiv_array_clear(nqiv_array* array)
 
 void nqiv_array_destroy(nqiv_array* array)
 {
-	if(array == NULL) {
-		 return;
-	}
+	assert(array != NULL);
 	if(array->data != NULL) {
 		memset(array->data, 0, array->data_length);
 		free(array->data);
