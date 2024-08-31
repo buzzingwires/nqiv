@@ -2,6 +2,10 @@ L_CFLAGS_STANDARDS=-std=c99 -Wall -Wpedantic -Wextra -Winline -Wcast-align -Werr
 L_CFLAGS_DEBUG_OPTS=-O0 -g 
 L_CFLAGS_RELEASE_OPTS=-DNDEBUG -O2 -flto=auto 
 
+if USECOV
+L_CFLAGS_STANDARDS+=--coverage 
+endif
+
 if ISCROSS
 if USEJEMALLOC
 L_JEMALLOC_LIBS=`pkg-config jemalloc --libs --define-prefix` 

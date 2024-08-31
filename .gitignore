@@ -18,3 +18,5 @@ install-sh
 missing
 AppDir
 nqiv-x86_64.AppImage
+*.gcda
+*.gcno
