@@ -185,22 +185,6 @@ bool nqiv_priority_queue_pop(nqiv_priority_queue* queue, void* entry)
 	return nqiv_priority_queue_pop_op(queue, entry, nqiv_queue_pop);
 }
 
-void nqiv_priority_queue_lock(nqiv_priority_queue* queue)
-{
-	int idx;
-	for(idx = 0; idx < queue->bin_count; ++idx) {
-		omp_set_lock( &(queue->bins[idx].lock) );
-	}
-}
-
-void nqiv_priority_queue_unlock(nqiv_priority_queue* queue)
-{
-	int idx;
-	for(idx = 0; idx < queue->bin_count; ++idx) {
-		omp_unset_lock( &(queue->bins[idx].lock) );
-	}
-}
-
 bool nqiv_queue_set_max_data_length(nqiv_queue* queue, const int length)
 {
 	queue->array->max_data_length = length;
@@ -227,11 +211,6 @@ bool nqiv_priority_queue_apply_int(nqiv_priority_queue* queue, bool (*op)(nqiv_q
 		}
 	}
 	return true;
-}
-
-bool nqiv_priority_queue_grow(nqiv_priority_queue* queue, const int new_count)
-{
-	return nqiv_priority_queue_apply_int(queue, nqiv_queue_grow, new_count);
 }
 
 bool nqiv_priority_queue_set_max_data_length(nqiv_priority_queue* queue, const int length)

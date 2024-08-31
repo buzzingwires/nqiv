@@ -66,21 +66,6 @@ struct nqiv_image
 	nqiv_image_form thumbnail;
 };
 
-/*
-nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* path);
-bool nqiv_image_load_raw_full(nqiv_image* image);
-bool nqiv_image_load_sdl_surface_full(nqiv_image* image);
-bool nqiv_image_load_sdl_texture_full(nqiv_image* image);
-bool nqiv_image_unload_full(nqiv_image* image);
-bool nqiv_image_load_raw_thumbnail(nqiv_image* image);
-bool nqiv_image_load_sdl_surface_thumbnail(nqiv_image* image);
-bool nqiv_image_load_sdl_texture_thumbnail(nqiv_image* image);
-bool nqiv_image_unload_thumbnail(nqiv_image* image);
-bool nqiv_image_next_frame(nqiv_image* image);
-void nqiv_image_destroy(nqiv_image* image);
-*/
-
-
 bool nqiv_image_form_first_frame(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_form_next_frame(nqiv_image* image, nqiv_image_form* form);
 

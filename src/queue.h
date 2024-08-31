@@ -32,9 +32,6 @@ bool nqiv_priority_queue_init(nqiv_priority_queue* queue, nqiv_log_ctx* logger, 
 bool nqiv_priority_queue_push(nqiv_priority_queue* queue, const int level, const void* entry);
 void nqiv_priority_queue_push_force(nqiv_priority_queue* queue, const int level, const void* entry);
 bool nqiv_priority_queue_pop(nqiv_priority_queue* queue, void* entry);
-void nqiv_priority_queue_lock(nqiv_priority_queue* queue);
-void nqiv_priority_queue_unlock(nqiv_priority_queue* queue);
-bool nqiv_priority_queue_grow(nqiv_priority_queue* queue, const int new_count);
 bool nqiv_priority_queue_set_max_data_length(nqiv_priority_queue* queue, const int length);
 bool nqiv_priority_queue_set_min_add_count(nqiv_priority_queue* queue, const int count);
 

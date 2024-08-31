@@ -389,22 +389,6 @@ bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form)
 	return true;
 }
 
-bool nqiv_image_load_sdl_texture(nqiv_image* image, nqiv_image_form* form, SDL_Renderer * renderer)
-{
-	assert(image != NULL);
-	assert(form != NULL);
-	assert( (form->data != NULL) );
-	assert( (form->surface != NULL) );
-	form->texture = SDL_CreateTextureFromSurface(renderer, form->surface);
-	if(form->texture == NULL) {
-		nqiv_log_write( image->parent->logger, NQIV_LOG_ERROR, "Failed to create SDL texture for path %s (%s).", form->path, SDL_GetError() );
-		form->error = true;
-		return false;
-	}
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded texture for image %s.\n", image->image.path);
-	return true;
-}
-
 int nqiv_lookup_vips_png_comment(gchar** values, const char* key)
 {
 	const size_t keylen = strlen(key);
