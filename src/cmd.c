@@ -1253,7 +1253,7 @@ void nqiv_cmd_dumpcfg(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_no
 	}
 }
 
-void nqiv_cmd_print_help(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_node, const bool recurse)
+void nqiv_cmd_print_help(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_node, const int recurse)
 {
 	if(current_node->deprecated && manager->print_settings.indent > 0) {
 		return;
@@ -1269,13 +1269,13 @@ void nqiv_cmd_print_help(nqiv_cmd_manager* manager, const nqiv_cmd_node* current
 		current_node->print_value(manager);
 	}
 	fprintf(stdout, "\n");
-	if(!recurse) {
+	if(recurse == 0) {
 		return;
 	}
 	manager->print_settings.indent += 1;
 	nqiv_cmd_node* child = current_node->child;
 	while(child != NULL) {
-		nqiv_cmd_print_help(manager, child, recurse);
+		nqiv_cmd_print_help(manager, child, recurse - 1);
 		child = child->peer;
 	}
 	manager->print_settings.indent -= 1;
@@ -1482,7 +1482,7 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager* manager, const nqiv_cmd_node* current
 		++tidx;
 	}
 	if(error || nqiv_cmd_scan_not_whitespace(data, idx, eolpos, NULL) != -1) {
-		nqiv_cmd_print_help(manager, current_node, false);
+		nqiv_cmd_print_help(manager, current_node, 0);
 		if(manager->state->cmd_parse_error_quit) {
 			nqiv_cmd_force_quit_main(manager);
 			error = true;
@@ -1533,7 +1533,7 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 	nqiv_array_inherit(&current_cmd_builder, current_cmd, sizeof(char), NQIV_CMD_DUMPCFG_BUFFER_LENGTH);
 	bool error = false;
 	bool help = false;
-	bool recurse_help = false;
+	int help_levels = 0;
 	bool dumpcfg = false;
 	char* data = manager->buffer->data;
 	int idx = nqiv_cmd_scan_not_whitespace_and_eol(data, 0, manager->buffer->position, NULL);
@@ -1558,13 +1558,15 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 	if(strncmp( &data[idx], "helptree", strlen("helptree") ) == 0) {
 		idx += strlen("helptree");
 		help = true;
-		recurse_help = true;
-	}
-	if(strncmp( &data[idx], "help", strlen("help") ) == 0) {
+		help_levels = -1;
+	} else if(strncmp( &data[idx], "helpchildren", strlen("helpchildren") ) == 0) {
+		idx += strlen("helpchildren");
+		help = true;
+		help_levels = 1;
+	} else if(strncmp( &data[idx], "help", strlen("help") ) == 0) {
 		idx += strlen("help");
 		help = true;
-	}
-	if(strncmp( &data[idx], "dumpcfg", strlen("dumpcfg") ) == 0) {
+	} else if(strncmp( &data[idx], "dumpcfg", strlen("dumpcfg") ) == 0) {
 		idx += strlen("dumpcfg");
 		dumpcfg = true;
 	}
@@ -1603,11 +1605,11 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 	if(dumpcfg) {
 		nqiv_cmd_dumpcfg(manager, current_node, true, current_cmd);
 	} else if(help) {
-		nqiv_cmd_print_help(manager, current_node, recurse_help);
+		nqiv_cmd_print_help(manager, current_node, help_levels);
 	} else if(!error && current_node->store_value != NULL) {
 		error = nqiv_cmd_execute_node(manager, current_node, idx, eolpos);
 	} else {
-		nqiv_cmd_print_help(manager, current_node, false);
+		nqiv_cmd_print_help(manager, current_node, 0);
 		if(error && manager->state->cmd_parse_error_quit) {
 			nqiv_cmd_force_quit_main(manager);
 		} else {
@@ -1881,7 +1883,7 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 	nqiv_array stack;
 	nqiv_array_inherit(&stack, stack_data, sizeof(nqiv_cmd_node*), STACKLEN);
 	bool status = true;
-	nqiv_cmd_node* root_node = nqiv_cmd_make_base_node(&status, "root", "Root of parsing tree. Prefix help to get help messages on commands, helptree to do the same recursively, or dumpcfg to dump functional commands to set the current configuration. Lines can also be commented by prefixing with #");
+	nqiv_cmd_node* root_node = nqiv_cmd_make_base_node(&status, "root", "Root of parsing tree. Prefix help to get help messages on commands, helptree to do the same recursively, helpchildren to only recurse one level, or dumpcfg to dump functional commands to set the current configuration. Lines can also be commented by prefixing with #");
 	nqiv_cmd_node* current_node;
 	nqiv_cmd_node* tmp_node = NULL;
 	bool deprecated = false;
