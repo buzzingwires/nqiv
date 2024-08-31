@@ -233,29 +233,6 @@ bool nqiv_array_pop(nqiv_array* array, void* ptr)
 	return nqiv_array_pop_count(array, ptr, 1);
 }
 
-void* nqiv_array_alloc(nqiv_array* array, const int count)
-{
-	assert(array->max_data_length > 0);
-	assert(array->unit_length == 1);
-	const int block_size = array->unit_length * count;
-	assert(block_size > 0);
-	if( !nqiv_array_make_room(array, count) ) {
-		return NULL;
-	}
-	const int block_start = array->position;
-	const int block_end = block_start + block_size;
-	assert(block_start >= 0);
-	assert(block_start < block_end);
-	assert(block_end <= array->data_length);
-	assert(array->max_data_length <= 0 || block_end <= array->max_data_length);
-	/* TODO Check whole block? */
-	assert( ( (char*)(array->data) )[block_start] == 0 );
-	assert( ( (char*)(array->data) )[block_end - 1] == 0 );
-	array->position = block_end;
-	assert( sizeof(void*) == sizeof(char*) );
-	return ( (char*)(array->data) ) + block_start;
-}
-
 void nqiv_array_clear(nqiv_array* array)
 {
 	nqiv_array_remove_count( array, 0, nqiv_array_get_units_count(array) );

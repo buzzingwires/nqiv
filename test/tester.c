@@ -165,7 +165,6 @@ test_set* create_tests(void)
 	if(add_test(array, &test_counter, "array_test_default", array_test_default) == NULL) { goto cleanup; }
 	if(add_test(array, &test_counter, "array_test_inherit", array_test_inherit) == NULL) { goto cleanup; }
 	if(add_test(array, &test_counter, "array_test_strbuild", array_test_strbuild) == NULL) { goto cleanup; }
-	if(add_test(array, &test_counter, "array_test_alloc", array_test_alloc) == NULL) { goto cleanup; }
 
 	test_set* logging = add_test_subset(root, &test_counter, "logging"); if(logging == NULL) { goto cleanup; }
 	if(add_test(logging, &test_counter, "logging_general", logging_test_general) == NULL) { goto cleanup; }
