@@ -131,6 +131,10 @@ struct nqiv_image_manager
 
 void nqiv_log_vips_exception(nqiv_log_ctx* logger, const char* path);
 
+void nqiv_image_unlock(nqiv_image* image);
+void nqiv_image_lock(nqiv_image* image);
+bool nqiv_image_test_lock(nqiv_image* image);
+
 void nqiv_image_manager_destroy(nqiv_image_manager* manager);
 bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, const int starting_length);
 bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, const int index);

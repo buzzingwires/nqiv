@@ -125,6 +125,31 @@ void nqiv_log_vips_exception(nqiv_log_ctx* logger,  const char* path)
 	g_free(error);
 }
 
+void nqiv_image_unlock(nqiv_image* image)
+{
+	nqiv_log_write( image->parent->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+	omp_unset_lock(&image->lock);
+	nqiv_log_write( image->parent->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+}
+
+void nqiv_image_lock(nqiv_image* image)
+{
+	nqiv_log_write( image->parent->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+	omp_set_lock(&image->lock);
+	nqiv_log_write( image->parent->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+}
+
+bool nqiv_image_test_lock(nqiv_image* image)
+{
+	nqiv_log_write( image->parent->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+	if( !omp_test_lock(&image->lock) ) {
+		nqiv_log_write( image->parent->logger, NQIV_LOG_DEBUG, "Failed to lock image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+		return false;
+	}
+	nqiv_log_write( image->parent->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+	return true;
+}
+
 /* TODO step frame */
 /* TODO input cleanup */
 /* TODO Add twice */

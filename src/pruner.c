@@ -148,16 +148,11 @@ void nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqi
 
 int nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_priority_queue* thread_queue, const int iidx, nqiv_image* image)
 {
-	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-	if( !omp_test_lock(&image->lock) ) {
-		nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Failed to lock image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+	if( !nqiv_image_test_lock(image) ) {
 		return 0;
 	}
-	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
 	if( !nqiv_image_has_loaded_form(image) ) {
-		nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-		omp_unset_lock(&image->lock);
-		nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+		nqiv_image_unlock(image);
 		return 0;
 	}
 	int prune_count = 0;
@@ -236,17 +231,13 @@ int nqiv_pruner_run_image(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv
 			if(send_event) {
 				event.transaction_group = pruner->thread_event_transaction_group;
 				if( !nqiv_priority_queue_push(thread_queue, NQIV_EVENT_PRIORITY_PRUNE, &event) ) {
-					nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-					omp_unset_lock(&image->lock);
-					nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+					nqiv_image_unlock(image);
 					return false;
 				}
 			}
 		}
 	}
-	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
-	omp_unset_lock(&image->lock);
-	nqiv_log_write( pruner->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n", image->image.path, omp_get_thread_num() );
+	nqiv_image_unlock(image);
 	return prune_count;
 }
 
