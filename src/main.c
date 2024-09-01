@@ -124,19 +124,11 @@ bool nqiv_setup_sdl(nqiv_state* state)
 		return false;
 	}
 
-	if( !nqiv_state_create_single_color_texture(state, &state->background_color, &state->texture_background) ) {
-		return false;
-	}
-	if( !nqiv_state_create_single_color_texture(state, &state->loading_color, &state->texture_montage_unloaded_background) ) {
-		return false;
-	}
-	if( !nqiv_state_create_single_color_texture(state, &state->error_color, &state->texture_montage_error_background) ) {
-		return false;
-	}
-	if( !nqiv_state_create_thumbnail_selection_texture(state) ) {
-		return false;
-	}
-	if( !nqiv_state_create_mark_texture(state) ) {
+	if( !nqiv_state_create_single_color_texture(state, &state->background_color, &state->texture_background) ||
+		!nqiv_state_create_single_color_texture(state, &state->loading_color, &state->texture_montage_unloaded_background) ||
+		!nqiv_state_create_single_color_texture(state, &state->error_color, &state->texture_montage_error_background) ||
+		!nqiv_state_create_thumbnail_selection_texture(state) ||
+		!nqiv_state_create_mark_texture(state) ) {
 		return false;
 	}
 
@@ -280,6 +272,16 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* default_config_path
 	return true;
 }
 
+void nqiv_print_args(void)
+{
+	fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.\n");
+	fprintf(stderr, "-B/--built-in-config Force the built in config to load. It will do so in the order it is specified.\n");
+	fprintf(stderr, "-N/--no-default-cfg Do not try to load the default config file (or settings if it does not exist).\n");
+	fprintf(stderr, "-c/--cmd <cmd> Issue a single command to the image viewer's command processor. Also pass help to get information about commands.\n");
+	fprintf(stderr, "-C/--cfg <path> Specify a config file to be read by the image viewer's command processor.\n");
+	fprintf(stderr, "-h/--help Print this help message.\n");
+}
+
 bool nqiv_parse_args(char *argv[], nqiv_state* state)
 {
 	state->zoom_default = NQIV_ZOOM_DEFAULT_FIT;
@@ -355,12 +357,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			load_default = false;
 			break;
 		case 'h':
-			fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.\n");
-			fprintf(stderr, "-B/--built-in-config Force the built in config to load. It will do so in the order it is specified.\n");
-			fprintf(stderr, "-N/--no-default-cfg Do not try to load the default config file (or settings if it does not exist).\n");
-			fprintf(stderr, "-c/--cmd <cmd> Issue a single command to the image viewer's command processor. Also pass help to get information about commands.\n");
-			fprintf(stderr, "-C/--cfg <path> Specify a config file to be read by the image viewer's command processor.\n");
-			fprintf(stderr, "-h/--help Print this help message.\n");
+			nqiv_print_args();
 			return false;
         case '?':
             fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
@@ -393,42 +390,33 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			}
 		}
 	}
+	bool success = true;
 	optparse_init(&options, argv);
-    while ((option = optparse_long(&options, longopts, NULL)) != -1) {
-        switch (option) {
+    while(success && ( option = optparse_long(&options, longopts, NULL) ) != -1) {
+        switch(option) {
 		case 's':
-			if( !nqiv_cmd_consume_stream(&state->cmds, stdin) ) {
-				return false;
-			}
+			success = success && nqiv_cmd_consume_stream(&state->cmds, stdin);
 			break;
 		case 'c':
-			if( !nqiv_cmd_add_line_and_parse(&state->cmds, options.optarg) ) {
-				return false;
-			}
+			success = success && nqiv_cmd_add_line_and_parse(&state->cmds, options.optarg);
 			break;
 		case 'B':
-			if( !nqiv_load_builtin_config(state, NULL) ) {
-				return false;
-			}
+			success = success && nqiv_load_builtin_config(state, NULL);
 			break;
 		case 'C':
-			if( !nqiv_cmd_consume_stream_from_path(&state->cmds, options.optarg) ) {
-				return false;
-			}
+			success = success && nqiv_cmd_consume_stream_from_path(&state->cmds, options.optarg);
 			break;
 		case 'h':
-			fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.\n");
-			fprintf(stderr, "-B/--built-in-config Force the built in config to load. It will do so in the order it is specified.\n");
-			fprintf(stderr, "-N/--no-default-cfg Do not try to load the default config file.\n");
-			fprintf(stderr, "-c/--cmd <cmd> Issue a single command to the image viewer's command processor. Also pass help to get information about commands.\n");
-			fprintf(stderr, "-C/--cfg <path> Specify a config file to be read by the image viewer's command processor.\n");
-			fprintf(stderr, "-h/--help Print this help message.\n");
+			nqiv_print_args();
 			return false;
         case '?':
             fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
 			return false;
         }
     }
+	if(!success) {
+		return false;
+	}
 	if( !nqiv_setup_thread_info(state) ) {
 		nqiv_state_clear(state);
 		return false;
@@ -948,16 +936,12 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n", image->image.path, idx);
 			SDL_Rect dstrect;
 			nqiv_montage_get_image_rect(&state->montage, idx, &dstrect);
-			if( !render_from_form(state, image, true, &dstrect, true, true, false, state->montage.positions.selection == idx, hard, true, 0) ) {
+			if( !render_from_form(state, image, true, &dstrect, true, true, false, state->montage.positions.selection == idx, hard, true, 0) ||
+			    ( idx == state->montage.positions.selection && !set_title(state, image) ) ) {
 				return false;
 			}
-			if( idx == state->montage.positions.selection && !set_title(state, image) ) {
-				return false;
-			}
-		} else {
-			if( !render_from_form(state, image, true, NULL, true, true, false, state->montage.positions.selection == idx, hard, true, 1) ) {
-				return false;
-			}
+		} else if( !render_from_form(state, image, true, NULL, true, true, false, state->montage.positions.selection == idx, hard, true, 1) ) {
+			return false;
 		}
 	}
 	return true;
@@ -978,10 +962,8 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 		return false;
 	}
 	const bool render_cleared = state->render_cleared;
-	if( !render_montage(state, false, true) ) {
-		return false;
-	}
-	if( !set_title(state, image) ) {
+	if( !render_montage(state, false, true) ||
+		!set_title(state, image) ) {
 		return false;
 	}
 	state->render_cleared = render_cleared;

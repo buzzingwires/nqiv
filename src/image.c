@@ -539,7 +539,6 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager, nqiv_log_ctx* logger, 
 		return false;
 	}
 	if(starting_length <= 0) {
-
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Cannot make image manager with starting length of: %d", starting_length);
 		return false;
 	}
