@@ -104,7 +104,7 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 	}
 
 	bool result = true;
-	result = result && nqiv_array_push_str_count(&builder, fullpath, rootlen);
+	result = result && nqiv_array_push_str_count(&builder, image->parent->thumbnail.root, rootlen);
 	result = result && nqiv_array_push_str(&builder, "/thumbnails/");
 	result = result && nqiv_thumbnail_get_type(image->parent, failed, &builder);
 	result = result && nqiv_thumbnail_digest_to_builder(&builder, image);
