@@ -274,7 +274,9 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* default_config_path
 			return false;
 		}
 	}
-	fprintf(stderr, "Failed to load default config file path. Consider `nqiv -c \"dumpcfg\" > %s` to create it?\n", default_config_path);
+	if(default_config_path != NULL) {
+		fprintf(stderr, "Failed to load default config file path. Consider `nqiv -c \"dumpcfg\" > %s` to create it?\n", default_config_path);
+	}
 	return true;
 }
 
@@ -336,6 +338,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 	nqiv_setup_montage(state);
 	const struct optparse_long longopts[] = {
 		{"cmd-from-stdin", 's', OPTPARSE_NONE},
+		{"built-in-config", 'B', OPTPARSE_NONE},
 		{"no-default-cfg", 'N', OPTPARSE_NONE},
 		{"cmd", 'c', OPTPARSE_REQUIRED},
 		{"cfg", 'C', OPTPARSE_REQUIRED},
@@ -353,6 +356,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			break;
 		case 'h':
 			fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.\n");
+			fprintf(stderr, "-B/--built-in-config Force the built in config to load. It will do so in the order it is specified.\n");
 			fprintf(stderr, "-N/--no-default-cfg Do not try to load the default config file (or settings if it does not exist).\n");
 			fprintf(stderr, "-c/--cmd <cmd> Issue a single command to the image viewer's command processor. Also pass help to get information about commands.\n");
 			fprintf(stderr, "-C/--cfg <path> Specify a config file to be read by the image viewer's command processor.\n");
@@ -402,6 +406,11 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 				return false;
 			}
 			break;
+		case 'B':
+			if( !nqiv_load_builtin_config(state, NULL) ) {
+				return false;
+			}
+			break;
 		case 'C':
 			if( !nqiv_cmd_consume_stream_from_path(&state->cmds, options.optarg) ) {
 				return false;
@@ -409,6 +418,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 			break;
 		case 'h':
 			fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.\n");
+			fprintf(stderr, "-B/--built-in-config Force the built in config to load. It will do so in the order it is specified.\n");
 			fprintf(stderr, "-N/--no-default-cfg Do not try to load the default config file.\n");
 			fprintf(stderr, "-c/--cmd <cmd> Issue a single command to the image viewer's command processor. Also pass help to get information about commands.\n");
 			fprintf(stderr, "-C/--cfg <path> Specify a config file to be read by the image viewer's command processor.\n");
