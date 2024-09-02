@@ -17,7 +17,7 @@
 
 /*file://
  */
-#define NQIV_URI_LEN PATH_MAX + 7
+#define (NQIV_URI_LEN PATH_MAX + 7)
 bool nqiv_thumbnail_render_uri(const nqiv_image* image, char* uri)
 {
 	const char* uristart = "file://";

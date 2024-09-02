@@ -187,9 +187,8 @@ bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 				match->data.mouse_button.button = tmp;
 				match->data.mouse_button.clicks = 1;
 				if(end < text + length) {
-					if(end + strlen("_double") > text + length) {
-						success = false;
-					} else if(strncmp( end, "_double", strlen("_double") ) == 0) {
+					if(end + strlen("_double") <= text + length &&
+					   strncmp( end, "_double", strlen("_double") ) == 0) {
 						match->data.mouse_button.clicks = 2;
 					} else {
 						success = false;

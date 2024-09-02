@@ -763,7 +763,7 @@ int nqiv_pruner_update_render_state_form(nqiv_pruner_render_state* state, nqiv_a
 	if(new->hard_unload != state->hard_unload) {
 		success = success && nqiv_array_push_sprintf(builder, "%s ", new->hard_unload ? "hard" : "no hard");
 	}
-	if( new->data_name != NULL && ( state->data_name == NULL || strcmp(new->data_name, state->data_name) ) ) {
+	if( new->data_name != NULL && (state->data_name == NULL || strcmp(new->data_name, state->data_name) != 0) ) {
 		success = success && nqiv_array_push_sprintf(builder, "%s ", new->data_name);
 	}
 	memcpy( state, new, sizeof(nqiv_pruner_render_state) );
