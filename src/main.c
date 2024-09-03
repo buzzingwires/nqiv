@@ -1515,18 +1515,47 @@ bool nqiv_run(nqiv_state* state)
 	const int64_t* thread_event_transaction_group = &state->thread_event_transaction_group;
 	omp_lock_t* thread_event_transaction_group_lock = &state->thread_event_transaction_group_lock;
 	const Uint32 event_code = state->thread_event_number;
-	#pragma omp parallel default(none) firstprivate(state, logger, thread_count, extra_wakeup_delay, thread_event_interval, thread_queue, event_code, result_ptr, thread_event_transaction_group, thread_event_transaction_group_lock) num_threads(thread_count + 1)
+	/* clang-format insists on unindenting pragmas. */
+	/* clang-format off */
+	#pragma omp parallel                                  \
+		default(none)                                     \
+		firstprivate(state,                               \
+					 logger,                              \
+					 thread_count,                        \
+					 extra_wakeup_delay,                  \
+					 thread_event_interval,               \
+					 thread_queue,                        \
+					 event_code,                          \
+					 result_ptr,                          \
+					 thread_event_transaction_group,      \
+					 thread_event_transaction_group_lock) \
+		num_threads(thread_count + 1)
+	/* clang-format on */
 	{
+		/* clang-format off */
 		#pragma omp master
+		/* clang-format on */
 		{
 			int thread;
 			for(thread = 0; thread < thread_count; ++thread) {
-				#pragma omp task default(none) firstprivate(logger, thread_queue, extra_wakeup_delay, thread_event_interval, event_code, thread_event_transaction_group, thread_event_transaction_group_lock)
+				/* clang-format off */
+				#pragma omp task                                      \
+					default(none)                                     \
+					firstprivate(logger,                              \
+								 thread_queue,                        \
+								 extra_wakeup_delay,                  \
+								 thread_event_interval,               \
+								 event_code,                          \
+								 thread_event_transaction_group,      \
+								 thread_event_transaction_group_lock)
+				/* clang-format on */
 				nqiv_worker_main(logger, thread_queue, extra_wakeup_delay, thread_event_interval, event_code, thread_event_transaction_group, thread_event_transaction_group_lock);
 			}
 			*result_ptr = nqiv_master_thread(state);
 		}
+		/* clang-format off */
 		#pragma omp taskwait
+		/* clang-format on */
 	}
 	return result;
 }

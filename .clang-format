@@ -1,0 +1,69 @@
+AlignAfterOpenBracket: Align
+AlignArrayOfStructures: Left
+AlignConsecutiveBitFields: AcrossEmptyLines
+AlignConsecutiveDeclarations: AcrossEmptyLines
+#AlignConsecutiveAssignments: AcrossEmptyLines
+AlignConsecutiveMacros: AcrossEmptyLines
+#AlignEscapedNewlines: LeftWithLastLine
+AlignEscapedNewlines: Left
+AlignOperands: Align
+AlignTrailingComments: Always
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: Empty
+AllowShortEnumsOnASingleLine: true
+AlwaysBreakBeforeMultilineStrings: false
+BinPackArguments: false
+#BinPackParameters: OnePerLine
+BinPackParameters: false
+BitFieldColonSpacing: Both
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterCaseLabel: true
+    AfterControlStatement: Never
+    AfterEnum: true
+    AfterFunction: true
+    AfterStruct: true
+    AfterUnion: true
+    BeforeElse: false
+    BeforeWhile: false
+    IndentBraces: false
+    SplitEmptyFunction: false
+#BreakAdjacentStringLiterals: true
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeTernaryOperators: true
+BreakBeforeInlineASMColon: OnlyMultiline
+#BreakBinaryOperations: OnePerLine
+#BreakFunctionDefinitionParameters: false
+BreakStringLiterals: true
+ColumnLimit: 100
+ContinuationIndentWidth: 4
+IncludeBlocks: Preserve
+IndentCaseLabels: false
+IndentCaseBlocks: true
+IndentGotoLabels: true
+IndentPPDirectives: BeforeHash
+IndentWidth: 4
+IndentWrappedFunctionNames: false
+InsertBraces: true
+InsertNewlineAtEOF: true
+KeepEmptyLinesAtEOF: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+Language: Cpp
+LineEnding: CRLF
+PPIndentWidth: 4
+PointerAlignment: Left
+QualifierAlignment: Left
+ReflowComments: true
+RemoveParentheses: ReturnStatement
+RemoveSemicolon: false
+SeparateDefinitionBlocks: Leave
+SortIncludes: Never
+SpaceAfterCStyleCast: false
+SpaceAfterLogicalNot: false
+SpaceAroundPointerQualifiers: Before
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeCaseColon: false
+SpaceBeforeParens: false
+TabWidth: 4
+UseTab: AlignWithSpaces

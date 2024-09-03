@@ -1882,37 +1882,55 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 
 	L("sendkey", "Issue a simulated keyboard action to the program.", nqiv_cmd_parser_sendkey, NULL, sendkey_args);
 	B("insert", "Add a value to a particular location.");
+	{
 		L("image", "Insert an image path to be opened at a particular index.", nqiv_cmd_parser_insert_image, NULL, idxname_args);
+	}
 	POP;
 	B("remove", "Remove a value from a particular location.");
+	{
 		B("image", "Remove an image from the list to be opened.");
+		{
 			L("index", "Delete the image from the given index.", nqiv_cmd_parser_remove_image_index, NULL, natural_args);
+		}
 		POP;
+	}
 	POP;
 	B("append", "Add a value to the end of an existing series.");
+	{
 		B("log", "Append operations related to logging.");
+		{
 			L("stream", "Log to the given stream.", nqiv_cmd_parser_append_log_stream, nqiv_cmd_parser_print_log_stream, stringfull_args);
+		}
 		POP;
 		L("image", "Add an image path to the be opened.", nqiv_cmd_parser_append_image, NULL, stringfull_args);
 		L("pruner", "Declaratively specified pruning instructions. Use help to get list of commands.", nqiv_cmd_parser_append_pruner, nqiv_cmd_parser_print_pruner, pruner_args);
 		L("extension", "Add an image extension to be accepted.", nqiv_cmd_parser_append_extension, nqiv_cmd_parser_print_extension, string_args);
 		L("keybind", "Add a keybind.", nqiv_cmd_parser_append_keybind, nqiv_cmd_parser_print_keybind, keybind_args);
+	}
 	POP;
 	B("set", "Alter a singular value.");
+	{
 		B("log", "Set operations related to logging.");
+		{
 			L("level", "Log messages this level or lower are printed.", nqiv_cmd_parser_set_log_level, nqiv_cmd_parser_print_log_level, loglevel_args);
 			L("prefix", "Log message format. Special messages are delimited by #. ## produces a literal #. #time:<strftime format># prints the time. #level# prints the log level.", nqiv_cmd_parser_set_log_prefix, nqiv_cmd_parser_print_log_prefix, stringfull_args);
+		}
 		POP;
 		B("thread", "Settings related to thread behavior.");
+		{
 			L("count", "Set the number of worker threads used by the software. Starts as the number of threads on the machine divided by three (or one). This does not count toward VIPs threads. See 'set vips threads' for that.", nqiv_cmd_parser_set_thread_count, nqiv_cmd_parser_print_thread_count, positive_args);
 			L("event_interval", "Threads will update the master after processing this many events. 0 to process all.", nqiv_cmd_parser_set_thread_event_interval, nqiv_cmd_parser_print_thread_event_interval, natural_args);
 			L("prune_delay", "A pruning cycle will be allowed to run after this many milliseconds since the last one. 0 always allow prune cycles.", nqiv_cmd_parser_set_prune_delay, nqiv_cmd_parser_print_prune_delay, uint64_args);
 			L("extra_wakeup_delay", "In addition to an internal algorithm, wait this long to wait to let the master thread lock a worker. Longer times might produce longer loading delays, but help improve UI responsiveness.", nqiv_cmd_parser_set_extra_wakeup_delay, nqiv_cmd_parser_print_extra_wakeup_delay, natural_args);
+		}
 		POP;
 		B("vips", "Settings related to the VIPS library.");
+		{
 			L("threads", "Set the number of threads used by the VIPs library. The default is the number of available threads divided by two (or one). If set to 0, it is determined by the environment variable VIPS_CONCURRENCY, or if unset, the number of threads available on the machine.", nqiv_cmd_parser_set_vips_threads, nqiv_cmd_parser_print_vips_threads, natural_args);
+		}
 		POP;
 		B("zoom", "Set operations related to zooming.");
+		{
 			L("left_amount", "Amount to pan the zoom left with each action.", nqiv_cmd_parser_set_zoom_left_amount, nqiv_cmd_parser_print_zoom_left_amount, doublenegativeone_args);
 			L("right_amount", "Amount to pan the zoom right with each action", nqiv_cmd_parser_set_zoom_right_amount, nqiv_cmd_parser_print_zoom_right_amount, doublepositiveone_args);
 			L("down_amount", "Amount to pan the zoom down with each action", nqiv_cmd_parser_set_zoom_down_amount, nqiv_cmd_parser_print_zoom_down_amount, doublepositiveone_args);
@@ -1929,36 +1947,46 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			L("up_coordinate_y_times", "This is multiplied against y axis panning caused by relative motion (like mouse panning)", nqiv_cmd_parser_set_zoom_up_coordinate_y_times, nqiv_cmd_parser_print_zoom_up_coordinate_y_times, double_args);
 			L("default", "Default zoom setting when loading an image- 'keep' old zoom, 'fit' to display, or set 'actual_size'.", nqiv_cmd_parser_set_zoom_default, nqiv_cmd_parser_print_zoom_default, string_args);
 			L("scale_mode", "Set scale mode used for SDL textures. Options are: 'nearest', 'linear', and 'best' or 'anisotropic'.", nqiv_cmd_parser_set_zoom_scale_mode, nqiv_cmd_parser_print_zoom_scale_mode, string_args);
+		}
 		POP;
 		B("thumbnail", "Set operations related to thumbnails.");
+		{
 			L("path", "Path thumbnails are stored under. This directory must exist.", nqiv_cmd_parser_set_thumbnail_path, nqiv_cmd_parser_print_thumbnail_path, stringfull_args);
 			L("size_adjust", "Number of pixels to resize thumbnails by with 'zoom' action in montage mode.", nqiv_cmd_parser_set_thumbnail_zoom_amount, nqiv_cmd_parser_print_thumbnail_zoom_amount, intpositive_args);
 			L("size_adjust_more", "Higher number of pixels to resize thumbnails by with 'zoom' action in montage mode.", nqiv_cmd_parser_set_thumbnail_zoom_amount_more, nqiv_cmd_parser_print_thumbnail_zoom_amount_more, intpositive_args);
 			L("load", "Whether to read thumbnails from the disk.", nqiv_cmd_parser_set_thumbnail_load, nqiv_cmd_parser_print_thumbnail_load, bool_args);
 			L("save", "Whether to save thumbnails to the disk. Note that if thumbnail_load is not set to true, then thumbnails will always be saved, even if they are up to date on the disk.", nqiv_cmd_parser_set_thumbnail_save, nqiv_cmd_parser_print_thumbnail_save, bool_args);
 			L("size", "Width and height of thumbnails are the same value.", nqiv_cmd_parser_set_thumbnail_size, nqiv_cmd_parser_print_thumbnail_size, intpositive_args);
+		}
 		POP;
 		L("default_frame_time", "If an animated image does not provide a frame time, use this.", nqiv_cmd_parser_set_default_frame_time, nqiv_cmd_parser_print_default_frame_time, intpositive_args);
 		B("keypress", "Settings for delaying and registering keypresses.");
+		{
 			DEPRECATE B("action", "(DEPRECATED: These settings are essentially part of the keybind implementation, now. Using these settings now will have no effect, nor will they print any information. This may cause some breakage of old key actions.) Key action specific settings for delaying and registering keypresses.");
+			{
 				L("start_delay", "Before a key is registered, it must be pressed for this long.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, keyactionbrief_uint64_args);
 				L("repeat_delay", "This is the starting delay for repeating a key.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, keyactionbrief_uint64_args);
 				L("delay_accel", "The repeat delay will be reduced by this amount for each repetition.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, keyactionbrief_uint64_args);
 				L("minimum_delay", "The delay will never be less than this.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, keyactionbrief_uint64_args);
 				L("send_on_up", "Register releasing of the key.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, keyactionbrief_pressaction_args);
 				L("send_on_down", "Register pressing of the key.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, keyactionbrief_pressaction_args);
+			}
 			POP;
 			B("default", "Default settings for delaying and registering keypresses.");
+			{
 				L("start_delay", "Before a key is registered, it must be pressed for this long.", nqiv_cmd_parser_set_start_delay_default, nqiv_cmd_parser_print_start_delay_default, uint64_args);
 				L("repeat_delay", "This is the starting delay for repeating a key.", nqiv_cmd_parser_set_repeat_delay_default, nqiv_cmd_parser_print_repeat_delay_default, uint64_args);
 				L("delay_accel", "The repeat delay will be reduced by this amount for each repetition.", nqiv_cmd_parser_set_delay_accel_default, nqiv_cmd_parser_print_delay_accel_default, uint64_args);
 				L("minimum_delay", "The delay will never be less than this.", nqiv_cmd_parser_set_minimum_delay_default, nqiv_cmd_parser_print_minimum_delay_default, uint64_args);
 				L("send_on_up", "Register releasing of the key.", nqiv_cmd_parser_set_send_on_up_default, nqiv_cmd_parser_print_send_on_up_default, bool_args);
 				L("send_on_down", "Register pressing of the key.", nqiv_cmd_parser_set_send_on_down_default, nqiv_cmd_parser_print_send_on_down_default, bool_args);
+			}
 			POP;
 			/*L("", "", nqiv_cmd_parser_set_, nqiv_cmd_parser_print_, _args);*/
+		}
 		POP;
 		B("color", "Set operations related to color.");
+		{
 			L("background", "Color of background.", nqiv_cmd_parser_set_background_color, nqiv_cmd_parser_print_background_color, color_args);
 			L("error", "Color of image area when there's an error loading.", nqiv_cmd_parser_set_error_color, nqiv_cmd_parser_print_error_color, color_args);
 			L("loading", "Color of image area when image is still loading.", nqiv_cmd_parser_set_loading_color, nqiv_cmd_parser_print_loading_color, color_args);
@@ -1966,24 +1994,34 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			L("mark", "Color of dashed box around marked image.", nqiv_cmd_parser_set_mark_color, nqiv_cmd_parser_print_mark_color, color_args);
 			L("alpha_background_one", "The background of a transparent image is rendered as checkers. This is the first color.", nqiv_cmd_parser_set_alpha_background_color_one, nqiv_cmd_parser_print_alpha_background_color_one, color_args);
 			L("alpha_background_two", "The background of a transparent image is rendered as checkers. This is the second color.", nqiv_cmd_parser_set_alpha_background_color_two, nqiv_cmd_parser_print_alpha_background_color_two, color_args);
+		}
 		POP;
 		B("preload", "Set options related to preloading images not yet in view.");
+		{
 			L("ahead", "This number of images ahead of the current montage are loaded.", nqiv_cmd_parser_set_preload_ahead, nqiv_cmd_parser_print_preload_ahead, natural_args);
 			L("behind", "This number of images behind of the current montage are loaded.", nqiv_cmd_parser_set_preload_behind, nqiv_cmd_parser_print_preload_behind, natural_args);
+		}
 		POP;
 		L("no_resample_oversized", "Normally, if the image is larger than 16k by 16k pixels, it will be reloaded for each zoom. This keeps the normal behavior with the entire image downsized.", nqiv_cmd_parser_set_no_resample_oversized, nqiv_cmd_parser_print_no_resample_oversized, bool_args);
 		B("show", "Settings related to displaying optional entities.");
+		{
 			L("loading_indicator", "Determine whether the loading indicator is rendered in image mode (achieve the same in montage mode by setting `set color loading` to match `set color background`).", nqiv_cmd_parser_set_show_loading_indicator, nqiv_cmd_parser_print_show_loading_indicator, bool_args);
+		}
 		POP;
 		DEPRECATE L("queue_size", "(DEPRECATED: Sizes can still be printed, but not set. For now, this is handled by an internal algorithm.) Dynamic arrays in the software are backed by a given amount of memory. They will expand as needed, but it may improve performance to allocate more memory in advance. This value is the default minimum.", nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_queue_size, intpositive_args);
 		B("window", "Set operations related to the window.");
+		{
 			L("width", "Set the width of the program window.", nqiv_cmd_parser_set_window_width, nqiv_cmd_parser_print_window_width, intpositive_args);
 			L("height", "Set the height of the program window.", nqiv_cmd_parser_set_window_height, nqiv_cmd_parser_print_window_height, intpositive_args);
+		}
 		POP;
 		B("cmd", "Set operations related to the commands.");
+		{
 			L("parse_error_quit", "Quit if there are errors parsing commands.", nqiv_cmd_parser_set_parse_error_quit, nqiv_cmd_parser_print_parse_error_quit, bool_args);
 			L("apply_error_quit", "Quit if there are errors applying correctly-parsed commands.", nqiv_cmd_parser_set_apply_error_quit, nqiv_cmd_parser_print_apply_error_quit, bool_args);
+		}
 		POP;
+	}
 	POP;
 
 	if(status) {

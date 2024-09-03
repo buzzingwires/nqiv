@@ -156,33 +156,40 @@ void run_tests(const test_set* tests, char** names_to_run, const int names_to_ru
 	run_tests_step(tests, false, names_to_run, names_to_run_count);
 }
 
+#define FAIL destroy_test_set(root); return NULL;
+#define S(name) current_set = add_test_subset(root, &test_counter, (name)); if(current_set == NULL) { FAIL; }
+#define T(name, func) assert(current_set != NULL); \
+	if(add_test(current_set, &test_counter, (name), (func)) == NULL) { FAIL; }
 test_set* create_tests(void)
 {
+	test_set* current_set;
 	int test_counter = 1;
-	test_set* root = new_test_root(); if(root == NULL) { goto done; }
 
-	test_set* array = add_test_subset(root, &test_counter, "array"); if(array == NULL) { goto cleanup; }
-	if(add_test(array, &test_counter, "array_test_default", array_test_default) == NULL) { goto cleanup; }
-	if(add_test(array, &test_counter, "array_test_inherit", array_test_inherit) == NULL) { goto cleanup; }
-	if(add_test(array, &test_counter, "array_test_strbuild", array_test_strbuild) == NULL) { goto cleanup; }
+	test_set* root = new_test_root();
+	if(root == NULL) {
+		return NULL;
+	}
 
-	test_set* logging = add_test_subset(root, &test_counter, "logging"); if(logging == NULL) { goto cleanup; }
-	if(add_test(logging, &test_counter, "logging_general", logging_test_general) == NULL) { goto cleanup; }
-	if(add_test(logging, &test_counter, "logging_nulls", logging_test_nulls) == NULL) { goto cleanup; }
+	S("array");
+	T("array_test_default", array_test_default);
+	T("array_test_inherit", array_test_inherit);
+	T("array_test_strbuild", array_test_strbuild);
 
-	test_set* pruner = add_test_subset(root, &test_counter, "pruner"); if(pruner == NULL) { goto cleanup; }
-	if(add_test(pruner, &test_counter, "pruner_default", pruner_test_default) == NULL) { goto cleanup; }
+	S("logging");
+	T("logging_general", logging_test_general);
+	T("logging_nulls", logging_test_nulls);
 
-	test_set* keybind = add_test_subset(root, &test_counter, "keybind"); if(keybind == NULL) { goto cleanup; }
-	if(add_test(keybind, &test_counter, "keybind_parse_print", keybind_test_parse_print) == NULL) { goto cleanup; }
+	S("pruner");
+	T("pruner_default", pruner_test_default);
 
-	goto done;
-	cleanup:
-		destroy_test_set(root);
-		root = NULL;
-	done:
-		return root;
+	S("keybind");
+	T("keybind_parse_print", keybind_test_parse_print);
+
+	return root;
 }
+#undef FAIL
+#undef S
+#undef T
 
 int main(int argc, char *argv[])
 {
