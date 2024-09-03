@@ -11,9 +11,12 @@ AlignTrailingComments: Always
 AllowAllArgumentsOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: true
 AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
 AllowShortEnumsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: Never
 AlwaysBreakBeforeMultilineStrings: false
-BinPackArguments: false
+AllowShortLoopsOnASingleLine: false
+BinPackArguments: true
 #BinPackParameters: OnePerLine
 BinPackParameters: false
 BitFieldColonSpacing: Both
@@ -67,3 +70,6 @@ SpaceBeforeCaseColon: false
 SpaceBeforeParens: false
 TabWidth: 4
 UseTab: AlignWithSpaces
+Cpp11BracedListStyle: true
+SpaceInEmptyBlock: false
+SpaceBeforeSquareBrackets: false
