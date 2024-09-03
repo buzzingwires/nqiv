@@ -258,7 +258,7 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* default_config_path
 		"append pruner and thumbnail no image texture self_opened image no thumbnail not_animated hard unload image thumbnail surface raw vips",
 		"append pruner or thumbnail image texture loaded_behind 0 0 loaded_ahead 0 0 surface loaded_behind 0 0 loaded_ahead 0 0 raw loaded_behind 0 0 loaded_ahead 0 0 vips loaded_behind 0 0 loaded_ahead 0 0 hard unload texture surface raw vips",
 		"append pruner or sum 0 thumbnail image texture bytes_ahead 0 0 bytes_behind 0 0 surface bytes_ahead 0 0 bytes_behind 0 0 raw bytes_ahead 0 0 bytes_behind 0 0 vips bytes_ahead 0 0 bytes_behind 0 0 hard unload texture surface raw vips",
-		NULL
+		NULL,
 	};
 	int idx;
 	for(idx = 0; cmds[idx] != NULL; ++idx) {
@@ -345,7 +345,7 @@ bool nqiv_parse_args(char *argv[], nqiv_state* state)
 		{"cmd", 'c', OPTPARSE_REQUIRED},
 		{"cfg", 'C', OPTPARSE_REQUIRED},
 		{"help", 'h', OPTPARSE_NONE},
-		{0}
+		{0},
 	};
 	bool load_default = true;
 	struct optparse options;
@@ -893,7 +893,7 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 		image->marked ? "MARKED - " : "",
 		state->is_loading ? "LOADING - " : "",
 		image->image.path,
-		NULL
+		NULL,
 	};
 	char window_title[WINDOW_TITLE_LEN] = {0};
 	nqiv_array builder;

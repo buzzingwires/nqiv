@@ -864,7 +864,7 @@ const char* nqiv_press_action_names[] =
 {
 	"default",
 	"allow",
-	"deny"
+	"deny",
 };
 
 void nqiv_cmd_parser_print_send_on_down_default(nqiv_cmd_manager* manager)

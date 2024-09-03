@@ -85,7 +85,7 @@ const char* nqiv_keybind_action_names[] =
 	"image_zoom_out",
 	"image_zoom_in_more",
 	"image_zoom_out_more",
-	"reload"
+	"reload",
 };
 
 nqiv_key_action nqiv_text_to_key_action(const char* text, const int length)
@@ -356,7 +356,7 @@ bool nqiv_keymod_to_string(const nqiv_keybind_pair* pair, nqiv_array* builder)
 		KMOD_CTRL,
 		KMOD_SHIFT,
 		KMOD_ALT,
-		0
+		0,
 	};
 	const Uint16 anti_mods[] =
 	{
@@ -373,7 +373,7 @@ bool nqiv_keymod_to_string(const nqiv_keybind_pair* pair, nqiv_array* builder)
 		0,
 		0,
 		0,
-		0
+		0,
 	};
 	const char* mod_names[] =
 	{
@@ -390,7 +390,7 @@ bool nqiv_keymod_to_string(const nqiv_keybind_pair* pair, nqiv_array* builder)
 		"ctrl",
 		"shift",
 		"alt",
-		NULL
+		NULL,
 	};
 	int idx;
 	bool success = true;

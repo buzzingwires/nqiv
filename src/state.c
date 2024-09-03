@@ -7,7 +7,7 @@ const char* nqiv_zoom_default_names[] =
 {
 	"keep",
 	"fit",
-	"actual"
+	"actual",
 };
 
 const char* nqiv_texture_scale_mode_names[] =
@@ -16,7 +16,7 @@ const char* nqiv_texture_scale_mode_names[] =
 	"linear",
 	"anisotropic",
 	"best",
-	NULL
+	NULL,
 };
 
 const SDL_ScaleMode nqiv_texture_scale_modes[] =
