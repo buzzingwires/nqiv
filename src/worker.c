@@ -82,6 +82,7 @@ void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_options
 				success = nqiv_image_load_surface(image, form);
 			}
 		}
+		(void) success;
 	}
 }
 

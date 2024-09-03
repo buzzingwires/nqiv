@@ -197,11 +197,6 @@ bool nqiv_queue_set_min_add_count(nqiv_queue* queue, const int count)
 	return true;
 }
 
-bool nqiv_queue_grow(nqiv_queue* queue, const int new_count)
-{
-	return nqiv_array_grow(queue->array, new_count, true);
-}
-
 bool nqiv_priority_queue_apply_int(nqiv_priority_queue* queue, bool (*op)(nqiv_queue*, int), const int value)
 {
 	int idx;

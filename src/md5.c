@@ -107,6 +107,7 @@ static const void *body(MD5_CTX *ctx, const void *data, unsigned long size)
 {
 	const unsigned char *ptr;
 	MD5_u32plus a, b, c, d;
+	/* cppcheck-suppress variableScope */
 	MD5_u32plus saved_a, saved_b, saved_c, saved_d;
 
 	ptr = (const unsigned char *)data;
@@ -224,6 +225,7 @@ void MD5_Init(MD5_CTX *ctx)
 void MD5_Update(MD5_CTX *ctx, const void *data, unsigned long size)
 {
 	MD5_u32plus saved_lo;
+	/* cppcheck-suppress variableScope */
 	unsigned long used, available;
 
 	saved_lo = ctx->lo;
