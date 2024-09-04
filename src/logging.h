@@ -10,7 +10,7 @@
 
 #define NQIV_LOG_PREFIX_FORMAT_LEN 255
 #define NQIV_LOG_ERROR_MESSAGE_LEN 255
-#define NQIV_LOG_STRFTIME_LEN 255
+#define NQIV_LOG_STRFTIME_LEN      255
 
 typedef enum nqiv_log_level
 {
@@ -27,23 +27,20 @@ extern const char* nqiv_log_level_names[];
 
 typedef struct nqiv_log_ctx
 {
-	omp_lock_t lock;
-	char prefix_format[NQIV_LOG_PREFIX_FORMAT_LEN];
-	char error_message[NQIV_LOG_ERROR_MESSAGE_LEN];
+	omp_lock_t     lock;
+	char           prefix_format[NQIV_LOG_PREFIX_FORMAT_LEN];
+	char           error_message[NQIV_LOG_ERROR_MESSAGE_LEN];
 	nqiv_log_level level;
-	nqiv_array* streams;
+	nqiv_array*    streams;
 } nqiv_log_ctx;
 
 nqiv_log_level nqiv_log_level_from_string(const char* text);
-void nqiv_log_clear_error(nqiv_log_ctx* ctx);
-bool nqiv_log_has_error(const nqiv_log_ctx* ctx);
-void nqiv_log_set_prefix_format(nqiv_log_ctx* ctx, const char* fmt);
-void nqiv_log_destroy(nqiv_log_ctx* ctx);
-void nqiv_log_init(nqiv_log_ctx* ctx);
-void nqiv_log_add_stream(nqiv_log_ctx* ctx, const FILE* stream);
-void nqiv_log_write(nqiv_log_ctx* ctx,
-	const nqiv_log_level level,
-	const char* format,
-	...);
+void           nqiv_log_clear_error(nqiv_log_ctx* ctx);
+bool           nqiv_log_has_error(const nqiv_log_ctx* ctx);
+void           nqiv_log_set_prefix_format(nqiv_log_ctx* ctx, const char* fmt);
+void           nqiv_log_destroy(nqiv_log_ctx* ctx);
+void           nqiv_log_init(nqiv_log_ctx* ctx);
+void           nqiv_log_add_stream(nqiv_log_ctx* ctx, const FILE* stream);
+void nqiv_log_write(nqiv_log_ctx* ctx, const nqiv_log_level level, const char* format, ...);
 
 #endif /* NQIV_LOG_H */

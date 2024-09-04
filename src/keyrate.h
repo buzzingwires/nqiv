@@ -9,7 +9,7 @@ typedef enum nqiv_keyrate_release_option
 {
 	NQIV_KEYRATE_ON_NONE = 0,
 	NQIV_KEYRATE_ON_DOWN = 1,
-	NQIV_KEYRATE_ON_UP   = 2
+	NQIV_KEYRATE_ON_UP = 2
 } nqiv_keyrate_release_option;
 
 typedef enum nqiv_keyrate_press_action
@@ -31,7 +31,8 @@ typedef struct nqiv_keyrate_keystate_settings
 {
 	/* When the key is first pressed, it must be pressed for this long before events are emitted. */
 	Uint64 start_delay;
-	/* After start delay has passed and key is deemed to have been pressed, this is the starting delay between each event. */
+	/* After start delay has passed and key is deemed to have been pressed, this is the starting
+	 * delay between each event. */
 	Uint64 consecutive_delay;
 	/* After each consecutive delay, subtract this from it... */
 	Uint64 delay_accel;
@@ -42,7 +43,7 @@ typedef struct nqiv_keyrate_keystate_settings
 typedef struct nqiv_keyrate_keystate
 {
 	nqiv_keyrate_keystate_ephemeral ephemeral;
-	nqiv_keyrate_keystate_settings settings;
+	nqiv_keyrate_keystate_settings  settings;
 	/* Send events if the key is held down */
 	nqiv_keyrate_press_action send_on_down;
 	/* Send events when the key is released */
@@ -53,10 +54,12 @@ typedef struct nqiv_keyrate_manager
 {
 	/* Defaults for each state */
 	nqiv_keyrate_keystate_settings settings;
-	bool send_on_down;
-	bool send_on_up;
+	bool                           send_on_down;
+	bool                           send_on_up;
 } nqiv_keyrate_manager;
 
-bool nqiv_keyrate_filter_action(const nqiv_keyrate_manager* manager, nqiv_keyrate_keystate* state, const nqiv_keyrate_release_option released);
+bool nqiv_keyrate_filter_action(const nqiv_keyrate_manager*       manager,
+                                nqiv_keyrate_keystate*            state,
+                                const nqiv_keyrate_release_option released);
 
 #endif /* NQIV_KEYRATE_H */

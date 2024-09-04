@@ -21,14 +21,14 @@ typedef enum nqiv_pruner_count_op
 
 typedef union nqiv_pruner_desc_datapoint_content
 {
-	int as_int;
-	int as_int_pair[2];
+	int  as_int;
+	int  as_int_pair[2];
 	bool as_bool;
 } nqiv_pruner_desc_datapoint_content;
 
 typedef struct nqiv_pruner_desc_datapoint
 {
-	bool active;
+	bool                               active;
 	nqiv_pruner_desc_datapoint_content condition;
 	nqiv_pruner_desc_datapoint_content value;
 } nqiv_pruner_desc_datapoint;
@@ -45,11 +45,11 @@ typedef struct nqiv_pruner_desc_dataset
 
 typedef struct nqiv_pruner_state
 {
-	int idx;
-	int selection;
-	int montage_start;
-	int montage_end;
-	int total_sum;
+	int  idx;
+	int  selection;
+	int  montage_start;
+	int  montage_end;
+	int  total_sum;
 	bool or_result;
 	bool and_result;
 	bool and_is_set;
@@ -57,8 +57,8 @@ typedef struct nqiv_pruner_state
 
 typedef struct nqiv_pruner_desc
 {
-	nqiv_pruner_count_op counter;
-	nqiv_pruner_state state_check;
+	nqiv_pruner_count_op     counter;
+	nqiv_pruner_state        state_check;
 	nqiv_pruner_desc_dataset vips_set;
 	nqiv_pruner_desc_dataset raw_set;
 	nqiv_pruner_desc_dataset surface_set;
@@ -67,33 +67,36 @@ typedef struct nqiv_pruner_desc
 	nqiv_pruner_desc_dataset thumbnail_raw_set;
 	nqiv_pruner_desc_dataset thumbnail_surface_set;
 	nqiv_pruner_desc_dataset thumbnail_texture_set;
-	bool unload_vips;
-	bool unload_raw;
-	bool unload_surface;
-	bool unload_texture;
-	bool unload_thumbnail_vips;
-	bool unload_thumbnail_raw;
-	bool unload_thumbnail_surface;
-	bool unload_thumbnail_texture;
-	bool unload_vips_soft;
-	bool unload_raw_soft;
-	bool unload_surface_soft;
-	bool unload_thumbnail_vips_soft;
-	bool unload_thumbnail_raw_soft;
-	bool unload_thumbnail_surface_soft;
+	bool                     unload_vips;
+	bool                     unload_raw;
+	bool                     unload_surface;
+	bool                     unload_texture;
+	bool                     unload_thumbnail_vips;
+	bool                     unload_thumbnail_raw;
+	bool                     unload_thumbnail_surface;
+	bool                     unload_thumbnail_texture;
+	bool                     unload_vips_soft;
+	bool                     unload_raw_soft;
+	bool                     unload_surface_soft;
+	bool                     unload_thumbnail_vips_soft;
+	bool                     unload_thumbnail_raw_soft;
+	bool                     unload_thumbnail_surface_soft;
 } nqiv_pruner_desc;
 
 typedef struct nqiv_pruner
 {
-	nqiv_log_ctx* logger;
-	nqiv_array* pruners;
+	nqiv_log_ctx*     logger;
+	nqiv_array*       pruners;
 	nqiv_pruner_state state;
-	int64_t thread_event_transaction_group;
+	int64_t           thread_event_transaction_group;
 } nqiv_pruner;
 
 void nqiv_pruner_destroy(nqiv_pruner* pruner);
 bool nqiv_pruner_init(nqiv_pruner* pruner, nqiv_log_ctx* logger, const int queue_length);
-int nqiv_pruner_run(nqiv_pruner* pruner, nqiv_montage_state* montage, nqiv_image_manager* images, nqiv_priority_queue* thread_queue);
+int  nqiv_pruner_run(nqiv_pruner*         pruner,
+                     nqiv_montage_state*  montage,
+                     nqiv_image_manager*  images,
+                     nqiv_priority_queue* thread_queue);
 bool nqiv_pruner_append(nqiv_pruner* pruner, const nqiv_pruner_desc* desc);
 bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner_desc* desc);
 bool nqiv_pruner_desc_to_string(const nqiv_pruner_desc* desc, char* buf);

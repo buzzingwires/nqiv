@@ -11,13 +11,8 @@
 #include "state.h"
 #include "logging.h"
 
-const char* nqiv_log_level_names[] =
-{
-	"any",
-	"debug",
-	"info",
-	"warning",
-	"error",
+const char* nqiv_log_level_names[] = {
+	"any", "debug", "info", "warning", "error",
 };
 
 nqiv_log_level nqiv_log_level_from_string(const char* text)
@@ -68,7 +63,7 @@ void nqiv_log_destroy(nqiv_log_ctx* ctx)
 		omp_destroy_lock(&ctx->lock);
 		nqiv_array_destroy(ctx->streams);
 	}
-	memset( ctx, 0, sizeof(nqiv_log_ctx) );
+	memset(ctx, 0, sizeof(nqiv_log_ctx));
 }
 
 void nqiv_log_init(nqiv_log_ctx* ctx)
@@ -80,7 +75,7 @@ void nqiv_log_init(nqiv_log_ctx* ctx)
 	ctx->streams = nqiv_array_create(sizeof(FILE*), STARTING_QUEUE_LENGTH);
 	if(ctx->streams == NULL) {
 		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN,
-			"Failed to allocate starting streams memory.\n");
+		         "Failed to allocate starting streams memory.\n");
 		return;
 	}
 	omp_init_lock(&ctx->lock);
@@ -92,22 +87,24 @@ void nqiv_log_add_stream(nqiv_log_ctx* ctx, const FILE* stream)
 		return;
 	}
 	if(stream == NULL) {
-		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN,
-			"Cannot add NULL stream.\n");
+		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN, "Cannot add NULL stream.\n");
 		return;
 	}
 	if(ctx->streams == NULL) {
 		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN,
-			"Cannot add stream without available memory.\n");
+		         "Cannot add stream without available memory.\n");
 		return;
 	}
-	if( !nqiv_array_push(ctx->streams, &stream) ) {
+	if(!nqiv_array_push(ctx->streams, &stream)) {
 		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN,
-			"Could not allocate memory for new stream.\n");
+		         "Could not allocate memory for new stream.\n");
 	}
 }
 
-void write_prefix_timeinfo(FILE* stream, const char* fmt, const int formatter_start, const int formatter_len)
+void write_prefix_timeinfo(FILE*       stream,
+                           const char* fmt,
+                           const int   formatter_start,
+                           const int   formatter_len)
 {
 	time_t rawtime;
 	time(&rawtime);
@@ -126,24 +123,24 @@ void write_prefix_timeinfo(FILE* stream, const char* fmt, const int formatter_st
 void write_prefix_level(FILE* stream, const nqiv_log_level level)
 {
 	switch(level) {
-		case NQIV_LOG_ANY:
-			fprintf(stream, "ANY");
-			break;
-		case NQIV_LOG_DEBUG:
-			fprintf(stream, "DEBUG");
-			break;
-		case NQIV_LOG_INFO:
-			fprintf(stream, "INFO");
-			break;
-		case NQIV_LOG_WARNING:
-			fprintf(stream, "WARNING");
-			break;
-		case NQIV_LOG_ERROR:
-			fprintf(stream, "ERROR");
-			break;
-		default:
-			fprintf(stream, "CUSTOM LEVEL(%d)", level);
-			break;
+	case NQIV_LOG_ANY:
+		fprintf(stream, "ANY");
+		break;
+	case NQIV_LOG_DEBUG:
+		fprintf(stream, "DEBUG");
+		break;
+	case NQIV_LOG_INFO:
+		fprintf(stream, "INFO");
+		break;
+	case NQIV_LOG_WARNING:
+		fprintf(stream, "WARNING");
+		break;
+	case NQIV_LOG_ERROR:
+		fprintf(stream, "ERROR");
+		break;
+	default:
+		fprintf(stream, "CUSTOM LEVEL(%d)", level);
+		break;
 	}
 }
 
@@ -171,7 +168,7 @@ void write_prefix(nqiv_log_ctx* ctx, const nqiv_log_level level, FILE* stream)
 {
 	assert(stream != NULL);
 	char slice[NQIV_LOG_PREFIX_FORMAT_LEN];
-	int slice_idx;
+	int  slice_idx;
 	write_prefix_clean_slice(slice, &slice_idx);
 	int formatter_start = -1;
 	int formatter_end = -1;
@@ -188,9 +185,13 @@ void write_prefix(nqiv_log_ctx* ctx, const nqiv_log_level level, FILE* stream)
 				formatter_end = idx;
 				assert(formatter_end > formatter_start);
 				const int formatter_len = formatter_end - (formatter_start + 1);
-				if(strncmp( &ctx->prefix_format[formatter_start + 1], "time:", strlen("time:") ) == 0) {
-					write_prefix_timeinfo(stream, ctx->prefix_format, formatter_start, formatter_len);
-				} else if(strncmp( &ctx->prefix_format[formatter_start + 1], "level", strlen("level") ) == 0) {
+				if(strncmp(&ctx->prefix_format[formatter_start + 1], "time:", strlen("time:"))
+				   == 0) {
+					write_prefix_timeinfo(stream, ctx->prefix_format, formatter_start,
+					                      formatter_len);
+				} else if(strncmp(&ctx->prefix_format[formatter_start + 1], "level",
+				                  strlen("level"))
+				          == 0) {
 					write_prefix_level(stream, level);
 				} else if(formatter_len == 0) {
 					fprintf(stream, "#");
@@ -212,10 +213,7 @@ void write_prefix(nqiv_log_ctx* ctx, const nqiv_log_level level, FILE* stream)
 	write_prefix_flush_slice(stream, slice, &slice_idx);
 }
 
-void nqiv_log_write(nqiv_log_ctx* ctx,
-	const nqiv_log_level level,
-	const char* format,
-	...)
+void nqiv_log_write(nqiv_log_ctx* ctx, const nqiv_log_level level, const char* format, ...)
 {
 	if(ctx == NULL) {
 		return;
@@ -225,8 +223,7 @@ void nqiv_log_write(nqiv_log_ctx* ctx,
 	}
 	omp_set_lock(&ctx->lock);
 	if(format == NULL) {
-		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN,
-			"No format message to write.\n");
+		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN, "No format message to write.\n");
 		omp_unset_lock(&ctx->lock);
 		return;
 	}
@@ -235,10 +232,10 @@ void nqiv_log_write(nqiv_log_ctx* ctx,
 		return;
 	}
 	const int num_streams = nqiv_array_get_units_count(ctx->streams);
-	FILE** streams = ctx->streams->data;
-	int idx;
+	FILE**    streams = ctx->streams->data;
+	int       idx;
 	for(idx = 0; idx < num_streams; ++idx) {
-		FILE* stream = streams[idx];
+		FILE*   stream = streams[idx];
 		va_list args;
 		va_start(args, format);
 		write_prefix(ctx, level, stream);

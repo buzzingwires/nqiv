@@ -9,15 +9,15 @@
 typedef struct nqiv_array
 {
 	void* data;
-	int data_length;
-	int max_data_length;
-	int unit_length;
-	int min_add_count;
-	int position;
+	int   data_length;
+	int   max_data_length;
+	int   unit_length;
+	int   min_add_count;
+	int   position;
 } nqiv_array;
 
-int nqiv_array_get_units_count(const nqiv_array* array);
-int nqiv_array_get_last_idx(const nqiv_array* array);
+int         nqiv_array_get_units_count(const nqiv_array* array);
+int         nqiv_array_get_last_idx(const nqiv_array* array);
 nqiv_array* nqiv_array_create(const int unit_size, const int unit_count);
 void nqiv_array_inherit(nqiv_array* array, void* data, const int unit_size, const int length);
 void nqiv_array_unlimit_data(nqiv_array* array);

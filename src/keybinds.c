@@ -17,8 +17,8 @@ int nqiv_findchar(const char* text, const char query, const int start, const int
 	assert(stop >= -1);
 	assert(start >= 0);
 	const int step = stop >= start ? 1 : -1;
-	int idx = start;
-	char c = text[idx];
+	int       idx = start;
+	char      c = text[idx];
 	while(c != '\0' && idx != stop) {
 		c = text[idx];
 		if(c == query) {
@@ -29,8 +29,7 @@ int nqiv_findchar(const char* text, const char query, const int start, const int
 	return -1;
 }
 
-const char* nqiv_keybind_action_names[] =
-{
+const char* nqiv_keybind_action_names[] = {
 	"quit",
 	"page_up",
 	"page_down",
@@ -92,7 +91,8 @@ nqiv_key_action nqiv_text_to_key_action(const char* text, const int length)
 {
 	nqiv_key_action action = NQIV_KEY_ACTION_NONE;
 	for(action = NQIV_KEY_ACTION_QUIT; action <= NQIV_KEY_ACTION_MAX; ++action) {
-		if( strncmp(text, nqiv_keybind_action_names[action], length) == 0 && (size_t)length == strlen(nqiv_keybind_action_names[action]) ) {
+		if(strncmp(text, nqiv_keybind_action_names[action], length) == 0
+		   && (size_t)length == strlen(nqiv_keybind_action_names[action])) {
 			return action;
 		}
 	}
@@ -102,83 +102,103 @@ nqiv_key_action nqiv_text_to_key_action(const char* text, const int length)
 bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 {
 	bool success = true;
-	if( strncmp(text, "lshift", length) == 0 ) {
+	if(strncmp(text, "lshift", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_LSHIFT;
-	} else if( strncmp(text, "rshift", length) == 0 ) {
+	} else if(strncmp(text, "rshift", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_RSHIFT;
-	} else if( strncmp(text, "lctrl", length) == 0 ) {
+	} else if(strncmp(text, "lctrl", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_LCTRL;
-	} else if( strncmp(text, "rctrl", length) == 0 ) {
+	} else if(strncmp(text, "rctrl", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_RCTRL;
-	} else if( strncmp(text, "lalt", length) == 0 ) {
+	} else if(strncmp(text, "lalt", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_LALT;
-	} else if( strncmp(text, "ralt", length) == 0 ) {
+	} else if(strncmp(text, "ralt", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_RALT;
-	} else if( strncmp(text, "lgui", length) == 0 ) {
+	} else if(strncmp(text, "lgui", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_LGUI;
-	} else if( strncmp(text, "rgui", length) == 0 ) {
+	} else if(strncmp(text, "rgui", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_RGUI;
-	} else if( strncmp(text, "num", length) == 0 ) {
+	} else if(strncmp(text, "num", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_NUM;
-	} else if( strncmp(text, "caps", length) == 0 ) {
+	} else if(strncmp(text, "caps", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_CAPS;
-	} else if( strncmp(text, "mode", length) == 0 ) {
+	} else if(strncmp(text, "mode", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_MODE;
-	} else if( strncmp(text, "scroll", length) == 0 ) {
+	} else if(strncmp(text, "scroll", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_SCROLL;
-	} else if( strncmp(text, "ctrl", length) == 0 ) {
+	} else if(strncmp(text, "ctrl", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_CTRL;
-	} else if( strncmp(text, "shift", length) == 0 ) {
+	} else if(strncmp(text, "shift", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_SHIFT;
-	} else if( strncmp(text, "alt", length) == 0 ) {
+	} else if(strncmp(text, "alt", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_ALT;
-	} else if( strncmp(text, "gui", length) == 0 ) {
+	} else if(strncmp(text, "gui", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_GUI;
-	} else if( strncmp(text, "scroll_forward", length) == 0 ) {
-		if( ( match->mode & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY) ) != 0 ) {
+	} else if(strncmp(text, "scroll_forward", length) == 0) {
+		if((match->mode
+		    & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD
+		       | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT
+		       | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY))
+		   != 0) {
 			success = false;
 		} else {
 			match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD;
 		}
-	} else if( strncmp(text, "scroll_backward", length) == 0 ) {
-		if( ( match->mode & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY) ) != 0 ) {
+	} else if(strncmp(text, "scroll_backward", length) == 0) {
+		if((match->mode
+		    & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD
+		       | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT
+		       | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY))
+		   != 0) {
 			success = false;
 		} else {
 			match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD;
 		}
-	} else if( strncmp(text, "scroll_left", length) == 0 ) {
-		if( ( match->mode & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY) ) != 0 ) {
+	} else if(strncmp(text, "scroll_left", length) == 0) {
+		if((match->mode
+		    & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD
+		       | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT
+		       | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY))
+		   != 0) {
 			success = false;
 		} else {
 			match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT;
 		}
-	} else if( strncmp(text, "scroll_right", length) == 0 ) {
-		if( ( match->mode & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY) ) != 0 ) {
+	} else if(strncmp(text, "scroll_right", length) == 0) {
+		if((match->mode
+		    & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD
+		       | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT
+		       | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY))
+		   != 0) {
 			success = false;
 		} else {
 			match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT;
 		}
-	} else if( (size_t)length > strlen("mouse") && strncmp( text, "mouse", strlen("mouse") ) == 0 ) {
-		if( ( match->mode & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY) ) != 0 ) {
+	} else if((size_t)length > strlen("mouse") && strncmp(text, "mouse", strlen("mouse")) == 0) {
+		if((match->mode
+		    & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD
+		       | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT
+		       | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY))
+		   != 0) {
 			success = false;
 		} else {
-			char* end = NULL;
+			char*     end = NULL;
 			const int tmp = strtol(text + strlen("mouse"), &end, 10);
 			if(errno == ERANGE || end == NULL || tmp < 0 || tmp > 255 || end > text + length) {
 				success = false;
@@ -187,8 +207,8 @@ bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 				match->data.mouse_button.button = tmp;
 				match->data.mouse_button.clicks = 1;
 				if(end < text + length) {
-					if(end + strlen("_double") <= text + length &&
-					   strncmp( end, "_double", strlen("_double") ) == 0) {
+					if(end + strlen("_double") <= text + length
+					   && strncmp(end, "_double", strlen("_double")) == 0) {
 						match->data.mouse_button.clicks = 2;
 					} else {
 						success = false;
@@ -203,7 +223,12 @@ bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 		assert(length >= 0);
 		assert(strlen(text) == (size_t)length);
 		text[length] = endchar;
-		if(sc == SDL_SCANCODE_UNKNOWN || match->data.key.scancode != 0 || ( match->mode & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY) ) != 0) {
+		if(sc == SDL_SCANCODE_UNKNOWN || match->data.key.scancode != 0
+		   || (match->mode
+		       & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD
+		          | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT
+		          | NQIV_KEY_MATCH_MODE_MOUSE_BUTTON | NQIV_KEY_MATCH_MODE_KEY))
+		          != 0) {
 			success = false;
 		} else {
 			match->mode |= NQIV_KEY_MATCH_MODE_KEY;
@@ -213,11 +238,15 @@ bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 	return success;
 }
 
-bool nqiv_text_to_keystate_numerical(char* text, const int length, const char* prefix, Uint64* output)
+bool nqiv_text_to_keystate_numerical(char*       text,
+                                     const int   length,
+                                     const char* prefix,
+                                     Uint64*     output)
 {
 	bool success = false;
-	if(*output == 0 && (size_t)length > strlen(prefix) && strncmp( text, prefix, strlen(prefix) ) == 0) {
-		char* end = NULL;
+	if(*output == 0 && (size_t)length > strlen(prefix)
+	   && strncmp(text, prefix, strlen(prefix)) == 0) {
+		char*     end = NULL;
 		const int tmp = strtol(text + strlen(prefix), &end, 10);
 		if(errno != ERANGE && end != NULL && tmp > 0 && end <= text + length) {
 			success = true;
@@ -232,16 +261,23 @@ bool nqiv_text_to_keystate(char* text, const int length, nqiv_keyrate_keystate* 
 	bool success = true;
 	if(strncmp(text, "allow_on_up", length) == 0 && state->send_on_up == NQIV_KEYRATE_ON_MANAGER) {
 		state->send_on_up = NQIV_KEYRATE_ALLOW;
-	} else if(strncmp(text, "allow_on_down", length) == 0 && state->send_on_down == NQIV_KEYRATE_ON_MANAGER) {
+	} else if(strncmp(text, "allow_on_down", length) == 0
+	          && state->send_on_down == NQIV_KEYRATE_ON_MANAGER) {
 		state->send_on_down = NQIV_KEYRATE_ALLOW;
-	} else if(strncmp(text, "deny_on_up", length) == 0 && state->send_on_up == NQIV_KEYRATE_ON_MANAGER) {
+	} else if(strncmp(text, "deny_on_up", length) == 0
+	          && state->send_on_up == NQIV_KEYRATE_ON_MANAGER) {
 		state->send_on_up = NQIV_KEYRATE_DENY;
-	} else if(strncmp(text, "deny_on_down", length) == 0 && state->send_on_down == NQIV_KEYRATE_ON_MANAGER) {
+	} else if(strncmp(text, "deny_on_down", length) == 0
+	          && state->send_on_down == NQIV_KEYRATE_ON_MANAGER) {
 		state->send_on_down = NQIV_KEYRATE_DENY;
-	} else if( !nqiv_text_to_keystate_numerical( text, length, "start_delay_", &(state->settings.start_delay) ) &&
-			   !nqiv_text_to_keystate_numerical( text, length, "consecutive_delay_", &(state->settings.consecutive_delay) ) &&
-			   !nqiv_text_to_keystate_numerical( text, length, "delay_accel_", &(state->settings.delay_accel) ) &&
-			   !nqiv_text_to_keystate_numerical( text, length, "minimum_delay_", &(state->settings.minimum_delay) ) ) {
+	} else if(!nqiv_text_to_keystate_numerical(text, length, "start_delay_",
+	                                           &(state->settings.start_delay))
+	          && !nqiv_text_to_keystate_numerical(text, length, "consecutive_delay_",
+	                                              &(state->settings.consecutive_delay))
+	          && !nqiv_text_to_keystate_numerical(text, length, "delay_accel_",
+	                                              &(state->settings.delay_accel))
+	          && !nqiv_text_to_keystate_numerical(text, length, "minimum_delay_",
+	                                              &(state->settings.minimum_delay))) {
 		success = false;
 	}
 	return success;
@@ -254,21 +290,22 @@ int nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair)
 		return -1;
 	}
 	const int equal_start = nqiv_findchar(text, '=', textlen - 1, -1);
-	if( equal_start == -1 || textlen <= (size_t)equal_start + 1 ) {
+	if(equal_start == -1 || textlen <= (size_t)equal_start + 1) {
 		return -1;
 	}
 	nqiv_keybind_pair tmp = {0};
 	tmp.action = NQIV_KEY_ACTION_NONE;
-	int idx;
-	int section_start;
+	int  idx;
+	int  section_start;
 	bool success = true;
 	for(idx = 0, section_start = 0; idx <= equal_start; ++idx) {
-		if(text[idx] == '+' || (idx == equal_start && idx > section_start) ) {
+		if(text[idx] == '+' || (idx == equal_start && idx > section_start)) {
 			int section_end = idx;
 			if(idx + 1 == equal_start || text[idx + 1] == '+') {
 				section_end += 1;
 			}
-			success = nqiv_text_to_key_match(text + section_start, section_end - section_start, &tmp.match);
+			success = nqiv_text_to_key_match(text + section_start, section_end - section_start,
+			                                 &tmp.match);
 			if(!success) {
 				break;
 			}
@@ -276,13 +313,13 @@ int nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair)
 		}
 	}
 	for(idx = equal_start + 1, section_start = idx; (size_t)idx <= textlen; ++idx) {
-		if( text[idx] == '+' || ( (size_t)idx == textlen && idx > section_start ) ) {
+		if(text[idx] == '+' || ((size_t)idx == textlen && idx > section_start)) {
 			int section_end = idx;
-			if( (size_t)idx + 1 == textlen || text[idx + 1] == '+' ) {
+			if((size_t)idx + 1 == textlen || text[idx + 1] == '+') {
 				section_end += 1;
 			}
 			const int section_length = section_end - section_start;
-			if( !nqiv_text_to_keystate(text + section_start, section_length, &tmp.keyrate) ) {
+			if(!nqiv_text_to_keystate(text + section_start, section_length, &tmp.keyrate)) {
 				if(tmp.action != NQIV_KEY_ACTION_NONE) {
 					success = false;
 					break;
@@ -300,14 +337,16 @@ int nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair)
 		success = false;
 	}
 	if(success) {
-		memcpy( pair, &tmp, sizeof(nqiv_keybind_pair) );
+		memcpy(pair, &tmp, sizeof(nqiv_keybind_pair));
 		return textlen;
 	} else {
 		return -1;
 	}
 }
 
-bool nqiv_keybind_create_manager(nqiv_keybind_manager* manager, nqiv_log_ctx* logger, const int starting_array_length)
+bool nqiv_keybind_create_manager(nqiv_keybind_manager* manager,
+                                 nqiv_log_ctx*         logger,
+                                 const int             starting_array_length)
 {
 	assert(manager != NULL);
 	nqiv_log_write(logger, NQIV_LOG_INFO, "Creating keybind manager.\n");
@@ -326,76 +365,37 @@ bool nqiv_keybind_add(nqiv_keybind_manager* manager, const nqiv_keybind_pair* pa
 	assert(manager->lookup != NULL);
 	assert(pair != NULL);
 	nqiv_keybind_pair tmp = {0};
-	memcpy( &tmp.match, &pair->match, sizeof(nqiv_key_match) );
-	memcpy( &tmp.keyrate, &pair->keyrate, sizeof(nqiv_keyrate_keystate) );
-	memset( &tmp.keyrate.ephemeral, 0, sizeof(nqiv_keyrate_keystate_ephemeral) );
+	memcpy(&tmp.match, &pair->match, sizeof(nqiv_key_match));
+	memcpy(&tmp.keyrate, &pair->keyrate, sizeof(nqiv_keyrate_keystate));
+	memset(&tmp.keyrate.ephemeral, 0, sizeof(nqiv_keyrate_keystate_ephemeral));
 	tmp.action = pair->action;
 	return nqiv_array_push(manager->lookup, &tmp);
 }
 
 bool nqiv_key_match_element_to_string(nqiv_array* builder, const char* suffix)
 {
-	return nqiv_array_push_str(builder, suffix) &&
-		   nqiv_array_push_str(builder, "+");
+	return nqiv_array_push_str(builder, suffix) && nqiv_array_push_str(builder, "+");
 }
 
 bool nqiv_keymod_to_string(const nqiv_keybind_pair* pair, nqiv_array* builder)
 {
-	const Uint16 mods[] =
-	{
-		KMOD_LSHIFT,
-		KMOD_RSHIFT,
-		KMOD_LCTRL,
-		KMOD_RCTRL,
-		KMOD_LALT,
-		KMOD_RALT,
-		KMOD_NUM,
-		KMOD_CAPS,
-		KMOD_MODE,
-		KMOD_SCROLL,
-		KMOD_CTRL,
-		KMOD_SHIFT,
-		KMOD_ALT,
-		0,
+	const Uint16 mods[] = {
+		KMOD_LSHIFT, KMOD_RSHIFT, KMOD_LCTRL,  KMOD_RCTRL, KMOD_LALT,  KMOD_RALT, KMOD_NUM,
+		KMOD_CAPS,   KMOD_MODE,   KMOD_SCROLL, KMOD_CTRL,  KMOD_SHIFT, KMOD_ALT,  0,
 	};
-	const Uint16 anti_mods[] =
-	{
-		KMOD_RSHIFT,
-		KMOD_LSHIFT,
-		KMOD_RCTRL,
-		KMOD_LCTRL,
-		KMOD_RALT,
-		KMOD_LALT,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
-		0,
+	const Uint16 anti_mods[] = {
+		KMOD_RSHIFT, KMOD_LSHIFT, KMOD_RCTRL, KMOD_LCTRL, KMOD_RALT, KMOD_LALT, 0,
+		0,           0,           0,          0,          0,         0,         0,
 	};
-	const char* mod_names[] =
-	{
-		"lshift",
-		"rshift",
-		"lctrl",
-		"rctrl",
-		"lalt",
-		"ralt",
-		"num",
-		"caps",
-		"mode",
-		"scroll",
-		"ctrl",
-		"shift",
-		"alt",
-		NULL,
+	const char* mod_names[] = {
+		"lshift", "rshift", "lctrl",  "rctrl", "lalt",  "ralt", "num",
+		"caps",   "mode",   "scroll", "ctrl",  "shift", "alt",  NULL,
 	};
-	int idx;
+	int  idx;
 	bool success = true;
 	for(idx = 0; mod_names[idx] != NULL; ++idx) {
-		if( (pair->match.data.key.mod & mods[idx]) == mods[idx] && (pair->match.data.key.mod & anti_mods[idx]) == 0 ) {
+		if((pair->match.data.key.mod & mods[idx]) == mods[idx]
+		   && (pair->match.data.key.mod & anti_mods[idx]) == 0) {
 			success = success && nqiv_key_match_element_to_string(builder, mod_names[idx]);
 		}
 	}
@@ -418,16 +418,24 @@ bool nqiv_keyrate_to_string(nqiv_array* builder, const nqiv_keyrate_keystate* st
 		success = success && nqiv_array_push_str(builder, "deny_on_up+");
 	}
 	if(state->settings.start_delay != 0) {
-		success = success &&  nqiv_array_push_sprintf(builder, "start_delay_%d+", state->settings.start_delay);
+		success =
+			success
+			&& nqiv_array_push_sprintf(builder, "start_delay_%d+", state->settings.start_delay);
 	}
 	if(state->settings.consecutive_delay != 0) {
-		success = success &&  nqiv_array_push_sprintf(builder, "consecutive_delay_%d+", state->settings.consecutive_delay);
+		success = success
+		          && nqiv_array_push_sprintf(builder, "consecutive_delay_%d+",
+		                                     state->settings.consecutive_delay);
 	}
 	if(state->settings.delay_accel != 0) {
-		success = success &&  nqiv_array_push_sprintf(builder, "delay_accel_%d+", state->settings.delay_accel);
+		success =
+			success
+			&& nqiv_array_push_sprintf(builder, "delay_accel_%d+", state->settings.delay_accel);
 	}
 	if(state->settings.minimum_delay != 0) {
-		success = success &&  nqiv_array_push_sprintf(builder, "minimum_delay_%d+", state->settings.minimum_delay);
+		success =
+			success
+			&& nqiv_array_push_sprintf(builder, "minimum_delay_%d+", state->settings.minimum_delay);
 	}
 	return success;
 }
@@ -438,29 +446,35 @@ bool nqiv_keybind_to_string(const nqiv_keybind_pair* pair, char* buf)
 	nqiv_array_inherit(&builder, buf, sizeof(char), NQIV_KEYBIND_STRLEN);
 	bool success = true;
 	success = success && nqiv_keymod_to_string(pair, &builder);
-	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_KEY) != 0 ) {
-		success = success && nqiv_key_match_element_to_string(&builder, SDL_GetScancodeName(pair->match.data.key.scancode) );
+	if((pair->match.mode & NQIV_KEY_MATCH_MODE_KEY) != 0) {
+		success = success
+		          && nqiv_key_match_element_to_string(
+					  &builder, SDL_GetScancodeName(pair->match.data.key.scancode));
 	}
-	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_BUTTON) != 0 ) {
-		assert(pair->match.data.mouse_button.clicks == 1 || pair->match.data.mouse_button.clicks == 2);
-		success = success && nqiv_array_push_sprintf(&builder, "mouse%d%s+", pair->match.data.mouse_button.button, pair->match.data.mouse_button.clicks == 2 ? "_double" : "");
+	if((pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_BUTTON) != 0) {
+		assert(pair->match.data.mouse_button.clicks == 1
+		       || pair->match.data.mouse_button.clicks == 2);
+		success =
+			success
+			&& nqiv_array_push_sprintf(&builder, "mouse%d%s+", pair->match.data.mouse_button.button,
+		                               pair->match.data.mouse_button.clicks == 2 ? "_double" : "");
 	}
-	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD) != 0 ) {
+	if((pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD) != 0) {
 		success = success && nqiv_key_match_element_to_string(&builder, "scroll_forward");
 	}
-	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD) != 0 ) {
+	if((pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD) != 0) {
 		success = success && nqiv_key_match_element_to_string(&builder, "scroll_backward");
 	}
-	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT) != 0 ) {
+	if((pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_LEFT) != 0) {
 		success = success && nqiv_key_match_element_to_string(&builder, "scroll_left");
 	}
-	if( (pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT) != 0 ) {
+	if((pair->match.mode & NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_RIGHT) != 0) {
 		success = success && nqiv_key_match_element_to_string(&builder, "scroll_right");
 	}
 	assert(nqiv_array_get_units_count(&builder) > 0);
 	assert(buf[nqiv_array_get_last_idx(&builder)] == '+');
 	buf[nqiv_array_get_last_idx(&builder)] = '=';
-	success = success && nqiv_keyrate_to_string( &builder, &(pair->keyrate) );
+	success = success && nqiv_keyrate_to_string(&builder, &(pair->keyrate));
 	success = success && nqiv_array_push_str(&builder, nqiv_keybind_action_names[pair->action]);
 	return success;
 }
@@ -469,38 +483,43 @@ bool nqiv_compare_mod(const Uint16 a, const Uint16 b)
 {
 	const Uint16 ac = a & ~KMOD_GUI & ~KMOD_SCROLL & ~KMOD_NUM;
 	const Uint16 bc = b & ~KMOD_GUI & ~KMOD_SCROLL & ~KMOD_NUM;
-	return ( (bool)(ac & KMOD_SHIFT)  == (bool)(bc & KMOD_SHIFT)  ) &&
-		   ( (bool)(ac & KMOD_CTRL)   == (bool)(bc & KMOD_CTRL)   ) &&
-		   ( (bool)(ac & KMOD_ALT)    == (bool)(bc & KMOD_ALT)    ) &&
-		   ( (bool)(ac & KMOD_GUI)    == (bool)(bc & KMOD_GUI)    ) &&
-		   ( (bool)(ac & KMOD_NUM)    == (bool)(bc & KMOD_NUM)    ) &&
-		   ( (bool)(ac & KMOD_CAPS)   == (bool)(bc & KMOD_CAPS)   ) &&
-		   ( (bool)(ac & KMOD_MODE)   == (bool)(bc & KMOD_MODE)   ) &&
-		   ( (bool)(ac & KMOD_SCROLL) == (bool)(bc & KMOD_SCROLL) );
+	return ((bool)(ac & KMOD_SHIFT) == (bool)(bc & KMOD_SHIFT))
+	       && ((bool)(ac & KMOD_CTRL) == (bool)(bc & KMOD_CTRL))
+	       && ((bool)(ac & KMOD_ALT) == (bool)(bc & KMOD_ALT))
+	       && ((bool)(ac & KMOD_GUI) == (bool)(bc & KMOD_GUI))
+	       && ((bool)(ac & KMOD_NUM) == (bool)(bc & KMOD_NUM))
+	       && ((bool)(ac & KMOD_CAPS) == (bool)(bc & KMOD_CAPS))
+	       && ((bool)(ac & KMOD_MODE) == (bool)(bc & KMOD_MODE))
+	       && ((bool)(ac & KMOD_SCROLL) == (bool)(bc & KMOD_SCROLL));
 }
 
 bool nqiv_keybind_compare_match(const nqiv_key_match* a, const nqiv_key_match* b)
 {
-	return (a->mode == b->mode) &&
-		   ( (a->mode & NQIV_KEY_MATCH_MODE_KEY_MOD) == 0 || ( nqiv_compare_mod(a->data.key.mod, b->data.key.mod) ) ) &&
-		   ( (a->mode & NQIV_KEY_MATCH_MODE_KEY) == 0 || (a->data.key.scancode == b->data.key.scancode) ) &&
-		   ( (a->mode & NQIV_KEY_MATCH_MODE_MOUSE_BUTTON) == 0 || ( a->data.mouse_button.button == b->data.mouse_button.button && a->data.mouse_button.clicks == b->data.mouse_button.clicks ) );
+	return (a->mode == b->mode)
+	       && ((a->mode & NQIV_KEY_MATCH_MODE_KEY_MOD) == 0
+	           || (nqiv_compare_mod(a->data.key.mod, b->data.key.mod)))
+	       && ((a->mode & NQIV_KEY_MATCH_MODE_KEY) == 0
+	           || (a->data.key.scancode == b->data.key.scancode))
+	       && ((a->mode & NQIV_KEY_MATCH_MODE_MOUSE_BUTTON) == 0
+	           || (a->data.mouse_button.button == b->data.mouse_button.button
+	               && a->data.mouse_button.clicks == b->data.mouse_button.clicks));
 }
 
-nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manager* manager, const nqiv_key_match* match, nqiv_queue* output)
+nqiv_key_lookup_summary
+nqiv_keybind_lookup(nqiv_keybind_manager* manager, const nqiv_key_match* match, nqiv_queue* output)
 {
 	assert(manager != NULL);
 	assert(manager->lookup != NULL);
 	assert(match != NULL);
 
 	nqiv_key_lookup_summary result = NQIV_KEY_LOOKUP_NOT_FOUND;
-	const int lookup_len = nqiv_array_get_units_count(manager->lookup);
-	nqiv_keybind_pair* lookup = manager->lookup->data;
-	int idx;
+	const int               lookup_len = nqiv_array_get_units_count(manager->lookup);
+	nqiv_keybind_pair*      lookup = manager->lookup->data;
+	int                     idx;
 	for(idx = 0; idx < lookup_len; ++idx) {
 		const nqiv_keybind_pair* pair = &lookup[idx];
-		if( nqiv_keybind_compare_match(&pair->match, match) ) {
-			if( output == NULL || !nqiv_queue_push(output, &pair) ) {
+		if(nqiv_keybind_compare_match(&pair->match, match)) {
+			if(output == NULL || !nqiv_queue_push(output, &pair)) {
 				result |= NQIV_KEY_LOOKUP_FAILURE;
 			} else {
 				result |= NQIV_KEY_LOOKUP_FOUND;
@@ -510,10 +529,11 @@ nqiv_key_lookup_summary nqiv_keybind_lookup(nqiv_keybind_manager* manager, const
 	return result;
 }
 
-void nqiv_keybind_destroy_manager(nqiv_keybind_manager* manager) {
+void nqiv_keybind_destroy_manager(nqiv_keybind_manager* manager)
+{
 	assert(manager != NULL);
 	assert(manager->lookup != NULL);
 	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Destroying keybind manager.\n");
 	nqiv_array_destroy(manager->lookup);
-	memset( manager, 0, sizeof(nqiv_keybind_manager) );
+	memset(manager, 0, sizeof(nqiv_keybind_manager));
 }

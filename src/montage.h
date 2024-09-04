@@ -7,14 +7,14 @@
 
 typedef struct nqiv_montage_dimensions
 {
-	int window_width;
-	int window_height;
+	int    window_width;
+	int    window_height;
 	double horizontal_margin;
 	double vertical_margin;
 	double column_space;
 	double row_space;
-	int count_per_row;
-	int count;
+	int    count_per_row;
+	int    count;
 } nqiv_montage_dimensions;
 
 typedef struct nqiv_montage_positions
@@ -32,13 +32,13 @@ typedef struct nqiv_montage_preload
 
 typedef struct nqiv_montage_state
 {
-	nqiv_log_ctx* logger;
-	SDL_Window* window;
-	nqiv_image_manager* images;
+	nqiv_log_ctx*           logger;
+	SDL_Window*             window;
+	nqiv_image_manager*     images;
 	nqiv_montage_dimensions dimensions;
-	nqiv_montage_positions positions;
-	nqiv_montage_preload preload;
-	bool range_changed;
+	nqiv_montage_positions  positions;
+	nqiv_montage_preload    preload;
+	bool                    range_changed;
 } nqiv_montage_state;
 
 void nqiv_montage_calculate_dimensions(nqiv_montage_state* state);
@@ -55,6 +55,6 @@ void nqiv_montage_next_selection_page(nqiv_montage_state* state);
 void nqiv_montage_previous_selection_page(nqiv_montage_state* state);
 void nqiv_montage_jump_selection_start(nqiv_montage_state* state);
 void nqiv_montage_jump_selection_end(nqiv_montage_state* state);
-int nqiv_montage_find_index_at_point(nqiv_montage_state* state, const int x, const int y);
+int  nqiv_montage_find_index_at_point(nqiv_montage_state* state, const int x, const int y);
 
 #endif /* NQIV_MONTAGE_H */

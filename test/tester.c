@@ -15,10 +15,10 @@ typedef struct test_set test_set;
 
 struct test_set
 {
-	char name[TEST_NAME_LEN];
-	int number;
+	char       name[TEST_NAME_LEN];
+	int        number;
 	test_set** subsets;
-	int subsets_len;
+	int        subsets_len;
 	void (*test_ptr)(void);
 };
 
@@ -43,7 +43,7 @@ void destroy_test_set(test_set* tests)
 		tests->subsets_len = 0;
 	}
 	assert(tests->subsets_len == 0);
-	memset( tests, 0, sizeof(test_set) );
+	memset(tests, 0, sizeof(test_set));
 	free(tests);
 }
 
@@ -51,7 +51,7 @@ test_set* new_test_set(const char* name, const int number)
 {
 	assert(name != NULL);
 	assert(number >= 0);
-	test_set* tests = (test_set*)calloc( 1, sizeof(test_set) );
+	test_set* tests = (test_set*)calloc(1, sizeof(test_set));
 	if(tests == NULL) {
 		fprintf(stderr, "Failed to create new test set %d %s\n", number, name);
 		return tests;
@@ -75,22 +75,24 @@ test_set* add_test_subset(test_set* tests, int* test_counter, const char* name)
 	assert(tests->number >= 0);
 	if(tests->subsets == NULL) {
 		assert(tests->subsets_len == 0);
-		tests->subsets = (test_set**)calloc( 1, sizeof(test_set*) );
+		tests->subsets = (test_set**)calloc(1, sizeof(test_set*));
 		if(tests->subsets == NULL) {
 			print_test_set_designation(tests);
-			fprintf(stderr, ": Failed to create test subset array for new test set %d %s\n", *test_counter, name);
+			fprintf(stderr, ": Failed to create test subset array for new test set %d %s\n",
+			        *test_counter, name);
 			return NULL;
 		}
 		tests->subsets_len = 1;
 	}
 	assert(tests->subsets_len > 0);
 	if(tests->subsets[tests->subsets_len - 1] != NULL) {
-		const int new_subsets_len = tests->subsets_len + 1;
-		test_set** new_subsets = (test_set**)realloc(tests->subsets,
-			sizeof(test_set*) * new_subsets_len);
+		const int  new_subsets_len = tests->subsets_len + 1;
+		test_set** new_subsets =
+			(test_set**)realloc(tests->subsets, sizeof(test_set*) * new_subsets_len);
 		if(new_subsets == NULL) {
 			print_test_set_designation(tests);
-			fprintf(stderr, ": Failed to expand test subset array for new test set %d %s\n", *test_counter, name);
+			fprintf(stderr, ": Failed to expand test subset array for new test set %d %s\n",
+			        *test_counter, name);
 			return NULL;
 		}
 		tests->subsets_len = new_subsets_len;
@@ -104,7 +106,7 @@ test_set* add_test_subset(test_set* tests, int* test_counter, const char* name)
 	return new_tests;
 }
 
-test_set* add_test( test_set* tests, int* test_counter, const char* name, void (*test_ptr)(void) )
+test_set* add_test(test_set* tests, int* test_counter, const char* name, void (*test_ptr)(void))
 {
 	assert(test_ptr != NULL);
 	test_set* test = add_test_subset(tests, test_counter, name);
@@ -131,7 +133,10 @@ bool check_name(char** array, const int count, const char* string)
 	return false;
 }
 
-void run_tests_step(const test_set* tests, const bool parent_allowed, char** names_to_run, const int names_to_run_len)
+void run_tests_step(const test_set* tests,
+                    const bool      parent_allowed,
+                    char**          names_to_run,
+                    const int       names_to_run_len)
 {
 	assert(tests != NULL);
 	const bool allowed = parent_allowed || check_name(names_to_run, names_to_run_len, tests->name);
@@ -156,14 +161,23 @@ void run_tests(const test_set* tests, char** names_to_run, const int names_to_ru
 	run_tests_step(tests, false, names_to_run, names_to_run_count);
 }
 
-#define FAIL destroy_test_set(root); return NULL;
-#define S(name) current_set = add_test_subset(root, &test_counter, (name)); if(current_set == NULL) { FAIL; }
-#define T(name, func) assert(current_set != NULL); \
-	if(add_test(current_set, &test_counter, (name), (func)) == NULL) { FAIL; }
+#define FAIL                \
+	destroy_test_set(root); \
+	return NULL;
+#define S(name)                                                 \
+	current_set = add_test_subset(root, &test_counter, (name)); \
+	if(current_set == NULL) {                                   \
+		FAIL;                                                   \
+	}
+#define T(name, func)                                                  \
+	assert(current_set != NULL);                                       \
+	if(add_test(current_set, &test_counter, (name), (func)) == NULL) { \
+		FAIL;                                                          \
+	}
 test_set* create_tests(void)
 {
 	test_set* current_set;
-	int test_counter = 1;
+	int       test_counter = 1;
 
 	test_set* root = new_test_root();
 	if(root == NULL) {
@@ -191,7 +205,7 @@ test_set* create_tests(void)
 #undef S
 #undef T
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	test_set* tests = create_tests();
 	if(tests == NULL) {

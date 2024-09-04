@@ -30,10 +30,10 @@ typedef struct nqiv_event_image_load_form_options
 
 typedef struct nqiv_event_image_load_options
 {
-	nqiv_image* image;
-	bool set_thumbnail_path;
-	bool create_thumbnail;
-	bool borrow_thumbnail_dimension_metadata;
+	nqiv_image*                        image;
+	bool                               set_thumbnail_path;
+	bool                               create_thumbnail;
+	bool                               borrow_thumbnail_dimension_metadata;
 	nqiv_event_image_load_form_options image_options;
 	nqiv_event_image_load_form_options thumbnail_options;
 } nqiv_event_image_load_options;
@@ -45,8 +45,8 @@ typedef union nqiv_event_options
 
 typedef struct nqiv_event
 {
-	nqiv_event_type type;
-	int64_t transaction_group;
+	nqiv_event_type    type;
+	int64_t            transaction_group;
 	nqiv_event_options options;
 } nqiv_event;
 
