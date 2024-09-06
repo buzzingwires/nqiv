@@ -52,6 +52,7 @@ void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_options
 								success = false;
 							}
 						}
+						form->error = !success;
 					}
 				} else {
 					success = nqiv_image_load_vips(image, form);
