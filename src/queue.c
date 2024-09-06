@@ -49,7 +49,7 @@ bool nqiv_queue_init(nqiv_queue*   queue,
 	}
 	omp_init_lock(&queue->lock);
 	queue->logger = logger;
-	nqiv_log_write(logger, NQIV_LOG_INFO, "Initialized queue of %d %d-sized units\n.", unit_count,
+	nqiv_log_write(logger, NQIV_LOG_INFO, "Initialized queue of %d %d-sized units.\n", unit_count,
 	               unit_size);
 	return true;
 }

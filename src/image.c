@@ -660,7 +660,8 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager,
 	manager->default_frame_time = 100;
 
 	nqiv_log_write(logger, NQIV_LOG_INFO,
-	               "Successfully made image manager with starting length of: %d", starting_length);
+	               "Successfully made image manager with starting length of: %d\n",
+	               starting_length);
 	return true;
 }
 
