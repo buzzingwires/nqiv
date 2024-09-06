@@ -166,12 +166,18 @@ bool nqiv_setup_sdl(nqiv_state* state)
 	return true;
 }
 
+void nqiv_update_montage_dimensions(nqiv_state* state)
+{
+	int width, height;
+	SDL_GetWindowSizeInPixels(state->window, &width, &height);
+	nqiv_montage_calculate_dimensions(&state->montage, width, height);
+}
+
 void nqiv_setup_montage(nqiv_state* state)
 {
 	state->montage.logger = &state->logger;
-	state->montage.window = state->window;
 	state->montage.images = &state->images;
-	nqiv_montage_calculate_dimensions(&state->montage);
+	nqiv_update_montage_dimensions(state);
 }
 
 bool nqiv_setup_thread_info(nqiv_state* state)
@@ -1097,7 +1103,7 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 void render_and_update(
 	nqiv_state* state, bool* running, bool* result, const bool first_render, const bool hard)
 {
-	nqiv_montage_calculate_dimensions(&state->montage);
+	nqiv_update_montage_dimensions(state);
 	const Uint64 new_time = SDL_GetTicks64();
 	if(new_time - state->time_of_last_prune > state->prune_delay) {
 		state->time_of_last_prune = new_time;

@@ -26,17 +26,18 @@ double nqiv_montage_calculate_axis(int* counter, const double ratio)
 	return 1.0 - fill;
 }
 
-void nqiv_montage_calculate_dimensions(nqiv_montage_state* state)
+void nqiv_montage_calculate_dimensions(nqiv_montage_state* state, const int width, const int height)
 {
 	nqiv_montage_state original = {0};
 	memcpy(&original, state, sizeof(nqiv_montage_state));
 	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Calculating montage dimensions.\n");
 	assert(state != NULL);
 	assert(state->images != NULL);
-	assert(state->window != NULL);
 	assert(state->logger != NULL);
-	SDL_GetWindowSizeInPixels(state->window, &state->dimensions.window_width,
-	                          &state->dimensions.window_height);
+	assert(width > 0);
+	assert(height > 0);
+	state->dimensions.window_width = width;
+	state->dimensions.window_height = height;
 	/*
 	double horizontal_margin;
 	double vertical_margin;
