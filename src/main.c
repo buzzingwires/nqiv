@@ -196,24 +196,6 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* default_config_path
 	const char* cmds[] = {
 		"set log prefix #level# #time:%Y-%m-%d %T%z# ",
 		"append log stream stderr",
-		"append extension png",
-		"append extension mng",
-		"append extension jpg",
-		"append extension jpeg",
-		"append extension webp",
-		"append extension gif",
-		"append extension webp",
-		"append extension tiff",
-		"append extension svg",
-		"append extension PNG",
-		"append extension MNG",
-		"append extension JPG",
-		"append extension JPEG",
-		"append extension WEBP",
-		"append extension GIF",
-		"append extension WEBP",
-		"append extension TIFF",
-		"append extension SVG",
 		"append keybind Q=quit",
 		"append keybind Home=allow_on_down+deny_on_up+montage_start",
 		"append keybind End=allow_on_down+deny_on_up+montage_end",
@@ -459,10 +441,8 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 	}
 	const char* arg;
 	while((arg = optparse_arg(&options))) {
-		if(nqiv_image_manager_has_path_extension(&state->images, arg)) {
-			if(!nqiv_image_manager_append(&state->images, arg)) {
-				return false;
-			}
+		if(!nqiv_image_manager_append(&state->images, arg)) {
+			return false;
 		}
 	}
 	state->first_frame_pending = true;

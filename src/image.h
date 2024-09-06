@@ -126,7 +126,6 @@ struct nqiv_image_manager
 	nqiv_image_manager_zoom_settings      zoom;
 	Uint32                                default_frame_time;
 	nqiv_array*                           images;
-	nqiv_array*                           extensions;
 };
 
 void nqiv_log_vips_exception(nqiv_log_ctx* logger, const char* path);
@@ -143,8 +142,6 @@ bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, co
 bool nqiv_image_manager_remove(nqiv_image_manager* manager, const int index);
 bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path);
 bool nqiv_image_manager_set_thumbnail_root(nqiv_image_manager* manager, const char* path);
-bool nqiv_image_manager_add_extension(nqiv_image_manager* manager, const char* extension);
-bool nqiv_image_manager_has_path_extension(nqiv_image_manager* manager, const char* path);
 
 void nqiv_image_manager_pan_left(nqiv_image_manager* manager);
 void nqiv_image_manager_pan_right(nqiv_image_manager* manager);

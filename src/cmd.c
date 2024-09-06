@@ -436,21 +436,11 @@ bool nqiv_cmd_parser_append_pruner(nqiv_cmd_manager* manager, nqiv_cmd_arg_token
 	return nqiv_pruner_append(&manager->state->pruner, &tokens[0]->value.as_pruner);
 }
 
-bool nqiv_cmd_parser_append_extension(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	const char data_end = nqiv_cmd_tmpterm(tokens[0]->raw, tokens[0]->length);
-	const bool output = nqiv_image_manager_add_extension(&manager->state->images, tokens[0]->raw);
-	nqiv_cmd_tmpret(tokens[0]->raw, tokens[0]->length, data_end);
-	return output;
-}
-
 bool nqiv_cmd_parser_append_image(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	const char data_end = nqiv_cmd_tmpterm(tokens[0]->raw, tokens[0]->length);
 	bool       output = true;
-	if(nqiv_image_manager_has_path_extension(&manager->state->images, tokens[0]->raw)) {
-		output = nqiv_image_manager_append(&manager->state->images, tokens[0]->raw);
-	}
+	output = nqiv_image_manager_append(&manager->state->images, tokens[0]->raw);
 	nqiv_cmd_tmpret(tokens[0]->raw, tokens[0]->length, data_end);
 	return output;
 }
@@ -472,10 +462,8 @@ bool nqiv_cmd_parser_insert_image(nqiv_cmd_manager* manager, nqiv_cmd_arg_token*
 {
 	const char data_end = nqiv_cmd_tmpterm(tokens[1]->raw, tokens[1]->length);
 	bool       output = true;
-	if(nqiv_image_manager_has_path_extension(&manager->state->images, tokens[1]->raw)) {
-		output = nqiv_image_manager_insert(&manager->state->images, tokens[1]->raw,
-		                                   tokens[0]->value.as_int);
-	}
+	output =
+		nqiv_image_manager_insert(&manager->state->images, tokens[1]->raw, tokens[0]->value.as_int);
 	nqiv_cmd_tmpret(tokens[1]->raw, tokens[1]->length, data_end);
 	return output;
 }
@@ -667,8 +655,6 @@ void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 		nqiv_cmd_print_indent(manager);
 		fprintf(stdout, "Images: %d\n", manager->state->images.images->data_length);
 		nqiv_cmd_print_indent(manager);
-		fprintf(stdout, "Image extensions: %d\n", manager->state->images.extensions->data_length);
-		nqiv_cmd_print_indent(manager);
 		fprintf(stdout, "Logger streams list: %d\n",
 		        manager->state->logger_stream_names->data_length);
 		int idx;
@@ -684,7 +670,6 @@ void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 	} else {
 		fprintf(stdout, "#Keybinds: %d\n", manager->state->keybinds.lookup->data_length);
 		fprintf(stdout, "#Images: %d\n", manager->state->images.images->data_length);
-		fprintf(stdout, "#Image extensions: %d\n", manager->state->images.extensions->data_length);
 		fprintf(stdout, "#Logger streams list: %d\n",
 		        manager->state->logger_stream_names->data_length);
 		int idx;
@@ -862,11 +847,6 @@ void nqiv_cmd_parser_print_pruner(nqiv_cmd_manager* manager)
 	if(!taken && manager->print_settings.dumpcfg) {
 		fprintf(stdout, "#%s", manager->print_settings.prefix);
 	}
-}
-
-void nqiv_cmd_parser_print_extension(nqiv_cmd_manager* manager)
-{
-	nqiv_cmd_print_str_list(manager, manager->state->images.extensions);
 }
 
 void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
@@ -1277,9 +1257,8 @@ void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		print_prefix(manager);
 		fprintf(stdout, "'self_opened' will check if the currently-selected image is loaded.\n");
 		print_prefix(manager);
-		fprintf(stdout,
-		        "'not_animated' will check if the currently-selected image is not animated."
-				" This can be run without specifying data.");
+		fprintf(stdout, "'not_animated' will check if the currently-selected image is not animated."
+		                " This can be run without specifying data.");
 		break;
 	}
 }
@@ -2138,8 +2117,10 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		L("pruner",
 		  "Declaratively specified pruning instructions. Use help to get list of commands.",
 		  nqiv_cmd_parser_append_pruner, nqiv_cmd_parser_print_pruner, pruner_args);
-		L("extension", "Add an image extension to be accepted.", nqiv_cmd_parser_append_extension,
-		  nqiv_cmd_parser_print_extension, string_args);
+		DEPRECATE L("extension",
+		            "(DEPRECATED nqiv will not be handling this for now) Add an image extension to "
+		            "be accepted.",
+					nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, string_args);
 		L("keybind", "Add a keybind.", nqiv_cmd_parser_append_keybind,
 		  nqiv_cmd_parser_print_keybind, keybind_args);
 	}
