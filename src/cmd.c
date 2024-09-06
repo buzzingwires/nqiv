@@ -1278,7 +1278,8 @@ void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		fprintf(stdout, "'self_opened' will check if the currently-selected image is loaded.\n");
 		print_prefix(manager);
 		fprintf(stdout,
-		        "'not_animated' will check if the currently-selected image is not animated.");
+		        "'not_animated' will check if the currently-selected image is not animated."
+				" This can be run without specifying data.");
 		break;
 	}
 }
