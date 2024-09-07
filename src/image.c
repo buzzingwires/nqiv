@@ -913,51 +913,47 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
 	assert(dstrect->x >= 0);
 	assert(dstrect->y >= 0);
 
-	SDL_Rect canvas_rect;
-	canvas_rect.x = 0;
-	canvas_rect.y = 0;
+	double canvas_rect_w;
+	double canvas_rect_h;
 	if(srcrect->w > srcrect->h) {
 		const double screen_aspect = (double)dstrect->h / (double)dstrect->w;
-		canvas_rect.w = srcrect->w;
-		canvas_rect.h = (int)((double)srcrect->w * screen_aspect);
+		canvas_rect_w = (double)srcrect->w;
+		canvas_rect_h = (double)srcrect->w * screen_aspect;
 	} else {
 		const double screen_aspect = (double)dstrect->w / (double)dstrect->h;
-		canvas_rect.w = (int)((double)srcrect->h * screen_aspect);
-		canvas_rect.h = srcrect->h;
+		canvas_rect_w = (double)srcrect->h * screen_aspect;
+		canvas_rect_h = srcrect->h;
 	}
 	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG,
-	               "Canvas - CanvasRect: %dx%d+%dx%d SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
-	               canvas_rect.w, canvas_rect.h, canvas_rect.x, canvas_rect.y, srcrect->w,
-	               srcrect->h, srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x,
-	               dstrect->y);
+	               "Canvas - CanvasRect: %fx%f SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
+	               canvas_rect_w, canvas_rect_h, srcrect->w, srcrect->h, srcrect->x, srcrect->y,
+	               dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 
 	if(do_zoom) {
-		canvas_rect.w = (int)((double)canvas_rect.w * manager->zoom.image_to_viewport_ratio);
-		canvas_rect.h = (int)((double)canvas_rect.h * manager->zoom.image_to_viewport_ratio);
+		canvas_rect_w *= manager->zoom.image_to_viewport_ratio;
+		canvas_rect_h *= manager->zoom.image_to_viewport_ratio;
 		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Zoom - Zoom Ratio: %f\n",
 		               manager->zoom.image_to_viewport_ratio);
 		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG,
-		               "Zoom - CanvasRect: %dx%d+%dx%d SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
-		               canvas_rect.w, canvas_rect.h, canvas_rect.x, canvas_rect.y, srcrect->w,
-		               srcrect->h, srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x,
-		               dstrect->y);
+		               "Zoom - CanvasRect: %fx%f SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
+		               canvas_rect_w, canvas_rect_h, srcrect->w, srcrect->h, srcrect->x, srcrect->y,
+		               dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 	}
 
-	if(srcrect->w > canvas_rect.w) {
-		const int diff = (srcrect->w - canvas_rect.w);
-		srcrect->w -= diff;
-		srcrect->x += diff / 2;
+	if((double)srcrect->w > canvas_rect_w) {
+		const double diff = (double)srcrect->w - canvas_rect_w;
+		srcrect->w -= (int)(diff);
+		srcrect->x += (int)(diff / 2.0);
 	}
-	if(srcrect->h > canvas_rect.h) {
-		const int diff = (srcrect->h - canvas_rect.h);
-		srcrect->h -= diff;
-		srcrect->y += diff / 2;
+	if((double)srcrect->h > canvas_rect_h) {
+		const double diff = (double)srcrect->h - canvas_rect_h;
+		srcrect->h -= (int)(diff);
+		srcrect->y += (int)(diff / 2.0);
 	}
 	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG,
-	               "Adjust - CanvasRect: %dx%d+%dx%d SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
-	               canvas_rect.w, canvas_rect.h, canvas_rect.x, canvas_rect.y, srcrect->w,
-	               srcrect->h, srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x,
-	               dstrect->y);
+	               "Adjust - CanvasRect: %fx%f SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
+	               canvas_rect_w, canvas_rect_h, srcrect->w, srcrect->h, srcrect->x, srcrect->y,
+	               dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 
 	if(do_zoom) {
 		srcrect->x += (int)((double)srcrect->x * manager->zoom.viewport_horizontal_shift);
@@ -966,17 +962,16 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
 			manager->logger, NQIV_LOG_DEBUG, "Move - Horizontal Shift: %f Vertical Shift: %f\n",
 			manager->zoom.viewport_horizontal_shift, manager->zoom.viewport_vertical_shift);
 		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG,
-		               "Move - CanvasRect: %dx%d+%dx%d SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
-		               canvas_rect.w, canvas_rect.h, canvas_rect.x, canvas_rect.y, srcrect->w,
-		               srcrect->h, srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x,
-		               dstrect->y);
+		               "Move - CanvasRect: %fx%f SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
+		               canvas_rect_w, canvas_rect_h, srcrect->w, srcrect->h, srcrect->x, srcrect->y,
+		               dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 	}
 
 	if(!do_stretch) {
 		const int    display_width = dstrect->w;
 		const int    display_height = dstrect->h;
-		const double canvas_dst_w_ratio = (double)dstrect->w / (double)canvas_rect.w;
-		const double canvas_dst_h_ratio = (double)dstrect->h / (double)canvas_rect.h;
+		const double canvas_dst_w_ratio = (double)dstrect->w / canvas_rect_w;
+		const double canvas_dst_h_ratio = (double)dstrect->h / canvas_rect_h;
 		const int    new_src_w = (int)((double)srcrect->w * canvas_dst_w_ratio);
 		const int    new_src_h = (int)((double)srcrect->h * canvas_dst_h_ratio);
 		dstrect->w = new_src_w;
@@ -990,10 +985,9 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
 			dstrect->y += diff / 2;
 		}
 		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG,
-		               "Fit - CanvasRect: %dx%d+%dx%d SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
-		               canvas_rect.w, canvas_rect.h, canvas_rect.x, canvas_rect.y, srcrect->w,
-		               srcrect->h, srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x,
-		               dstrect->y);
+		               "Fit - CanvasRect: %fx%f SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
+		               canvas_rect_w, canvas_rect_h, srcrect->w, srcrect->h, srcrect->x, srcrect->y,
+		               dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 	}
 	if(dstrect->x < 0) {
 		dstrect->x = 0;
