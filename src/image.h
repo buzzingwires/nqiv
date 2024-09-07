@@ -128,7 +128,7 @@ struct nqiv_image_manager
 	nqiv_array*                           images;
 };
 
-void nqiv_log_vips_exception(nqiv_log_ctx* logger, const char* path);
+void nqiv_log_vips_exception(nqiv_log_ctx* logger, nqiv_image* image, nqiv_image_form* form);
 
 void nqiv_image_unlock(nqiv_image* image);
 void nqiv_image_lock(nqiv_image* image);
@@ -159,11 +159,11 @@ void nqiv_image_manager_pan_down_more(nqiv_image_manager* manager);
 void nqiv_image_manager_zoom_in_more(nqiv_image_manager* manager);
 void nqiv_image_manager_zoom_out_more(nqiv_image_manager* manager);
 
-void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
-                                           const bool          do_zoom,
-                                           const bool          do_stretch,
-                                           SDL_Rect*           srcrect,
-                                           SDL_Rect*           dstrect);
+void nqiv_image_manager_retrieve_zoomrect(nqiv_image_manager* manager,
+                                          const bool          do_zoom,
+                                          const bool          do_stretch,
+                                          SDL_Rect*           srcrect,
+                                          SDL_Rect*           dstrect);
 void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
                                                   const bool          tight_fit,
                                                   const SDL_Rect*     srcrect,

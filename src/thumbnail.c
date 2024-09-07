@@ -155,14 +155,14 @@ bool nqiv_thumbnail_create_vips(nqiv_image* image)
 	VipsImage* old_vips;
 	VipsImage* thumbnail_vips;
 	if(vips_copy(image->image.vips, &thumbnail_vips, NULL) == -1) {
-		nqiv_log_vips_exception(image->parent->logger, image->image.path);
+		nqiv_log_vips_exception(image->parent->logger, image, &image->image);
 		return false;
 	}
 	old_vips = thumbnail_vips;
 	if(vips_crop(old_vips, &thumbnail_vips, 0, 0, image->image.width, image->image.height, NULL)
 	   == -1) {
 		g_object_unref(old_vips);
-		nqiv_log_vips_exception(image->parent->logger, image->image.path);
+		nqiv_log_vips_exception(image->parent->logger, image, &image->image);
 		return false;
 	}
 	g_object_unref(old_vips);
@@ -171,7 +171,7 @@ bool nqiv_thumbnail_create_vips(nqiv_image* image)
 	old_vips = thumbnail_vips;
 	if(vips_thumbnail_image(old_vips, &thumbnail_vips, image->parent->thumbnail.size, NULL) == -1) {
 		g_object_unref(old_vips);
-		nqiv_log_vips_exception(image->parent->logger, image->image.path);
+		nqiv_log_vips_exception(image->parent->logger, image, &image->image);
 		return false;
 	}
 	g_object_unref(old_vips);
@@ -233,7 +233,7 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 		return false;
 	}
 	if(vips_image_write_to_file(image->thumbnail.vips, image->thumbnail.path, NULL) == -1) {
-		nqiv_log_vips_exception(image->parent->logger, image->image.path);
+		nqiv_log_vips_exception(image->parent->logger, image, &image->image);
 		return false;
 	}
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
@@ -281,7 +281,7 @@ bool nqiv_thumbnail_matches_image(nqiv_image* image)
 	                         &thumbnail_mtime)
 	   == -1) {
 		g_strfreev(header_field_names);
-		nqiv_log_vips_exception(image->parent->logger, image->image.path);
+		nqiv_log_vips_exception(image->parent->logger, image, &image->image);
 		return false;
 	}
 	g_strfreev(header_field_names);

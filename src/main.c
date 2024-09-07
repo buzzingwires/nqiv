@@ -457,7 +457,6 @@ bool nqiv_send_thread_event_base(nqiv_state*       state,
                                  const nqiv_event* event,
                                  const bool        force)
 {
-	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Sending event.\n");
 	bool event_sent;
 	if(force) {
 		nqiv_priority_queue_push_force(&state->thread_queue, level, event);
@@ -471,7 +470,6 @@ bool nqiv_send_thread_event_base(nqiv_state*       state,
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to send event.\n");
 		return false;
 	}
-	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent successfully.\n");
 	return true;
 }
 
@@ -599,9 +597,9 @@ bool render_from_form(nqiv_state*     state,
 					nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage,
 					                                             &tmp_srcrect, &tmp_dstrect);
 					nqiv_apply_zoom_modifications(state, first_frame);
-					nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage,
-					                                      state->stretch_images, &tmp_srcrect,
-					                                      &tmp_dstrect);
+					nqiv_image_manager_retrieve_zoomrect(&state->images, !is_montage,
+					                                     state->stretch_images, &tmp_srcrect,
+					                                     &tmp_dstrect);
 					if(!nqiv_state_update_alpha_background_dimensions(state, tmp_dstrect.w,
 					                                                  tmp_dstrect.h)) {
 						return false;
@@ -670,8 +668,8 @@ bool render_from_form(nqiv_state*     state,
 		nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect,
 		                                             dstrect_zoom_ptr);
 		nqiv_apply_zoom_modifications(state, first_frame);
-		nqiv_image_manager_calculate_zoomrect(&state->images, !is_montage, state->stretch_images,
-		                                      &srcrect, dstrect_zoom_ptr);
+		nqiv_image_manager_retrieve_zoomrect(&state->images, !is_montage, state->stretch_images,
+		                                     &srcrect, dstrect_zoom_ptr);
 		if(!state->no_resample_oversized && (form->height > 16000 || form->width > 16000)) {
 			if(form->srcrect.x != srcrect.x || form->srcrect.y != srcrect.y
 			   || form->srcrect.w != srcrect.w || form->srcrect.h != srcrect.h) {
@@ -708,7 +706,7 @@ bool render_from_form(nqiv_state*     state,
 				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect,
 				                                             dstrect_zoom_ptr);
 				nqiv_apply_zoom_modifications(state, first_frame);
-				nqiv_image_manager_calculate_zoomrect(
+				nqiv_image_manager_retrieve_zoomrect(
 					&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr);
 			}
 		}
@@ -1518,7 +1516,6 @@ bool nqiv_master_thread(nqiv_state* state)
 	bool result = true;
 	bool running = true;
 	while(running) {
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Waiting on SDL event.\n");
 		SDL_PumpEvents();
 		SDL_Event input_event = {0};
 		const int event_result = SDL_WaitEvent(&input_event);
@@ -1529,11 +1526,8 @@ bool nqiv_master_thread(nqiv_state* state)
 			result = false;
 			continue;
 		}
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received SDL event.\n");
 		switch(input_event.type) {
 		case SDL_USEREVENT:
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
-			               "Received response from worker thread.\n");
 			if(input_event.user.code >= 0) {
 				if((Uint32)input_event.user.code == state->thread_event_number) {
 					render_and_update(state, &running, &result, false, false);
@@ -1554,19 +1548,15 @@ bool nqiv_master_thread(nqiv_state* state)
 			   || input_event.window.event == SDL_WINDOWEVENT_SHOWN
 			   || input_event.window.event == SDL_WINDOWEVENT_ICCPROF_CHANGED
 			   || input_event.window.event == SDL_WINDOWEVENT_DISPLAY_CHANGED) {
-				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
-				               "Received window event for redrawing.\n");
 				render_and_update(state, &running, &result, false, false);
 			}
 			break;
 		case SDL_QUIT:
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received window quit event.\n");
 			running = false;
 			break;
 		case SDL_KEYDOWN:
 		case SDL_KEYUP:
 			assert(input_event.type == SDL_KEYDOWN || input_event.type == SDL_KEYUP);
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received key event.\n");
 			{
 				nqiv_key_match match = {0};
 				if(input_event.key.keysym.scancode != SDL_SCANCODE_UNKNOWN) {
@@ -1593,7 +1583,6 @@ bool nqiv_master_thread(nqiv_state* state)
 		case SDL_MOUSEBUTTONUP:
 			assert(input_event.type == SDL_MOUSEBUTTONDOWN
 			       || input_event.type == SDL_MOUSEBUTTONUP);
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received mouse button event.\n");
 			{
 				nqiv_key_match match = {0};
 				match.mode |= NQIV_KEY_MATCH_MODE_MOUSE_BUTTON;
@@ -1615,7 +1604,6 @@ bool nqiv_master_thread(nqiv_state* state)
 			break;
 		case SDL_MOUSEWHEEL:
 			assert(input_event.type == SDL_MOUSEWHEEL);
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received mouse wheel event.\n");
 			{
 				nqiv_key_match match = {0};
 				if(input_event.wheel.x < 0) {
@@ -1644,7 +1632,6 @@ bool nqiv_master_thread(nqiv_state* state)
 			}
 			break;
 		case SDL_MOUSEMOTION:
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received mouse motion event.\n");
 			if(state->is_mouse_panning && !state->in_montage) {
 				SDL_Rect coordinates = {0};
 				SDL_GetWindowSizeInPixels(state->window, &coordinates.w, &coordinates.h);
@@ -1659,7 +1646,7 @@ bool nqiv_master_thread(nqiv_state* state)
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Finished waiting on events.\n");
 	int idx;
 	for(idx = 0; idx < state->thread_count; ++idx) {
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Killing thread %d.\n", idx);
+		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Killing worker %d.\n", idx);
 		nqiv_event output_event = {0};
 		output_event.type = NQIV_EVENT_WORKER_STOP;
 		nqiv_send_thread_event_force(state, 0, &output_event);

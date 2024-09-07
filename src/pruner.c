@@ -98,7 +98,6 @@ void nqiv_pruner_run_loaded_ahead(nqiv_pruner*                pruner,
                                   nqiv_pruner_desc_datapoint* datapoint,
                                   const void*                 object)
 {
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking loaded_ahead\n");
 	if(datapoint->active && object != NULL
 	   && (pruner->state.idx - pruner->state.montage_end) + 1
 	          > datapoint->condition.as_int_pair[0]) {
@@ -110,7 +109,6 @@ void nqiv_pruner_run_loaded_behind(nqiv_pruner*                pruner,
                                    nqiv_pruner_desc_datapoint* datapoint,
                                    const void*                 object)
 {
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking loaded_behind\n");
 	if(datapoint->active && object != NULL
 	   && (pruner->state.montage_start - pruner->state.idx) > datapoint->condition.as_int_pair[0]) {
 		nqiv_pruner_loaded_count_body(pruner, datapoint, 1);
@@ -122,7 +120,6 @@ void nqiv_pruner_run_bytes_ahead(nqiv_pruner*                pruner,
                                  const void*                 object,
                                  const int                   size)
 {
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking bytes_ahead\n");
 	if(datapoint->active && object != NULL
 	   && (pruner->state.idx - pruner->state.montage_end) + 1
 	          > datapoint->condition.as_int_pair[0]) {
@@ -135,7 +132,6 @@ void nqiv_pruner_run_bytes_behind(nqiv_pruner*                pruner,
                                   const void*                 object,
                                   const int                   size)
 {
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking bytes_behind\n");
 	if(datapoint->active && object != NULL
 	   && (pruner->state.montage_start - pruner->state.idx) > datapoint->condition.as_int_pair[0]) {
 		nqiv_pruner_loaded_count_body(pruner, datapoint, size);
@@ -167,31 +163,23 @@ void nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqi
 	 * 2 (max count) ), void ptr */
 	/* CHeck bytes behind, pruner, form (param), datapoint ( param 1 (point to start counting),
 	 * param 2 (max count) ), void ptr */
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking vips_set\n");
 	nqiv_pruner_run_set(pruner, &(desc->vips_set), &image->image, image->image.vips,
 	                    image->image.effective_width * image->image.effective_height * 4);
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking raw_set\n");
 	nqiv_pruner_run_set(pruner, &(desc->raw_set), &image->image, image->image.data,
 	                    image->image.effective_width * image->image.effective_height * 4);
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking surface_set\n");
 	nqiv_pruner_run_set(pruner, &(desc->surface_set), &image->image, image->image.surface,
 	                    image->image.effective_width * image->image.effective_height * 4);
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking texture_set\n");
 	nqiv_pruner_run_set(pruner, &(desc->texture_set), &image->image, image->image.texture,
 	                    image->image.effective_width * image->image.effective_height * 4);
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking thumbnail_vips_set\n");
 	nqiv_pruner_run_set(pruner, &(desc->thumbnail_vips_set), &image->thumbnail,
 	                    image->thumbnail.vips,
 	                    image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking thumbnail_raw_set\n");
 	nqiv_pruner_run_set(pruner, &(desc->thumbnail_raw_set), &image->thumbnail,
 	                    image->thumbnail.data,
 	                    image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking thumbnail_surface_set\n");
 	nqiv_pruner_run_set(pruner, &(desc->thumbnail_surface_set), &image->thumbnail,
 	                    image->thumbnail.surface,
 	                    image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Prune checking thumbnail_texture_set\n");
 	nqiv_pruner_run_set(pruner, &(desc->thumbnail_texture_set), &image->thumbnail,
 	                    image->thumbnail.texture,
 	                    image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
@@ -225,7 +213,6 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 		pruner->state.or_result = false;
 		pruner->state.and_result = false;
 		pruner->state.and_is_set = false;
-		nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Checking prune directive %d.\n", idx);
 		nqiv_pruner_run_desc(pruner, desc, image);
 		if((desc->counter & NQIV_PRUNER_COUNT_OP_SUM
 		    && pruner->state.total_sum > desc->state_check.total_sum)
@@ -301,7 +288,7 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 			if(send_event) {
 				prune_count += 1;
 			}
-			nqiv_log_write(pruner->logger, NQIV_LOG_INFO,
+			nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG,
 			               "%sending prune event for image %d desc %d/%d.\n",
 			               send_event ? "S" : "Not s", iidx, idx, num_descs);
 			if(send_event) {
@@ -363,6 +350,10 @@ int nqiv_pruner_run(nqiv_pruner*         pruner,
 		nqiv_pruner_clean_desc(&descs_array[idx]);
 	}
 	memset(&pruner->state, 0, sizeof(nqiv_pruner_state));
+	if(output > 0) {
+		nqiv_log_write(pruner->logger, NQIV_LOG_INFO,
+		               "Sending %d prune events (texture prunes not counted).\n", output);
+	}
 	return output;
 }
 

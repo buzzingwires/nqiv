@@ -102,62 +102,49 @@ nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* path)
 	const size_t path_size = path_len + 1;
 	nqiv_image*  image = (nqiv_image*)calloc(1, sizeof(nqiv_image));
 	if(image == NULL) {
-		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to allocate memory for image at path %s.",
+		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to allocate memory for image at path %s",
 		               path);
 		return image;
 	}
 	image->image.path = calloc(1, path_size);
 	if(image->image.path == NULL) {
-		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to allocate memory for path data %s.", path);
+		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to allocate memory for path data %s", path);
 		nqiv_image_destroy(image);
 		return NULL;
 	}
 	omp_init_lock(&image->lock);
 	memcpy(image->image.path, path, path_len);
 	assert(strcmp(image->image.path, path) == 0);
-	nqiv_log_write(logger, NQIV_LOG_DEBUG, "Created image %s.\n", image->image.path);
+	nqiv_log_write(logger, NQIV_LOG_DEBUG, "Created image %s\n", image->image.path);
 	return image;
 }
 
-void nqiv_log_vips_exception(nqiv_log_ctx* logger, const char* path)
+void nqiv_log_vips_exception(nqiv_log_ctx* logger, nqiv_image* image, nqiv_image_form* form)
 {
-	assert(logger != NULL);
-	assert(path != NULL);
 	char* error = vips_error_buffer_copy();
-	nqiv_log_write(logger, NQIV_LOG_WARNING, "Vips exception for path %s: %s\n", path, error);
+	nqiv_log_write(logger, NQIV_LOG_WARNING, "Vips exception for form %s of path %s (%s)\n",
+	               form == &image->image ? "image" : "thumbnail", image->image.path, error);
 	g_free(error);
 }
 
 void nqiv_image_unlock(nqiv_image* image)
 {
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Unlocking image %s, from thread %d.\n",
-	               image->image.path, omp_get_thread_num());
 	omp_unset_lock(&image->lock);
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Unlocked image %s, from thread %d.\n",
-	               image->image.path, omp_get_thread_num());
 }
 
 void nqiv_image_lock(nqiv_image* image)
 {
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n",
-	               image->image.path, omp_get_thread_num());
 	omp_set_lock(&image->lock);
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n",
-	               image->image.path, omp_get_thread_num());
 }
 
 bool nqiv_image_test_lock(nqiv_image* image)
 {
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Locking image %s, from thread %d.\n",
-	               image->image.path, omp_get_thread_num());
 	if(!omp_test_lock(&image->lock)) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
 		               "Failed to lock image %s, from thread %d.\n", image->image.path,
 		               omp_get_thread_num());
 		return false;
 	}
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Locked image %s, from thread %d.\n",
-	               image->image.path, omp_get_thread_num());
 	return true;
 }
 
@@ -195,7 +182,7 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 {
 	char* delay_string;
 	if(vips_image_get_as_string(form->vips, "delay", &delay_string) == -1) {
-		nqiv_log_vips_exception(image->parent->logger, image->image.path);
+		nqiv_log_vips_exception(image->parent->logger, image, form);
 		form->error = true;
 		return false;
 	}
@@ -203,7 +190,7 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 	if(idx == -1) {
 		g_free(delay_string);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-		               "Unable to find delay for frame %d of '%s'.\n", form->animation.frame,
+		               "Unable to find delay for frame %d of %s\n", form->animation.frame,
 		               image->image.path);
 		form->error = true;
 		return false;
@@ -223,7 +210,7 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 		form->animation.delay = image->parent->default_frame_time;
 	} else if(delay_value < 0) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-		               "Invalid delay of %d for frame %d of '%s'.\n", delay_value,
+		               "Invalid delay of %d for frame %d of %s\n", delay_value,
 		               form->animation.frame, image->image.path);
 		form->error = true;
 		return false;
@@ -239,14 +226,14 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 	assert(form != NULL);
 	assert(form->vips == NULL);
 	if(form->path == NULL) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "No path for form in image %s.\n",
-		               image->image.path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "No path for %s form in image %s\n",
+		               form == &image->image ? "image" : "thumbnail", image->image.path);
 		form->error = true;
 		return false;
 	}
 	form->vips = vips_image_new_from_file(form->path, NULL);
 	if(form->vips == NULL || !vips_colourspace_issupported(form->vips)) {
-		nqiv_log_vips_exception(image->parent->logger, form->path);
+		nqiv_log_vips_exception(image->parent->logger, image, form);
 		form->error = true;
 		return false;
 	}
@@ -264,21 +251,21 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 	if(form->animation.frame_count > 1) {
 		form->animation.exists = true;
 		if(!nqiv_image_form_set_frame_delay(image, form)) {
-			nqiv_log_vips_exception(image->parent->logger, form->path);
+			nqiv_log_vips_exception(image->parent->logger, image, form);
 			form->error = true;
 			return false;
 		}
 		g_object_unref(form->vips);
 		form->vips = vips_image_new_from_file(form->path, "n", form->animation.frame_count, NULL);
 		if(form->vips == NULL) {
-			nqiv_log_vips_exception(image->parent->logger, form->path);
+			nqiv_log_vips_exception(image->parent->logger, image, form);
 			form->error = true;
 			return false;
 		}
 	}
 
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "%s vips for image loaded.\n",
-	               image->image.path);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Form %s vips for loaded for image %s\n",
+	               form == &image->image ? "image" : "thumbnail", image->image.path);
 	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
 }
@@ -300,18 +287,18 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		if(vips_crop(used_vips, &new_vips, form->srcrect.x, form->srcrect.y + frame_offset,
 		             form->srcrect.w, form->srcrect.h, NULL)
 		   == -1) {
-			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-			               "Failed to crop out oversized vips region to resize for %s.\n",
-			               form->path);
+			nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
+			               "Failed to crop out oversized vips region to resize of form %s of %s\n",
+			               form == &image->image ? "image" : "thumbnail", image->image.path);
 			form->error = true;
 			return false;
 		}
 		used_vips = new_vips;
 		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
-		               "Cropped selection from %dx%d+%dx%d to %dx%d for %s.\n", form->srcrect.w,
-		               form->srcrect.h, form->srcrect.x, form->srcrect.y,
+		               "Cropped selection from %dx%d+%dx%d to %dx%d for form %s of %s\n",
+		               form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y,
 		               vips_image_get_width(used_vips), vips_image_get_height(used_vips),
-		               image->image.path);
+		               form == &image->image ? "image" : "thumbnail", image->image.path);
 	}
 
 	if(form->srcrect.w > 16000 || form->srcrect.h > 16000) {
@@ -322,8 +309,9 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 			if(used_vips != form->vips) {
 				g_object_unref(used_vips);
 			}
-			nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-			               "Failed to resize oversized vips region for %s.", form->path);
+			nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
+			               "Failed to resize oversized vips region for form %s of %s",
+			               form == &image->image ? "image" : "thumbnail", image->image.path);
 			form->error = true;
 			return false;
 		}
@@ -332,10 +320,10 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		}
 		used_vips = new_vips;
 		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
-		               "Resized oversized selection %dx%d+%dx%d to %dx%d for %s.\n",
+		               "Resized oversized selection %dx%d+%dx%d to %dx%d for form %s of %s\n",
 		               form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y,
 		               vips_image_get_width(used_vips), vips_image_get_height(used_vips),
-		               image->image.path);
+		               form == &image->image ? "image" : "thumbnail", image->image.path);
 	}
 
 	const VipsBandFormat band_format = vips_image_get_format(used_vips);
@@ -343,7 +331,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		if(used_vips != form->vips) {
 			g_object_unref(used_vips);
 		}
-		nqiv_log_vips_exception(image->parent->logger, form->path);
+		nqiv_log_vips_exception(image->parent->logger, image, form);
 		form->error = true;
 		return false;
 	}
@@ -352,7 +340,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 			if(used_vips != form->vips) {
 				g_object_unref(used_vips);
 			}
-			nqiv_log_vips_exception(image->parent->logger, form->path);
+			nqiv_log_vips_exception(image->parent->logger, image, form);
 			form->error = true;
 			return false;
 		}
@@ -367,7 +355,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		if(used_vips != form->vips) {
 			g_object_unref(used_vips);
 		}
-		nqiv_log_vips_exception(image->parent->logger, form->path);
+		nqiv_log_vips_exception(image->parent->logger, image, form);
 		form->error = true;
 		return false;
 	}
@@ -376,7 +364,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 			if(used_vips != form->vips) {
 				g_object_unref(used_vips);
 			}
-			nqiv_log_vips_exception(image->parent->logger, form->path);
+			nqiv_log_vips_exception(image->parent->logger, image, form);
 			form->error = true;
 			return false;
 		}
@@ -391,7 +379,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 			if(used_vips != form->vips) {
 				g_object_unref(used_vips);
 			}
-			nqiv_log_vips_exception(image->parent->logger, form->path);
+			nqiv_log_vips_exception(image->parent->logger, image, form);
 			form->error = true;
 			return false;
 		}
@@ -406,8 +394,9 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		if(used_vips != form->vips) {
 			g_object_unref(used_vips);
 		}
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Failed to extract raw image data at path %s.\n", form->path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
+		               "Failed to extract raw image data for form %s of %s\n",
+		               form == &image->image ? "image" : "thumbnail", image->image.path);
 		form->error = true;
 		return false;
 	}
@@ -419,8 +408,9 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		if(used_vips != form->vips) {
 			g_object_unref(used_vips);
 		}
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Failed to allocate memory for raw image data at path %s.\n", form->path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
+		               "Failed to allocate memory for raw image data for form %s of %s\n",
+		               form == &image->image ? "image" : "thumbnail", image->image.path);
 		form->error = true;
 		return false;
 	}
@@ -431,10 +421,12 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	if(used_vips != form->vips) {
 		g_object_unref(used_vips);
 	}
-	nqiv_log_write(
-		image->parent->logger, NQIV_LOG_DEBUG,
-		"Loaded raw of size %zu for image %s frame %d with pixel offset %d at delay of %d.\n",
-		data_size, image->image.path, form->animation.frame, frame_offset, form->animation.delay);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
+	               "Loaded raw of size %zu for image form %s frame %d with pixel offset %d at "
+	               "delay of %d at path %s\n",
+	               data_size, form == &image->image ? "image" : "thumbnail", form->animation.frame,
+	               frame_offset, form->animation.delay,
+	               form == &image->image ? "image" : "thumbnail", image->image.path);
 	return true;
 }
 
@@ -449,14 +441,15 @@ bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form)
 		form->data, form->effective_width, form->effective_height, 4 * 8, 4 * form->effective_width,
 		SDL_PIXELFORMAT_ABGR8888);
 	if(form->surface == NULL) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Failed to create SDL surface for path %s (%s).", form->path,
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
+		               "Failed to create SDL surface for form %s of %s (%s).",
+		               form == &image->image ? "image" : "thumbnail", image->image.path,
 		               SDL_GetError());
 		form->error = true;
 		return false;
 	}
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded surface for image %s.\n",
-	               image->image.path);
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded surface of form %s of image %s\n",
+	               form == &image->image ? "image" : "thumbnail", image->image.path);
 	return true;
 }
 
@@ -484,21 +477,21 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 	if(image->thumbnail.vips == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
 		               "Not borrowing dimension metadata from thumbnail because the vips image is "
-		               "unavailable for image %s.\n",
+		               "unavailable for image %s\n",
 		               image->image.path);
 		return true;
 	}
 	if(image->image.width != 0 || image->image.height != 0) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
 		               "Not borrowing dimension metadata from thumbnail because it's already set "
-		               "for image %s.\n",
+		               "for image %s\n",
 		               image->image.path);
 		return true;
 	}
 	gchar** header_field_names = vips_image_get_fields(image->thumbnail.vips);
 	if(header_field_names == NULL) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
-		               "Failed to get vips header field names for image %s.\n", image->image.path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
+		               "Failed to get vips header field names for image %s\n", image->image.path);
 		return false;
 	}
 	const int width_string_idx =
@@ -506,7 +499,7 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 	if(width_string_idx == -1) {
 		g_strfreev(header_field_names);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-		               "Failed to lookup width metadata from thumbnail for %s.\n",
+		               "Failed to lookup width metadata from thumbnail for %s\n",
 		               image->image.path);
 		return false;
 	}
@@ -515,7 +508,7 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 	if(height_string_idx == -1) {
 		g_strfreev(header_field_names);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-		               "Failed to lookup height metadata from thumbnail for %s.\n",
+		               "Failed to lookup height metadata from thumbnail for %s\n",
 		               image->image.path);
 		return false;
 	}
@@ -525,7 +518,7 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 	   == -1) {
 		g_strfreev(header_field_names);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-		               "Failed to get width metadata from thumbnail for %s.\n", image->image.path);
+		               "Failed to get width metadata from thumbnail for %s\n", image->image.path);
 		return false;
 	}
 	const char* height_string;
@@ -534,24 +527,24 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 	   == -1) {
 		g_strfreev(header_field_names);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-		               "Failed to get height metadata from thumbnail for %s.\n", image->image.path);
+		               "Failed to get height metadata from thumbnail for %s\n", image->image.path);
 		return false;
 	}
 	g_strfreev(header_field_names);
 	const int width_value = strtol(width_string, NULL, 10);
 	if(width_value == 0 || errno == ERANGE) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-		               "Invalid width for thumbnail of '%s'.\n", image->image.path);
+		               "Invalid width for thumbnail of %s\n", image->image.path);
 		return false;
 	}
 	const int height_value = strtol(height_string, NULL, 10);
 	if(height_value == 0 || errno == ERANGE) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-		               "Invalid height for thumbnail of '%s'.\n", image->image.path);
+		               "Invalid height for thumbnail of %s\n", image->image.path);
 		return false;
 	}
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
-	               "Borrowing dimension metadata from thumbnail set for image %s.\n",
+	               "Borrowing dimension metadata from thumbnail set for image %s\n",
 	               image->image.path);
 	image->image.width = width_value;
 	image->image.height = height_value;
@@ -924,20 +917,10 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
 		canvas_rect_w = (double)srcrect->h * screen_aspect;
 		canvas_rect_h = srcrect->h;
 	}
-	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG,
-	               "Canvas - CanvasRect: %fx%f SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
-	               canvas_rect_w, canvas_rect_h, srcrect->w, srcrect->h, srcrect->x, srcrect->y,
-	               dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 
 	if(do_zoom) {
 		canvas_rect_w *= manager->zoom.image_to_viewport_ratio;
 		canvas_rect_h *= manager->zoom.image_to_viewport_ratio;
-		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG, "Zoom - Zoom Ratio: %f\n",
-		               manager->zoom.image_to_viewport_ratio);
-		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG,
-		               "Zoom - CanvasRect: %fx%f SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
-		               canvas_rect_w, canvas_rect_h, srcrect->w, srcrect->h, srcrect->x, srcrect->y,
-		               dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 	}
 
 	if((double)srcrect->w > canvas_rect_w) {
@@ -950,21 +933,10 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
 		srcrect->h -= (int)(diff);
 		srcrect->y += (int)(diff / 2.0);
 	}
-	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG,
-	               "Adjust - CanvasRect: %fx%f SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
-	               canvas_rect_w, canvas_rect_h, srcrect->w, srcrect->h, srcrect->x, srcrect->y,
-	               dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 
 	if(do_zoom) {
 		srcrect->x += (int)((double)srcrect->x * manager->zoom.viewport_horizontal_shift);
 		srcrect->y += (int)((double)srcrect->y * manager->zoom.viewport_vertical_shift);
-		nqiv_log_write(
-			manager->logger, NQIV_LOG_DEBUG, "Move - Horizontal Shift: %f Vertical Shift: %f\n",
-			manager->zoom.viewport_horizontal_shift, manager->zoom.viewport_vertical_shift);
-		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG,
-		               "Move - CanvasRect: %fx%f SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
-		               canvas_rect_w, canvas_rect_h, srcrect->w, srcrect->h, srcrect->x, srcrect->y,
-		               dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 	}
 
 	if(!do_stretch) {
@@ -984,10 +956,6 @@ void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
 			const int diff = display_height - dstrect->h;
 			dstrect->y += diff / 2;
 		}
-		nqiv_log_write(manager->logger, NQIV_LOG_DEBUG,
-		               "Fit - CanvasRect: %fx%f SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n",
-		               canvas_rect_w, canvas_rect_h, srcrect->w, srcrect->h, srcrect->x, srcrect->y,
-		               dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 	}
 	if(dstrect->x < 0) {
 		dstrect->x = 0;
@@ -1089,6 +1057,18 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
 	if(manager->zoom.image_to_viewport_ratio > manager->zoom.image_to_viewport_ratio_max) {
 		manager->zoom.image_to_viewport_ratio = manager->zoom.image_to_viewport_ratio_max;
 	}
+}
+
+void nqiv_image_manager_retrieve_zoomrect(nqiv_image_manager* manager,
+                                          const bool          do_zoom,
+                                          const bool          do_stretch,
+                                          SDL_Rect*           srcrect,
+                                          SDL_Rect*           dstrect)
+{
+	nqiv_image_manager_calculate_zoomrect(manager, do_zoom, do_stretch, srcrect, dstrect);
+	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG,
+	               "Zoomrect - SrcRect: %dx%d+%dx%d DstRect: %dx%d+%dx%d\n", srcrect->w, srcrect->h,
+	               srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 }
 
 int nqiv_image_manager_get_zoom_percent(nqiv_image_manager* manager)

@@ -217,8 +217,6 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 					running = false;
 				}
 			} else {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Waiting for %d from thread %d.\n",
-				               wait_time, omp_get_thread_num());
 				SDL_Delay(wait_time);
 			}
 		}
