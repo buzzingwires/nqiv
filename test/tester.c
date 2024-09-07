@@ -7,6 +7,7 @@
 #include "logging_tests.h"
 #include "array_tests.h"
 #include "pruner_tests.h"
+#include "queue_tests.h"
 #include "keybind_tests.h"
 
 #define TEST_NAME_LEN 50
@@ -188,6 +189,10 @@ test_set* create_tests(void)
 	T("array_test_default", array_test_default);
 	T("array_test_inherit", array_test_inherit);
 	T("array_test_strbuild", array_test_strbuild);
+
+	S("queue");
+	T("queue_test_default", array_test_default);
+	T("queue_test_priority_default", array_test_inherit);
 
 	S("logging");
 	T("logging_general", logging_test_general);
