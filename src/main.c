@@ -193,8 +193,16 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 
 bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* default_config_path)
 {
+	char thumbnail_cmd[PATH_MAX + 19 + 1] = "set thumbnail path ";
+	if(!nqiv_get_default_cfg_thumbnail_dir(thumbnail_cmd + 19, PATH_MAX)) {
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
+		               "Failed to retrieve reasonable path to save thumbnails in the local "
+		               "environment. Proceeding without.\n");
+		thumbnail_cmd[19] = '\0';
+	}
 	const char* cmds[] = {
 		"set log prefix #level# #time:%Y-%m-%d %T%z# ",
+		thumbnail_cmd,
 		"append log stream stderr",
 		"append keybind Q=quit",
 		"append keybind Home=allow_on_down+deny_on_up+montage_start",
