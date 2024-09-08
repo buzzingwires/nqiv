@@ -382,7 +382,7 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 	}
 	if(load_default) {
 		char default_config_path[PATH_MAX + 1] = {0};
-		if(nqiv_get_default_cfg(default_config_path, PATH_MAX + 1)) {
+		if(nqiv_get_default_cfg(default_config_path, PATH_MAX)) {
 			FILE* stream = fopen(default_config_path, "r");
 			if(stream != NULL) {
 				const int c = fgetc(stream);
@@ -948,15 +948,15 @@ bool render_from_form(nqiv_state*     state,
 	return true;
 }
 
-/*2305843009213693951\0*/
-#define INT_MAX_STRLEN 20
+/*2305843009213693951*/
+#define INT_MAX_STRLEN 19
 bool set_title(nqiv_state* state, nqiv_image* image)
 {
-	char idx_string[INT_MAX_STRLEN] = {0};
-	char count_string[INT_MAX_STRLEN] = {0};
-	char width_string[INT_MAX_STRLEN] = {0};
-	char height_string[INT_MAX_STRLEN] = {0};
-	char zoom_string[INT_MAX_STRLEN] = {0};
+	char idx_string[INT_MAX_STRLEN + 1] = {0};
+	char count_string[INT_MAX_STRLEN + 1] = {0};
+	char width_string[INT_MAX_STRLEN + 1] = {0};
+	char height_string[INT_MAX_STRLEN + 1] = {0};
+	char zoom_string[INT_MAX_STRLEN + 1] = {0};
 	snprintf(idx_string, INT_MAX_STRLEN, "%d", state->montage.positions.selection + 1);
 	snprintf(count_string, INT_MAX_STRLEN, "%d", nqiv_array_get_units_count(state->images.images));
 	const bool do_dimensions = image->image.width > 0 && image->image.height > 0;
@@ -987,7 +987,7 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 		image->image.path,
 		NULL,
 	};
-	char       window_title[WINDOW_TITLE_LEN] = {0};
+	char       window_title[WINDOW_TITLE_LEN + 1] = {0};
 	nqiv_array builder;
 	nqiv_array_inherit(&builder, window_title, sizeof(char), WINDOW_TITLE_LEN);
 	int idx;

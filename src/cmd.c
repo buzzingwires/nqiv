@@ -828,7 +828,7 @@ void nqiv_cmd_parser_print_pruner(nqiv_cmd_manager* manager)
 	for(idx = 0; idx < list_len; ++idx) {
 		const nqiv_pruner_desc* desc = &pruners[idx];
 		taken = true;
-		char       desc_str[NQIV_PRUNER_DESC_STRLEN] = {0};
+		char       desc_str[NQIV_PRUNER_DESC_STRLEN + 1] = {0};
 		const bool result = nqiv_pruner_desc_to_string(desc, desc_str);
 		assert(result);
 		(void)result;
@@ -858,7 +858,7 @@ void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
 	for(idx = 0; idx < list_len; ++idx) {
 		const nqiv_keybind_pair* pair = &pairs[idx];
 		taken = true;
-		char       keybind_str[NQIV_KEYBIND_STRLEN] = {0};
+		char       keybind_str[NQIV_KEYBIND_STRLEN + 1] = {0};
 		const bool result = nqiv_keybind_to_string(pair, keybind_str);
 		assert(result);
 		(void)result;
@@ -1285,7 +1285,7 @@ void nqiv_cmd_dumpcfg(nqiv_cmd_manager*    manager,
 	if(current_node->deprecated) {
 		return;
 	}
-	char       new_cmd[NQIV_CMD_DUMPCFG_BUFFER_LENGTH] = {0};
+	char       new_cmd[NQIV_CMD_DUMPCFG_BUFFER_LENGTH + 1] = {0};
 	nqiv_array new_cmd_builder;
 	nqiv_array_inherit(&new_cmd_builder, new_cmd, sizeof(char), NQIV_CMD_DUMPCFG_BUFFER_LENGTH);
 	bool new_cmd_success = true;
@@ -1681,7 +1681,7 @@ bool nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
 bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 {
 	memset(&manager->print_settings, 0, sizeof(nqiv_cmd_manager_print_settings));
-	char       current_cmd[NQIV_CMD_DUMPCFG_BUFFER_LENGTH] = {0};
+	char       current_cmd[NQIV_CMD_DUMPCFG_BUFFER_LENGTH + 1] = {0};
 	bool       current_cmd_success = true;
 	nqiv_array current_cmd_builder;
 	nqiv_array_inherit(&current_cmd_builder, current_cmd, sizeof(char),

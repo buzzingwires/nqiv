@@ -20,7 +20,7 @@ void pruner_test_default(void)
 
 	nqiv_pruner_desc               desc = {0};
 	nqiv_pruner_desc               cmp_desc = {0};
-	char                           desc_str[NQIV_PRUNER_DESC_STRLEN] = {0};
+	char                           desc_str[NQIV_PRUNER_DESC_STRLEN + 1] = {0};
 	const nqiv_pruner_desc_dataset empty_dataset = {0};
 
 	memset(&desc, 0, sizeof(nqiv_pruner_desc));

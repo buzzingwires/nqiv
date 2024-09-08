@@ -79,6 +79,11 @@ bool nqiv_get_default_cfg(char* output, const size_t length)
 	                                NQIV_CFG_DIRECTORY NQIV_CFG_FILENAME);
 }
 
+bool nqiv_get_default_cfg_thumbnail_dir(char* output, const size_t length)
+{
+	return nqiv_write_path_from_env(output, length, NQIV_CFG_ENV, NQIV_CFG_THUMBNAILS);
+}
+
 void nqiv_suggest_cfg_setup(const char* exe)
 {
 	char default_config_dir[PATH_MAX + 1] = {0};

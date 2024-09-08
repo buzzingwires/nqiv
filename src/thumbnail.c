@@ -71,7 +71,7 @@ bool nqiv_thumbnail_create_dirs(nqiv_image_manager* images, const bool failed)
 	assert(images->thumbnail.root != NULL);
 
 	nqiv_array builder;
-	char       fullpath[PATH_MAX] = {0};
+	char       fullpath[PATH_MAX + 1] = {0};
 	nqiv_array_inherit(&builder, fullpath, sizeof(char), PATH_MAX);
 
 	bool result = true;
@@ -95,7 +95,7 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 	assert(image->parent->thumbnail.root != NULL);
 
 	nqiv_array builder;
-	char       fullpath[PATH_MAX] = {0};
+	char       fullpath[PATH_MAX + 1] = {0};
 	nqiv_array_inherit(&builder, fullpath, sizeof(char), PATH_MAX);
 
 	const size_t raw_rootlen = strlen(image->parent->thumbnail.root);
@@ -211,13 +211,13 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 		               "Failed to get stat data for image at %s.\n", image->image.path);
 		return false;
 	}
-	char mtime_string[NQIV_MTIME_STRLEN] = {0};
+	char mtime_string[NQIV_MTIME_STRLEN + 1] = {0};
 	snprintf(mtime_string, NQIV_MTIME_STRLEN, "%" PRIuMAX, stat_data.mtime);
-	char size_string[NQIV_SIZE_STRLEN] = {0};
+	char size_string[NQIV_SIZE_STRLEN + 1] = {0};
 	snprintf(size_string, NQIV_SIZE_STRLEN, "%zu", stat_data.size);
-	char width_string[NQIV_DIMENSION_STRLEN] = {0};
+	char width_string[NQIV_DIMENSION_STRLEN + 1] = {0};
 	snprintf(width_string, NQIV_DIMENSION_STRLEN, "%d", image->image.width);
-	char height_string[NQIV_DIMENSION_STRLEN] = {0};
+	char height_string[NQIV_DIMENSION_STRLEN + 1] = {0};
 	snprintf(height_string, NQIV_DIMENSION_STRLEN, "%d", image->image.height);
 
 	vips_image_set_string(image->thumbnail.vips, "png-comment-0-Thumb::URI", actualpath);

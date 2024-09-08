@@ -9,13 +9,15 @@
 
 #define NQIV_CFG_FILENAME "nqiv.cfg"
 #if defined(__MINGW32__)
-	#define NQIV_CFG_MKDIR     "md"
-	#define NQIV_CFG_ENV       "USERPROFILE"
-	#define NQIV_CFG_DIRECTORY "\\AppData\\Roaming\\nqiv\\"
+	#define NQIV_CFG_MKDIR      "md"
+	#define NQIV_CFG_ENV        "USERPROFILE"
+	#define NQIV_CFG_DIRECTORY  "\\AppData\\Roaming\\nqiv\\"
+	#define NQIV_CFG_THUMBNAILS NQIV_CFG_DIRECTORY
 #else
-	#define NQIV_CFG_MKDIR     "mkdir -p"
-	#define NQIV_CFG_ENV       "HOME"
-	#define NQIV_CFG_DIRECTORY "/.config/nqiv/"
+	#define NQIV_CFG_MKDIR      "mkdir -p"
+	#define NQIV_CFG_ENV        "HOME"
+	#define NQIV_CFG_DIRECTORY  "/.config/nqiv/"
+	#define NQIV_CFG_THUMBNAILS "/.cache/"
 #endif
 
 #include <stdbool.h>
@@ -31,6 +33,7 @@ char* nqiv_realpath(const char* path, char* resolved_path);
 bool  nqiv_stat(const char* path, nqiv_stat_data* data);
 bool  nqiv_mkdir(char* path);
 bool  nqiv_get_default_cfg(char* output, const size_t length);
+bool  nqiv_get_default_cfg_thumbnail_dir(char* output, const size_t length);
 void  nqiv_suggest_cfg_setup(const char* exe);
 
 #endif /* NQIV_PLATFORM_H */
