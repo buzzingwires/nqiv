@@ -73,15 +73,22 @@ bool nqiv_write_path_from_env(char*        output,
 }
 #endif
 
-#if defined(__MINGW32__)
 bool nqiv_get_default_cfg(char* output, const size_t length)
 {
-	return nqiv_write_path_from_env(output, length, "USERPROFILE",
-	                                "\\AppData\\Roaming\\nqiv\\nqiv.cfg");
+	return nqiv_write_path_from_env(output, length, NQIV_CFG_ENV,
+	                                NQIV_CFG_DIRECTORY NQIV_CFG_FILENAME);
 }
-#else
-bool nqiv_get_default_cfg(char* output, const size_t length)
+
+void nqiv_suggest_cfg_setup(const char* exe)
 {
-	return nqiv_write_path_from_env(output, length, "HOME", "/.config/nqiv.cfg");
+	char default_config_dir[PATH_MAX + 1] = {0};
+	if(nqiv_write_path_from_env(default_config_dir, PATH_MAX, NQIV_CFG_ENV, NQIV_CFG_DIRECTORY)) {
+		fprintf(stderr,
+		        "Failed to load default config file path. Consider `" NQIV_CFG_MKDIR
+		        " \'%s\' && %s -c \'dumpcfg\' > \'%s" NQIV_CFG_FILENAME "\'` to create it?\n",
+		        default_config_dir, exe, default_config_dir);
+	} else {
+		fprintf(stderr, "Failed to get environment variable '" NQIV_CFG_ENV
+		                "' to suggest config creation command. This usually shouldn't happen.\n");
+	}
 }
-#endif

@@ -191,7 +191,7 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	return true;
 }
 
-bool nqiv_load_builtin_config(nqiv_state* state, const char* default_config_path)
+bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* default_config_path)
 {
 	const char* cmds[] = {
 		"set log prefix #level# #time:%Y-%m-%d %T%z# ",
@@ -275,10 +275,7 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* default_config_path
 		}
 	}
 	if(default_config_path != NULL) {
-		fprintf(stderr,
-		        "Failed to load default config file path. Consider `nqiv -c \"dumpcfg\" > %s` to "
-		        "create it?\n",
-		        default_config_path);
+		nqiv_suggest_cfg_setup(exe);
 	}
 	return true;
 }
@@ -390,7 +387,7 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 			if(stream != NULL) {
 				const int c = fgetc(stream);
 				if(c == EOF) {
-					if(!nqiv_load_builtin_config(state, default_config_path)) {
+					if(!nqiv_load_builtin_config(state, argv[0], default_config_path)) {
 						return false;
 					}
 				} else {
@@ -404,7 +401,7 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 				}
 				fclose(stream);
 			} else {
-				if(!nqiv_load_builtin_config(state, default_config_path)) {
+				if(!nqiv_load_builtin_config(state, argv[0], default_config_path)) {
 					return false;
 				}
 			}
@@ -421,7 +418,7 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 			success = success && nqiv_cmd_add_line_and_parse(&state->cmds, options.optarg);
 			break;
 		case 'B':
-			success = success && nqiv_load_builtin_config(state, NULL);
+			success = success && nqiv_load_builtin_config(state, argv[0], NULL);
 			break;
 		case 'C':
 			success = success && nqiv_cmd_consume_stream_from_path(&state->cmds, options.optarg);
