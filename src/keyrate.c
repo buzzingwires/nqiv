@@ -27,7 +27,8 @@ bool nqiv_keyrate_get_bool_setting(const bool* manager, const nqiv_keyrate_press
 
 bool nqiv_keyrate_filter_action(const nqiv_keyrate_manager*       manager,
                                 nqiv_keyrate_keystate*            state,
-                                const nqiv_keyrate_release_option released)
+                                const nqiv_keyrate_release_option released,
+								Uint64                            ticks)
 {
 	bool output = false;
 	if((released & NQIV_KEYRATE_ON_UP) != 0) {
@@ -47,15 +48,14 @@ bool nqiv_keyrate_filter_action(const nqiv_keyrate_manager*       manager,
 			state->ephemeral.current_delay = consecutive_delay;
 			if(start_delay == 0) {
 				output = true;
-				state->ephemeral.next_event_time =
-					SDL_GetTicks64() + state->ephemeral.current_delay;
+				state->ephemeral.next_event_time = ticks + state->ephemeral.current_delay;
 			} else {
-				state->ephemeral.next_event_time = SDL_GetTicks64() + start_delay;
+				state->ephemeral.next_event_time = ticks + start_delay;
 			}
-		} else if(SDL_GetTicks64() >= state->ephemeral.next_event_time) {
+		} else if(ticks >= state->ephemeral.next_event_time) {
 			const Uint64 delay_accel = nqiv_keyrate_get_numerical_setting(
 				&manager->settings.delay_accel, &state->settings.delay_accel);
-			state->ephemeral.next_event_time = SDL_GetTicks64() + state->ephemeral.current_delay;
+			state->ephemeral.next_event_time = ticks + state->ephemeral.current_delay;
 			if(state->ephemeral.current_delay >= delay_accel) {
 				state->ephemeral.current_delay -= delay_accel;
 			}
