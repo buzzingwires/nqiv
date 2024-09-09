@@ -126,7 +126,7 @@ bool nqiv_keybind_create_manager(nqiv_keybind_manager* manager,
  * nqiv_key_action action);*/
 void            nqiv_key_print_actions(FILE* stream);
 nqiv_key_action nqiv_text_to_key_action(const char* text, const int length);
-int             nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair);
+int             nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* pair);
 bool            nqiv_keybind_add(nqiv_keybind_manager* manager, const nqiv_keybind_pair* pair);
 bool            nqiv_keybind_to_string(const nqiv_keybind_pair* pair, char* buf);
 nqiv_key_lookup_summary

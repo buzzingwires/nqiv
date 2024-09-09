@@ -283,9 +283,14 @@ bool nqiv_text_to_keystate(char* text, const int length, nqiv_keyrate_keystate* 
 	return success;
 }
 
-int nqiv_keybind_text_to_keybind(char* text, nqiv_keybind_pair* pair)
+int nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* pair)
 {
-	const size_t textlen = strlen(text);
+	char         text[NQIV_KEYBIND_STRLEN + 1] = {0};
+	const size_t textlen = strlen(original_text);
+	if(textlen > NQIV_KEYBIND_STRLEN) {
+		return -1;
+	}
+	memcpy(text, original_text, textlen);
 	if(textlen == 0) {
 		return -1;
 	}
