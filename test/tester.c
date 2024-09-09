@@ -9,6 +9,7 @@
 #include "pruner_tests.h"
 #include "queue_tests.h"
 #include "keybind_tests.h"
+#include "keyrate_tests.h"
 
 #define TEST_NAME_LEN 50
 
@@ -204,6 +205,10 @@ test_set* create_tests(void)
 
 	S("keybind");
 	T("keybind_parse_print", keybind_test_parse_print);
+	T("keybind_lookup", keybind_test_lookup);
+
+	S("keyrate");
+	T("keyrate_default", keyrate_test_default);
 
 	return root;
 }
