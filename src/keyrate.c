@@ -28,7 +28,7 @@ bool nqiv_keyrate_get_bool_setting(const bool* manager, const nqiv_keyrate_press
 bool nqiv_keyrate_filter_action(const nqiv_keyrate_manager*       manager,
                                 nqiv_keyrate_keystate*            state,
                                 const nqiv_keyrate_release_option released,
-								Uint64                            ticks)
+                                Uint64                            ticks)
 {
 	bool output = false;
 	if((released & NQIV_KEYRATE_ON_UP) != 0) {

@@ -25,7 +25,8 @@ void keyrate_test_default(void)
 	state.send_on_up = NQIV_KEYRATE_ON_MANAGER;
 
 	assert(nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_UP, 0));
-	assert(nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_UP | NQIV_KEYRATE_ON_DOWN, 0));
+	assert(
+		nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_UP | NQIV_KEYRATE_ON_DOWN, 0));
 	assert(!nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_DOWN, 0));
 	assert(!nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_DOWN, 0));
 	assert(nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_DOWN, 50));

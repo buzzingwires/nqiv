@@ -1139,7 +1139,9 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 		assert(state->montage.positions.selection < images_count);
 		nqiv_image** images = state->images.images->data;
 		nqiv_image*  image = images[state->montage.positions.selection];
-		if(!simulated && !nqiv_keyrate_filter_action(&state->keystates, &pair->keyrate, released, SDL_GetTicks64())) {
+		if(!simulated
+		   && !nqiv_keyrate_filter_action(&state->keystates, &pair->keyrate, released,
+		                                  SDL_GetTicks64())) {
 			/* NOOP */
 		} else if(pair->action == NQIV_KEY_ACTION_QUIT) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action quit.\n");

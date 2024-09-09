@@ -96,10 +96,8 @@ void keybind_test_parse_print(void)
 bool add_keybind_string(nqiv_keybind_manager* manager, char* text)
 {
 	nqiv_keybind_pair pair = {0};
-	return nqiv_keybind_text_to_keybind(text, &pair) != -1
-		   && nqiv_keybind_add(manager, &pair);
+	return nqiv_keybind_text_to_keybind(text, &pair) != -1 && nqiv_keybind_add(manager, &pair);
 }
-
 
 void keybind_test_lookup(void)
 {
@@ -126,9 +124,13 @@ void keybind_test_lookup(void)
 	assert(nqiv_queue_init(&queue, &logger, sizeof(nqiv_keybind_pair*), STARTING_QUEUE_LENGTH));
 	assert(nqiv_keybind_create_manager(&manager, &logger, STARTING_QUEUE_LENGTH));
 
-	assert(add_keybind_string(&manager, "Q+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+mode=quit"));
-	assert(add_keybind_string(&manager, "mouse0_double+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+mode=quit"));
-	assert(add_keybind_string(&manager, "scroll_forward+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+mode=quit"));
+	assert(add_keybind_string(
+		&manager,
+		"Q+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+mode=quit"));
+	assert(add_keybind_string(&manager, "mouse0_double+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+"
+	                                    "ralt+lalt+gui+lgui+rgui+num+caps+mode=quit"));
+	assert(add_keybind_string(&manager, "scroll_forward+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+"
+	                                    "ralt+lalt+gui+lgui+rgui+num+caps+mode=quit"));
 
 	match.mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_KEY_LOOKUP_NOT_FOUND);

@@ -61,6 +61,6 @@ typedef struct nqiv_keyrate_manager
 bool nqiv_keyrate_filter_action(const nqiv_keyrate_manager*       manager,
                                 nqiv_keyrate_keystate*            state,
                                 const nqiv_keyrate_release_option released,
-								Uint64                            ticks);
+                                Uint64                            ticks);
 
 #endif /* NQIV_KEYRATE_H */
