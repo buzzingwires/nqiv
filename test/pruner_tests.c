@@ -426,8 +426,6 @@ void pruner_test_check_instance(const char*          pruner_string,
 		assert(!e.options.image_load.borrow_thumbnail_dimension_metadata);
 		assert(!e.options.image_load.image_options.clear_error);
 		assert(e.options.image_load.image_options.unload);
-		assert(!e.options.image_load.image_options.file);
-		assert(!e.options.image_load.image_options.file_soft);
 		assert(!e.options.image_load.image_options.first_frame);
 		assert(!e.options.image_load.image_options.next_frame);
 		assert(e.options.image_load.image_options.vips == effects->hard_unload_image_vips);
@@ -438,8 +436,6 @@ void pruner_test_check_instance(const char*          pruner_string,
 		assert(e.options.image_load.image_options.surface_soft == effects->unload_image_surface);
 		assert(!e.options.image_load.thumbnail_options.clear_error);
 		assert(e.options.image_load.thumbnail_options.unload);
-		assert(!e.options.image_load.thumbnail_options.file);
-		assert(!e.options.image_load.thumbnail_options.file_soft);
 		assert(!e.options.image_load.thumbnail_options.first_frame);
 		assert(!e.options.image_load.thumbnail_options.next_frame);
 		assert(e.options.image_load.thumbnail_options.vips == effects->hard_unload_thumbnail_vips);

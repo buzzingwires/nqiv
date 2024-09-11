@@ -769,10 +769,8 @@ bool render_from_form(nqiv_state*     state,
 				event.options.image_load.image = image;
 				event.options.image_load.thumbnail_options.clear_error = true;
 				if(hard) {
-					event.options.image_load.thumbnail_options.file = true;
 					event.options.image_load.thumbnail_options.vips = true;
 				} else {
-					event.options.image_load.thumbnail_options.file_soft = true;
 					event.options.image_load.thumbnail_options.vips_soft = true;
 				}
 				if(!nqiv_send_thread_event(
@@ -831,11 +829,9 @@ bool render_from_form(nqiv_state*     state,
 					state->images.thumbnail.save;
 				event.options.image_load.create_thumbnail = state->images.thumbnail.save;
 				if(hard) {
-					event.options.image_load.thumbnail_options.file = true;
 					event.options.image_load.thumbnail_options.vips = true;
 					event.options.image_load.borrow_thumbnail_dimension_metadata = true;
 				} else {
-					event.options.image_load.thumbnail_options.file_soft = true;
 					event.options.image_load.thumbnail_options.vips_soft = true;
 					event.options.image_load.borrow_thumbnail_dimension_metadata = true;
 				}
@@ -863,10 +859,8 @@ bool render_from_form(nqiv_state*     state,
 				event.type = NQIV_EVENT_IMAGE_LOAD;
 				event.options.image_load.image = image;
 				if(hard) {
-					event.options.image_load.image_options.file = true;
 					event.options.image_load.image_options.vips = true;
 				} else {
-					event.options.image_load.image_options.file_soft = true;
 					event.options.image_load.image_options.vips_soft = true;
 				}
 				if(image->image.vips != NULL
@@ -917,10 +911,8 @@ bool render_from_form(nqiv_state*     state,
 				event.type = NQIV_EVENT_IMAGE_LOAD;
 				event.options.image_load.image = image;
 				if(hard) {
-					event.options.image_load.image_options.file = true;
 					event.options.image_load.image_options.vips = true;
 				} else {
-					event.options.image_load.image_options.file_soft = true;
 					event.options.image_load.image_options.vips_soft = true;
 				}
 				event.options.image_load.image_options.raw = true;

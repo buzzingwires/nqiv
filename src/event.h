@@ -16,8 +16,6 @@ typedef struct nqiv_event_image_load_form_options
 {
 	bool clear_error;
 	bool unload;
-	bool file;
-	bool file_soft;
 	bool vips;
 	bool vips_soft;
 	bool first_frame;
