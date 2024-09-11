@@ -31,6 +31,11 @@ void keybind_test_parse_print(void)
 	assert(keybind_test_parse_print_entry(
 		true,
 		"Q+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+mode=quit+"
+	    "allow_on_up+allow_on_down",
+		"num+caps+mode+ctrl+shift+alt+Q=allow_on_down+allow_on_up+quit"));
+	assert(keybind_test_parse_print_entry(
+		true,
+		"Q+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+mode=quit+"
 	    "allow_on_up+allow_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+minimum_"
 	    "delay_100",
 		"num+caps+mode+ctrl+shift+alt+Q=allow_on_down+allow_on_up+start_delay_100+consecutive_"

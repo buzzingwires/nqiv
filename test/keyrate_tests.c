@@ -17,10 +17,10 @@ void keyrate_test_default(void)
 	manager.send_on_down = true;
 	manager.send_on_up = true;
 
-	state.settings.start_delay = 0;
-	state.settings.consecutive_delay = 0;
-	state.settings.delay_accel = 0;
-	state.settings.minimum_delay = 0;
+	state.settings.start_delay = -1;
+	state.settings.consecutive_delay = -1;
+	state.settings.delay_accel = -1;
+	state.settings.minimum_delay = -1;
 	state.send_on_down = NQIV_KEYRATE_ON_MANAGER;
 	state.send_on_up = NQIV_KEYRATE_ON_MANAGER;
 
@@ -57,7 +57,7 @@ void keyrate_test_default(void)
 
 	state.settings.start_delay = 40;
 	state.settings.consecutive_delay = 30;
-	state.settings.delay_accel = 10;
+	state.settings.delay_accel = 20;
 	state.settings.minimum_delay = 10;
 	state.send_on_down = NQIV_KEYRATE_ALLOW;
 	state.send_on_up = NQIV_KEYRATE_DENY;
@@ -66,8 +66,8 @@ void keyrate_test_default(void)
 	assert(!nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_DOWN, 0));
 	assert(nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_DOWN, 40));
 	assert(nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_DOWN, 70));
+	assert(nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_DOWN, 80));
 	assert(nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_DOWN, 90));
 	assert(nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_DOWN, 100));
-	assert(nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_DOWN, 110));
 	assert(!nqiv_keyrate_filter_action(&manager, &state, NQIV_KEYRATE_ON_UP, 0));
 }

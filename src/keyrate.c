@@ -1,17 +1,15 @@
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 
 #include <SDL2/SDL.h>
 
 #include "keyrate.h"
 
-Uint64 nqiv_keyrate_get_numerical_setting(const Uint64* manager, const Uint64* state)
+Uint64 nqiv_keyrate_get_numerical_setting(const Sint64* manager, const Sint64* state)
 {
-	if(*state == 0) {
-		return *manager;
-	} else {
-		return *state;
-	}
+	assert(*manager >= 0);
+	return *state < 0 ? (Uint64)(*manager) : (Uint64)(*state);
 }
 
 bool nqiv_keyrate_get_bool_setting(const bool* manager, const nqiv_keyrate_press_action* state)
@@ -58,6 +56,8 @@ bool nqiv_keyrate_filter_action(const nqiv_keyrate_manager*       manager,
 			state->ephemeral.next_event_time = ticks + state->ephemeral.current_delay;
 			if(state->ephemeral.current_delay >= delay_accel) {
 				state->ephemeral.current_delay -= delay_accel;
+			} else {
+				state->ephemeral.current_delay = 0;
 			}
 			output = true;
 		}

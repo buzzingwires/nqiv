@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
@@ -241,16 +242,16 @@ bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 bool nqiv_text_to_keystate_numerical(char*       text,
                                      const int   length,
                                      const char* prefix,
-                                     Uint64*     output)
+                                     Sint64*     output)
 {
 	bool success = false;
-	if(*output == 0 && (size_t)length > strlen(prefix)
+	if(*output < 0 && (size_t)length > strlen(prefix)
 	   && strncmp(text, prefix, strlen(prefix)) == 0) {
 		char*     end = NULL;
 		const int tmp = strtol(text + strlen(prefix), &end, 10);
 		if(errno != ERANGE && end != NULL && tmp > 0 && end <= text + length) {
 			success = true;
-			*output = (Uint64)tmp;
+			*output = (Sint64)tmp;
 		}
 	}
 	return success;
@@ -299,6 +300,10 @@ int nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* p
 		return -1;
 	}
 	nqiv_keybind_pair tmp = {0};
+	tmp.keyrate.settings.start_delay = -1;
+	tmp.keyrate.settings.consecutive_delay = -1;
+	tmp.keyrate.settings.delay_accel = -1;
+	tmp.keyrate.settings.minimum_delay = -1;
 	tmp.action = NQIV_KEY_ACTION_NONE;
 	int  idx;
 	int  section_start;
@@ -422,25 +427,25 @@ bool nqiv_keyrate_to_string(nqiv_array* builder, const nqiv_keyrate_keystate* st
 	if(state->send_on_up == NQIV_KEYRATE_DENY) {
 		success = success && nqiv_array_push_str(builder, "deny_on_up+");
 	}
-	if(state->settings.start_delay != 0) {
+	if(state->settings.start_delay > -1) {
 		success =
 			success
-			&& nqiv_array_push_sprintf(builder, "start_delay_%d+", state->settings.start_delay);
+			&& nqiv_array_push_sprintf(builder, "start_delay_%" PRIi64 "+", state->settings.start_delay);
 	}
-	if(state->settings.consecutive_delay != 0) {
+	if(state->settings.consecutive_delay > -1) {
 		success = success
-		          && nqiv_array_push_sprintf(builder, "consecutive_delay_%d+",
+		          && nqiv_array_push_sprintf(builder, "consecutive_delay_%" PRIi64 "+",
 		                                     state->settings.consecutive_delay);
 	}
-	if(state->settings.delay_accel != 0) {
+	if(state->settings.delay_accel > -1) {
 		success =
 			success
-			&& nqiv_array_push_sprintf(builder, "delay_accel_%d+", state->settings.delay_accel);
+			&& nqiv_array_push_sprintf(builder, "delay_accel_%" PRIi64 "+", state->settings.delay_accel);
 	}
-	if(state->settings.minimum_delay != 0) {
+	if(state->settings.minimum_delay > -1) {
 		success =
 			success
-			&& nqiv_array_push_sprintf(builder, "minimum_delay_%d+", state->settings.minimum_delay);
+			&& nqiv_array_push_sprintf(builder, "minimum_delay_%" PRIi64 "+", state->settings.minimum_delay);
 	}
 	return success;
 }

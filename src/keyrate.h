@@ -30,14 +30,14 @@ typedef struct nqiv_keyrate_keystate_ephemeral
 typedef struct nqiv_keyrate_keystate_settings
 {
 	/* When the key is first pressed, it must be pressed for this long before events are emitted. */
-	Uint64 start_delay;
+	Sint64 start_delay;
 	/* After start delay has passed and key is deemed to have been pressed, this is the starting
 	 * delay between each event. */
-	Uint64 consecutive_delay;
+	Sint64 consecutive_delay;
 	/* After each consecutive delay, subtract this from it... */
-	Uint64 delay_accel;
+	Sint64 delay_accel;
 	/* ...but cap at this minimum value */
-	Uint64 minimum_delay;
+	Sint64 minimum_delay;
 } nqiv_keyrate_keystate_settings;
 
 typedef struct nqiv_keyrate_keystate

@@ -395,14 +395,14 @@ bool nqiv_cmd_parser_set_window_width(nqiv_cmd_manager* manager, nqiv_cmd_arg_to
 bool nqiv_cmd_parser_set_minimum_delay_default(nqiv_cmd_manager*    manager,
                                                nqiv_cmd_arg_token** tokens)
 {
-	manager->state->keystates.settings.minimum_delay = tokens[0]->value.as_Uint64;
+	manager->state->keystates.settings.minimum_delay = (Sint64)(tokens[0]->value.as_int);
 	return true;
 }
 
 bool nqiv_cmd_parser_set_repeat_delay_default(nqiv_cmd_manager*    manager,
                                               nqiv_cmd_arg_token** tokens)
 {
-	manager->state->keystates.settings.consecutive_delay = tokens[0]->value.as_Uint64;
+	manager->state->keystates.settings.consecutive_delay = (Sint64)(tokens[0]->value.as_int);
 	return true;
 }
 
@@ -421,13 +421,13 @@ bool nqiv_cmd_parser_set_send_on_up_default(nqiv_cmd_manager* manager, nqiv_cmd_
 
 bool nqiv_cmd_parser_set_start_delay_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
-	manager->state->keystates.settings.start_delay = tokens[0]->value.as_Uint64;
+	manager->state->keystates.settings.start_delay = (Sint64)(tokens[0]->value.as_int);
 	return true;
 }
 
 bool nqiv_cmd_parser_set_delay_accel_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
-	manager->state->keystates.settings.delay_accel = tokens[0]->value.as_Uint64;
+	manager->state->keystates.settings.delay_accel = (Sint64)(tokens[0]->value.as_int);
 	return true;
 }
 
@@ -2285,17 +2285,17 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			{
 				L("start_delay", "Before a key is registered, it must be pressed for this long.",
 				  nqiv_cmd_parser_set_start_delay_default,
-				  nqiv_cmd_parser_print_start_delay_default, uint64_args);
+				  nqiv_cmd_parser_print_start_delay_default, natural_args);
 				L("repeat_delay", "This is the starting delay for repeating a key.",
 				  nqiv_cmd_parser_set_repeat_delay_default,
-				  nqiv_cmd_parser_print_repeat_delay_default, uint64_args);
+				  nqiv_cmd_parser_print_repeat_delay_default, natural_args);
 				L("delay_accel",
 				  "The repeat delay will be reduced by this amount for each repetition.",
 				  nqiv_cmd_parser_set_delay_accel_default,
-				  nqiv_cmd_parser_print_delay_accel_default, uint64_args);
+				  nqiv_cmd_parser_print_delay_accel_default, natural_args);
 				L("minimum_delay", "The delay will never be less than this.",
 				  nqiv_cmd_parser_set_minimum_delay_default,
-				  nqiv_cmd_parser_print_minimum_delay_default, uint64_args);
+				  nqiv_cmd_parser_print_minimum_delay_default, natural_args);
 				L("send_on_up", "Register releasing of the key.",
 				  nqiv_cmd_parser_set_send_on_up_default, nqiv_cmd_parser_print_send_on_up_default,
 				  bool_args);
