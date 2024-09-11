@@ -163,7 +163,7 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 		return false;
 	}
 
-	char* pathptr = calloc(builder.unit_length, nqiv_array_get_units_count(&builder));
+	char* pathptr = calloc(builder.unit_length, nqiv_array_get_units_count(&builder) + 1);
 	if(pathptr == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
 		               "Failed to allocate memory for path data %s\n", image->image.path);

@@ -2415,7 +2415,7 @@ bool nqiv_cmd_manager_init(nqiv_cmd_manager* manager, nqiv_state* state)
 		               NQIV_CMD_READ_BUFFER_LENGTH);
 		return false;
 	}
-	manager->buffer->max_data_length = NQIV_CMD_READ_BUFFER_LENGTH_MAX;
+	nqiv_array_set_max_data_length(manager->buffer, NQIV_CMD_READ_BUFFER_LENGTH_MAX);
 	manager->buffer->min_add_count = NQIV_CMD_READ_BUFFER_LENGTH;
 	if(!nqiv_cmd_manager_build_cmdtree(manager)) {
 		nqiv_cmd_manager_destroy(manager);

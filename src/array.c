@@ -234,6 +234,13 @@ bool nqiv_array_pop(nqiv_array* array, void* ptr)
 	return nqiv_array_pop_count(array, ptr, 1);
 }
 
+void nqiv_array_set_max_data_length(nqiv_array* array, const int count)
+{
+	const int length = count * array->unit_length;
+	assert(length >= array->unit_length && length >= count);
+	array->max_data_length = length;
+}
+
 void nqiv_array_clear(nqiv_array* array)
 {
 	nqiv_array_remove_count(array, 0, nqiv_array_get_units_count(array));

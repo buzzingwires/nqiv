@@ -192,8 +192,8 @@ test_set* create_tests(void)
 	T("array_test_strbuild", array_test_strbuild);
 
 	S("queue");
-	T("queue_test_default", array_test_default);
-	T("queue_test_priority_default", array_test_inherit);
+	T("queue_test_default", queue_test_default);
+	T("queue_test_priority_default", queue_test_priority_default);
 
 	S("logging");
 	T("logging_general", logging_test_general);

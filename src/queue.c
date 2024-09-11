@@ -85,7 +85,7 @@ void nqiv_queue_push_force(nqiv_queue* queue, const void* entry)
 			queue->logger, NQIV_LOG_WARNING,
 			"Failed to push to array of length %d, so, we are forcibly overwriting it.\n",
 			queue->array->data_length);
-		nqiv_array_clear(queue->array);
+		nqiv_array_remove(queue->array, nqiv_array_get_last_idx(queue->array));
 		const bool result = nqiv_array_push(queue->array, entry);
 		assert(result);
 		(void)result;
@@ -204,9 +204,9 @@ bool nqiv_priority_queue_pop(nqiv_priority_queue* queue, void* entry)
 	return nqiv_priority_queue_pop_op(queue, entry, nqiv_queue_pop);
 }
 
-bool nqiv_queue_set_max_data_length(nqiv_queue* queue, const int length)
+bool nqiv_queue_set_max_data_length(nqiv_queue* queue, const int count)
 {
-	queue->array->max_data_length = length;
+	nqiv_array_set_max_data_length(queue->array, count);
 	return true;
 }
 

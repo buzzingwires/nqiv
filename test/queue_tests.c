@@ -30,7 +30,6 @@ void queue_test_default(void)
 	c = 3;
 	assert(!nqiv_queue_push(&queue, &c));
 	nqiv_queue_push_force(&queue, &c);
-	nqiv_queue_push_force(&queue, &c);
 
 	assert(nqiv_queue_pop_front(&queue, &c));
 	assert(c == 0);
@@ -58,19 +57,19 @@ void queue_test_priority_default(void)
 	                                QUEUE_TEST_BIN_COUNT));
 	assert(nqiv_priority_queue_set_max_data_length(&queue, QUEUE_TEST_STANDARD_SIZE));
 	assert(nqiv_priority_queue_set_min_add_count(&queue, 2));
-	assert(nqiv_array_get_units_count(queue.bins[0].array) == QUEUE_TEST_STANDARD_SIZE - 2);
-	assert(nqiv_array_get_units_count(queue.bins[1].array) == QUEUE_TEST_STANDARD_SIZE - 2);
+	assert(queue.bins[0].array->data_length == sizeof(int) * (QUEUE_TEST_STANDARD_SIZE - 2));
+	assert(queue.bins[1].array->data_length == sizeof(int) * (QUEUE_TEST_STANDARD_SIZE - 2));
 	c = 0;
 	assert(nqiv_priority_queue_push(&queue, 0, &c));
-	assert(nqiv_array_get_units_count(queue.bins[0].array) == QUEUE_TEST_STANDARD_SIZE - 2);
+	assert(queue.bins[0].array->data_length == sizeof(int) * (QUEUE_TEST_STANDARD_SIZE - 2));
 	assert(nqiv_priority_queue_push(&queue, 0, &c));
-	assert(nqiv_array_get_units_count(queue.bins[0].array) == QUEUE_TEST_STANDARD_SIZE);
+	assert(queue.bins[0].array->data_length == sizeof(int) * QUEUE_TEST_STANDARD_SIZE);
 	assert(nqiv_priority_queue_push(&queue, 0, &c));
 	c = 1;
 	assert(nqiv_priority_queue_push(&queue, 1, &c));
-	assert(nqiv_array_get_units_count(queue.bins[1].array) == QUEUE_TEST_STANDARD_SIZE - 2);
+	assert(queue.bins[1].array->data_length == sizeof(int) * (QUEUE_TEST_STANDARD_SIZE - 2));
 	assert(nqiv_priority_queue_push(&queue, 1, &c));
-	assert(nqiv_array_get_units_count(queue.bins[1].array) == QUEUE_TEST_STANDARD_SIZE);
+	assert(queue.bins[1].array->data_length == sizeof(int) * QUEUE_TEST_STANDARD_SIZE);
 	assert(nqiv_priority_queue_push(&queue, 1, &c));
 	c = 2;
 	assert(!nqiv_priority_queue_push(&queue, 0, &c));

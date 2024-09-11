@@ -75,7 +75,7 @@ void array_test_default(void)
 {
 	nqiv_array* array = nqiv_array_create(sizeof(int), 1);
 	array->min_add_count = 5;
-	array->max_data_length = 6 * sizeof(int);
+	nqiv_array_set_max_data_length(array, 6);
 	array_test_standard(array, sizeof(int) * 1, sizeof(int) * (5 * 2 + 1), array->max_data_length,
 	                    6, true);
 	nqiv_array_destroy(array);

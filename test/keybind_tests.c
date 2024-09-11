@@ -98,7 +98,7 @@ void keybind_test_parse_print(void)
 		"100+consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 }
 
-bool add_keybind_string(nqiv_keybind_manager* manager, char* text)
+bool add_keybind_string(nqiv_keybind_manager* manager, const char* text)
 {
 	nqiv_keybind_pair pair = {0};
 	return nqiv_keybind_text_to_keybind(text, &pair) != -1 && nqiv_keybind_add(manager, &pair);

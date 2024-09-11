@@ -35,6 +35,7 @@ bool nqiv_array_get_count(const nqiv_array* array, const int idx, void* ptr, con
 bool nqiv_array_get(const nqiv_array* array, const int idx, void* ptr);
 bool nqiv_array_pop_count(nqiv_array* array, void* ptr, const int count);
 bool nqiv_array_pop(nqiv_array* array, void* ptr);
+void nqiv_array_set_max_data_length(nqiv_array* array, const int count);
 void nqiv_array_clear(nqiv_array* array);
 void nqiv_array_destroy(nqiv_array* array);
 
