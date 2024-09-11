@@ -23,7 +23,7 @@ bool nqiv_chmod(const char *filename, uint16_t mode)
 }
 bool nqiv_rename(const char* to, const char* from)
 {
-	assert(strcmp(to, from) != 0;)
+	assert(strcmp(to, from) != 0);
 	return MoveFile(from, to) != 0;
 }
 #else
