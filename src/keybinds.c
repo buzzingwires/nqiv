@@ -428,9 +428,9 @@ bool nqiv_keyrate_to_string(nqiv_array* builder, const nqiv_keyrate_keystate* st
 		success = success && nqiv_array_push_str(builder, "deny_on_up+");
 	}
 	if(state->settings.start_delay > -1) {
-		success =
-			success
-			&& nqiv_array_push_sprintf(builder, "start_delay_%" PRIi64 "+", state->settings.start_delay);
+		success = success
+		          && nqiv_array_push_sprintf(builder, "start_delay_%" PRIi64 "+",
+		                                     state->settings.start_delay);
 	}
 	if(state->settings.consecutive_delay > -1) {
 		success = success
@@ -438,14 +438,14 @@ bool nqiv_keyrate_to_string(nqiv_array* builder, const nqiv_keyrate_keystate* st
 		                                     state->settings.consecutive_delay);
 	}
 	if(state->settings.delay_accel > -1) {
-		success =
-			success
-			&& nqiv_array_push_sprintf(builder, "delay_accel_%" PRIi64 "+", state->settings.delay_accel);
+		success = success
+		          && nqiv_array_push_sprintf(builder, "delay_accel_%" PRIi64 "+",
+		                                     state->settings.delay_accel);
 	}
 	if(state->settings.minimum_delay > -1) {
-		success =
-			success
-			&& nqiv_array_push_sprintf(builder, "minimum_delay_%" PRIi64 "+", state->settings.minimum_delay);
+		success = success
+		          && nqiv_array_push_sprintf(builder, "minimum_delay_%" PRIi64 "+",
+		                                     state->settings.minimum_delay);
 	}
 	return success;
 }

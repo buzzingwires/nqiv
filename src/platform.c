@@ -17,7 +17,7 @@ bool nqiv_mkdir(char* path)
 	const int result = _mkdir(path);
 	return result == 0 || errno == EEXIST ? true : false;
 }
-bool nqiv_chmod(const char *filename, uint16_t mode)
+bool nqiv_chmod(const char* filename, uint16_t mode)
 {
 	return true; /* Windows doesn't do that */
 }
@@ -44,7 +44,7 @@ bool nqiv_mkdir(char* path)
 	const int result = mkdir(path, 0777);
 	return result == 0 || errno == EEXIST ? true : false;
 }
-bool nqiv_chmod(const char *filename, uint16_t mode)
+bool nqiv_chmod(const char* filename, uint16_t mode)
 {
 	return chmod(filename, mode) == 0;
 }

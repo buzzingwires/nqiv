@@ -179,8 +179,8 @@ void pruner_test_default(void)
 	assert(nqiv_pruner_create_desc(
 		&logger,
 		"or thumbnail image texture loaded_behind 30 0 loaded_ahead 30 0 surface loaded_behind 30 "
-	    "0 loaded_ahead 30 0 raw loaded_behind 30 0 loaded_ahead 30 0 vips loaded_behind 30 0 "
-	    "loaded_ahead 30 0 hard unload texture surface raw vips",
+		"0 loaded_ahead 30 0 raw loaded_behind 30 0 loaded_ahead 30 0 vips loaded_behind 30 0 "
+		"loaded_ahead 30 0 hard unload texture surface raw vips",
 		&desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
@@ -258,9 +258,9 @@ void pruner_test_default(void)
 	assert(nqiv_pruner_create_desc(
 		&logger,
 		"or sum 1000000000 thumbnail image texture bytes_ahead 0 1000000000 bytes_behind 0 "
-	    "1000000000 surface bytes_ahead 0 1000000000 bytes_behind 0 1000000000 raw bytes_ahead 0 "
-	    "1000000000 bytes_behind 0 1000000000 vips bytes_ahead 0 1000000000 bytes_behind 0 "
-	    "1000000000 hard unload texture surface raw vips",
+		"1000000000 surface bytes_ahead 0 1000000000 bytes_behind 0 1000000000 raw bytes_ahead 0 "
+		"1000000000 bytes_behind 0 1000000000 vips bytes_ahead 0 1000000000 bytes_behind 0 "
+		"1000000000 hard unload texture surface raw vips",
 		&desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));

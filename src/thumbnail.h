@@ -13,7 +13,7 @@ if thumbnail saving is enabled and thumbnail doesn't exist, generate thumbnail f
 we need to copy, resize, write metadata, optimize the image, and finally save to disk
 */
 
-int nqiv_thumbnail_get_closest_size(const int size);
+int  nqiv_thumbnail_get_closest_size(const int size);
 
 bool nqiv_thumbnail_calculate_path(const nqiv_image* image,
                                    char**            pathptr_store,

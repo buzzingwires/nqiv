@@ -31,71 +31,71 @@ void keybind_test_parse_print(void)
 	assert(keybind_test_parse_print_entry(
 		true,
 		"Q+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+mode=quit+"
-	    "allow_on_up+allow_on_down",
+		"allow_on_up+allow_on_down",
 		"num+caps+mode+ctrl+shift+alt+Q=allow_on_down+allow_on_up+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
 		"Q+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+mode=quit+"
-	    "allow_on_up+allow_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+minimum_"
-	    "delay_100",
+		"allow_on_up+allow_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+minimum_"
+		"delay_100",
 		"num+caps+mode+ctrl+shift+alt+Q=allow_on_down+allow_on_up+start_delay_100+consecutive_"
-	    "delay_100+delay_accel_100+minimum_delay_100+quit"));
+		"delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
 		"mouse0_double+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
-	    "mode=quit+allow_on_up+allow_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
-	    "minimum_delay_100",
+		"mode=quit+allow_on_up+allow_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
+		"minimum_delay_100",
 		"num+caps+mode+ctrl+shift+alt+mouse0_double=allow_on_down+allow_on_up+start_delay_100+"
-	    "consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
+		"consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
 		"mouse0_double+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
-	    "mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
-	    "minimum_delay_100",
+		"mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
+		"minimum_delay_100",
 		"num+caps+mode+ctrl+shift+alt+mouse0_double=deny_on_down+deny_on_up+start_delay_100+"
-	    "consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
+		"consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
 		"scroll_forward+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
-	    "mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
-	    "minimum_delay_100",
+		"mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
+		"minimum_delay_100",
 		"num+caps+mode+ctrl+shift+alt+scroll_forward=deny_on_down+deny_on_up+start_delay_100+"
-	    "consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
+		"consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
 		"scroll_backward+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
-	    "mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
-	    "minimum_delay_100",
+		"mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
+		"minimum_delay_100",
 		"num+caps+mode+ctrl+shift+alt+scroll_backward=deny_on_down+deny_on_up+start_delay_100+"
-	    "consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
+		"consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
 		"scroll_left+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
-	    "mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
-	    "minimum_delay_100",
+		"mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
+		"minimum_delay_100",
 		"num+caps+mode+ctrl+shift+alt+scroll_left=deny_on_down+deny_on_up+start_delay_100+"
-	    "consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
+		"consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
 		"scroll_right+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
-	    "mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
-	    "minimum_delay_100",
+		"mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
+		"minimum_delay_100",
 		"num+caps+mode+ctrl+shift+alt+scroll_right=deny_on_down+deny_on_up+start_delay_100+"
-	    "consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
+		"consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		false,
 		"scroll_right+scroll_left+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+"
-	    "num+caps+mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_"
-	    "accel_100+minimum_delay_100",
+		"num+caps+mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_"
+		"accel_100+minimum_delay_100",
 		"num+caps+mode+ctrl+shift+alt+scroll_right+scroll_left=deny_on_down+deny_on_up+start_delay_"
-	    "100+consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
+		"100+consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		false,
 		"scroll_right+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
-	    "mode=quit+deny_on_up+deny_on_down+allow_on_up+start_delay_100+consecutive_delay_100+delay_"
-	    "accel_100+minimum_delay_100",
+		"mode=quit+deny_on_up+deny_on_down+allow_on_up+start_delay_100+consecutive_delay_100+delay_"
+		"accel_100+minimum_delay_100",
 		"num+caps+mode+ctrl+shift+alt+scroll_right=allow_on_up+deny_on_down+deny_on_up+start_delay_"
-	    "100+consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
+		"100+consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 }
 
 bool add_keybind_string(nqiv_keybind_manager* manager, char* text)

@@ -120,7 +120,9 @@ nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* path)
 	return image;
 }
 
-void nqiv_log_vips_exception(nqiv_log_ctx* logger, const nqiv_image* image, const nqiv_image_form* form)
+void nqiv_log_vips_exception(nqiv_log_ctx*          logger,
+                             const nqiv_image*      image,
+                             const nqiv_image_form* form)
 {
 	char* error = vips_error_buffer_copy();
 	nqiv_log_write(logger, NQIV_LOG_WARNING, "Vips exception for form %s of path %s (%s)\n",
@@ -1079,7 +1081,8 @@ int nqiv_image_manager_get_zoom_percent(nqiv_image_manager* manager)
 
 void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size)
 {
-	if(nqiv_thumbnail_get_closest_size(manager->thumbnail.size) == nqiv_thumbnail_get_closest_size(old_size)) {
+	if(nqiv_thumbnail_get_closest_size(manager->thumbnail.size)
+	   == nqiv_thumbnail_get_closest_size(old_size)) {
 		return;
 	}
 	const int    num_images = nqiv_array_get_units_count(manager->images);

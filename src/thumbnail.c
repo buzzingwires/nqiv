@@ -40,8 +40,8 @@ bool nqiv_thumbnail_render_uri(const nqiv_image* image, char* uri)
 
 	gchar* gcanon = g_canonicalize_filename(abspath, "/");
 	if(gcanon == NULL) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Failed to canonicalize path of %s\n", image->image.path);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Failed to canonicalize path of %s\n",
+		               image->image.path);
 		return false;
 	}
 
@@ -54,7 +54,8 @@ bool nqiv_thumbnail_render_uri(const nqiv_image* image, char* uri)
 	}
 	if(strlen(guri) > NQIV_URI_LEN) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Generated URI exceeds length of %d for path %s\n", NQIV_URI_LEN, image->image.path);
+		               "Generated URI exceeds length of %d for path %s\n", NQIV_URI_LEN,
+		               image->image.path);
 		g_free(guri);
 		return false;
 	}
@@ -135,7 +136,7 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 
 	nqiv_array builder;
 	/* XXX: We may or may not make a .tmp file with this path, so there should be room for that. */
-	char       fullpath[PATH_MAX - 4 + 1] = {0};
+	char fullpath[PATH_MAX - 4 + 1] = {0};
 	nqiv_array_inherit(&builder, fullpath, sizeof(char), PATH_MAX);
 
 	const size_t raw_rootlen = strlen(image->parent->thumbnail.root);
@@ -209,7 +210,9 @@ bool nqiv_thumbnail_create_vips(nqiv_image* image)
 
 	image->thumbnail.animation.frame = 0;
 	old_vips = thumbnail_vips;
-	if(vips_thumbnail_image(old_vips, &thumbnail_vips, nqiv_thumbnail_get_closest_size(image->parent->thumbnail.size), NULL) == -1) {
+	if(vips_thumbnail_image(old_vips, &thumbnail_vips,
+	                        nqiv_thumbnail_get_closest_size(image->parent->thumbnail.size), NULL)
+	   == -1) {
 		g_object_unref(old_vips);
 		nqiv_log_vips_exception(image->parent->logger, image, &image->image);
 		return false;
@@ -292,13 +295,13 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 		if(nqiv_stat(image->thumbnail.path, NULL)) {
 			nqiv_log_write(image->parent->logger, NQIV_LOG_INFO,
 			               "Thumbnail already exists (concurrent creation) for"
-						   "'%s' of image at path '%s'.\n", image->thumbnail.path,
-						   image->image.path);
+			               "'%s' of image at path '%s'.\n",
+			               image->thumbnail.path, image->image.path);
 			return true;
 		}
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-		               "Failed to save '%s' of image at path '%s'.\n",
-		               image->thumbnail.path, image->image.path);
+		               "Failed to save '%s' of image at path '%s'.\n", image->thumbnail.path,
+		               image->image.path);
 		return false;
 	}
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
@@ -311,20 +314,22 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 #undef NQIV_SIZE_STRLEN
 #undef NQIV_DIMENSIONS_STRLEN
 
-uintmax_t nqiv_thumbnail_get_field(bool* output, const nqiv_image* image, gchar** header_field_names, const char* field)
+uintmax_t nqiv_thumbnail_get_field(bool*             output,
+                                   const nqiv_image* image,
+                                   gchar**           header_field_names,
+                                   const char*       field)
 {
 	const int string_idx = nqiv_lookup_vips_png_comment(header_field_names, field);
 	if(string_idx == -1) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-		               "Failed to lookup %s metadata from thumbnail for %s\n",
-		               field, image->image.path);
+		               "Failed to lookup %s metadata from thumbnail for %s\n", field,
+		               image->image.path);
 		*output = false;
 		return 0;
 	}
 
 	const char* field_string;
-	if(vips_image_get_string(image->thumbnail.vips, header_field_names[string_idx],
-	                         &field_string)
+	if(vips_image_get_string(image->thumbnail.vips, header_field_names[string_idx], &field_string)
 	   == -1) {
 		nqiv_log_vips_exception(image->parent->logger, image, &image->image);
 		*output = false;
@@ -364,24 +369,23 @@ bool nqiv_thumbnail_matches_image(nqiv_image* image)
 		return false;
 	}
 
-
-	bool result = false;
-	const uintmax_t thumbnail_mtime_value =	nqiv_thumbnail_get_field(&result, image,
-		header_field_names, "Thumb::MTime");
+	bool            result = false;
+	const uintmax_t thumbnail_mtime_value =
+		nqiv_thumbnail_get_field(&result, image, header_field_names, "Thumb::MTime");
 	if(!result) {
 		g_strfreev(header_field_names);
 		return false;
 	}
-	const uintmax_t thumbnail_size_value = nqiv_thumbnail_get_field(&result, image,
-		header_field_names, "Thumb::Size");
+	const uintmax_t thumbnail_size_value =
+		nqiv_thumbnail_get_field(&result, image, header_field_names, "Thumb::Size");
 	if(!result) {
 		g_strfreev(header_field_names);
 		return false;
 	}
 	g_strfreev(header_field_names);
 
-	const bool matches = thumbnail_mtime_value == (uintmax_t)(stat_data.mtime) &&
-						 thumbnail_size_value == (uintmax_t)(stat_data.size);
+	const bool matches = thumbnail_mtime_value == (uintmax_t)(stat_data.mtime)
+	                     && thumbnail_size_value == (uintmax_t)(stat_data.size);
 
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "'%s' %s '%s'.\n", image->image.path,
 	               matches ? "matches" : "does not match", image->thumbnail.path);

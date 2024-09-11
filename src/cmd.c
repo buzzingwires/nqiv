@@ -2078,9 +2078,9 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 	nqiv_cmd_node* root_node = nqiv_cmd_make_base_node(
 		&status, "root",
 		"Root of parsing tree. Prefix help to get help messages on commands, helptree to do the "
-	    "same recursively, helpchildren to only recurse one level, or dumpcfg to dump functional "
-	    "commands to set the current configuration. Lines can also be commented by prefixing with "
-	    "#");
+		"same recursively, helpchildren to only recurse one level, or dumpcfg to dump functional "
+		"commands to set the current configuration. Lines can also be commented by prefixing with "
+		"#");
 	nqiv_cmd_node* current_node;
 	nqiv_cmd_node* tmp_node = NULL;
 	bool           deprecated = false;
@@ -2120,7 +2120,7 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		DEPRECATE L("extension",
 		            "(DEPRECATED nqiv will not be handling this for now) Add an image extension to "
 		            "be accepted.",
-					nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, string_args);
+		            nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, string_args);
 		L("keybind", "Add a keybind.", nqiv_cmd_parser_append_keybind,
 		  nqiv_cmd_parser_print_keybind, keybind_args);
 	}
@@ -2262,9 +2262,9 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			DEPRECATE B(
 				"action",
 				"(DEPRECATED: These settings are essentially part of the keybind implementation, "
-			    "now. Using these settings now will have no effect, nor will they print any "
-			    "information. This may cause some breakage of old key actions.) Key action "
-			    "specific settings for delaying and registering keypresses.");
+				"now. Using these settings now will have no effect, nor will they print any "
+				"information. This may cause some breakage of old key actions.) Key action "
+				"specific settings for delaying and registering keypresses.");
 			{
 				L("start_delay", "Before a key is registered, it must be pressed for this long.",
 				  nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, keyactionbrief_uint64_args);
@@ -2358,9 +2358,9 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		DEPRECATE L(
 			"queue_size",
 			"(DEPRECATED: Sizes can still be printed, but not set. For now, this is handled by an "
-		    "internal algorithm.) Dynamic arrays in the software are backed by a given amount of "
-		    "memory. They will expand as needed, but it may improve performance to allocate more "
-		    "memory in advance. This value is the default minimum.",
+			"internal algorithm.) Dynamic arrays in the software are backed by a given amount of "
+			"memory. They will expand as needed, but it may improve performance to allocate more "
+			"memory in advance. This value is the default minimum.",
 			nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_queue_size, intpositive_args);
 		B("window", "Set operations related to the window.");
 		{

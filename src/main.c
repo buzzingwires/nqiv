@@ -264,16 +264,16 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* de
 		"append keybind shift+scroll_backward=zoom_out",
 		"append pruner or thumbnail no image texture self_opened unload surface raw vips",
 		"append pruner and no thumbnail image texture self_opened not_animated unload surface raw "
-	    "vips",
+		"vips",
 		"append pruner or no thumbnail image texture self_opened unload surface raw",
 		"append pruner and thumbnail no image texture self_opened image no thumbnail not_animated "
-	    "hard unload image thumbnail surface raw vips",
+		"hard unload image thumbnail surface raw vips",
 		"append pruner or thumbnail image texture loaded_behind 0 0 loaded_ahead 0 0 surface "
-	    "loaded_behind 0 0 loaded_ahead 0 0 raw loaded_behind 0 0 loaded_ahead 0 0 vips "
-	    "loaded_behind 0 0 loaded_ahead 0 0 hard unload texture surface raw vips",
+		"loaded_behind 0 0 loaded_ahead 0 0 raw loaded_behind 0 0 loaded_ahead 0 0 vips "
+		"loaded_behind 0 0 loaded_ahead 0 0 hard unload texture surface raw vips",
 		"append pruner or sum 0 thumbnail image texture bytes_ahead 0 0 bytes_behind 0 0 surface "
-	    "bytes_ahead 0 0 bytes_behind 0 0 raw bytes_ahead 0 0 bytes_behind 0 0 vips bytes_ahead 0 "
-	    "0 bytes_behind 0 0 hard unload texture surface raw vips",
+		"bytes_ahead 0 0 bytes_behind 0 0 raw bytes_ahead 0 0 bytes_behind 0 0 vips bytes_ahead 0 "
+		"0 bytes_behind 0 0 hard unload texture surface raw vips",
 		NULL,
 	};
 	int idx;
