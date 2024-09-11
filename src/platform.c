@@ -1,9 +1,13 @@
 #include "platform.h"
 
+#include <assert.h>
+
 #if defined(__MINGW32__)
 	#include <stdlib.h>
+	#include <string.h>
 	#include <errno.h>
 	#include <direct.h>
+	#include <winbase.h>
 char* nqiv_realpath(const char* path, char* resolved_path)
 {
 	return _fullpath(resolved_path, path, PATH_MAX);
@@ -13,7 +17,19 @@ bool nqiv_mkdir(char* path)
 	const int result = _mkdir(path);
 	return result == 0 || errno == EEXIST ? true : false;
 }
+bool nqiv_chmod(const char *filename, uint16_t mode)
+{
+	return true; /* Windows doesn't do that */
+}
+bool nqiv_rename(const char* to, const char* from)
+{
+	assert(strcmp(to, from) != 0;)
+	return MoveFile(from, to) != 0;
+}
 #else
+	#include <stdio.h>
+	#include <stdint.h>
+	#include <string.h>
 	#include <stdlib.h>
 	#include <limits.h>
 	#include <errno.h>
@@ -27,6 +43,15 @@ bool nqiv_mkdir(char* path)
 {
 	const int result = mkdir(path, 0777);
 	return result == 0 || errno == EEXIST ? true : false;
+}
+bool nqiv_chmod(const char *filename, uint16_t mode)
+{
+	return chmod(filename, mode) == 0;
+}
+bool nqiv_rename(const char* to, const char* from)
+{
+	assert(strcmp(to, from) != 0);
+	return rename(from, to) != -1;
 }
 #endif
 
@@ -44,13 +69,14 @@ bool nqiv_mkdir(char* path)
 	#include "array.h"
 bool nqiv_stat(const char* path, nqiv_stat_data* data)
 {
-	assert(data != NULL);
 	struct stat s;
 	if(stat(path, &s) != 0) {
 		return false;
 	}
-	data->size = (size_t)(s.st_size);
-	data->mtime = s.st_mtime;
+	if(data != NULL) {
+		data->size = (size_t)(s.st_size);
+		data->mtime = s.st_mtime;
+	}
 	return true;
 }
 bool nqiv_write_path_from_env(char*        output,

@@ -128,7 +128,7 @@ struct nqiv_image_manager
 	nqiv_array*                           images;
 };
 
-void nqiv_log_vips_exception(nqiv_log_ctx* logger, nqiv_image* image, nqiv_image_form* form);
+void nqiv_log_vips_exception(nqiv_log_ctx* logger, const nqiv_image* image, const nqiv_image_form* form);
 
 void nqiv_image_unlock(nqiv_image* image);
 void nqiv_image_lock(nqiv_image* image);
