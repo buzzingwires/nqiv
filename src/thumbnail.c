@@ -34,14 +34,14 @@ bool nqiv_thumbnail_render_uri(const nqiv_image* image, char* uri)
 	char abspath[PATH_MAX + 1] = {0};
 	if(nqiv_realpath(image->image.path, abspath) == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Failed to calculate absolute path of %s.\n", image->image.path);
+		               "Failed to calculate absolute path of %s\n", image->image.path);
 		return false;
 	}
 
 	gchar* gcanon = g_canonicalize_filename(abspath, "/");
 	if(gcanon == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Failed to canonicalize path of %s.\n", image->image.path);
+		               "Failed to canonicalize path of %s\n", image->image.path);
 		return false;
 	}
 
@@ -49,12 +49,12 @@ bool nqiv_thumbnail_render_uri(const nqiv_image* image, char* uri)
 	g_free(gcanon);
 	if(guri == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Failed to generate URI from path of %s.\n", image->image.path);
+		               "Failed to generate URI from path of %s\n", image->image.path);
 		return false;
 	}
 	if(strlen(guri) > NQIV_URI_LEN) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Generated URI exceeds length of %d for path %s.\n", NQIV_URI_LEN, image->image.path);
+		               "Generated URI exceeds length of %d for path %s\n", NQIV_URI_LEN, image->image.path);
 		g_free(guri);
 		return false;
 	}
@@ -158,14 +158,14 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 	result = result && nqiv_array_push_str(&builder, ".png");
 	if(!result) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Thumbnail name string too long for image %s.\n", image->image.path);
+		               "Thumbnail name string too long for image %s\n", image->image.path);
 		return false;
 	}
 
 	char* pathptr = calloc(builder.unit_length, nqiv_array_get_units_count(&builder));
 	if(pathptr == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Failed to allocate memory for path data %s.\n", image->image.path);
+		               "Failed to allocate memory for path data %s\n", image->image.path);
 		return false;
 	}
 	memcpy(pathptr, fullpath, nqiv_array_get_units_count(&builder));
@@ -248,7 +248,7 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	nqiv_stat_data stat_data;
 	if(!nqiv_stat(image->image.path, &stat_data)) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Failed to get stat data for image at %s.\n", image->image.path);
+		               "Failed to get stat data for image at %s\n", image->image.path);
 		return false;
 	}
 	char mtime_string[NQIV_MTIME_STRLEN + 1] = {0};
@@ -269,7 +269,7 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 
 	if(!nqiv_thumbnail_create_dirs(image->parent, false)) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Failed create thumbnail dirs under %s.\n", image->parent->thumbnail.root);
+		               "Failed create thumbnail dirs under %s\n", image->parent->thumbnail.root);
 		return false;
 	}
 	char         tmppath[PATH_MAX + 1] = {0};
@@ -316,7 +316,7 @@ uintmax_t nqiv_thumbnail_get_field(bool* output, const nqiv_image* image, gchar*
 	const int string_idx = nqiv_lookup_vips_png_comment(header_field_names, field);
 	if(string_idx == -1) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-		               "Failed to lookup %s metadata from thumbnail for %s.\n",
+		               "Failed to lookup %s metadata from thumbnail for %s\n",
 		               field, image->image.path);
 		*output = false;
 		return 0;
@@ -354,13 +354,13 @@ bool nqiv_thumbnail_matches_image(nqiv_image* image)
 	nqiv_stat_data stat_data;
 	if(!nqiv_stat(image->image.path, &stat_data)) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Failed to get stat data for image at %s.\n", image->image.path);
+		               "Failed to get stat data for image at %s\n", image->image.path);
 		return false;
 	}
 	gchar** header_field_names = vips_image_get_fields(image->thumbnail.vips);
 	if(header_field_names == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
-		               "Failed to get vips header field names for image %s.\n", image->image.path);
+		               "Failed to get vips header field names for image %s\n", image->image.path);
 		return false;
 	}
 

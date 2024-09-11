@@ -306,7 +306,7 @@ bool nqiv_cmd_parser_apply_color(nqiv_cmd_manager*    manager,
 	color->b = tokens[2]->value.as_Uint8;
 	color->a = tokens[3]->value.as_Uint8;
 	if(!apply(manager->state)) {
-		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Failed to apply color for %s.\n",
+		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING, "Failed to apply color for %s\n",
 		               error_message);
 		memcpy(color, &tmp, sizeof(SDL_Color));
 		return false;

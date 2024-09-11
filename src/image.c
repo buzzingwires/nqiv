@@ -77,7 +77,7 @@ void nqiv_image_destroy(nqiv_image* image)
 {
 	assert(image != NULL);
 	assert(image->parent != NULL);
-	nqiv_log_write(image->parent->logger, NQIV_LOG_INFO, "Destroying image %s.\n",
+	nqiv_log_write(image->parent->logger, NQIV_LOG_INFO, "Destroying image %s\n",
 	               image->image.path);
 	omp_destroy_lock(&image->lock);
 	nqiv_unload_image_form(&image->image);
@@ -723,7 +723,7 @@ bool nqiv_image_manager_set_thumbnail_root(nqiv_image_manager* manager, const ch
 	char*        path_ptr = (char*)calloc(1, path_len + 1);
 	if(path_ptr == NULL) {
 		nqiv_log_write(manager->logger, NQIV_LOG_ERROR,
-		               "Failed to create buffer to store thumbnail root of %s.", path);
+		               "Failed to create buffer to store thumbnail root of %s", path);
 		return false;
 	}
 	manager->thumbnail.root = path_ptr;

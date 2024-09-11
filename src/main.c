@@ -796,7 +796,7 @@ bool render_from_form(nqiv_state*     state,
 			/* NOOP */
 		} else if(form->surface != NULL && !resample_zoom
 		          && (is_montage || !first_frame || !form->animation.exists)) {
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading texture for image %s.\n",
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading texture for image %s\n",
 			               image->image.path);
 			form->texture = SDL_CreateTextureFromSurface(state->renderer, form->surface);
 			nqiv_unload_image_form_fallback_texture(form);
@@ -853,7 +853,7 @@ bool render_from_form(nqiv_state*     state,
 					return false;
 				}
 			} else {
-				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading image %s.\n",
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading image %s\n",
 				               image->image.path);
 				nqiv_event event = {0};
 				event.type = NQIV_EVENT_IMAGE_LOAD;
