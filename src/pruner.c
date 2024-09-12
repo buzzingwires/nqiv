@@ -191,6 +191,9 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
                           const int            iidx,
                           nqiv_image*          image)
 {
+	nqiv_event                     event = {0};
+	nqiv_event_image_load_options* event_options = &(event.options.image_load);
+	bool                           send_event = false;
 	if(!nqiv_image_test_lock(image)) {
 		return 0;
 	}
@@ -198,6 +201,10 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 		nqiv_image_unlock(image);
 		return 0;
 	}
+	event.type = NQIV_EVENT_IMAGE_LOAD;
+	event_options->image = image;
+	event_options->image_options.unload = true;
+	event_options->thumbnail_options.unload = true;
 	int               prune_count = 0;
 	int               idx;
 	nqiv_pruner_desc* descs_array = pruner->pruners->data;
@@ -221,7 +228,6 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 		   || (pruner->state.and_is_set && desc->counter & NQIV_PRUNER_COUNT_OP_AND
 		       && pruner->state.and_result == desc->state_check.and_result)) {
 			nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Pruning image %s\n", image->image.path);
-			bool send_event = false;
 			/* TODO: This cannot be called from a thread. If we plan to have the pruner run in a
 			 * thread, we need to do this in a thread safe way, probably by sending an SDL event for
 			 * master. */
@@ -243,61 +249,62 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 				assert(image->thumbnail.fallback_texture == NULL);
 				send_event = true;
 			}
-			nqiv_event event = {0};
-			event.type = NQIV_EVENT_IMAGE_LOAD;
-			event.options.image_load.image = image;
-			event.options.image_load.image_options.unload = true;
-			event.options.image_load.image_options.vips =
-				desc->unload_vips && image->image.vips != NULL;
-			event.options.image_load.image_options.raw =
-				desc->unload_raw && image->image.data != NULL;
-			event.options.image_load.image_options.surface =
-				desc->unload_surface && image->image.surface != NULL;
-			event.options.image_load.image_options.vips_soft =
-				desc->unload_vips_soft && image->image.vips != NULL;
-			event.options.image_load.image_options.raw_soft =
-				desc->unload_raw_soft && image->image.data != NULL;
-			event.options.image_load.image_options.surface_soft =
-				desc->unload_surface_soft && image->image.surface != NULL;
-			event.options.image_load.thumbnail_options.unload = true;
-			event.options.image_load.thumbnail_options.vips =
-				desc->unload_thumbnail_vips && image->thumbnail.vips != NULL;
-			event.options.image_load.thumbnail_options.raw =
-				desc->unload_thumbnail_raw && image->thumbnail.data != NULL;
-			event.options.image_load.thumbnail_options.surface =
-				desc->unload_thumbnail_surface && image->thumbnail.surface != NULL;
-			event.options.image_load.thumbnail_options.vips_soft =
-				desc->unload_thumbnail_vips_soft && image->thumbnail.vips != NULL;
-			event.options.image_load.thumbnail_options.raw_soft =
-				desc->unload_thumbnail_raw_soft && image->thumbnail.data != NULL;
-			event.options.image_load.thumbnail_options.surface_soft =
-				desc->unload_thumbnail_surface_soft && image->thumbnail.surface != NULL;
-			send_event = send_event || event.options.image_load.image_options.vips
-			             || event.options.image_load.image_options.raw
-			             || event.options.image_load.image_options.surface
-			             || event.options.image_load.image_options.vips_soft
-			             || event.options.image_load.image_options.raw_soft
-			             || event.options.image_load.image_options.surface_soft
-			             || event.options.image_load.thumbnail_options.vips
-			             || event.options.image_load.thumbnail_options.raw
-			             || event.options.image_load.thumbnail_options.surface
-			             || event.options.image_load.thumbnail_options.vips_soft
-			             || event.options.image_load.thumbnail_options.raw_soft
-			             || event.options.image_load.thumbnail_options.surface_soft;
-			if(send_event) {
-				prune_count += 1;
-			}
-			nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG,
-			               "%sending prune event for image %d desc %d/%d.\n",
-			               send_event ? "S" : "Not s", iidx, idx, num_descs);
-			if(send_event) {
-				event.transaction_group = pruner->thread_event_transaction_group;
-				if(!nqiv_priority_queue_push(thread_queue, NQIV_EVENT_PRIORITY_PRUNE, &event)) {
-					nqiv_image_unlock(image);
-					return false;
-				}
-			}
+			event_options->image_options.vips = event_options->image_options.vips
+			                                    || (desc->unload_vips && image->image.vips != NULL);
+			event_options->image_options.raw =
+				event_options->image_options.raw || (desc->unload_raw && image->image.data != NULL);
+			event_options->image_options.surface =
+				event_options->image_options.surface
+				|| (desc->unload_surface && image->image.surface != NULL);
+			event_options->image_options.vips_soft =
+				event_options->image_options.vips_soft
+				|| (desc->unload_vips_soft && image->image.vips != NULL);
+			event_options->image_options.raw_soft =
+				event_options->image_options.raw_soft
+				|| (desc->unload_raw_soft && image->image.data != NULL);
+			event_options->image_options.surface_soft =
+				event_options->image_options.surface_soft
+				|| (desc->unload_surface_soft && image->image.surface != NULL);
+			event_options->thumbnail_options.vips =
+				event_options->thumbnail_options.vips
+				|| (desc->unload_thumbnail_vips && image->thumbnail.vips != NULL);
+			event_options->thumbnail_options.raw =
+				event_options->thumbnail_options.raw
+				|| (desc->unload_thumbnail_raw && image->thumbnail.data != NULL);
+			event_options->thumbnail_options.surface =
+				event_options->thumbnail_options.surface
+				|| (desc->unload_thumbnail_surface && image->thumbnail.surface != NULL);
+			event_options->thumbnail_options.vips_soft =
+				event_options->thumbnail_options.vips_soft
+				|| (desc->unload_thumbnail_vips_soft && image->thumbnail.vips != NULL);
+			event_options->thumbnail_options.raw_soft =
+				event_options->thumbnail_options.raw_soft
+				|| (desc->unload_thumbnail_raw_soft && image->thumbnail.data != NULL);
+			event_options->thumbnail_options.surface_soft =
+				event_options->thumbnail_options.surface_soft
+				|| (desc->unload_thumbnail_surface_soft && image->thumbnail.surface != NULL);
+			send_event =
+				send_event || event.options.image_load.image_options.vips
+				|| event_options->image_options.raw || event_options->image_options.surface
+				|| event_options->image_options.vips_soft || event_options->image_options.raw_soft
+				|| event_options->image_options.surface_soft
+				|| event_options->thumbnail_options.vips || event_options->thumbnail_options.raw
+				|| event_options->thumbnail_options.surface
+				|| event_options->thumbnail_options.vips_soft
+				|| event_options->thumbnail_options.raw_soft
+				|| event_options->thumbnail_options.surface_soft;
 		}
+	}
+	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG,
+	               "%sending prune event for image %d desc %d/%d.\n", send_event ? "S" : "Not s",
+	               iidx, idx, num_descs);
+	if(send_event) {
+		event.transaction_group = pruner->thread_event_transaction_group;
+		if(!nqiv_priority_queue_push(thread_queue, NQIV_EVENT_PRIORITY_PRUNE, &event)) {
+			nqiv_image_unlock(image);
+			return false;
+		}
+		prune_count = 1;
 	}
 	nqiv_image_unlock(image);
 	return prune_count;
