@@ -126,6 +126,8 @@ struct nqiv_image_manager
 	nqiv_image_manager_thumbnail_settings thumbnail;
 	nqiv_image_manager_zoom_settings      zoom;
 	Uint32                                default_frame_time;
+	int                                   max_texture_height;
+	int                                   max_texture_width;
 	nqiv_array*                           images;
 	nqiv_priority_queue*                  thread_queue;
 };

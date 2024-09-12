@@ -2341,7 +2341,8 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		}
 		POP;
 		L("no_resample_oversized",
-		  "Normally, if the image is larger than 16k by 16k pixels, it will be reloaded for each "
+		  "Normally, if the image is larger than the platform's maximum texture size, it will be "
+		  "reloaded for each "
 		  "zoom. This keeps the normal behavior with the entire image downsized.",
 		  nqiv_cmd_parser_set_no_resample_oversized, nqiv_cmd_parser_print_no_resample_oversized,
 		  bool_args);

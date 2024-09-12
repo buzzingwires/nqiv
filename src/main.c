@@ -124,6 +124,14 @@ bool nqiv_setup_sdl(nqiv_state* state)
 		               "Failed to create SDL Renderer. SDL Error: %s\n", SDL_GetError());
 		return false;
 	}
+	SDL_RendererInfo renderer_info = {0};
+	if(SDL_GetRendererInfo(state->renderer, &renderer_info) != 0) {
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
+		               "Failed to retrieve SDL renderer info. SDL Error: %s\n", SDL_GetError());
+		return false;
+	}
+	state->images.max_texture_width = renderer_info.max_texture_width;
+	state->images.max_texture_height = renderer_info.max_texture_height;
 	if(SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255) != 0) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
 		               "Failed to set SDL Renderer draw color. SDL Error: %s\n", SDL_GetError());
@@ -678,7 +686,9 @@ bool render_from_form(nqiv_state*     state,
 		nqiv_apply_zoom_modifications(state, first_frame);
 		nqiv_image_manager_retrieve_zoomrect(&state->images, !is_montage, state->stretch_images,
 		                                     &srcrect, dstrect_zoom_ptr);
-		if(!state->no_resample_oversized && (form->height > 16000 || form->width > 16000)) {
+		if(!state->no_resample_oversized
+		   && (form->height > state->images.max_texture_height
+		       || form->width > state->images.max_texture_width)) {
 			if(form->srcrect.x != srcrect.x || form->srcrect.y != srcrect.y
 			   || form->srcrect.w != srcrect.w || form->srcrect.h != srcrect.h) {
 				resample_zoom = true;

@@ -306,10 +306,15 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		               form == &image->image ? "image" : "thumbnail", image->image.path);
 	}
 
-	if(form->srcrect.w > 16000 || form->srcrect.h > 16000) {
+	if(form->srcrect.w > image->parent->max_texture_width
+	   || form->srcrect.h > image->parent->max_texture_height) {
 		const int largest_dimension =
 			form->srcrect.w > form->srcrect.h ? form->srcrect.w : form->srcrect.h;
-		const double resize_ratio = 16000.0 / (double)largest_dimension;
+		const int smallest_texture_dimension =
+			image->parent->max_texture_width > image->parent->max_texture_height
+				? image->parent->max_texture_height
+				: image->parent->max_texture_width;
+		const double resize_ratio = (double)smallest_texture_dimension / (double)largest_dimension;
 		if(vips_resize(used_vips, &new_vips, resize_ratio, NULL) == -1) {
 			if(used_vips != form->vips) {
 				g_object_unref(used_vips);
