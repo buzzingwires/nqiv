@@ -8,7 +8,9 @@
 #include <vips/vips.h>
 #include <omp.h>
 
+#include "event.h"
 #include "array.h"
+#include "queue.h"
 #include "image.h"
 #include "thumbnail.h"
 #include "state.h"
@@ -554,12 +556,15 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 	return true;
 }
 
+bool nqiv_image_is_form_loaded(nqiv_image_form* form)
+{
+	return form->vips != NULL || form->data != NULL || form->surface != NULL
+	       || form->texture != NULL;
+}
+
 bool nqiv_image_has_loaded_form(nqiv_image* image)
 {
-	return image->image.vips != NULL || image->image.data != NULL || image->image.surface != NULL
-	       || image->image.texture != NULL || image->thumbnail.vips != NULL
-	       || image->thumbnail.data != NULL || image->thumbnail.surface != NULL
-	       || image->thumbnail.texture != NULL;
+	return nqiv_image_is_form_loaded(&image->thumbnail) || nqiv_image_is_form_loaded(&image->image);
 }
 
 /* Image manager */
@@ -1079,35 +1084,67 @@ int nqiv_image_manager_get_zoom_percent(nqiv_image_manager* manager)
 	return (int)((manager->zoom.actual_size_level / manager->zoom.image_to_viewport_ratio) * 100.0);
 }
 
-void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size)
+bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size)
 {
 	if(nqiv_thumbnail_get_closest_size(manager->thumbnail.size)
-	   == nqiv_thumbnail_get_closest_size(old_size)) {
-		return;
+	   <= nqiv_thumbnail_get_closest_size(old_size)) {
+		return true;
 	}
 	const int    num_images = nqiv_array_get_units_count(manager->images);
 	nqiv_image** images = manager->images->data;
 	int          idx;
 	for(idx = 0; idx < num_images; ++idx) {
+		nqiv_image_lock(images[idx]);
 		images[idx]->thumbnail_attempted = false;
+		if(nqiv_image_is_form_loaded(&(images[idx]->thumbnail))) {
+			if(images[idx]->thumbnail.texture != NULL
+			   || images[idx]->thumbnail.fallback_texture != NULL) {
+				nqiv_unload_image_form_texture(&images[idx]->thumbnail);
+				nqiv_unload_image_form_fallback_texture(&images[idx]->thumbnail);
+				nqiv_unload_image_form_texture(&images[idx]->thumbnail);
+				assert(images[idx]->thumbnail.texture == NULL);
+				assert(images[idx]->thumbnail.fallback_texture == NULL);
+			}
+			if(images[idx]->thumbnail.path != NULL) {
+				free(images[idx]->thumbnail.path);
+				images[idx]->thumbnail.path = NULL;
+			}
+			if(images[idx]->thumbnail.vips != NULL || images[idx]->thumbnail.data != NULL
+			   || images[idx]->thumbnail.surface != NULL) {
+				nqiv_event event = {0};
+				event.type = NQIV_EVENT_IMAGE_LOAD;
+				event.transaction_group = -1;
+				event.options.image_load.image = images[idx];
+				event.options.image_load.thumbnail_options.unload = true;
+				event.options.image_load.thumbnail_options.vips =
+					images[idx]->thumbnail.vips != NULL;
+				event.options.image_load.thumbnail_options.raw =
+					images[idx]->thumbnail.data != NULL;
+				event.options.image_load.thumbnail_options.surface =
+					images[idx]->thumbnail.surface != NULL;
+				if(!nqiv_priority_queue_push(manager->thread_queue,
+				                             NQIV_EVENT_PRIORITY_REATTEMPT_THUMBNAIL, &event)) {
+					nqiv_image_unlock(images[idx]);
+					return false;
+				}
+			}
+		}
+		nqiv_image_unlock(images[idx]);
 	}
+	return true;
 }
 
 void nqiv_image_manager_increment_thumbnail_size_base(nqiv_image_manager* manager, const int adjust)
 {
-	const int old_size = manager->thumbnail.size;
 	manager->thumbnail.size += adjust;
-	nqiv_image_manager_reattempt_thumbnails(manager, old_size);
 }
 
 void nqiv_image_manager_decrement_thumbnail_size_base(nqiv_image_manager* manager, const int adjust)
 {
-	const int old_size = manager->thumbnail.size;
 	manager->thumbnail.size -= adjust;
 	if(manager->thumbnail.size <= 0) {
 		manager->thumbnail.size = adjust;
 	}
-	nqiv_image_manager_reattempt_thumbnails(manager, old_size);
 }
 
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager)

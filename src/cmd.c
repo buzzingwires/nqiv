@@ -218,8 +218,7 @@ bool nqiv_cmd_parser_set_thumbnail_size(nqiv_cmd_manager* manager, nqiv_cmd_arg_
 {
 	const int old_size = manager->state->images.thumbnail.size;
 	manager->state->images.thumbnail.size = tokens[0]->value.as_int;
-	nqiv_image_manager_reattempt_thumbnails(&manager->state->images, old_size);
-	return true;
+	return nqiv_image_manager_reattempt_thumbnails(&manager->state->images, old_size);
 }
 
 bool nqiv_cmd_parser_set_default_frame_time(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)

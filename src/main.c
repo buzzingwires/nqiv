@@ -351,6 +351,7 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 		fputs("Failed to initialize thread queue.\n", stderr);
 		return false;
 	}
+	state->images.thread_queue = &state->thread_queue;
 	if(!nqiv_queue_init(&state->key_actions, &state->logger, sizeof(nqiv_keybind_pair*),
 	                    STARTING_QUEUE_LENGTH)) {
 		fputs("Failed to initialize key action queue.\n", stderr);
@@ -1118,6 +1119,20 @@ void render_and_update(
 	}
 }
 
+void nqiv_handle_thumbnail_resize_action(nqiv_state* state,
+                                         bool*       running,
+                                         bool*       result,
+                                         void (*op)(nqiv_image_manager*))
+{
+	const int old_size = state->images.thumbnail.size;
+	op(&state->images);
+	if(!nqiv_image_manager_reattempt_thumbnails(&state->images, old_size)) {
+		*running = false;
+		*result = false;
+	}
+	render_and_update(state, running, result, false, false);
+}
+
 /* TODO Won't running simulated just also run the events on non-simulated events? */
 void nqiv_handle_keyactions(nqiv_state*                       state,
                             bool*                             running,
@@ -1222,8 +1237,8 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 				nqiv_image_manager_zoom_in(&state->images);
 				render_and_update(state, running, result, false, false);
 			} else if(state->montage.dimensions.count > 2) {
-				nqiv_image_manager_increment_thumbnail_size(&state->images);
-				render_and_update(state, running, result, false, false);
+				nqiv_handle_thumbnail_resize_action(state, running, result,
+				                                    nqiv_image_manager_increment_thumbnail_size);
 			}
 		} else if(pair->action == NQIV_KEY_ACTION_ZOOM_OUT) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom out.\n");
@@ -1231,8 +1246,8 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 				nqiv_image_manager_zoom_out(&state->images);
 				render_and_update(state, running, result, false, false);
 			} else {
-				nqiv_image_manager_decrement_thumbnail_size(&state->images);
-				render_and_update(state, running, result, false, false);
+				nqiv_handle_thumbnail_resize_action(state, running, result,
+				                                    nqiv_image_manager_decrement_thumbnail_size);
 			}
 		} else if(pair->action == NQIV_KEY_ACTION_PAN_LEFT) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan left.\n");
@@ -1264,8 +1279,8 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 				nqiv_image_manager_zoom_in_more(&state->images);
 				render_and_update(state, running, result, false, false);
 			} else if(state->montage.dimensions.count > 2) {
-				nqiv_image_manager_increment_thumbnail_size_more(&state->images);
-				render_and_update(state, running, result, false, false);
+				nqiv_handle_thumbnail_resize_action(
+					state, running, result, nqiv_image_manager_increment_thumbnail_size_more);
 			}
 		} else if(pair->action == NQIV_KEY_ACTION_ZOOM_OUT_MORE) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action zoom out more.\n");
@@ -1273,8 +1288,8 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 				nqiv_image_manager_zoom_out_more(&state->images);
 				render_and_update(state, running, result, false, false);
 			} else {
-				nqiv_image_manager_decrement_thumbnail_size_more(&state->images);
-				render_and_update(state, running, result, false, false);
+				nqiv_handle_thumbnail_resize_action(
+					state, running, result, nqiv_image_manager_decrement_thumbnail_size_more);
 			}
 		} else if(pair->action == NQIV_KEY_ACTION_PAN_LEFT_MORE) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action pan left more.\n");

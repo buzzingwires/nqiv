@@ -7,6 +7,7 @@
 #include <vips/vips.h>
 
 #include "array.h"
+#include "queue.h"
 #include "logging.h"
 
 /*
@@ -126,6 +127,7 @@ struct nqiv_image_manager
 	nqiv_image_manager_zoom_settings      zoom;
 	Uint32                                default_frame_time;
 	nqiv_array*                           images;
+	nqiv_priority_queue*                  thread_queue;
 };
 
 void nqiv_log_vips_exception(nqiv_log_ctx*          logger,
@@ -172,7 +174,7 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
                                                   const SDL_Rect*     dstrect);
 int  nqiv_image_manager_get_zoom_percent(nqiv_image_manager* manager);
 
-void nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size);
+bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size);
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager);
 void nqiv_image_manager_decrement_thumbnail_size(nqiv_image_manager* manager);
 void nqiv_image_manager_increment_thumbnail_size_more(nqiv_image_manager* manager);
