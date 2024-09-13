@@ -12,7 +12,6 @@
 #include <vips/vips.h>
 
 #include "image.h"
-#include "md5.h"
 #include "thumbnail.h"
 
 int nqiv_thumbnail_get_closest_size(const int size)
@@ -69,22 +68,20 @@ bool nqiv_thumbnail_render_uri(const nqiv_image* image, char* uri)
 
 bool nqiv_thumbnail_digest_to_builder(nqiv_array* builder, const nqiv_image* image)
 {
-	MD5_CTX md5state;
-	MD5_Init(&md5state);
 	char actualpath[NQIV_URI_LEN + 1];
 	if(!nqiv_thumbnail_render_uri(image, actualpath)) {
 		return false;
 	}
-	MD5_Update(&md5state, actualpath, strlen(actualpath));
-	unsigned char md5raw[16];
-	MD5_Final(md5raw, &md5state);
-	int idx;
-	for(idx = 0; idx < 16; ++idx) {
-		if(!nqiv_array_push_sprintf(builder, "%02x", (unsigned int)md5raw[idx])) {
-			return false;
-		}
+	gchar* md5string = g_compute_checksum_for_string(G_CHECKSUM_MD5, actualpath, -1);
+	if(md5string == NULL) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
+		               "Failed to compute checksum for thumbnail URI '%s' of %s\n", actualpath,
+		               image->image.path);
+		return false;
 	}
-	return true;
+	const bool result = nqiv_array_push_str(builder, md5string);
+	g_free(md5string);
+	return result;
 }
 
 bool nqiv_thumbnail_get_type(const nqiv_image_manager* images,
