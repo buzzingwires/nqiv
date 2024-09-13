@@ -7,7 +7,6 @@
 	#include <string.h>
 	#include <errno.h>
 	#include <direct.h>
-	#include <winbase.h>
 char* nqiv_realpath(const char* path, char* resolved_path)
 {
 	return _fullpath(resolved_path, path, PATH_MAX);
@@ -19,6 +18,8 @@ bool nqiv_mkdir(char* path)
 }
 bool nqiv_chmod(const char* filename, uint16_t mode)
 {
+	(void)filename;
+	(void)mode;
 	return true; /* Windows doesn't do that */
 }
 #else
