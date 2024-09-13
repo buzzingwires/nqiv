@@ -1756,15 +1756,16 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 					&& nqiv_array_push_str(&current_cmd_builder, current_node->name);
 				current_cmd_success =
 					current_cmd_success && nqiv_array_push_str(&current_cmd_builder, " ");
+				if(current_node->deprecated) {
+					const char eolcd = nqiv_cmd_tmpterm(data, eolpos);
+					nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
+					               "Node '%s' deprecated for input %s\n", current_node->name,
+					               data + idx);
+					nqiv_cmd_tmpret(data, eolpos, eolcd);
+				}
 				break;
 			}
 			child = child->peer;
-		}
-		if(current_node->deprecated) {
-			const char eolcd = nqiv_cmd_tmpterm(data, eolpos);
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
-			               "Node '%s' deprecated for input %s\n", current_node->name, data + idx);
-			nqiv_cmd_tmpret(data, eolpos, eolcd);
 		}
 		if(!found_node) {
 			break;
