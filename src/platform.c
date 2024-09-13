@@ -21,11 +21,6 @@ bool nqiv_chmod(const char* filename, uint16_t mode)
 {
 	return true; /* Windows doesn't do that */
 }
-bool nqiv_rename(const char* to, const char* from)
-{
-	assert(strcmp(to, from) != 0);
-	return MoveFile(from, to) != 0;
-}
 #else
 	#include <stdio.h>
 	#include <stdint.h>
@@ -47,11 +42,6 @@ bool nqiv_mkdir(char* path)
 bool nqiv_chmod(const char* filename, uint16_t mode)
 {
 	return chmod(filename, mode) == 0;
-}
-bool nqiv_rename(const char* to, const char* from)
-{
-	assert(strcmp(to, from) != 0);
-	return rename(from, to) != -1;
 }
 #endif
 

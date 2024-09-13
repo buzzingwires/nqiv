@@ -288,7 +288,7 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 		               image->thumbnail.path, image->image.path);
 		return false;
 	}
-	if(!nqiv_rename(image->thumbnail.path, tmppath)) {
+	if(g_rename(tmppath, image->thumbnail.path) == -1) {
 		if(nqiv_stat(image->thumbnail.path, NULL)) {
 			nqiv_log_write(image->parent->logger, NQIV_LOG_INFO,
 			               "Thumbnail already exists (concurrent creation) for"
