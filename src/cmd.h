@@ -123,7 +123,6 @@ struct nqiv_cmd_manager
  * the string, a union with the raw data, if relevant. Whenever we're finished with text, we can
  * traverse the string forward.*/
 
-/* TODO Stifle repeated events? */
 struct nqiv_cmd_node
 {
 	char* name;

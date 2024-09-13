@@ -585,7 +585,6 @@ bool render_from_form(nqiv_state*     state,
                       const bool      lock,
                       const int       base_priority)
 {
-	/* TODO Use load thumbnail for is_thumbnail? */
 	bool             cleared = is_montage;
 	nqiv_image_form* form = is_thumbnail ? &image->thumbnail : &image->image;
 	if(is_montage) {

@@ -279,7 +279,6 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Form %s vips for loaded for image %s\n",
 	               form == &image->image ? "image" : "thumbnail", image->image.path);
-	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
 }
 
@@ -664,8 +663,6 @@ bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, co
 {
 	nqiv_image* image = nqiv_image_create(manager->logger, path);
 	if(image == NULL) {
-		// nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Failed to generate image at path '%s'.
-		// Success: %s", path, "false");
 		return false;
 	}
 	const int images_length = nqiv_array_get_units_count(manager->images);
@@ -684,7 +681,6 @@ bool nqiv_image_manager_insert(nqiv_image_manager* manager, const char* path, co
 		               index);
 		return false;
 	}
-	// nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Generated image at path '%s'.", path);
 	nqiv_log_write(manager->logger, NQIV_LOG_INFO,
 	               "Added image at path '%s' to image manager at index %d.\n", path, index);
 	image->parent = manager;
@@ -714,8 +710,6 @@ bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path)
 {
 	nqiv_image* image = nqiv_image_create(manager->logger, path);
 	if(image == NULL) {
-		// nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Failed to generate image at path '%s'.
-		// Success: %s", path, "false");
 		return false;
 	}
 	if(!nqiv_array_push(manager->images, &image)) {
@@ -724,7 +718,6 @@ bool nqiv_image_manager_append(nqiv_image_manager* manager, const char* path)
 		               "Failed to add image at path '%s' to image manager.", path);
 		return false;
 	}
-	// nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Generated image at path '%s'.", path);
 	nqiv_log_write(manager->logger, NQIV_LOG_INFO, "Added image at path '%s' to image manager.\n",
 	               path);
 	image->parent = manager;
@@ -1199,7 +1192,6 @@ bool nqiv_image_form_first_frame(nqiv_image* image, nqiv_image_form* form)
 		return false;
 	}
 	nqiv_image_form_delay_frame(form);
-	/* GIFs are 10 FPS by default. Do we need to account for other delays? */
 	return true;
 }
 

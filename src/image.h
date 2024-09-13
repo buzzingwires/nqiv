@@ -10,19 +10,6 @@
 #include "queue.h"
 #include "logging.h"
 
-/*
- * thumbnail data
- * image data
- * mode sdl texture | sdl surface | raw data
- * load thumbnail (from disk)
- * save thumbnail (to disk)
- * thumbnail path
- * image path
- * size
- * other metadata
- * instead of size readahead and behind like vimiv?
- */
-
 typedef struct nqiv_image_form_animation
 {
 	bool   exists;

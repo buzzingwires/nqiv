@@ -3,16 +3,6 @@
 
 #include <SDL2/SDL.h>
 
-/*
-void set_pixel(SDL_Surface *surface, int x, int y, Uint32 pixel)
-{
-  Uint32 * const target_pixel = (Uint32 *) ((Uint8 *) surface->pixels
-                                             + y * surface->pitch
-                                             + x * surface->format->BytesPerPixel);
-  *target_pixel = pixel;
-}
-*/
-
 void nqiv_fill_checked_rect(SDL_Surface*     surface,
                             const SDL_Rect*  rect,
                             const int        x_check_size,
