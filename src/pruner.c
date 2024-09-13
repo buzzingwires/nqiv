@@ -234,20 +234,12 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 			 * master. */
 			if(desc->unload_texture
 			   && (image->image.texture != NULL || image->image.fallback_texture != NULL)) {
-				nqiv_unload_image_form_texture(&image->image);
-				nqiv_unload_image_form_fallback_texture(&image->image);
-				nqiv_unload_image_form_texture(&image->image);
-				assert(image->image.texture == NULL);
-				assert(image->image.fallback_texture == NULL);
+				nqiv_unload_image_form_all_textures(&image->image);
 				send_event = true;
 			}
 			if(desc->unload_thumbnail_texture
 			   && (image->thumbnail.texture != NULL || image->thumbnail.fallback_texture != NULL)) {
-				nqiv_unload_image_form_texture(&image->thumbnail);
-				nqiv_unload_image_form_fallback_texture(&image->thumbnail);
-				nqiv_unload_image_form_texture(&image->thumbnail);
-				assert(image->thumbnail.texture == NULL);
-				assert(image->thumbnail.fallback_texture == NULL);
+				nqiv_unload_image_form_all_textures(&image->thumbnail);
 				send_event = true;
 			}
 			event_options->image_options.vips = event_options->image_options.vips

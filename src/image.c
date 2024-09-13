@@ -47,6 +47,15 @@ void nqiv_unload_image_form_fallback_texture(nqiv_image_form* form)
 	nqiv_unload_texture_ptr(&form->fallback_texture, true);
 }
 
+void nqiv_unload_image_form_all_textures(nqiv_image_form* form)
+{
+	nqiv_unload_image_form_texture(form);
+	nqiv_unload_image_form_fallback_texture(form);
+	nqiv_unload_image_form_texture(form);
+	assert(form->texture == NULL);
+	assert(form->fallback_texture == NULL);
+}
+
 void nqiv_unload_image_form_surface(nqiv_image_form* form)
 {
 	assert(form != NULL);
@@ -69,8 +78,7 @@ void nqiv_unload_image_form(nqiv_image_form* form)
 {
 	assert(form != NULL);
 	nqiv_unload_image_form_vips(form);
-	nqiv_unload_image_form_texture(form);
-	nqiv_unload_image_form_fallback_texture(form);
+	nqiv_unload_image_form_all_textures(nqiv_image_form* form);
 	nqiv_unload_image_form_surface(form);
 	nqiv_unload_image_form_raw(form);
 }
@@ -1104,11 +1112,7 @@ bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const 
 		if(nqiv_image_is_form_loaded(&(images[idx]->thumbnail))) {
 			if(images[idx]->thumbnail.texture != NULL
 			   || images[idx]->thumbnail.fallback_texture != NULL) {
-				nqiv_unload_image_form_texture(&images[idx]->thumbnail);
-				nqiv_unload_image_form_fallback_texture(&images[idx]->thumbnail);
-				nqiv_unload_image_form_texture(&images[idx]->thumbnail);
-				assert(images[idx]->thumbnail.texture == NULL);
-				assert(images[idx]->thumbnail.fallback_texture == NULL);
+				nqiv_unload_image_form_all_textures(&images[idx]->thumbnail);
 			}
 			if(images[idx]->thumbnail.path != NULL) {
 				free(images[idx]->thumbnail.path);
