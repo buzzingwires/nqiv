@@ -198,6 +198,9 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 			}
 		} else {
 			if(events_processed > 0) {
+				nqiv_log_write(logger, NQIV_LOG_DEBUG,
+				               "Thread %d waking master after processing %d events\n",
+				               omp_get_thread_num(), events_processed);
 				events_processed = 0;
 				SDL_Event tell_finished = {0};
 				tell_finished.type = SDL_USEREVENT;

@@ -227,7 +227,8 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 		       && pruner->state.or_result == desc->state_check.or_result)
 		   || (pruner->state.and_is_set && desc->counter & NQIV_PRUNER_COUNT_OP_AND
 		       && pruner->state.and_result == desc->state_check.and_result)) {
-			nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Pruning image %s\n", image->image.path);
+			nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Desc %d pruning image %s\n", idx,
+			               image->image.path);
 			/* TODO: This cannot be called from a thread. If we plan to have the pruner run in a
 			 * thread, we need to do this in a thread safe way, probably by sending an SDL event for
 			 * master. */
@@ -295,9 +296,8 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 				|| event_options->thumbnail_options.surface_soft;
 		}
 	}
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG,
-	               "%sending prune event for image %d desc %d/%d.\n", send_event ? "S" : "Not s",
-	               iidx, idx, num_descs);
+	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "%sending prune event for image %d.\n",
+	               send_event ? "S" : "Not s", iidx);
 	if(send_event) {
 		event.transaction_group = pruner->thread_event_transaction_group;
 		if(!nqiv_priority_queue_push(thread_queue, NQIV_EVENT_PRIORITY_PRUNE, &event)) {

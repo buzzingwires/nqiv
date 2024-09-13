@@ -480,8 +480,6 @@ bool nqiv_send_thread_event_base(nqiv_state*       state,
 	} else {
 		event_sent = nqiv_priority_queue_push(&state->thread_queue, level, event);
 	}
-	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Event sent attempted, status: %s.\n",
-	               event_sent ? "Success" : "Failure");
 	if(!event_sent) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to send event.\n");
 		return false;

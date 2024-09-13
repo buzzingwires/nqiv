@@ -59,16 +59,17 @@ bool nqiv_queue_push(nqiv_queue* queue, const void* entry)
 	assert(entry != NULL);
 	assert(queue != NULL);
 	assert(queue->array != NULL);
-	bool result = false;
+	bool result = true;
 	omp_set_lock(&queue->lock);
+	const int old_length = queue->array->data_length;
 	if(!nqiv_array_push(queue->array, entry)) {
 		nqiv_log_write(queue->logger, NQIV_LOG_WARNING, "Failed to push to array of length %d.\n",
 		               queue->array->data_length);
-	} else {
-		nqiv_log_write(queue->logger, NQIV_LOG_DEBUG,
-		               "Pushed to queue of length %d at position %d.\n", queue->array->data_length,
-		               queue->array->position - 1);
-		result = true;
+		result = false;
+	}
+	if(old_length != queue->array->data_length) {
+		nqiv_log_write(queue->logger, NQIV_LOG_DEBUG, "Expanded queue from length %d to %d.\n",
+		               old_length, queue->array->data_length);
 	}
 	omp_unset_lock(&queue->lock);
 	return result;
@@ -105,8 +106,6 @@ bool nqiv_queue_pop(nqiv_queue* queue, void* entry)
 	bool result = false;
 	omp_set_lock(&queue->lock);
 	if(nqiv_array_pop(queue->array, entry)) {
-		nqiv_log_write(queue->logger, NQIV_LOG_DEBUG, "Popped from queue at position %d.\n",
-		               queue->array->position + 1);
 		result = true;
 	}
 	omp_unset_lock(&queue->lock);
