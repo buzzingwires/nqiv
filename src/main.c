@@ -335,7 +335,7 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 	if(!nqiv_cmd_manager_init(&state->cmds, state)) {
 		return false;
 	}
-	state->logger.level = NQIV_LOG_ERROR;
+	state->logger.level = NQIV_LOG_WARNING;
 	if(!nqiv_check_and_print_logger_error(&state->logger)) {
 		return false;
 	}
