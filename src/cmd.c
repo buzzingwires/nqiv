@@ -1726,6 +1726,7 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 		dumpcfg = true;
 	}
 	nqiv_cmd_node* current_node = manager->root_node;
+	assert(!manager->root_node->deprecated);
 	while(idx < eolpos) {
 		const int next_text_offset = nqiv_cmd_scan_not_whitespace(data, idx, eolpos, NULL);
 		if(next_text_offset != -1) {
@@ -1758,6 +1759,12 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 				break;
 			}
 			child = child->peer;
+		}
+		if(current_node->deprecated) {
+			const char eolc = nqiv_cmd_tmpterm(data, eolpos);
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
+			               "Node '%s' deprecated for input %s\n", current_node->name, data + idx);
+			nqiv_cmd_tmpret(data, eolpos, eolc);
 		}
 		if(!found_node) {
 			break;
