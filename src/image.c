@@ -78,7 +78,7 @@ void nqiv_unload_image_form(nqiv_image_form* form)
 {
 	assert(form != NULL);
 	nqiv_unload_image_form_vips(form);
-	nqiv_unload_image_form_all_textures(nqiv_image_form* form);
+	nqiv_unload_image_form_all_textures(form);
 	nqiv_unload_image_form_surface(form);
 	nqiv_unload_image_form_raw(form);
 }
@@ -568,7 +568,7 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 	return true;
 }
 
-bool nqiv_image_is_form_loaded(nqiv_image_form* form)
+bool nqiv_image_is_form_loaded(const nqiv_image_form* form)
 {
 	return form->vips != NULL || form->data != NULL || form->surface != NULL
 	       || form->texture != NULL;
