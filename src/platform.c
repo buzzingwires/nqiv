@@ -59,14 +59,13 @@ bool nqiv_chmod(const char* filename, uint16_t mode)
 	#include "array.h"
 bool nqiv_stat(const char* path, nqiv_stat_data* data)
 {
+	assert(data != NULL);
 	struct stat s;
 	if(stat(path, &s) != 0) {
 		return false;
 	}
-	if(data != NULL) {
-		data->size = (size_t)(s.st_size);
-		data->mtime = s.st_mtime;
-	}
+	data->size = (size_t)(s.st_size);
+	data->mtime = s.st_mtime;
 	return true;
 }
 bool nqiv_write_path_from_env(char*        output,

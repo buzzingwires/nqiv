@@ -289,16 +289,24 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 		return false;
 	}
 	if(g_rename(tmppath, image->thumbnail.path) == -1) {
-		if(nqiv_stat(image->thumbnail.path, NULL)) {
+		if(g_access(image->thumbnail.path, R_OK | W_OK) != -1) {
 			nqiv_log_write(image->parent->logger, NQIV_LOG_INFO,
 			               "Thumbnail already exists (concurrent creation) for"
 			               "'%s' of image at path '%s'.\n",
 			               image->thumbnail.path, image->image.path);
 			return true;
 		}
-		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-		               "Failed to save '%s' of image at path '%s'.\n", image->thumbnail.path,
-		               image->image.path);
+		if(g_access(image->thumbnail.path, F_OK) != -1) {
+			nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
+			               "Thumbnail already exists (concurrent creation) but does not have "
+			               "read/write permissions for"
+			               "'%s' of image at path '%s'.\n",
+			               image->thumbnail.path, image->image.path);
+		} else {
+			nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
+			               "Failed to save '%s' of image at path '%s'.\n", image->thumbnail.path,
+			               image->image.path);
+		}
 		return false;
 	}
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
