@@ -216,17 +216,19 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 		               form->animation.frame, image->image.path);
 		form->error = true;
 		return false;
-	} else if(delay_value == 0) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
-		               "Delay for frame %d of '%s' is zero. Setting to default of %d\n",
-		               form->animation.frame, image->image.path, image->parent->default_frame_time);
-		form->animation.delay = image->parent->default_frame_time;
-	} else if(delay_value < 0) {
+	}
+	if(delay_value < 0) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 		               "Invalid delay of %d for frame %d of %s\n", delay_value,
 		               form->animation.frame, image->image.path);
 		form->error = true;
 		return false;
+	}
+	if(delay_value == 0) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
+		               "Delay for frame %d of '%s' is zero. Setting to default of %d\n",
+		               form->animation.frame, image->image.path, image->parent->default_frame_time);
+		form->animation.delay = image->parent->default_frame_time;
 	} else {
 		form->animation.delay = delay_value; /* Delay is in milliseconds for vips */
 	}

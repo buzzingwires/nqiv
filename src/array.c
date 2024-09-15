@@ -90,7 +90,7 @@ bool nqiv_array_grow(nqiv_array* array, const int new_count, const bool force)
 	if(!force && array->max_data_length > 0 && length > array->max_data_length) {
 		return false;
 	}
-	void* new_data = (void*)realloc(array->data, length);
+	void* new_data = realloc(array->data, length);
 	if(new_data == NULL) {
 		return false;
 	}

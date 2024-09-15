@@ -349,9 +349,8 @@ int nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* p
 	if(success) {
 		memcpy(pair, &tmp, sizeof(nqiv_keybind_pair));
 		return textlen;
-	} else {
-		return -1;
 	}
+	return -1;
 }
 
 bool nqiv_keybind_create_manager(nqiv_keybind_manager* manager,

@@ -1632,9 +1632,8 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
 		if(parse_result == -1) {
 			error = true;
 			break;
-		} else {
-			idx += parse_result;
 		}
+		idx += parse_result;
 		++tidx;
 	}
 	if(error || nqiv_cmd_scan_not_whitespace(data, idx, eolpos, NULL) != -1) {
