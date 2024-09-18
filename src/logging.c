@@ -6,12 +6,13 @@
 #include <time.h>
 
 #include <omp.h>
+#include <glib.h>
 
 #include "array.h"
 #include "state.h"
 #include "logging.h"
 
-const char* nqiv_log_level_names[] = {
+const char* const nqiv_log_level_names[] = {
 	"any", "debug", "info", "warning", "error",
 };
 
@@ -101,23 +102,34 @@ void nqiv_log_add_stream(nqiv_log_ctx* ctx, const FILE* stream)
 	}
 }
 
-void write_prefix_timeinfo(FILE*       stream,
-                           const char* fmt,
-                           const int   formatter_start,
-                           const int   formatter_len)
+void write_prefix_timeinfo(FILE*         stream,
+                           nqiv_log_ctx* ctx,
+                           const int     formatter_start,
+                           const int     formatter_len)
 {
-	time_t rawtime;
-	time(&rawtime);
-	const struct tm* timeinfo;
-	timeinfo = localtime(&rawtime);
-	char fmtbuf[NQIV_LOG_PREFIX_FORMAT_LEN];
-	memset(fmtbuf, 0, NQIV_LOG_PREFIX_FORMAT_LEN);
+	char fmtbuf[NQIV_LOG_PREFIX_FORMAT_LEN] = {0};
 	assert(formatter_len - (int)strlen("TIME:") >= 0);
-	strncpy(fmtbuf, &fmt[formatter_start + 1 + strlen("TIME:")], formatter_len - strlen("TIME:"));
-	char timebuf[NQIV_LOG_STRFTIME_LEN];
-	memset(timebuf, 0, NQIV_LOG_STRFTIME_LEN);
-	strftime(timebuf, NQIV_LOG_STRFTIME_LEN, fmtbuf, timeinfo);
+	strncpy(fmtbuf, &ctx->prefix_format[formatter_start + 1 + strlen("TIME:")],
+	        formatter_len - strlen("TIME:"));
+
+	GDateTime* dt = g_date_time_new_now_local();
+	if(dt == NULL) {
+		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN,
+		         "Could not allocate memory for datetime.\n");
+		return;
+	}
+
+	gchar* timebuf = g_date_time_format(dt, fmtbuf);
+	if(timebuf == NULL) {
+		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN,
+		         "Failed to generate time format string.\n");
+		g_date_time_unref(dt);
+		return;
+	}
+
+	g_date_time_unref(dt);
 	fprintf(stream, "%s", timebuf);
+	g_free(timebuf);
 }
 
 void write_prefix_level(FILE* stream, const nqiv_log_level level)
@@ -187,8 +199,7 @@ void write_prefix(nqiv_log_ctx* ctx, const nqiv_log_level level, FILE* stream)
 				const int formatter_len = formatter_end - (formatter_start + 1);
 				if(strncmp(&ctx->prefix_format[formatter_start + 1], "time:", strlen("time:"))
 				   == 0) {
-					write_prefix_timeinfo(stream, ctx->prefix_format, formatter_start,
-					                      formatter_len);
+					write_prefix_timeinfo(stream, ctx, formatter_start, formatter_len);
 				} else if(strncmp(&ctx->prefix_format[formatter_start + 1], "level",
 				                  strlen("level"))
 				          == 0) {

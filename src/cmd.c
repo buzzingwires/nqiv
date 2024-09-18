@@ -1,3 +1,5 @@
+#include "platform.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -893,7 +895,7 @@ void nqiv_cmd_parser_print_start_delay_default(nqiv_cmd_manager* manager)
 	fprintf(stdout, "%" PRIu64, manager->state->keystates.settings.start_delay);
 }
 
-const char* nqiv_press_action_names[] = {
+const char* const nqiv_press_action_names[] = {
 	"default",
 	"allow",
 	"deny",
@@ -909,92 +911,92 @@ void nqiv_cmd_parser_print_send_on_up_default(nqiv_cmd_manager* manager)
 	fprintf(stdout, "%s", manager->state->keystates.send_on_up ? "true" : "false");
 }
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_int_natural = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_int_natural = {
 	.type = NQIV_CMD_ARG_INT,
 	.setting = {.of_int = {.min = 0, .max = INT_MAX}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_int_positive = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_int_positive = {
 	.type = NQIV_CMD_ARG_INT,
 	.setting = {.of_int = {.min = 1, .max = INT_MAX}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_Uint64 = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_Uint64 = {
 	.type = NQIV_CMD_ARG_UINT64,
 	.setting = {.of_Uint64 = {.min = (Uint64)0, .max = (Uint64)INT_MAX}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_Uint8 = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_Uint8 = {
 	.type = NQIV_CMD_ARG_UINT8,
 	.setting = {{0}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_double_positive = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_double_positive = {
 	.type = NQIV_CMD_ARG_DOUBLE,
 	.setting = {.of_double = {.min = NQIV_CMD_ARG_FLOAT_MIN, .max = NQIV_CMD_ARG_FLOAT_MAX}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_double_negative = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_double_negative = {
 	.type = NQIV_CMD_ARG_DOUBLE,
 	.setting = {.of_double = {.min = -NQIV_CMD_ARG_FLOAT_MAX, .max = -NQIV_CMD_ARG_FLOAT_MIN}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_double_negative_one = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_double_negative_one = {
 	.type = NQIV_CMD_ARG_DOUBLE,
 	.setting = {.of_double = {.min = -1.0, .max = -NQIV_CMD_ARG_FLOAT_MIN}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_double_positive_one = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_double_positive_one = {
 	.type = NQIV_CMD_ARG_DOUBLE,
 	.setting = {.of_double = {.min = NQIV_CMD_ARG_FLOAT_MIN, .max = 1.0}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_double = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_double = {
 	.type = NQIV_CMD_ARG_DOUBLE,
 	.setting = {.of_double = {.min = -NQIV_CMD_ARG_FLOAT_MAX, .max = NQIV_CMD_ARG_FLOAT_MAX}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_bool = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_bool = {
 	.type = NQIV_CMD_ARG_BOOL,
 	.setting = {{0}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_log_level = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_log_level = {
 	.type = NQIV_CMD_ARG_LOG_LEVEL,
 	.setting = {{0}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_press_action = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_press_action = {
 	.type = NQIV_CMD_ARG_PRESS_ACTION,
 	.setting = {{0}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_key_action = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_key_action = {
 	.type = NQIV_CMD_ARG_KEY_ACTION,
 	.setting = {{0}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_key_action_brief = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_key_action_brief = {
 	.type = NQIV_CMD_ARG_KEY_ACTION,
 	.setting = {.of_key_action = {.brief = true}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_keybind = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_keybind = {
 	.type = NQIV_CMD_ARG_KEYBIND,
 	.setting = {{0}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_string = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_string = {
 	.type = NQIV_CMD_ARG_STRING,
 	.setting = {.of_string = {.spaceless = true}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_string_full = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_string_full = {
 	.type = NQIV_CMD_ARG_STRING,
 	.setting = {.of_string = {.spaceless = false}},
 };
 
-nqiv_cmd_arg_desc nqiv_parser_arg_type_pruner = {
+const nqiv_cmd_arg_desc nqiv_parser_arg_type_pruner = {
 	.type = NQIV_CMD_ARG_PRUNER,
 	.setting = {{0}},
 };
@@ -1026,7 +1028,7 @@ int nqiv_cmd_scan_subs(const char*  data,
 			if(!negated) {
 				if(strncmp(&data[bidx], subs[sidx], strlen(subs[sidx])) == 0) {
 					if(length != NULL) {
-						*length = strlen(subs[sidx]);
+						*length = nqiv_strlen(subs[sidx]);
 					}
 					goto found;
 				}
@@ -1373,15 +1375,15 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd checking int arg at %d for token %s for input %s\n", tidx,
 			               current_node->name, data);
-			char*     end = NULL;
-			const int tmp = strtol(data, &end, 10);
+			char*          end = NULL;
+			const long int tmp = strtol(data, &end, 10);
 			if(errno != ERANGE && end != NULL && tmp >= desc->setting.of_int.min
 			   && tmp <= desc->setting.of_int.max) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
-				               "Cmd int arg at %d for token %s is %d for input %s\n", tidx,
+				               "Cmd int arg at %d for token %s is %ld for input %s\n", tidx,
 				               current_node->name, tmp, data);
-				token->value.as_int = tmp;
-				output = end - data;
+				token->value.as_int = (int)tmp;
+				output = nqiv_ptrdiff(end, data);
 			} else {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
 				               "Cmd error parsing int arg at %d for token %s with input %s\n", tidx,
@@ -1402,7 +1404,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 				               "Cmd double at %d for token %s is %f for input %s\n", tidx,
 				               current_node->name, tmp, data);
 				token->value.as_double = tmp;
-				output = end - data;
+				output = nqiv_ptrdiff(end, data);
 			} else {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
 				               "Cmd error parsing double arg at %d for token %s with input %s\n",
@@ -1415,15 +1417,16 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd checking uint64 arg at %d for token %s for input %s\n", tidx,
 			               current_node->name, data);
-			char*     end = NULL;
-			const int tmp = strtol(data, &end, 10);
-			if(errno != ERANGE && end != NULL && (Uint64)tmp >= desc->setting.of_Uint64.min
-			   && (Uint64)tmp <= desc->setting.of_Uint64.max) {
+			char*                   end = NULL;
+			const unsigned long int tmp = strtoul(data, &end, 10);
+			if(errno != ERANGE && end != NULL
+			   && (uintmax_t)tmp >= (uintmax_t)desc->setting.of_Uint64.min
+			   && (uintmax_t)tmp <= (uintmax_t)desc->setting.of_Uint64.max) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
-				               "Cmd uint64 arg at %d for token %s is %d for input %s\n", tidx,
+				               "Cmd uint64 arg at %d for token %s is %lu for input %s\n", tidx,
 				               current_node->name, tmp, data);
 				token->value.as_Uint64 = (Uint64)tmp;
-				output = end - data;
+				output = nqiv_ptrdiff(end, data);
 			} else {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
 				               "Cmd error parsing uint64 arg at %d for token %s with input %s\n",
@@ -1436,14 +1439,14 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd checking uint8 arg at %d for token %s for input %s\n", tidx,
 			               current_node->name, data);
-			char*     end = NULL;
-			const int tmp = strtol(data, &end, 10);
+			char*          end = NULL;
+			const long int tmp = strtol(data, &end, 10);
 			if(errno != ERANGE && end != NULL && tmp >= 0 && tmp <= 255) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 				               "Cmd uint8 arg at %d for token %s is %d for input %s\n", tidx,
 				               current_node->name, tmp, data);
 				token->value.as_Uint8 = (Uint8)tmp;
-				output = end - data;
+				output = nqiv_ptrdiff(end, data);
 			} else {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
 				               "Cmd error parsing uint8 arg at %d for token %s with input %s\n",
@@ -1486,7 +1489,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 				               "Cmd log level arg at %d for token %s is %s for input %s\n", tidx,
 				               current_node->name, nqiv_log_level_names[tmp / 10], data);
 				token->value.as_log_level = tmp;
-				output = strlen(nqiv_log_level_names[tmp / 10]);
+				output = nqiv_strlen(nqiv_log_level_names[tmp / 10]);
 			} else {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
 				               "Cmd error parsing log level arg at %d for token %s with input %s\n",
@@ -1505,7 +1508,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 				               "Cmd press action arg at %d for token %s is %s for input %s\n", tidx,
 				               current_node->name, nqiv_press_action_names[tmp], data);
 				token->value.as_press_action = tmp;
-				output = strlen(nqiv_press_action_names[tmp]);
+				output = nqiv_strlen(nqiv_press_action_names[tmp]);
 			} else {
 				nqiv_log_write(
 					&manager->state->logger, NQIV_LOG_WARNING,
@@ -1529,7 +1532,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 				               "Cmd key action arg at %d for token %s is %s for input %s\n", tidx,
 				               current_node->name, nqiv_keybind_action_names[tmp], data);
 				token->value.as_key_action = tmp;
-				output = strlen(nqiv_keybind_action_names[tmp]);
+				output = nqiv_strlen(nqiv_keybind_action_names[tmp]);
 			} else {
 				nqiv_log_write(
 					&manager->state->logger, NQIV_LOG_WARNING,
@@ -1869,7 +1872,7 @@ nqiv_cmd_node* nqiv_cmd_get_last_peer(nqiv_cmd_node* first_peer)
 }
 
 /* TODO: Why can't we const this? */
-int nqiv_cmd_get_args_list_length(nqiv_cmd_arg_desc** args)
+int nqiv_cmd_get_args_list_length(const nqiv_cmd_arg_desc** args)
 {
 	assert(args != NULL);
 	int count;
@@ -1881,7 +1884,7 @@ int nqiv_cmd_get_args_list_length(nqiv_cmd_arg_desc** args)
 int nqiv_cmd_get_args_length(const nqiv_cmd_node* node)
 {
 	assert(node != NULL);
-	return nqiv_cmd_get_args_list_length(node->args);
+	return nqiv_cmd_get_args_list_length((const nqiv_cmd_arg_desc**)node->args);
 }
 
 void nqiv_cmd_add_child_node(nqiv_cmd_node* parent, nqiv_cmd_node* child)
@@ -1952,8 +1955,8 @@ nqiv_cmd_node* nqiv_cmd_make_base_node(bool* status, const char* name, const cha
 		*status = *status && false;
 		return NULL;
 	}
-	memcpy(node->name, name, strlen(name));
-	memcpy(node->description, description, strlen(description));
+	strcpy(node->name, name);
+	strcpy(node->description, description);
 	*status = *status && true;
 	return node;
 }
@@ -1963,7 +1966,7 @@ nqiv_cmd_node* nqiv_cmd_make_leaf_node(bool*       status,
                                        const char* description,
                                        bool (*store_value)(nqiv_cmd_manager*, nqiv_cmd_arg_token**),
                                        void (*print_value)(nqiv_cmd_manager*),
-                                       nqiv_cmd_arg_desc** args)
+                                       const nqiv_cmd_arg_desc** args)
 {
 	assert(store_value != NULL);
 	assert(args != NULL);
@@ -2007,7 +2010,7 @@ nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool*          status,
                                             bool (*store_value)(nqiv_cmd_manager*,
                                                                 nqiv_cmd_arg_token**),
                                             void (*print_value)(nqiv_cmd_manager*),
-                                            nqiv_cmd_arg_desc** args)
+                                            const nqiv_cmd_arg_desc** args)
 {
 	if(parent == NULL || !*status) {
 		return NULL;
@@ -2052,33 +2055,35 @@ nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool*          status,
 	SET_CURRENT;
 bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 {
-	nqiv_cmd_arg_desc* sendkey_args[] = {&nqiv_parser_arg_type_key_action, NULL};
-	nqiv_cmd_arg_desc* idxname_args[] = {&nqiv_parser_arg_type_int_natural,
-	                                     &nqiv_parser_arg_type_string_full, NULL};
-	nqiv_cmd_arg_desc* natural_args[] = {&nqiv_parser_arg_type_int_natural, NULL};
-	nqiv_cmd_arg_desc* positive_args[] = {&nqiv_parser_arg_type_int_positive, NULL};
-	nqiv_cmd_arg_desc* uint64_args[] = {&nqiv_parser_arg_type_Uint64, NULL};
-	nqiv_cmd_arg_desc* keyactionbrief_uint64_args[] = {&nqiv_parser_arg_type_key_action_brief,
-	                                                   &nqiv_parser_arg_type_Uint64, NULL};
-	nqiv_cmd_arg_desc* keyactionbrief_pressaction_args[] = {
+	const nqiv_cmd_arg_desc* sendkey_args[] = {&nqiv_parser_arg_type_key_action, NULL};
+	const nqiv_cmd_arg_desc* idxname_args[] = {&nqiv_parser_arg_type_int_natural,
+	                                           &nqiv_parser_arg_type_string_full, NULL};
+	const nqiv_cmd_arg_desc* natural_args[] = {&nqiv_parser_arg_type_int_natural, NULL};
+	const nqiv_cmd_arg_desc* positive_args[] = {&nqiv_parser_arg_type_int_positive, NULL};
+	const nqiv_cmd_arg_desc* uint64_args[] = {&nqiv_parser_arg_type_Uint64, NULL};
+	const nqiv_cmd_arg_desc* keyactionbrief_uint64_args[] = {&nqiv_parser_arg_type_key_action_brief,
+	                                                         &nqiv_parser_arg_type_Uint64, NULL};
+	const nqiv_cmd_arg_desc* keyactionbrief_pressaction_args[] = {
 		&nqiv_parser_arg_type_key_action_brief, &nqiv_parser_arg_type_press_action, NULL};
-	nqiv_cmd_arg_desc* stringfull_args[] = {&nqiv_parser_arg_type_string_full, NULL};
-	nqiv_cmd_arg_desc* string_args[] = {&nqiv_parser_arg_type_string, NULL};
-	nqiv_cmd_arg_desc* pruner_args[] = {&nqiv_parser_arg_type_pruner, NULL};
-	nqiv_cmd_arg_desc* keybind_args[] = {&nqiv_parser_arg_type_keybind, NULL};
-	nqiv_cmd_arg_desc* loglevel_args[] = {&nqiv_parser_arg_type_log_level, NULL};
-	nqiv_cmd_arg_desc* doublepositiveone_args[] = {&nqiv_parser_arg_type_double_positive_one, NULL};
-	nqiv_cmd_arg_desc* doublenegativeone_args[] = {&nqiv_parser_arg_type_double_negative_one, NULL};
-	nqiv_cmd_arg_desc* doublepositive_args[] = {&nqiv_parser_arg_type_double_positive, NULL};
-	nqiv_cmd_arg_desc* doublenegative_args[] = {&nqiv_parser_arg_type_double_negative, NULL};
-	nqiv_cmd_arg_desc* double_args[] = {&nqiv_parser_arg_type_double, NULL};
-	nqiv_cmd_arg_desc* intpositive_args[] = {&nqiv_parser_arg_type_int_positive, NULL};
-	nqiv_cmd_arg_desc* bool_args[] = {&nqiv_parser_arg_type_bool, NULL};
-	nqiv_cmd_arg_desc* color_args[] = {&nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8,
-	                                   &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8,
-	                                   NULL};
-	nqiv_cmd_node*     stack_data[STACKLEN] = {0};
-	nqiv_array         stack;
+	const nqiv_cmd_arg_desc* stringfull_args[] = {&nqiv_parser_arg_type_string_full, NULL};
+	const nqiv_cmd_arg_desc* string_args[] = {&nqiv_parser_arg_type_string, NULL};
+	const nqiv_cmd_arg_desc* pruner_args[] = {&nqiv_parser_arg_type_pruner, NULL};
+	const nqiv_cmd_arg_desc* keybind_args[] = {&nqiv_parser_arg_type_keybind, NULL};
+	const nqiv_cmd_arg_desc* loglevel_args[] = {&nqiv_parser_arg_type_log_level, NULL};
+	const nqiv_cmd_arg_desc* doublepositiveone_args[] = {&nqiv_parser_arg_type_double_positive_one,
+	                                                     NULL};
+	const nqiv_cmd_arg_desc* doublenegativeone_args[] = {&nqiv_parser_arg_type_double_negative_one,
+	                                                     NULL};
+	const nqiv_cmd_arg_desc* doublepositive_args[] = {&nqiv_parser_arg_type_double_positive, NULL};
+	const nqiv_cmd_arg_desc* doublenegative_args[] = {&nqiv_parser_arg_type_double_negative, NULL};
+	const nqiv_cmd_arg_desc* double_args[] = {&nqiv_parser_arg_type_double, NULL};
+	const nqiv_cmd_arg_desc* intpositive_args[] = {&nqiv_parser_arg_type_int_positive, NULL};
+	const nqiv_cmd_arg_desc* bool_args[] = {&nqiv_parser_arg_type_bool, NULL};
+	const nqiv_cmd_arg_desc* color_args[] = {
+		&nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8, &nqiv_parser_arg_type_Uint8,
+		&nqiv_parser_arg_type_Uint8, NULL};
+	nqiv_cmd_node* stack_data[STACKLEN] = {0};
+	nqiv_array     stack;
 	nqiv_array_inherit(&stack, stack_data, sizeof(nqiv_cmd_node*), STACKLEN);
 	bool           status = true;
 	nqiv_cmd_node* root_node = nqiv_cmd_make_base_node(

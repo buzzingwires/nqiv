@@ -395,6 +395,14 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 		case '?':
 			fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
 			return false;
+		case 's':
+		case 'c':
+		case 'B':
+		case 'C':
+			assert(true);
+			break;
+		default:
+			assert(false);
 		}
 	}
 	if(load_default) {
@@ -446,6 +454,11 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 		case '?':
 			fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
 			return false;
+		case 'N':
+			assert(true);
+			break;
+		default:
+			assert(false);
 		}
 	}
 	if(!success) {
@@ -1665,6 +1678,8 @@ bool nqiv_master_thread(nqiv_state* state)
 				render_and_update(state, &running, &result, false, false);
 			}
 			break;
+		default:
+			assert(true);
 		}
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Finished waiting on events.\n");

@@ -32,8 +32,8 @@ void nqiv_fill_checked_rect(SDL_Surface*     surface,
 		int x_square_count = 0;
 		for(x = rect->x; x < rect->w; ++x) {
 			assert(sizeof(Uint8*) == sizeof(void*));
-			Uint8* pixel =
-				(Uint8*)(surface->pixels) + y * surface->pitch + x * surface->format->BytesPerPixel;
+			Uint8* pixel = (Uint8*)(surface->pixels) + (ptrdiff_t)y * (ptrdiff_t)surface->pitch
+			               + (ptrdiff_t)x * (ptrdiff_t)surface->format->BytesPerPixel;
 			pixel[0] = color->r;
 			pixel[1] = color->g;
 			pixel[2] = color->b;

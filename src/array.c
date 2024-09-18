@@ -1,3 +1,5 @@
+#include "platform.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
@@ -185,7 +187,7 @@ bool nqiv_array_push_str_count(nqiv_array* array, const char* ptr, const int cou
 
 bool nqiv_array_push_str(nqiv_array* array, const char* ptr)
 {
-	return nqiv_array_push_str_count(array, ptr, strlen(ptr));
+	return nqiv_array_push_str_count(array, ptr, nqiv_strlen(ptr));
 }
 
 bool nqiv_array_push_sprintf(nqiv_array* array, const char* format, ...)

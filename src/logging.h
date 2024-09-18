@@ -23,7 +23,7 @@ typedef enum nqiv_log_level
 	NQIV_LOG_UNKNOWN = 999,
 } nqiv_log_level;
 
-extern const char* nqiv_log_level_names[];
+extern const char* const nqiv_log_level_names[];
 
 typedef struct nqiv_log_ctx
 {

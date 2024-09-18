@@ -73,7 +73,7 @@ typedef enum nqiv_key_action
 	NQIV_KEY_ACTION_MAX = NQIV_KEY_ACTION_RELOAD,
 } nqiv_key_action;
 
-extern const char* nqiv_keybind_action_names[];
+extern const char* const nqiv_keybind_action_names[];
 
 typedef enum nqiv_key_lookup_summary
 {

@@ -1,3 +1,5 @@
+#include "platform.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -166,14 +168,17 @@ bool nqiv_image_test_lock(nqiv_image* image)
 /* TODO Add twice */
 /* TODO Detect change */
 
-int nqiv_find_space_delimted_idx(const char* string, const int wanted_idx)
+ptrdiff_t nqiv_find_space_delimited_idx(const char* string, const int wanted_idx)
 {
-	const int len = strlen(string);
+	const size_t len = strlen(string);
+	if(len > PTRDIFF_MAX) {
+		return -1;
+	}
 	int       i_idx = -1;
-	int       c_idx;
+	ptrdiff_t c_idx;
 	bool      in_section = false;
 	bool      found = false;
-	for(c_idx = 0; c_idx < len; ++c_idx) {
+	for(c_idx = 0; (size_t)c_idx < len; ++c_idx) {
 		const char c = string[c_idx];
 		if(!in_section) {
 			if(c != ' ') {
@@ -199,7 +204,7 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 		form->error = true;
 		return false;
 	}
-	const int idx = nqiv_find_space_delimted_idx(delay_string, form->animation.frame);
+	const ptrdiff_t idx = nqiv_find_space_delimited_idx(delay_string, form->animation.frame);
 	if(idx == -1) {
 		g_free(delay_string);
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
@@ -208,9 +213,10 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 		form->error = true;
 		return false;
 	}
-	const int delay_value = strtol(delay_string + idx, NULL, 10);
+	assert(idx >= 0);
+	const long int delay_value = strtol(delay_string + idx, NULL, 10);
 	g_free(delay_string);
-	if(errno == ERANGE) {
+	if(errno == ERANGE || delay_value > INT_MAX) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 		               "Delay for frame %d of '%s' is not a valid integer.\n",
 		               form->animation.frame, image->image.path);
@@ -550,14 +556,14 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 		return false;
 	}
 	g_strfreev(header_field_names);
-	const int width_value = strtol(width_string, NULL, 10);
-	if(width_value == 0 || errno == ERANGE) {
+	const int width_value = nqiv_strtoi(width_string, NULL, 10);
+	if(width_value <= 0 || errno == ERANGE) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 		               "Invalid width for thumbnail of %s\n", image->image.path);
 		return false;
 	}
-	const int height_value = strtol(height_string, NULL, 10);
-	if(height_value == 0 || errno == ERANGE) {
+	const int height_value = nqiv_strtoi(height_string, NULL, 10);
+	if(height_value <= 0 || errno == ERANGE) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 		               "Invalid height for thumbnail of %s\n", image->image.path);
 		return false;

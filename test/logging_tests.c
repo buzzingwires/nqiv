@@ -10,7 +10,7 @@ size_t get_file_contents(FILE* f, char* buf, const int n)
 {
 	const long orig_pos = ftell(f);
 	fseek(f, 0, SEEK_SET);
-	const int bytes_read = fread(buf, 1, n, f);
+	const size_t bytes_read = fread(buf, 1, n, f);
 	fseek(f, orig_pos, SEEK_SET);
 	assert(ftell(f) == orig_pos);
 	return bytes_read;
@@ -22,7 +22,7 @@ void logging_test_general(void)
 
 	/* Update set prefix and level use info level */
 	nqiv_log_init(&ctx);
-	int streams_len = ctx.streams->position / sizeof(FILE*);
+	int streams_len = ctx.streams->position / (int)sizeof(FILE*);
 	ctx.level = NQIV_LOG_INFO;
 	assert(ctx.streams != NULL);
 	assert(streams_len == 0);
@@ -39,15 +39,15 @@ void logging_test_general(void)
 
 	nqiv_log_add_stream(&ctx, testfile_1);
 	assert(strlen(ctx.error_message) == 0);
-	streams_len = ctx.streams->position / sizeof(FILE*);
+	streams_len = ctx.streams->position / (int)sizeof(FILE*);
 	assert(streams_len == 1);
 	nqiv_log_add_stream(&ctx, testfile_2);
 	assert(strlen(ctx.error_message) == 0);
-	streams_len = ctx.streams->position / sizeof(FILE*);
+	streams_len = ctx.streams->position / (int)sizeof(FILE*);
 	assert(streams_len == 2);
 	nqiv_log_add_stream(&ctx, stderr);
 	assert(strlen(ctx.error_message) == 0);
-	streams_len = ctx.streams->position / sizeof(FILE*);
+	streams_len = ctx.streams->position / (int)sizeof(FILE*);
 	assert(streams_len == 3);
 
 	nqiv_log_write(&ctx, NQIV_LOG_DEBUG, "Should not be listed because debug.\n");

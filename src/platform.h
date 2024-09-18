@@ -34,8 +34,11 @@ char* nqiv_realpath(const char* path, char* resolved_path);
 bool  nqiv_stat(const char* path, nqiv_stat_data* data);
 bool  nqiv_mkdir(char* path);
 bool  nqiv_chmod(const char* filename, uint16_t mode);
-bool  nqiv_get_default_cfg(char* output, const size_t length);
-bool  nqiv_get_default_cfg_thumbnail_dir(char* output, const size_t length);
+bool  nqiv_get_default_cfg(char* output, const int length);
+bool  nqiv_get_default_cfg_thumbnail_dir(char* output, const int length);
 void  nqiv_suggest_cfg_setup(const char* exe);
+int   nqiv_strlen(const char* str);
+int   nqiv_strtoi(const char* str, char** endptr, int base);
+int   nqiv_ptrdiff(const void* a, const void* b);
 
 #endif /* NQIV_PLATFORM_H */

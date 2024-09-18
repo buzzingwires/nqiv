@@ -1,10 +1,14 @@
 #include "platform.h"
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 #include <assert.h>
 
+#include <glib.h>
+
 #if defined(__MINGW32__)
-	#include <stdlib.h>
-	#include <string.h>
 	#include <errno.h>
 	#include <direct.h>
 char* nqiv_realpath(const char* path, char* resolved_path)
@@ -25,8 +29,6 @@ bool nqiv_chmod(const char* filename, uint16_t mode)
 #else
 	#include <stdio.h>
 	#include <stdint.h>
-	#include <string.h>
-	#include <stdlib.h>
 	#include <limits.h>
 	#include <errno.h>
 	#include <sys/types.h>
@@ -48,8 +50,6 @@ bool nqiv_chmod(const char* filename, uint16_t mode)
 
 #if defined(__unix__) || defined(__linux__) || defined(__gnu_linux__) || defined(__MINGW32__)
 	#include <stdio.h>
-	#include <stdlib.h>
-	#include <string.h>
 	#include <stdbool.h>
 	#include <time.h>
 	#include <assert.h>
@@ -69,15 +69,15 @@ bool nqiv_stat(const char* path, nqiv_stat_data* data)
 	data->mtime = s.st_mtime;
 	return true;
 }
-bool nqiv_write_path_from_env(char*        output,
-                              const size_t length,
-                              const char*  env_name,
-                              const char*  sub_path)
+bool nqiv_write_path_from_env(char*       output,
+                              const int   length,
+                              const char* env_name,
+                              const char* sub_path)
 {
 	assert(length < INT_MAX);
 	nqiv_array builder;
 	nqiv_array_inherit(&builder, output, sizeof(char), length);
-	const char* raw_env = getenv(env_name);
+	const char* raw_env = g_getenv(env_name);
 	if(raw_env == NULL) {
 		return false;
 	}
@@ -89,13 +89,13 @@ bool nqiv_write_path_from_env(char*        output,
 }
 #endif
 
-bool nqiv_get_default_cfg(char* output, const size_t length)
+bool nqiv_get_default_cfg(char* output, const int length)
 {
 	return nqiv_write_path_from_env(output, length, NQIV_CFG_ENV,
 	                                NQIV_CFG_DIRECTORY NQIV_CFG_FILENAME);
 }
 
-bool nqiv_get_default_cfg_thumbnail_dir(char* output, const size_t length)
+bool nqiv_get_default_cfg_thumbnail_dir(char* output, const int length)
 {
 	return nqiv_write_path_from_env(output, length, NQIV_CFG_ENV, NQIV_CFG_THUMBNAILS);
 }
@@ -112,4 +112,33 @@ void nqiv_suggest_cfg_setup(const char* exe)
 		fprintf(stderr, "Failed to get environment variable '" NQIV_CFG_ENV
 		                "' to suggest config creation command. This usually shouldn't happen.\n");
 	}
+}
+
+int nqiv_strlen(const char* str)
+{
+	const size_t len = strlen(str);
+	assert(len <= INT_MAX);
+	return (int)len;
+}
+
+int nqiv_strtoi(const char* str, char** endptr, int base)
+{
+	long int result = strtol(str, endptr, base);
+	if(result > INT_MAX) {
+		result = INT_MAX;
+		errno = ERANGE;
+	} else if(result < INT_MIN) {
+		result = INT_MIN;
+		errno = ERANGE;
+	}
+	return (int)result;
+}
+
+int nqiv_ptrdiff(const void* a, const void* b)
+{
+	assert(sizeof(void*) == sizeof(char*));
+	const ptrdiff_t diff = (char*)a - (char*)b;
+	assert(diff >= 0);
+	assert(diff <= INT_MAX);
+	return (int)diff;
 }

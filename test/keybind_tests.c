@@ -17,8 +17,8 @@ bool keybind_test_parse_print_entry(const bool  expected,
 	char              output_buf[NQIV_KEYBIND_STRLEN + 1] = {0};
 	result = result && strlen(input_buf_arg) < NQIV_KEYBIND_STRLEN;
 	result = result && strlen(compare_buf_arg) < NQIV_KEYBIND_STRLEN;
-	memcpy(input_buf, input_buf_arg, strlen(input_buf_arg));
-	memcpy(compare_buf, compare_buf_arg, strlen(compare_buf_arg));
+	strcpy(input_buf, input_buf_arg);
+	strcpy(compare_buf, compare_buf_arg);
 	result = result && nqiv_keybind_text_to_keybind(input_buf, &pair) != -1;
 	result = result && nqiv_keybind_to_string(&pair, output_buf);
 	result = result && strlen(output_buf) < NQIV_KEYBIND_STRLEN;

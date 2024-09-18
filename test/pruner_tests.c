@@ -30,19 +30,18 @@ void pruner_test_default(void)
 		&logger, "or thumbnail no image texture self_opened unload surface raw vips", &desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
-	assert(memcmp(&desc, &cmp_desc, sizeof(nqiv_pruner_desc)) == 0);
+	assert(nqiv_pruner_desc_compare(&desc, &cmp_desc));
 	assert(desc.counter == NQIV_PRUNER_COUNT_OP_OR);
 	assert(desc.state_check.or_result == true);
 	assert(desc.state_check.and_result == false);
 	assert(desc.state_check.total_sum == 0);
-	assert(memcmp(&desc.vips_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.raw_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.surface_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.texture_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.thumbnail_vips_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.thumbnail_raw_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.thumbnail_surface_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset))
-	       == 0);
+	assert(nqiv_pruner_desc_dataset_compare(&desc.vips_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.raw_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.surface_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.texture_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_vips_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_raw_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_surface_set, &empty_dataset));
 	assert(desc.thumbnail_texture_set.loaded_self.active);
 	assert(!desc.unload_vips);
 	assert(!desc.unload_raw);
@@ -67,22 +66,21 @@ void pruner_test_default(void)
 		&desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
-	assert(memcmp(&desc, &cmp_desc, sizeof(nqiv_pruner_desc)) == 0);
+	assert(nqiv_pruner_desc_compare(&desc, &cmp_desc));
 	assert(desc.counter == NQIV_PRUNER_COUNT_OP_AND);
 	assert(desc.state_check.or_result == false);
 	assert(desc.state_check.and_result == true);
 	assert(desc.state_check.total_sum == 0);
-	assert(memcmp(&desc.vips_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.raw_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.surface_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
+
+	assert(nqiv_pruner_desc_dataset_compare(&desc.vips_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.raw_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.surface_set, &empty_dataset));
 	assert(desc.texture_set.loaded_self.active);
 	assert(desc.texture_set.not_animated.active);
-	assert(memcmp(&desc.thumbnail_vips_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.thumbnail_raw_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.thumbnail_surface_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset))
-	       == 0);
-	assert(memcmp(&desc.thumbnail_texture_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset))
-	       == 0);
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_vips_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_raw_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_surface_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_texture_set, &empty_dataset));
 	assert(!desc.unload_vips);
 	assert(!desc.unload_raw);
 	assert(!desc.unload_surface);
@@ -105,21 +103,19 @@ void pruner_test_default(void)
 		&logger, "or no thumbnail image texture self_opened unload surface raw", &desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
-	assert(memcmp(&desc, &cmp_desc, sizeof(nqiv_pruner_desc)) == 0);
+	assert(nqiv_pruner_desc_compare(&desc, &cmp_desc));
 	assert(desc.counter == NQIV_PRUNER_COUNT_OP_OR);
 	assert(desc.state_check.or_result == true);
 	assert(desc.state_check.and_result == false);
 	assert(desc.state_check.total_sum == 0);
-	assert(memcmp(&desc.vips_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.raw_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.surface_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
+	assert(nqiv_pruner_desc_dataset_compare(&desc.vips_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.raw_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.surface_set, &empty_dataset));
 	assert(desc.texture_set.loaded_self.active);
-	assert(memcmp(&desc.thumbnail_vips_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.thumbnail_raw_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.thumbnail_surface_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset))
-	       == 0);
-	assert(memcmp(&desc.thumbnail_texture_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset))
-	       == 0);
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_vips_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_raw_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_surface_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_texture_set, &empty_dataset));
 	assert(!desc.unload_vips);
 	assert(!desc.unload_raw);
 	assert(!desc.unload_surface);
@@ -144,19 +140,18 @@ void pruner_test_default(void)
 	                               &desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
-	assert(memcmp(&desc, &cmp_desc, sizeof(nqiv_pruner_desc)) == 0);
+	assert(nqiv_pruner_desc_compare(&desc, &cmp_desc));
 	assert(desc.counter == NQIV_PRUNER_COUNT_OP_AND);
 	assert(desc.state_check.or_result == false);
 	assert(desc.state_check.and_result == true);
 	assert(desc.state_check.total_sum == 0);
-	assert(memcmp(&desc.vips_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.raw_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.surface_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
+	assert(nqiv_pruner_desc_dataset_compare(&desc.vips_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.raw_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.surface_set, &empty_dataset));
 	assert(desc.texture_set.not_animated.active);
-	assert(memcmp(&desc.thumbnail_vips_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.thumbnail_raw_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset)) == 0);
-	assert(memcmp(&desc.thumbnail_surface_set, &empty_dataset, sizeof(nqiv_pruner_desc_dataset))
-	       == 0);
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_vips_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_raw_set, &empty_dataset));
+	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_surface_set, &empty_dataset));
 	assert(desc.thumbnail_texture_set.loaded_self.active);
 	assert(desc.unload_vips);
 	assert(desc.unload_raw);
@@ -184,7 +179,7 @@ void pruner_test_default(void)
 		&desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
-	assert(memcmp(&desc, &cmp_desc, sizeof(nqiv_pruner_desc)) == 0);
+	assert(nqiv_pruner_desc_compare(&desc, &cmp_desc));
 	assert(desc.counter == NQIV_PRUNER_COUNT_OP_OR);
 	assert(desc.state_check.or_result == true);
 	assert(desc.state_check.and_result == false);
@@ -264,7 +259,7 @@ void pruner_test_default(void)
 		&desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
-	assert(memcmp(&desc, &cmp_desc, sizeof(nqiv_pruner_desc)) == 0);
+	assert(nqiv_pruner_desc_compare(&desc, &cmp_desc));
 	assert((desc.counter & NQIV_PRUNER_COUNT_OP_OR) == NQIV_PRUNER_COUNT_OP_OR);
 	assert((desc.counter & NQIV_PRUNER_COUNT_OP_SUM) == NQIV_PRUNER_COUNT_OP_SUM);
 	assert(desc.state_check.or_result == true);

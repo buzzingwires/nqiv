@@ -1,4 +1,7 @@
+#include "platform.h"
+
 #include <stdbool.h>
+#include <limits.h>
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
@@ -30,7 +33,7 @@ int nqiv_findchar(const char* text, const char query, const int start, const int
 	return -1;
 }
 
-const char* nqiv_keybind_action_names[] = {
+const char* const nqiv_keybind_action_names[] = {
 	"quit",
 	"page_up",
 	"page_down",
@@ -199,13 +202,13 @@ bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 		   != 0) {
 			success = false;
 		} else {
-			char*     end = NULL;
-			const int tmp = strtol(text + strlen("mouse"), &end, 10);
+			char*          end = NULL;
+			const long int tmp = strtol(text + strlen("mouse"), &end, 10);
 			if(errno == ERANGE || end == NULL || tmp < 0 || tmp > 255 || end > text + length) {
 				success = false;
 			} else {
 				match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_BUTTON;
-				match->data.mouse_button.button = tmp;
+				match->data.mouse_button.button = (Uint8)tmp;
 				match->data.mouse_button.clicks = 1;
 				if(end < text + length) {
 					if(end + strlen("_double") <= text + length
@@ -247,9 +250,9 @@ bool nqiv_text_to_keystate_numerical(char*       text,
 	bool success = false;
 	if(*output < 0 && (size_t)length > strlen(prefix)
 	   && strncmp(text, prefix, strlen(prefix)) == 0) {
-		char*     end = NULL;
-		const int tmp = strtol(text + strlen(prefix), &end, 10);
-		if(errno != ERANGE && end != NULL && tmp > 0 && end <= text + length) {
+		char*          end = NULL;
+		const long int tmp = strtol(text + strlen(prefix), &end, 10);
+		if(errno != ERANGE && end != NULL && tmp > 0 && tmp <= INT_MAX && end <= text + length) {
 			success = true;
 			*output = (Sint64)tmp;
 		}
@@ -286,8 +289,8 @@ bool nqiv_text_to_keystate(char* text, const int length, nqiv_keyrate_keystate* 
 
 int nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* pair)
 {
-	char         text[NQIV_KEYBIND_STRLEN + 1] = {0};
-	const size_t textlen = strlen(original_text);
+	char      text[NQIV_KEYBIND_STRLEN + 1] = {0};
+	const int textlen = nqiv_strlen(original_text);
 	if(textlen > NQIV_KEYBIND_STRLEN) {
 		return -1;
 	}
@@ -296,7 +299,7 @@ int nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* p
 		return -1;
 	}
 	const int equal_start = nqiv_findchar(text, '=', textlen - 1, -1);
-	if(equal_start == -1 || textlen <= (size_t)equal_start + 1) {
+	if(equal_start == -1 || textlen <= equal_start + 1) {
 		return -1;
 	}
 	nqiv_keybind_pair tmp = {0};
@@ -322,10 +325,10 @@ int nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* p
 			section_start = section_end + 1;
 		}
 	}
-	for(idx = equal_start + 1, section_start = idx; (size_t)idx <= textlen; ++idx) {
-		if(text[idx] == '+' || ((size_t)idx == textlen && idx > section_start)) {
+	for(idx = equal_start + 1, section_start = idx; idx <= textlen; ++idx) {
+		if(text[idx] == '+' || (idx == textlen && idx > section_start)) {
 			int section_end = idx;
-			if((size_t)idx + 1 == textlen || text[idx + 1] == '+') {
+			if(idx + 1 == textlen || text[idx + 1] == '+') {
 				section_end += 1;
 			}
 			const int section_length = section_end - section_start;

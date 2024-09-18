@@ -101,4 +101,8 @@ bool nqiv_pruner_append(nqiv_pruner* pruner, const nqiv_pruner_desc* desc);
 bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner_desc* desc);
 bool nqiv_pruner_desc_to_string(const nqiv_pruner_desc* desc, char* buf);
 
+bool nqiv_pruner_desc_dataset_compare(const nqiv_pruner_desc_dataset* first,
+                                      const nqiv_pruner_desc_dataset* second);
+bool nqiv_pruner_desc_compare(const nqiv_pruner_desc* first, const nqiv_pruner_desc* second);
+
 #endif /* NQIV_PRUNER_H */

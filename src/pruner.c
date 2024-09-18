@@ -372,12 +372,12 @@ int nqiv_pruner_parse_int(
 		return nidx;
 	}
 	nqiv_log_write(logger, NQIV_LOG_DEBUG, "Trying to get integer at %s\n", &text[nidx]);
-	char*     end = NULL;
-	const int tmp = strtol(&text[nidx], &end, 10);
-	if(errno != ERANGE && end != NULL) {
+	char*          end = NULL;
+	const long int tmp = strtol(&text[nidx], &end, 10);
+	if(errno != ERANGE && end != NULL && tmp >= INT_MIN && tmp <= INT_MAX) {
 		nqiv_log_write(logger, NQIV_LOG_DEBUG, "Int arg is %d for input %s\n", tmp, &text[nidx]);
-		*output = tmp;
-		nidx = end - text;
+		*output = (int)tmp;
+		nidx = nqiv_ptrdiff(end, text);
 	} else {
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Error parsing int arg with input %s\n",
 		               &text[nidx]);
@@ -525,7 +525,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 	bool                      inside_hard = false;
 	bool                      inside_image = true;
 	bool                      inside_thumbnail = false;
-	const int                 end = strlen(text);
+	const int                 end = nqiv_strlen(text);
 	int                       idx = 0;
 	nqiv_log_write(logger, NQIV_LOG_DEBUG, "Generating pruner desc from %s\n", text);
 	while(idx < end) {
@@ -960,6 +960,69 @@ int nqiv_pruner_desc_dataset_to_string(nqiv_pruner_render_state*       state,
 	return success;
 }
 
+bool nqiv_pruner_desc_datapoint_int(const nqiv_pruner_desc_datapoint* first,
+                                    const nqiv_pruner_desc_datapoint* second)
+{
+	return first->active == second->active
+	       && first->condition.as_int_pair[0] == second->condition.as_int_pair[0]
+	       && first->condition.as_int_pair[1] == second->condition.as_int_pair[1]
+	       && first->value.as_int == second->value.as_int;
+}
+
+bool nqiv_pruner_desc_datapoint_bool(const nqiv_pruner_desc_datapoint* first,
+                                     const nqiv_pruner_desc_datapoint* second)
+{
+	return first->active == second->active && first->value.as_bool == second->value.as_bool;
+}
+
+bool nqiv_pruner_desc_dataset_compare(const nqiv_pruner_desc_dataset* first,
+                                      const nqiv_pruner_desc_dataset* second)
+{
+	return nqiv_pruner_desc_datapoint_bool(&first->not_animated, &second->not_animated)
+	       && nqiv_pruner_desc_datapoint_bool(&first->loaded_self, &second->loaded_self)
+	       && nqiv_pruner_desc_datapoint_int(&first->loaded_ahead, &second->loaded_ahead)
+	       && nqiv_pruner_desc_datapoint_int(&first->loaded_behind, &second->loaded_behind)
+	       && nqiv_pruner_desc_datapoint_int(&first->bytes_ahead, &second->bytes_ahead)
+	       && nqiv_pruner_desc_datapoint_int(&first->bytes_behind, &second->bytes_behind);
+}
+
+bool nqiv_pruner_desc_compare(const nqiv_pruner_desc* first, const nqiv_pruner_desc* second)
+{
+	return first->counter == second->counter && first->state_check.idx == second->state_check.idx
+	       && first->state_check.selection == second->state_check.selection
+	       && first->state_check.montage_start == second->state_check.montage_start
+	       && first->state_check.montage_end == second->state_check.montage_end
+	       && first->state_check.total_sum == second->state_check.total_sum
+	       && first->state_check.or_result == second->state_check.or_result
+	       && first->state_check.and_result == second->state_check.and_result
+	       && first->state_check.and_is_set == second->state_check.and_is_set
+	       && nqiv_pruner_desc_dataset_compare(&first->vips_set, &second->vips_set)
+	       && nqiv_pruner_desc_dataset_compare(&first->raw_set, &second->raw_set)
+	       && nqiv_pruner_desc_dataset_compare(&first->surface_set, &second->surface_set)
+	       && nqiv_pruner_desc_dataset_compare(&first->texture_set, &second->texture_set)
+	       && nqiv_pruner_desc_dataset_compare(&first->thumbnail_vips_set,
+	                                           &second->thumbnail_vips_set)
+	       && nqiv_pruner_desc_dataset_compare(&first->thumbnail_raw_set,
+	                                           &second->thumbnail_raw_set)
+	       && nqiv_pruner_desc_dataset_compare(&first->thumbnail_surface_set,
+	                                           &second->thumbnail_surface_set)
+	       && nqiv_pruner_desc_dataset_compare(&first->thumbnail_texture_set,
+	                                           &second->thumbnail_texture_set)
+	       && first->unload_vips == second->unload_vips && first->unload_raw == second->unload_raw
+	       && first->unload_surface == second->unload_surface
+	       && first->unload_texture == second->unload_texture
+	       && first->unload_thumbnail_vips == second->unload_thumbnail_vips
+	       && first->unload_thumbnail_raw == second->unload_thumbnail_raw
+	       && first->unload_thumbnail_surface == second->unload_thumbnail_surface
+	       && first->unload_thumbnail_texture == second->unload_thumbnail_texture
+	       && first->unload_vips_soft == second->unload_vips_soft
+	       && first->unload_raw_soft == second->unload_raw_soft
+	       && first->unload_surface_soft == second->unload_surface_soft
+	       && first->unload_thumbnail_vips_soft == second->unload_thumbnail_vips_soft
+	       && first->unload_thumbnail_raw_soft == second->unload_thumbnail_raw_soft
+	       && first->unload_thumbnail_surface_soft == second->unload_thumbnail_surface_soft;
+}
+
 bool nqiv_pruner_desc_dataset_pair_to_string(nqiv_pruner_render_state*       state,
                                              char*                           name,
                                              const nqiv_pruner_desc_dataset* image_set,
@@ -967,7 +1030,7 @@ bool nqiv_pruner_desc_dataset_pair_to_string(nqiv_pruner_render_state*       sta
                                              nqiv_array*                     builder)
 {
 	int success = true;
-	if(memcmp(image_set, thumbnail_set, sizeof(nqiv_pruner_desc_dataset)) == 0
+	if(nqiv_pruner_desc_dataset_compare(image_set, thumbnail_set)
 	   && (image_set->not_animated.active || image_set->loaded_self.active
 	       || image_set->loaded_ahead.active || image_set->loaded_behind.active
 	       || image_set->bytes_ahead.active || image_set->bytes_behind.active)) {

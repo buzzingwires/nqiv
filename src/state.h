@@ -49,9 +49,9 @@ typedef enum nqiv_zoom_default
 	NQIV_ZOOM_DEFAULT_ACTUAL = 2
 } nqiv_zoom_default;
 
-extern const char*         nqiv_zoom_default_names[];
+extern const char* const   nqiv_zoom_default_names[];
 
-extern const char*         nqiv_texture_scale_mode_names[];
+extern const char* const   nqiv_texture_scale_mode_names[];
 extern const SDL_ScaleMode nqiv_texture_scale_modes[];
 
 struct nqiv_state

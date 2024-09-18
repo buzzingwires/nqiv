@@ -3,13 +3,13 @@
 
 #include <SDL2/SDL.h>
 
-const char* nqiv_zoom_default_names[] = {
+const char* const nqiv_zoom_default_names[] = {
 	"keep",
 	"fit",
 	"actual",
 };
 
-const char* nqiv_texture_scale_mode_names[] = {
+const char* const nqiv_texture_scale_mode_names[] = {
 	"nearest", "linear", "anisotropic", "best", NULL,
 };
 
@@ -85,7 +85,7 @@ bool nqiv_add_logger_path(nqiv_state* state, const char* path)
 		fclose(stream);
 		return false;
 	}
-	memcpy(persistent_path, path, strlen(path));
+	strcpy(persistent_path, path);
 	if(!nqiv_array_push(state->logger_stream_names, &persistent_path)) {
 		free(persistent_path);
 		fclose(stream);

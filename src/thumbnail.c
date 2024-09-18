@@ -136,9 +136,9 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 	char fullpath[PATH_MAX - 4 + 1] = {0};
 	nqiv_array_inherit(&builder, fullpath, sizeof(char), PATH_MAX);
 
-	const size_t raw_rootlen = strlen(image->parent->thumbnail.root);
+	const int raw_rootlen = nqiv_strlen(image->parent->thumbnail.root);
 	assert(raw_rootlen >= 1);
-	const size_t rootlen =
+	const int rootlen =
 		image->parent->thumbnail.root[raw_rootlen - 1] == '/' ? raw_rootlen - 1 : raw_rootlen;
 	if(strncmp(image->image.path, image->parent->thumbnail.root, rootlen) == 0) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
@@ -276,7 +276,7 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	const size_t pathlen = strlen(image->thumbnail.path);
 	assert(pathlen <= PATH_MAX - 4 + 1); /* XXX: Room for .tmp */
 	memcpy(tmppath, image->thumbnail.path, pathlen);
-	memcpy(tmppath + pathlen, ".tmp", strlen(".tmp"));
+	memcpy(tmppath + pathlen, ".tmp", nqiv_strlen(".tmp"));
 	assert(strlen(tmppath) == pathlen + 4);
 	if(vips_pngsave(image->thumbnail.vips, tmppath, NULL) == -1) {
 		nqiv_log_vips_exception(image->parent->logger, image, &image->image);
