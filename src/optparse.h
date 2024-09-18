@@ -1,3 +1,5 @@
+/* This is not 'our' code. Leave it as is. */
+/* clang-format off */
 /* Optparse --- portable, reentrant, embeddable, getopt-like option parser
  *
  * This is free and unencumbered software released into the public domain.
@@ -401,3 +403,4 @@ optparse_long(struct optparse *options,
 
 #endif /* OPTPARSE_IMPLEMENTATION */
 #endif /* OPTPARSE_H */
+/* clang-format on */
