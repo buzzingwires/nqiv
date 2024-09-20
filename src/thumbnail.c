@@ -133,7 +133,7 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 
 	nqiv_array builder;
 	/* XXX: We may or may not make a .tmp file with this path, so there should be room for that. */
-	char fullpath[PATH_MAX - 4 + 1] = {0};
+	char       fullpath[PATH_MAX - 4 + 1] = {0};
 	nqiv_array_inherit(&builder, fullpath, sizeof(char), PATH_MAX);
 
 	const int raw_rootlen = nqiv_strlen(image->parent->thumbnail.root);

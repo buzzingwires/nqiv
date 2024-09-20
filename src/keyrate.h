@@ -61,9 +61,9 @@ typedef struct nqiv_keyrate_keystate
 	nqiv_keyrate_keystate_ephemeral ephemeral;
 	nqiv_keyrate_keystate_settings  settings;
 	/* Send events if the key is held down */
-	nqiv_keyrate_press_action send_on_down;
+	nqiv_keyrate_press_action       send_on_down;
 	/* Send events when the key is released */
-	nqiv_keyrate_press_action send_on_up;
+	nqiv_keyrate_press_action       send_on_up;
 } nqiv_keyrate_keystate;
 
 typedef struct nqiv_keyrate_manager
@@ -74,12 +74,12 @@ typedef struct nqiv_keyrate_manager
 	bool                           send_on_up;
 } nqiv_keyrate_manager;
 
-bool nqiv_keyrate_filter_action(const nqiv_keyrate_manager* manager,
+bool nqiv_keyrate_filter_action(const nqiv_keyrate_manager*       manager,
                                 /* Settings for this particular keybind. */
-                                nqiv_keyrate_keystate* state,
+                                nqiv_keyrate_keystate*            state,
                                 /* Consider the key pressed, released, or both. */
                                 const nqiv_keyrate_release_option released,
                                 /* Timestamp in SDL ticks (milliseconds) */
-                                Uint64 ticks);
+                                Uint64                            ticks);
 
 #endif /* NQIV_KEYRATE_H */

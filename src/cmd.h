@@ -165,12 +165,12 @@ struct nqiv_cmd_node
 	void (*print_value)(nqiv_cmd_manager*);
 	nqiv_cmd_arg_desc** args;
 	/* Child nodes are chosen from a linked list of peers. */
-	nqiv_cmd_node* peer;
-	nqiv_cmd_node* child;
+	nqiv_cmd_node*      peer;
+	nqiv_cmd_node*      child;
 	/* Deprecated commands are still usable, but will not appear unless directly
 	 * referenced. A branch node's deprecated status will be propagated to its
 	 * children. */
-	bool deprecated;
+	bool                deprecated;
 };
 
 bool nqiv_cmd_add_line_and_parse(nqiv_cmd_manager* manager, const char* str);

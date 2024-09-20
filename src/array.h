@@ -47,10 +47,10 @@ int nqiv_array_get_units_count(const nqiv_array* array); /* Current length of ar
 int nqiv_array_get_last_idx(const nqiv_array* array);
 nqiv_array* nqiv_array_create(const int unit_size, const int unit_count);
 /* In units. */
-void nqiv_array_inherit(nqiv_array* array, void* data, const int unit_size, const int count);
-void nqiv_array_unlimit_data(nqiv_array* array);
+void        nqiv_array_inherit(nqiv_array* array, void* data, const int unit_size, const int count);
+void        nqiv_array_unlimit_data(nqiv_array* array);
 /* In units! force ignores max data length and sets the new length as max. */
-bool nqiv_array_grow(nqiv_array* array, const int new_count, const bool force);
+bool        nqiv_array_grow(nqiv_array* array, const int new_count, const bool force);
 bool nqiv_array_insert_count(nqiv_array* array, const void* ptr, const int idx, const int count);
 bool nqiv_array_insert(nqiv_array* array, const void* ptr, const int idx);
 void nqiv_array_remove_count(nqiv_array* array, const int idx, const int count);

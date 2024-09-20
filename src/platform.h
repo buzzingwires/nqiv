@@ -51,10 +51,10 @@ bool  nqiv_get_default_cfg(char* output, const int length);
 bool  nqiv_get_default_cfg_thumbnail_dir(char* output, const int length);
 void  nqiv_suggest_cfg_setup(const char* exe);
 /* Output asserted to 0 to INT_MAX */
-int nqiv_strlen(const char* str);
+int   nqiv_strlen(const char* str);
 /* Works like strtol but with a regular int. */
-int nqiv_strtoi(const char* str, char** endptr, int base);
+int   nqiv_strtoi(const char* str, char** endptr, int base);
 /* Simple pointer arithmetic with result asserted to be within an 0 to INT_MAX */
-int nqiv_ptrdiff(const void* a, const void* b);
+int   nqiv_ptrdiff(const void* a, const void* b);
 
 #endif /* NQIV_PLATFORM_H */

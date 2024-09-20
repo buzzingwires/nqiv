@@ -40,31 +40,31 @@ typedef struct nqiv_image_form
 {
 	nqiv_image_form_animation animation;
 	/* Was there some kind of error with this form? */
-	bool         error;
-	char*        path;
-	VipsImage*   vips;
-	void*        data;
-	SDL_Surface* surface;
-	SDL_Texture* texture;
+	bool                      error;
+	char*                     path;
+	VipsImage*                vips;
+	void*                     data;
+	SDL_Surface*              surface;
+	SDL_Texture*              texture;
 	/* The fallback texture is used if the current texture is not available, since waiting for the
 	 * texture to unload and load again may cause flickering. */
-	SDL_Texture* fallback_texture;
+	SDL_Texture*              fallback_texture;
 	/* Dimensions of whole image. */
-	int height;
-	int width;
+	int                       height;
+	int                       width;
 	/* Sometimes we want to crop out a large image. */
-	SDL_Rect srcrect;
+	SDL_Rect                  srcrect;
 	/* Dimensions of whatever crop we're using. */
-	int effective_height;
-	int effective_width;
+	int                       effective_height;
+	int                       effective_width;
 	/* Master entries are record keeping reserved to the master thread only for
 	 * rendering the fallback texture. They are NOT protected by the lock. */
-	SDL_Rect master_srcrect;
-	SDL_Rect master_dstrect;
-	bool     master_dimensions_set;
+	SDL_Rect                  master_srcrect;
+	SDL_Rect                  master_dstrect;
+	bool                      master_dimensions_set;
 	/* Have we tried and failed to load a thumbnail? If the thumbnail is
 	 * successfully created later on, this may be reset. */
-	bool thumbnail_load_failed;
+	bool                      thumbnail_load_failed;
 } nqiv_image_form;
 
 typedef struct nqiv_image         nqiv_image;
@@ -76,11 +76,11 @@ struct nqiv_image
 	omp_lock_t          lock;
 	/* Have we tried to create a thumbnail, successfully or otherwise? Don't
 	 * retry. */
-	bool thumbnail_attempted;
+	bool                thumbnail_attempted;
 	/* Used to visually mark images and select them for certain operations. */
-	bool            marked;
-	nqiv_image_form image;
-	nqiv_image_form thumbnail;
+	bool                marked;
+	nqiv_image_form     image;
+	nqiv_image_form     thumbnail;
 };
 
 bool nqiv_image_form_first_frame(nqiv_image* image, nqiv_image_form* form);
@@ -114,10 +114,10 @@ typedef struct nqiv_image_manager_thumbnail_settings
 	/* Where thumbnails are stored. */
 	char* root;
 	/* Do we load and/or save? */
-	bool load;
-	bool save;
+	bool  load;
+	bool  save;
 	/* Dimension of either side. */
-	int size;
+	int   size;
 } nqiv_image_manager_thumbnail_settings;
 
 typedef struct nqiv_image_manager_zoom_settings
@@ -164,10 +164,10 @@ struct nqiv_image_manager
 	Uint32                                default_frame_time;
 	/* Platform depdendent and set at runtime- these control when an image must
 	 * be cropped or resized for conversion into a texture. */
-	int                  max_texture_height;
-	int                  max_texture_width;
-	nqiv_array*          images;
-	nqiv_priority_queue* thread_queue;
+	int                                   max_texture_height;
+	int                                   max_texture_width;
+	nqiv_array*                           images;
+	nqiv_priority_queue*                  thread_queue;
 };
 
 void nqiv_log_vips_exception(nqiv_log_ctx*          logger,

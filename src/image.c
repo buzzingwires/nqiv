@@ -302,7 +302,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	assert(form->vips != NULL);
 	assert(form->data == NULL);
 
-	const int  frame_offset = form->height * (form->animation.exists ? form->animation.frame : 0);
+	const int frame_offset = form->height * (form->animation.exists ? form->animation.frame : 0);
 
 	VipsImage* used_vips = form->vips;
 	VipsImage* new_vips;

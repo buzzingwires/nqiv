@@ -30,10 +30,10 @@ typedef struct nqiv_event_image_load_form_options
 
 typedef struct nqiv_event_image_load_options
 {
-	nqiv_image* image;
+	nqiv_image*                        image;
 	/* Calculate the thumbnail path, but don't create it. */
-	bool set_thumbnail_path;
-	bool create_thumbnail;
+	bool                               set_thumbnail_path;
+	bool                               create_thumbnail;
 	/* If it exists, prematurely copy the known dimensions of the image from the thumbnail. There
 	 * are other operations that benefit from knowing this, such as showing the dimensions of the
 	 * actual image, when only a thumbnail is loaded. */
@@ -49,7 +49,7 @@ typedef union nqiv_event_options
 
 typedef struct nqiv_event
 {
-	nqiv_event_type type;
+	nqiv_event_type    type;
 	/* The transaction group is compared against a current number tracked by the threads. If the
 	 * event is less than the current number, it is considered out of date and discarded. An event
 	 * with a transaction group of -1 is never out of date. This feature primarily exists to solve

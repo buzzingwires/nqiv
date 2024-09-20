@@ -608,24 +608,24 @@ void nqiv_apply_zoom_modifications(nqiv_state* state, const bool first_frame)
 
 /* TODO STEP FRAME? */
 /* TODO Reset frame */
-bool render_from_form(nqiv_state* state,
-                      nqiv_image* image,
-                      const bool  is_montage,
+bool render_from_form(nqiv_state*     state,
+                      nqiv_image*     image,
+                      const bool      is_montage,
                       /* Where to draw to. */
                       const SDL_Rect* dstrect,
                       /* Sometimes we can be using the image form to render in the montage. */
-                      const bool is_thumbnail,
-                      const bool first_frame,
-                      const bool next_frame,
+                      const bool      is_thumbnail,
+                      const bool      first_frame,
+                      const bool      next_frame,
                       /* Selected in montage mode? */
-                      const bool selected,
+                      const bool      selected,
                       /* Force reload */
-                      const bool hard,
+                      const bool      hard,
                       /* Try to lock the image */
-                      const bool lock,
+                      const bool      lock,
                       /* Preload events will have lower priority (higher number), so actual priority
                          is added to this. */
-                      const int base_priority)
+                      const int       base_priority)
 {
 	bool             cleared = is_montage;
 	nqiv_image_form* form = is_thumbnail ? &image->thumbnail : &image->image;

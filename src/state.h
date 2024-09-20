@@ -68,7 +68,7 @@ typedef enum nqiv_zoom_default
 	NQIV_ZOOM_DEFAULT_ACTUAL = 2 /* Show image in actual size. */
 } nqiv_zoom_default;
 
-extern const char* const   nqiv_zoom_default_names[];
+extern const char* const nqiv_zoom_default_names[];
 
 extern const char* const   nqiv_texture_scale_mode_names[];
 extern const SDL_ScaleMode nqiv_texture_scale_modes[];
@@ -76,7 +76,7 @@ extern const SDL_ScaleMode nqiv_texture_scale_modes[];
 /* The central object. Contains everything else and some extra state used by the same loop. */
 struct nqiv_state
 {
-	nqiv_log_ctx logger;
+	nqiv_log_ctx         logger;
 	/* Just used for record keeping so we can print the names of logging streams. */
 	nqiv_array*          logger_stream_names;
 	nqiv_image_manager   images;
@@ -86,86 +86,86 @@ struct nqiv_state
 	nqiv_montage_state   montage;
 	nqiv_cmd_manager     cmds;
 	/* Communicates events to workers. */
-	nqiv_priority_queue thread_queue;
+	nqiv_priority_queue  thread_queue;
 	/* Pending keyboard actions. */
-	nqiv_queue key_actions;
+	nqiv_queue           key_actions;
 	/* Have we initialized SDL. If so, do special cleanup stuff. */
-	bool          SDL_inited;
-	SDL_Window*   window;
-	SDL_Renderer* renderer;
-	SDL_Texture*  texture_background;
+	bool                 SDL_inited;
+	SDL_Window*          window;
+	SDL_Renderer*        renderer;
+	SDL_Texture*         texture_background;
 	/* Box around selected montage thumbnail. */
-	SDL_Texture* texture_montage_selection;
+	SDL_Texture*         texture_montage_selection;
 	/* Dashed box around marked montage thumbnail. */
-	SDL_Texture* texture_montage_mark;
+	SDL_Texture*         texture_montage_mark;
 	/* While an image load is pending, show this in its place unless show_loading_indicator is
 	 * false. */
-	SDL_Texture* texture_montage_unloaded_background;
+	SDL_Texture*         texture_montage_unloaded_background;
 	/* Shown in place of an image that fails to load. */
-	SDL_Texture* texture_montage_error_background;
+	SDL_Texture*         texture_montage_error_background;
 	/* Background shown behind transparent image- may be checkered. */
-	SDL_Texture*  texture_alpha_background;
-	SDL_ScaleMode texture_scale_mode;
+	SDL_Texture*         texture_alpha_background;
+	SDL_ScaleMode        texture_scale_mode;
 	/* Track dimensions of alpha background, since they may need to be updated. */
-	int alpha_background_width;
-	int alpha_background_height;
+	int                  alpha_background_width;
+	int                  alpha_background_height;
 	/* SDL events returned to master from workers. */
-	Uint32 thread_event_number;
+	Uint32               thread_event_number;
 	/* SDL events returned to master from configuration. */
-	Uint32 cfg_event_number;
+	Uint32               cfg_event_number;
 	/* Number of worker threads. */
-	int thread_count;
+	int                  thread_count;
 	/* Threads will update the master after processing this many events. 0 to process all. */
-	int thread_event_interval;
-	int vips_threads;
+	int                  thread_event_interval;
+	int                  vips_threads;
 	/* The transaction group of an event is compared against this, protected by a mutex lock. If the
 	 * event is less than the current number, it is considered out of date and discarded. An event
 	 * with a transaction group of -1 is never out of date. This feature primarily exists to solve
 	 * the problem of events still being queued for images that are no longer visible. */
-	int64_t thread_event_transaction_group;
+	int64_t              thread_event_transaction_group;
 	/* In SDL ticks (milliseconds) Check if prune_delay has passed for each render_and_update */
-	Uint64 time_of_last_prune;
-	Uint64 prune_delay;
+	Uint64               time_of_last_prune;
+	Uint64               prune_delay;
 	/* Base amount worker threads sleep between updates. */
-	int        extra_wakeup_delay;
-	omp_lock_t thread_event_transaction_group_lock;
+	int                  extra_wakeup_delay;
+	omp_lock_t           thread_event_transaction_group_lock;
 	/* Used to tell when the display needs to be redrawn. */
-	bool render_cleared;
+	bool                 render_cleared;
 	/* Is montage mode? Otherwise image mode. */
-	bool in_montage;
+	bool                 in_montage;
 	/* Try to fill entire display area with image, disregarding aspect ratio. */
-	bool stretch_images;
+	bool                 stretch_images;
 	/* Used to handle edge case of first frame being passed, but not being rendered yet. Otherwise,
 	 * zoom defaults may not be set. */
-	bool              first_frame_pending;
-	nqiv_zoom_default zoom_default;
+	bool                 first_frame_pending;
+	nqiv_zoom_default    zoom_default;
 	/* Should we pan the image according to mouse motion right now? */
-	bool is_mouse_panning;
+	bool                 is_mouse_panning;
 	/* If we get an image bigger than the max texture size, just shrink the entire thing once, and
 	 * use that. */
-	bool no_resample_oversized;
-	bool show_loading_indicator;
+	bool                 no_resample_oversized;
+	bool                 show_loading_indicator;
 	/* Are we currently waiting for an image to load or render? */
-	bool      is_loading;
-	SDL_Color background_color;
-	SDL_Color error_color;
-	SDL_Color loading_color;
-	SDL_Color selection_color;
-	SDL_Color mark_color;
-	SDL_Color alpha_checker_color_one;
-	SDL_Color alpha_checker_color_two;
+	bool                 is_loading;
+	SDL_Color            background_color;
+	SDL_Color            error_color;
+	SDL_Color            loading_color;
+	SDL_Color            selection_color;
+	SDL_Color            mark_color;
+	SDL_Color            alpha_checker_color_one;
+	SDL_Color            alpha_checker_color_two;
 	/* Whether to quit if the command parser has an error parsing or storing values. Otherwise
 	 * attempt to continue. */
-	bool cmd_parse_error_quit;
-	bool cmd_apply_error_quit;
+	bool                 cmd_parse_error_quit;
+	bool                 cmd_apply_error_quit;
 };
 
 /* Check if logger has error message. If it does, print it and return false. */
-bool nqiv_check_and_print_logger_error(const nqiv_log_ctx* logger);
+bool              nqiv_check_and_print_logger_error(const nqiv_log_ctx* logger);
 /* Open stream if necessary, add it to logger and its path (or stderr/stderr) to logger_stream_names
  */
-bool nqiv_add_logger_path(nqiv_state* state, const char* path);
-void nqiv_state_set_default_colors(nqiv_state* state);
+bool              nqiv_add_logger_path(nqiv_state* state, const char* path);
+void              nqiv_state_set_default_colors(nqiv_state* state);
 /* Recreation will check for existence, remove it if present, then create. */
 bool              nqiv_state_create_thumbnail_selection_texture(nqiv_state* state);
 bool              nqiv_state_recreate_thumbnail_selection_texture(nqiv_state* state);

@@ -20,7 +20,7 @@ typedef struct nqiv_montage_dimensions
 	double row_space;
 	int    count_per_row;
 	/* Number of thumbnails per 'page' */
-	int count;
+	int    count;
 } nqiv_montage_dimensions;
 
 typedef struct nqiv_montage_positions
@@ -48,7 +48,7 @@ typedef struct nqiv_montage_state
 	/* Are we viewing a different set/page of thumbnails now?
 	 * Used to set loading 'transaction group' to discard queued out of sight thumbnails.
 	 */
-	bool range_changed;
+	bool                    range_changed;
 } nqiv_montage_state;
 
 /* Update montage to new dimensions. */

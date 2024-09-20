@@ -145,9 +145,9 @@ typedef struct nqiv_keybind_manager
 	nqiv_array*   lookup; /* Array of nqiv_keybind_pair */
 } nqiv_keybind_manager;
 
-bool nqiv_keybind_create_manager(nqiv_keybind_manager* manager,
-                                 nqiv_log_ctx*         logger,
-                                 const int             starting_array_length);
+bool            nqiv_keybind_create_manager(nqiv_keybind_manager* manager,
+                                            nqiv_log_ctx*         logger,
+                                            const int             starting_array_length);
 /*void nqiv_keybind_remove(nqiv_keybind_manager manager, const SDL_Keysym* key, const
  * nqiv_key_action action);*/
 void            nqiv_key_print_actions(FILE* stream);
