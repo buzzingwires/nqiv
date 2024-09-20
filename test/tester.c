@@ -11,6 +11,17 @@
 #include "keybind_tests.h"
 #include "keyrate_tests.h"
 
+/*
+ * Run automated, self-contained tests.
+ *
+ * Tests are organized in a tree structure with branch nodes (test sets) that contain a list of
+ * other nodes, and leaf nodes (actual tests) which contain a valid pointer to a function that
+ * performs the test.
+ *
+ * To run tests, take a list of names from the command line. If it is empty, run them all.
+ * Otherwise, only run tests that are named, or the parent of which are named.
+ */
+
 #define TEST_NAME_LEN 50
 
 typedef struct test_set test_set;

@@ -26,7 +26,7 @@ int nqiv_array_get_last_idx(const nqiv_array* array)
 nqiv_array* nqiv_array_create(const int unit_size, const int unit_count)
 {
 	const int length = unit_count * unit_size;
-	assert(length >= unit_size && length >= unit_count);
+	assert(length >= unit_size && length >= unit_count); /* Overflow check */
 	nqiv_array* array = (nqiv_array*)calloc(1, sizeof(nqiv_array));
 	if(array == NULL) {
 		return array;
@@ -43,8 +43,9 @@ nqiv_array* nqiv_array_create(const int unit_size, const int unit_count)
 	return array;
 }
 
-void nqiv_array_inherit(nqiv_array* array, void* data, const int unit_size, const int length)
+void nqiv_array_inherit(nqiv_array* array, void* data, const int unit_size, const int count)
 {
+	/* Overflow check. */
 	assert(length * unit_size >= length);
 	assert(length * unit_size >= unit_size);
 	memset(array, 0, sizeof(nqiv_array));
@@ -62,7 +63,7 @@ void nqiv_array_unlimit_data(nqiv_array* array)
 int nqiv_array_calculate_potential_length(const nqiv_array* array, const int units)
 {
 	const int length = array->unit_length * units;
-	if(length < array->unit_length || length < units || units <= 0) {
+	if(length < array->unit_length || length < units || units <= 0) { /* Overflow/sanity check. */
 		return -1;
 	}
 	return length;

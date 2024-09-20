@@ -10,7 +10,30 @@
 #include "logging.h"
 #include "keyrate.h"
 
-#define NQIV_KEYBIND_STRLEN 1024
+/*
+ * Parse the keybind notation, and create an object from it that can be matched
+ * to data from SDL events to translate them to key actions with certain
+ * filtering/keyrate characteristics recognized by keyrate.h
+ *
+ * Parsing is case sensitive and retrieves match and action data separated by
+ * '+' from two lists separated by '='. After successfully splitting each option
+ * by '+', attempt to match them by whatever works first. Keymod, scroll, mouse
+ * click, scancode for the match list. Filter/keyrate info, then action for the
+ * second. See code or the 'help append keybind' command for more info. Keymods
+ * must be mixed with other matches, but other matches cannot be mixed with one
+ * another.
+ *
+ * Lookups are relatively simple. Build a match object from event info, and set
+ * the mode to compare the relevant properties. If there is a match, a pointer
+ * to the keybind pair will be pushed to the provided queue. Note that these
+ * pointers could be broken if the list is reallocated- it shouldn't be since
+ * its length is static and everything is currently handled by the master
+ * thread, so they should all be processed before a potentially reallocation,
+ * anyway.
+ *
+ */
+
+#define NQIV_KEYBIND_STRLEN 1024 /* Keybind notation should not be longer than this. */
 
 typedef enum nqiv_key_action
 {
@@ -78,15 +101,18 @@ extern const char* const nqiv_keybind_action_names[];
 typedef enum nqiv_key_lookup_summary
 {
 	NQIV_KEY_LOOKUP_NOT_FOUND = 0,
+	/* If we found key actions, but failed to push them to the output queue. */
 	NQIV_KEY_LOOKUP_FAILURE = 1,
 	NQIV_KEY_LOOKUP_FOUND = 2,
 } nqiv_key_lookup_summary;
 
+/* Describe which data from a key match to use, or specify simple, unambiguous
+ * operations like mouse wheel movement. */
 typedef enum nqiv_key_match_mode
 {
 	NQIV_KEY_MATCH_MODE_NONE = 0,
 	NQIV_KEY_MATCH_MODE_KEY = 1,
-	NQIV_KEY_MATCH_MODE_KEY_MOD = 2,
+	NQIV_KEY_MATCH_MODE_KEY_MOD = 2, /* Modifier keys like shift, ctrl, etc' */
 	NQIV_KEY_MATCH_MODE_MOUSE_BUTTON = 4,
 	NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD = 8,
 	NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD = 16,
@@ -108,15 +134,15 @@ typedef struct nqiv_key_match
 
 typedef struct nqiv_keybind_pair
 {
-	nqiv_key_match        match;
-	nqiv_keyrate_keystate keyrate;
-	nqiv_key_action       action;
+	nqiv_key_match        match;   /* Lookup data. */
+	nqiv_keyrate_keystate keyrate; /* Key filtering data for this bind. */
+	nqiv_key_action       action;  /* Action taken on match. */
 } nqiv_keybind_pair;
 
 typedef struct nqiv_keybind_manager
 {
 	nqiv_log_ctx* logger;
-	nqiv_array*   lookup;
+	nqiv_array*   lookup; /* Array of nqiv_keybind_pair */
 } nqiv_keybind_manager;
 
 bool nqiv_keybind_create_manager(nqiv_keybind_manager* manager,

@@ -1,12 +1,25 @@
 #ifndef NQIV_PLATFORM_H
 #define NQIV_PLATFORM_H
 
+/*
+ * A major philosophy of nqiv is that conditional compilation should be kept to
+ * a minimum and that when it is necessary, it should primarily be restricted
+ * to a module that provides platform-specific features with a standard
+ * interface that matches the idioms of the wider project. Additionally, any
+ * platform-related sanity checks may be performed here.
+ *
+ * Further, when this header is included, it should be included first since its
+ * behavior can affect the behavior of other headers.
+ */
+
 #if !defined(__unix__) && !defined(__linux__) && !defined(__gnu_linux__) && !defined(__MINGW32__)
 	#error "Currently, only Unix, Linux, and windows through MinGW are supported."
 #else
+	/* Standard library headers will have different functionality with this set. */
 	#define _GNU_SOURCE
 #endif
 
+/* Platform-specific config paths and suggested commands to create them. */
 #define NQIV_CFG_FILENAME "nqiv.cfg"
 #if defined(__MINGW32__)
 	#define NQIV_CFG_MKDIR      "md"
@@ -37,8 +50,11 @@ bool  nqiv_chmod(const char* filename, uint16_t mode);
 bool  nqiv_get_default_cfg(char* output, const int length);
 bool  nqiv_get_default_cfg_thumbnail_dir(char* output, const int length);
 void  nqiv_suggest_cfg_setup(const char* exe);
-int   nqiv_strlen(const char* str);
-int   nqiv_strtoi(const char* str, char** endptr, int base);
-int   nqiv_ptrdiff(const void* a, const void* b);
+/* Output asserted to 0 to INT_MAX */
+int nqiv_strlen(const char* str);
+/* Works like strtol but with a regular int. */
+int nqiv_strtoi(const char* str, char** endptr, int base);
+/* Simple pointer arithmetic with result asserted to be within an 0 to INT_MAX */
+int nqiv_ptrdiff(const void* a, const void* b);
 
 #endif /* NQIV_PLATFORM_H */

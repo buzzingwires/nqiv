@@ -35,6 +35,9 @@ void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_options
 					assert(options->vips);
 					nqiv_unload_image_form_vips(form);
 				}
+				/* Load thumbnail if allowed. If not, or if fail, we create the thumbnail VIPS data
+				 * from the image for rendering, without actually generating a full on-disk
+				 * thumbnail. */
 				if(form == &image->thumbnail) {
 					if(image->parent->thumbnail.load && !form->thumbnail_load_failed) {
 						success = nqiv_image_load_vips(image, form);
@@ -105,12 +108,14 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
                       const int64_t*       transaction_group,
                       omp_lock_t*          transaction_group_lock)
 {
+	/* Stagger events by their thread num to prevent stampeding herd problems. */
 	int  wait_time = delay_base + omp_get_thread_num();
 	bool running = true;
 	int  events_processed = 0;
 	while(running) {
 		nqiv_event event = {0};
 		bool       event_found = false;
+		/* Find valid events */
 		if(events_processed < event_interval || event_interval == 0) {
 			while(true) {
 				event_found = nqiv_priority_queue_pop(queue, &event);
@@ -158,6 +163,8 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 					nqiv_worker_handle_image_load_form(&image_load->image_options, image,
 					                                   &image->image);
 					if(!image->thumbnail_attempted && image_load->create_thumbnail) {
+						/* If we can load the thumbnail and are allowed to create it, then make sure
+						 * it also is up to date. This involves loading the image form, as well. */
 						if(image->thumbnail.vips == NULL
 						   && nqiv_image_load_vips(image, &image->thumbnail)) {
 							if(image->image.vips == NULL) {
@@ -172,6 +179,8 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 									!nqiv_thumbnail_create(image)
 									&& image->thumbnail.thumbnail_load_failed;
 							}
+							/* Otherwise, load the image vips and create the thumbnail from scratch.
+							 */
 						} else {
 							if(image->image.vips == NULL) {
 								if(nqiv_image_load_vips(image, &image->image)) {
@@ -197,6 +206,8 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 				}
 			}
 		} else {
+			/* No more events? Inform master if any events have been processed. Otherwise, sleep for
+			 * polling interval. */
 			if(events_processed > 0) {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG,
 				               "Thread %d waking master after processing %d events\n",

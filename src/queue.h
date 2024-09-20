@@ -7,6 +7,18 @@
 
 #include "logging.h"
 
+/*
+ * nqiv_queue is backed by nqiv_array and primarily functions as a stack with a
+ * mutex lock for thread safe operation, and a logger for feedback. See array.h
+ * for documentation related to how lengths and units are managed.
+ *
+ * nqiv_priority_queue is backed by an array of nqiv_queue objects of unchanging
+ * length. We will call these individual queues 'bins' and say individual
+ * entries are sorted into them by priority. To retrieve an item from the
+ * priority queue, the bins are iterated through from first and last, until one
+ * of them returns an entry.
+ */
+
 typedef struct nqiv_queue
 {
 	omp_lock_t    lock;

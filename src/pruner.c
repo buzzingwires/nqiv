@@ -84,6 +84,8 @@ void nqiv_pruner_loaded_count_body(nqiv_pruner*                pruner,
                                    nqiv_pruner_desc_datapoint* datapoint,
                                    const int                   increment)
 {
+	/* Mutate value by increment amount and check against condition, updating
+	 * result against the pruner-wide nqiv_pruner_count_op */
 	datapoint->value.as_int += increment;
 	const bool result = datapoint->value.as_int > datapoint->condition.as_int_pair[1];
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG,
@@ -221,6 +223,7 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 		pruner->state.and_result = false;
 		pruner->state.and_is_set = false;
 		nqiv_pruner_run_desc(pruner, desc, image);
+		/* If any of the operations passed. */
 		if((desc->counter & NQIV_PRUNER_COUNT_OP_SUM
 		    && pruner->state.total_sum > desc->state_check.total_sum)
 		   || (desc->counter & NQIV_PRUNER_COUNT_OP_OR
@@ -242,6 +245,10 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 				nqiv_unload_image_form_all_textures(&image->thumbnail);
 				send_event = true;
 			}
+			/* Long determination of whether there is anything that actually
+			 * needs unloading. It is important that we avoid doing unnecessary
+			 * work. Send a single event for each image, and only set each
+			 * unload option if the object to be unloaded actually exists. */
 			event_options->image_options.vips = event_options->image_options.vips
 			                                    || (desc->unload_vips && image->image.vips != NULL);
 			event_options->image_options.raw =
@@ -276,6 +283,7 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 			event_options->thumbnail_options.surface_soft =
 				event_options->thumbnail_options.surface_soft
 				|| (desc->unload_thumbnail_surface_soft && image->thumbnail.surface != NULL);
+			/* Finally, track if there's anything to do. */
 			send_event =
 				send_event || event.options.image_load.image_options.vips
 				|| event_options->image_options.raw || event_options->image_options.surface
@@ -288,6 +296,7 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 				|| event_options->thumbnail_options.surface_soft;
 		}
 	}
+	/* We send the event if there's something to do. */
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "%sending prune event for image %d.\n",
 	               send_event ? "S" : "Not s", iidx);
 	if(send_event) {
@@ -314,6 +323,7 @@ void nqiv_pruner_clean_desc_set(nqiv_pruner_desc_dataset* set)
 
 void nqiv_pruner_clean_desc(nqiv_pruner_desc* desc)
 {
+	/* Clean ephemeral state information. */
 	nqiv_pruner_clean_desc_set(&desc->vips_set);
 	nqiv_pruner_clean_desc_set(&desc->raw_set);
 	nqiv_pruner_clean_desc_set(&desc->surface_set);
@@ -438,6 +448,9 @@ int nqiv_pruner_parse_set_check(nqiv_log_ctx*               logger,
                                                   const int,
                                                   nqiv_pruner_desc_datapoint_content*))
 {
+	/* Based on the state of the parser, we parse the given condition of the
+	 * check, disable the check, enable or disable its unload setting, setting
+	 * the index as appropriate, or returning -1 on failure. */
 	int nidx = idx;
 	if(inside_unload) {
 		if(inside_no) {
@@ -533,6 +546,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 		if(idx == -1) {
 			break;
 		}
+		/* Basic modifier states. */
 		if(nqiv_pruner_check_token(text, idx, end, "hard")) {
 			if(inside_no) {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling 'hard' at %s\n", &text[idx]);
@@ -619,6 +633,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling image\n");
 				inside_image = true;
 			}
+			/* Determine which data we are working on. */
 		} else if(nqiv_pruner_check_token(text, idx, end, "vips")) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'vips' at %s\n", &text[idx]);
 			idx += strlen("vips");
@@ -818,6 +833,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				thumbnail_unload_setting = &desc->unload_thumbnail_texture;
 				thumbnail_set = &desc->thumbnail_texture_set;
 			}
+			/* Determine which checks to run. */
 		} else if(nqiv_pruner_check_token(text, idx, end, "not_animated")) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'not_animated' %s\n", &text[idx]);
 			idx += strlen("not_animated");
@@ -828,6 +844,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 									  : &desc->thumbnail_vips_set.not_animated,
 				unload_setting, thumbnail_unload_setting, nqiv_pruner_set_true);
 			inside_no = false;
+			/* After this point, we need a data to run checks. */
 		} else if(set == NULL) {
 			nqiv_log_write(logger, NQIV_LOG_ERROR,
 			               "Failed to continue with unknown set target from %s\n", &text[idx]);
@@ -923,6 +940,7 @@ int nqiv_pruner_desc_dataset_to_string(nqiv_pruner_render_state*       state,
                                        const nqiv_pruner_render_state* new_state)
 {
 	bool success = true;
+	/* Do we have any kinds of checks? */
 	if(set->not_animated.active || set->loaded_self.active || set->loaded_ahead.active
 	   || set->loaded_behind.active || set->bytes_ahead.active || set->bytes_behind.active) {
 		success = success && nqiv_pruner_update_render_state_form(state, builder, new_state);
@@ -988,6 +1006,8 @@ bool nqiv_pruner_desc_dataset_compare(const nqiv_pruner_desc_dataset* first,
 
 bool nqiv_pruner_desc_compare(const nqiv_pruner_desc* first, const nqiv_pruner_desc* second)
 {
+	/* We're primarily comparing conditions and operations, not ephemeral
+	 * information about the state of the pruner. */
 	return first->counter == second->counter && first->state_check.idx == second->state_check.idx
 	       && first->state_check.selection == second->state_check.selection
 	       && first->state_check.montage_start == second->state_check.montage_start
@@ -1030,6 +1050,8 @@ bool nqiv_pruner_desc_dataset_pair_to_string(nqiv_pruner_render_state*       sta
                                              nqiv_array*                     builder)
 {
 	int success = true;
+	/* If the checks exist and are the same for images and thumbnail, only
+	 * render them once. */
 	if(nqiv_pruner_desc_dataset_compare(image_set, thumbnail_set)
 	   && (image_set->not_animated.active || image_set->loaded_self.active
 	       || image_set->loaded_ahead.active || image_set->loaded_behind.active
@@ -1095,6 +1117,7 @@ bool nqiv_pruner_desc_to_string(const nqiv_pruner_desc* desc, char* buf)
 	if((desc->counter & NQIV_PRUNER_COUNT_OP_AND) != 0) {
 		result = result && nqiv_array_push_sprintf(&builder, "and ");
 	}
+	/* Track the state of the description to reduce redundant instructions. */
 	nqiv_pruner_render_state render_state = {.in_image = true,
 	                                         .in_thumbnail = false,
 	                                         .hard_unload = false,
@@ -1113,6 +1136,7 @@ bool nqiv_pruner_desc_to_string(const nqiv_pruner_desc* desc, char* buf)
 		result
 		&& nqiv_pruner_desc_dataset_pair_to_string(&render_state, "texture", &desc->texture_set,
 	                                               &desc->thumbnail_texture_set, &builder);
+	/* Do we have anything to unload? */
 	if(desc->unload_vips || desc->unload_raw || desc->unload_surface || desc->unload_texture
 	   || desc->unload_thumbnail_vips || desc->unload_thumbnail_raw
 	   || desc->unload_thumbnail_surface || desc->unload_thumbnail_texture || desc->unload_vips_soft
@@ -1120,6 +1144,7 @@ bool nqiv_pruner_desc_to_string(const nqiv_pruner_desc* desc, char* buf)
 	   || desc->unload_thumbnail_raw_soft || desc->unload_thumbnail_surface_soft) {
 		result = result && nqiv_array_push_sprintf(&builder, "unload ");
 	}
+	/* Add hard unloads. */
 	if(desc->unload_vips || desc->unload_raw || desc->unload_surface || desc->unload_texture
 	   || desc->unload_thumbnail_vips || desc->unload_thumbnail_raw
 	   || desc->unload_thumbnail_surface || desc->unload_thumbnail_texture) {
@@ -1138,6 +1163,7 @@ bool nqiv_pruner_desc_to_string(const nqiv_pruner_desc* desc, char* buf)
 			&& nqiv_pruner_unload_pair_to_string(&render_state, "texture", desc->unload_texture,
 		                                         desc->unload_thumbnail_texture, true, &builder);
 	}
+	/* Add soft unloads. */
 	if(desc->unload_vips_soft || desc->unload_raw_soft || desc->unload_surface_soft
 	   || desc->unload_thumbnail_vips_soft || desc->unload_thumbnail_raw_soft
 	   || desc->unload_thumbnail_surface_soft) {
@@ -1154,6 +1180,8 @@ bool nqiv_pruner_desc_to_string(const nqiv_pruner_desc* desc, char* buf)
 					 &render_state, "surface", desc->unload_surface_soft,
 					 desc->unload_thumbnail_surface_soft, false, &builder);
 	}
+	/* There's a trailing space at the end of the string in anticipation of
+	 * more things to append. When we're done, make it a NULL terminator. */
 	if(result && buf[nqiv_array_get_last_idx(&builder)] == ' ') {
 		buf[nqiv_array_get_last_idx(&builder)] = '\0';
 	}

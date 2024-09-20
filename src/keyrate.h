@@ -5,6 +5,22 @@
 
 #include <SDL2/SDL.h>
 
+/*
+ * Handle key repeat rates and whether they should register on being being
+ * pressed or released.
+ *
+ * There are default settings, and settings related to a particular keybind.
+ * These include ephemeral information about the current key state, and actual
+ * specifications as to how that should be handled. For the latter, setting them
+ * to be less than zero will cause the default settings to be used.
+ *
+ * If the key is released, clear ephemeral data and then tell whether the
+ * released key should be registered.
+ *
+ * If the key is held down and pressed keys are supposed to be registered,
+ * follow the pattern in nqiv_keyrate_keystate_settings
+ */
+
 typedef enum nqiv_keyrate_release_option
 {
 	NQIV_KEYRATE_ON_NONE = 0,
@@ -58,9 +74,12 @@ typedef struct nqiv_keyrate_manager
 	bool                           send_on_up;
 } nqiv_keyrate_manager;
 
-bool nqiv_keyrate_filter_action(const nqiv_keyrate_manager*       manager,
-                                nqiv_keyrate_keystate*            state,
+bool nqiv_keyrate_filter_action(const nqiv_keyrate_manager* manager,
+                                /* Settings for this particular keybind. */
+                                nqiv_keyrate_keystate* state,
+                                /* Consider the key pressed, released, or both. */
                                 const nqiv_keyrate_release_option released,
-                                Uint64                            ticks);
+                                /* Timestamp in SDL ticks (milliseconds) */
+                                Uint64 ticks);
 
 #endif /* NQIV_KEYRATE_H */

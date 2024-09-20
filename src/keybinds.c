@@ -20,6 +20,7 @@ int nqiv_findchar(const char* text, const char query, const int start, const int
 	assert(text != NULL);
 	assert(stop >= -1);
 	assert(start >= 0);
+	/* Variable direction searching. Get first occurrence or -1 */
 	const int step = stop >= start ? 1 : -1;
 	int       idx = start;
 	char      c = text[idx];
@@ -298,7 +299,9 @@ int nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* p
 	if(textlen == 0) {
 		return -1;
 	}
+	/* Get last equal to split match and action data */
 	const int equal_start = nqiv_findchar(text, '=', textlen - 1, -1);
+	/* Make sure we actually have an equal sign and data before and after. */
 	if(equal_start == -1 || textlen <= equal_start + 1) {
 		return -1;
 	}
@@ -312,8 +315,11 @@ int nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* p
 	int  section_start;
 	bool success = true;
 	for(idx = 0, section_start = 0; idx <= equal_start; ++idx) {
+		/* Split at '+' or if there is extra data before the '=' */
 		if(text[idx] == '+' || (idx == equal_start && idx > section_start)) {
 			int section_end = idx;
+			/* The last segment won't end with a '+', or a segment might end
+			 * with an '+' in addition to being separated by one. */
 			if(idx + 1 == equal_start || text[idx + 1] == '+') {
 				section_end += 1;
 			}
@@ -326,8 +332,11 @@ int nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* p
 		}
 	}
 	for(idx = equal_start + 1, section_start = idx; idx <= textlen; ++idx) {
+		/* Split at '+' or if there is extra data before the end */
 		if(text[idx] == '+' || (idx == textlen && idx > section_start)) {
 			int section_end = idx;
+			/* The last segment won't end with a '+', or a segment might end
+			 * with an '+' in addition to being separated by one. */
 			if(idx + 1 == textlen || text[idx + 1] == '+') {
 				section_end += 1;
 			}
@@ -346,6 +355,7 @@ int nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* p
 			section_start = section_end + 1;
 		}
 	}
+	/* Don't allow keymods alone. */
 	if(tmp.match.mode == NQIV_KEY_MATCH_MODE_KEY_MOD) {
 		success = false;
 	}

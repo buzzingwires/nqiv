@@ -51,6 +51,11 @@ void nqiv_unload_image_form_fallback_texture(nqiv_image_form* form)
 
 void nqiv_unload_image_form_all_textures(nqiv_image_form* form)
 {
+	/* Texture is only destroyed if it does not match fallback texture (since
+	 * the pointer to the old texture is copied to its position). Otherwise, it
+	 * is just unloaded (pointer set to NULL). And, texture must be different
+	 * (or NULL) when destroying fallback. Do this to make absolutely sure both
+	 * textures are unloaded. */
 	nqiv_unload_image_form_texture(form);
 	nqiv_unload_image_form_fallback_texture(form);
 	nqiv_unload_image_form_texture(form);
@@ -1007,6 +1012,9 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
 	assert(dstrect->h > 0);
 	double src_aspect;
 	double dst_aspect;
+	/* Basically guestimate fit level based on biggest side of image, makingit
+	 * proportional to the ratio between it and the screen's corresponding
+	 * side. */
 	if(srcrect->w > srcrect->h) {
 		manager->zoom.fit_level = (double)dstrect->w / (double)srcrect->w;
 		src_aspect = (double)srcrect->w / (double)srcrect->h;
@@ -1020,6 +1028,8 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
 	} else {
 		dst_aspect = (double)dstrect->h / (double)dstrect->w;
 	}
+	/* If image has a bigger side than display, set fit level to be greater
+	 * than 1.0 + (biggest ratio - smallest ratio) */
 	if(srcrect->w > dstrect->w || srcrect->h > dstrect->h) {
 		if(src_aspect > dst_aspect) {
 			manager->zoom.fit_level = 1.0 + (src_aspect - dst_aspect);
@@ -1032,6 +1042,8 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
 	manager->zoom.image_to_viewport_ratio_max = manager->zoom.fit_level;
 	double current_ratio = manager->zoom.image_to_viewport_ratio;
 	bool   ever_set = false;
+	/* Get a precisely calculated zoom level by repeatedly calculating the real
+	 * zoomrect until the entire image isn't in view. */
 	while(true) {
 		if(manager->zoom.image_to_viewport_ratio > 0.0) {
 			SDL_Rect src = {0};
@@ -1060,11 +1072,14 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
 		ever_set = true;
 	}
 	manager->zoom.image_to_viewport_ratio = original_ratio;
+	/* If the image is smaller than the screen, make sure we can zoom out
+	 * enough to see its actual size. */
 	if(manager->zoom.actual_size_level > manager->zoom.fit_level) {
 		manager->zoom.image_to_viewport_ratio_max = manager->zoom.actual_size_level;
 	} else {
 		manager->zoom.image_to_viewport_ratio_max = manager->zoom.fit_level;
 	}
+	/* Clamp max ratio at 1.0 */
 	if(manager->zoom.image_to_viewport_ratio_max < 1.0) {
 		manager->zoom.image_to_viewport_ratio_max = 1.0;
 		if(manager->zoom.fit_level < 1.0) {
