@@ -13,6 +13,8 @@ D_MXE_DIR="./cross/mxe"
 D_PACKAGE_DIR="./cross/packages"
 D_VIPS_URL="https://github.com/libvips/build-win64-mxe/releases/download/v8.15.2/vips-dev-w64-web-8.15.2.zip"
 D_JEMALLOC_URL="https://github.com/jemalloc/jemalloc/releases/download/5.3.0/jemalloc-5.3.0.tar.bz2"
+D_ENV_PATH="./env.sh"
+D_BUILDER_PATH="./genbuilder.sh"
 
 errcho()
 {
@@ -72,6 +74,10 @@ exit_usage()
 	errcho
 	errcho "'-j' : Download jemalloc from here. Try checking https://github.com/jemalloc/jemalloc/releases for choices. Default: $D_JEMALLOC_URL"
 	errcho
+	errcho "'-e' : Path to environment setup file created by 'genenvfile'. Default: $D_ENV_PATH"
+	errcho
+	errcho "'-b' : Path to environment setup file created by 'genbuilder'. Default: $D_BUILDER_PATH"
+	errcho
 	errcho "Actions:"
 	errcho
 	errcho "'cleanmxe' : Delete the ENTIRE MXE directory and all of its contents."
@@ -86,7 +92,13 @@ exit_usage()
 	errcho
 	errcho "'loadjemalloc' : 'cleanjemalloc', then download jemalloc, build it, and install it in the MXE environment."
 	errcho
-	errcho "'genbuilder' : Generate a build script with appropriate environment variables and so on. Write it to stdout."
+	errcho "'cleantoolchain' : Alias for cleanmxe. Deletes the ENTIRE MXE directory and all of its contents."
+	errcho
+	errcho "'loadtoolchain' : Alias for loadmxe, loadvips, and loadjemalloc"
+	errcho
+	errcho "'genenvfile' : Generate a script that can be sourced to set the appropriate environment variables but take no further option. Write it to ${D_ENV_PATH}"
+	errcho
+	errcho "'genbuilder' : Generate a script to set up the build environment with appropriate environment variables and so on. Write it to ${D_BUILDER_PATH}"
 
 	exit "$L_CODE"
 }
@@ -97,6 +109,8 @@ a_mxe_dir="$D_MXE_DIR"
 a_package_dir="$D_PACKAGE_DIR"
 a_vips_url="$D_VIPS_URL"
 a_jemalloc_url="$D_JEMALLOC_URL"
+a_env_path="$D_ENV_PATH"
+a_builder_path="$D_BUILDER_PATH"
 
 action_cleanmxe()
 {
@@ -184,18 +198,42 @@ action_loadjemalloc()
 	cd -
 }
 
-action_genbuilder()
+action_cleantoolchain()
+{
+	action_cleanmxe
+}
+
+action_loadtoolchain()
+{
+	action_loadmxe
+	action_loadvips
+	action_loadjemalloc
+}
+
+print_envfile()
 {
 	echo "export PKG_CONFIG_PATH=\"$a_mxe_dir/usr/$a_mxe_target/lib/pkgconfig/\""
 	echo "export PATH=\"$a_mxe_dir/usr/bin:\$PATH\""
-	echo "autoreconf --install"
-	echo "./configure --prefix=\"$a_mxe_dir/usr/$a_mxe_target\" --host=\"$a_mxe_target\" --enable-cross-compile=yes"
+}
+
+action_genenvfile()
+{
+	print_envfile > "$a_env_path"
+	chmod +x "$a_env_path"
+}
+
+action_genbuilder()
+{
+	print_envfile > "$a_builder_path"
+	echo "autoreconf --install" >> "$a_builder_path"
+	echo "./configure --prefix=\"$a_mxe_dir/usr/$a_mxe_target\" --host=\"$a_mxe_target\" --enable-cross-compile=yes" >> "$a_builder_path"
+	chmod +x "$a_builder_path"
 }
 
 main()
 {
 	set -efu
-	while getopts "ht:p:d:D:v:j:" opt;
+	while getopts "ht:p:d:D:v:j:e:b:" opt;
 	do
 		case "$opt" in
 		'h')
@@ -218,6 +256,12 @@ main()
 			;;
 		'j')
 			a_jemalloc_url="$OPTARG"
+			;;
+		'e')
+			a_env_path="$OPTARG"
+			;;
+		'b')
+			a_builder_path="$OPTARG"
 			;;
 		*)
 			errcho "Error: Unrecognized flag '$opt'."
@@ -253,6 +297,15 @@ main()
 			;;
 		'loadjemalloc')
 			action_loadjemalloc
+			;;
+		'cleantoolchain')
+			action_cleantoolchain
+			;;
+		'loadtoolchain')
+			action_loadtoolchain
+			;;
+		'genenvfile')
+			action_genenvfile
 			;;
 		'genbuilder')
 			action_genbuilder
