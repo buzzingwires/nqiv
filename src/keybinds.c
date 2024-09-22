@@ -125,24 +125,12 @@ bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 	} else if(strncmp(text, "ralt", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_RALT;
-	} else if(strncmp(text, "lgui", length) == 0) {
-		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
-		match->data.key.mod |= KMOD_LGUI;
-	} else if(strncmp(text, "rgui", length) == 0) {
-		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
-		match->data.key.mod |= KMOD_RGUI;
-	} else if(strncmp(text, "num", length) == 0) {
-		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
-		match->data.key.mod |= KMOD_NUM;
 	} else if(strncmp(text, "caps", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_CAPS;
 	} else if(strncmp(text, "mode", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_MODE;
-	} else if(strncmp(text, "scroll", length) == 0) {
-		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
-		match->data.key.mod |= KMOD_SCROLL;
 	} else if(strncmp(text, "ctrl", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_CTRL;
@@ -152,9 +140,6 @@ bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 	} else if(strncmp(text, "alt", length) == 0) {
 		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 		match->data.key.mod |= KMOD_ALT;
-	} else if(strncmp(text, "gui", length) == 0) {
-		match->mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
-		match->data.key.mod |= KMOD_GUI;
 	} else if(strncmp(text, "scroll_forward", length) == 0) {
 		if((match->mode
 		    & (NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD | NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_BACKWARD
@@ -402,16 +387,15 @@ bool nqiv_key_match_element_to_string(nqiv_array* builder, const char* suffix)
 bool nqiv_keymod_to_string(const nqiv_keybind_pair* pair, nqiv_array* builder)
 {
 	const Uint16 mods[] = {
-		KMOD_LSHIFT, KMOD_RSHIFT, KMOD_LCTRL,  KMOD_RCTRL, KMOD_LALT,  KMOD_RALT, KMOD_NUM,
-		KMOD_CAPS,   KMOD_MODE,   KMOD_SCROLL, KMOD_CTRL,  KMOD_SHIFT, KMOD_ALT,  0,
+		KMOD_LSHIFT, KMOD_RSHIFT, KMOD_LCTRL, KMOD_RCTRL, KMOD_LALT, KMOD_RALT,
+		KMOD_CAPS,   KMOD_MODE,   KMOD_CTRL,  KMOD_SHIFT, KMOD_ALT,  0,
 	};
 	const Uint16 anti_mods[] = {
-		KMOD_RSHIFT, KMOD_LSHIFT, KMOD_RCTRL, KMOD_LCTRL, KMOD_RALT, KMOD_LALT, 0,
-		0,           0,           0,          0,          0,         0,         0,
+		KMOD_RSHIFT, KMOD_LSHIFT, KMOD_RCTRL, KMOD_LCTRL, KMOD_RALT, KMOD_LALT, 0, 0, 0, 0, 0, 0,
 	};
 	const char* mod_names[] = {
-		"lshift", "rshift", "lctrl",  "rctrl", "lalt",  "ralt", "num",
-		"caps",   "mode",   "scroll", "ctrl",  "shift", "alt",  NULL,
+		"lshift", "rshift", "lctrl", "rctrl", "lalt", "ralt",
+		"caps",   "mode",   "ctrl",  "shift", "alt",  NULL,
 	};
 	int  idx;
 	bool success = true;
@@ -508,11 +492,8 @@ bool nqiv_compare_mod(const Uint16 a, const Uint16 b)
 	return ((bool)(ac & KMOD_SHIFT) == (bool)(bc & KMOD_SHIFT))
 	       && ((bool)(ac & KMOD_CTRL) == (bool)(bc & KMOD_CTRL))
 	       && ((bool)(ac & KMOD_ALT) == (bool)(bc & KMOD_ALT))
-	       && ((bool)(ac & KMOD_GUI) == (bool)(bc & KMOD_GUI))
-	       && ((bool)(ac & KMOD_NUM) == (bool)(bc & KMOD_NUM))
 	       && ((bool)(ac & KMOD_CAPS) == (bool)(bc & KMOD_CAPS))
-	       && ((bool)(ac & KMOD_MODE) == (bool)(bc & KMOD_MODE))
-	       && ((bool)(ac & KMOD_SCROLL) == (bool)(bc & KMOD_SCROLL));
+	       && ((bool)(ac & KMOD_MODE) == (bool)(bc & KMOD_MODE));
 }
 
 bool nqiv_keybind_compare_match(const nqiv_key_match* a, const nqiv_key_match* b)

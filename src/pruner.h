@@ -79,7 +79,6 @@ typedef struct nqiv_pruner_state
 {
 	/* Current image index. */
 	int  idx;
-	int  selection;
 	int  montage_start;
 	int  montage_end;
 	int  total_sum;

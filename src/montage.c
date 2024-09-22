@@ -44,12 +44,6 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state, const int widt
 	assert(height > 0);
 	state->dimensions.window_width = width;
 	state->dimensions.window_height = height;
-	/*
-	double horizontal_margin;
-	double vertical_margin;
-	double column_space;
-	double row_space;
-	*/
 	const double width_ratio =
 		(double)(state->images->thumbnail.size) / (double)(state->dimensions.window_width);
 	const double height_ratio =

@@ -1164,15 +1164,9 @@ void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		print_prefix(manager);
 		fprintf(stdout, "'lalt', 'ralt', or 'alt' for either.\n");
 		print_prefix(manager);
-		fprintf(stdout, "'lgui', 'rgui', or 'gui' for either.\n");
-		print_prefix(manager);
-		fprintf(stdout, "num\n");
-		print_prefix(manager);
 		fprintf(stdout, "caps\n");
 		print_prefix(manager);
 		fprintf(stdout, "mode\n");
-		print_prefix(manager);
-		fprintf(stdout, "scroll\n");
 		print_prefix(manager);
 		fprintf(stdout, "<key_action> options:\n");
 		print_prefix(manager);

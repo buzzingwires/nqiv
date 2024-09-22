@@ -215,7 +215,6 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 		nqiv_pruner_desc* desc = &descs_array[idx];
 		assert(desc->counter != NQIV_PRUNER_COUNT_OP_UNKNOWN);
 		pruner->state.idx = iidx;
-		pruner->state.selection = montage->positions.selection;
 		const int raw_start_idx = montage->positions.start - montage->preload.behind;
 		pruner->state.montage_start = raw_start_idx >= 0 ? raw_start_idx : 0;
 		pruner->state.montage_end = montage->positions.end + montage->preload.ahead;
@@ -1009,7 +1008,6 @@ bool nqiv_pruner_desc_compare(const nqiv_pruner_desc* first, const nqiv_pruner_d
 	/* We're primarily comparing conditions and operations, not ephemeral
 	 * information about the state of the pruner. */
 	return first->counter == second->counter && first->state_check.idx == second->state_check.idx
-	       && first->state_check.selection == second->state_check.selection
 	       && first->state_check.montage_start == second->state_check.montage_start
 	       && first->state_check.montage_end == second->state_check.montage_end
 	       && first->state_check.total_sum == second->state_check.total_sum

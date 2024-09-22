@@ -613,85 +613,80 @@ bool render_from_form(nqiv_state*     state,
                       const bool      is_montage,
                       /* Where to draw to. */
                       const SDL_Rect* dstrect,
-                      /* Sometimes we can be using the image form to render in the montage. */
-                      const bool      is_thumbnail,
                       const bool      first_frame,
                       const bool      next_frame,
                       /* Selected in montage mode? */
                       const bool      selected,
                       /* Force reload */
                       const bool      hard,
-                      /* Try to lock the image */
-                      const bool      lock,
                       /* Preload events will have lower priority (higher number), so actual priority
                          is added to this. */
                       const int       base_priority)
 {
 	bool             cleared = is_montage;
-	nqiv_image_form* form = is_thumbnail ? &image->thumbnail : &image->image;
+	nqiv_image_form* form = is_montage ? &image->thumbnail : &image->image;
 	if(is_montage) {
 		state->is_loading = false;
 	}
-	if(lock) {
-		/* We try to lock the image. Don't wait on it and block the whole program, if not. Just use
-		 * its fallback texture and return early. */
-		if(!nqiv_image_test_lock(image)) {
-			/* If this is a preload, don't bother. Nowhere to render. */
-			if(dstrect != NULL) {
-				/* Track our own dimensions for the fallback texture. */
-				SDL_Rect        tmp_srcrect;
-				SDL_Rect        tmp_dstrect;
-				const SDL_Rect* tmp_dstrect_ptr = dstrect;
-				if(form->master_srcrect.w > 0 && form->master_srcrect.h > 0
-				   && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
-					memcpy(&tmp_srcrect, &form->master_srcrect, sizeof(SDL_Rect));
-					memcpy(&tmp_dstrect, &form->master_dstrect, sizeof(SDL_Rect));
-					tmp_dstrect_ptr = &tmp_dstrect;
-				}
-				state->is_loading = !is_montage;
-				bool clearedtmp = true;
-				if(form->master_dimensions_set && form->fallback_texture != NULL
-				   && form->master_srcrect.w > 0 && form->master_srcrect.h > 0
-				   && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
-					nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage,
-					                                             &tmp_srcrect, &tmp_dstrect);
-					nqiv_apply_zoom_modifications(state, first_frame);
-					nqiv_image_manager_retrieve_zoomrect(&state->images, !is_montage,
-					                                     state->stretch_images, &tmp_srcrect,
-					                                     &tmp_dstrect);
-					if(!nqiv_state_update_alpha_background_dimensions(state, tmp_dstrect.w,
-					                                                  tmp_dstrect.h)) {
-						return false;
-					}
-					if(!render_texture(&cleared, NULL, state, state->texture_alpha_background, NULL,
-					                   &tmp_dstrect)) {
-						return false;
-					}
-					if(!render_texture(&cleared, NULL, state, form->fallback_texture, &tmp_srcrect,
-					                   &tmp_dstrect)) {
-						return false;
-					}
-					/* Don't clear display if we're just drawing the loading indicator. */
-				} else if(!render_texture(&clearedtmp, dstrect, state,
-				                          state->texture_montage_unloaded_background, NULL,
-				                          tmp_dstrect_ptr)) {
+	/* We try to lock the image. Don't wait on it and block the whole program, if not. Just use
+	 * its fallback texture and return early. */
+	if(!nqiv_image_test_lock(image)) {
+		/* If this is a preload, there won't be a location to write to, so don't bother. Nowhere to
+		 * render. */
+		if(dstrect != NULL) {
+			/* Track our own dimensions for the fallback texture. */
+			SDL_Rect        tmp_srcrect;
+			SDL_Rect        tmp_dstrect;
+			const SDL_Rect* tmp_dstrect_ptr = dstrect;
+			if(form->master_srcrect.w > 0 && form->master_srcrect.h > 0
+			   && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
+				memcpy(&tmp_srcrect, &form->master_srcrect, sizeof(SDL_Rect));
+				memcpy(&tmp_dstrect, &form->master_dstrect, sizeof(SDL_Rect));
+				tmp_dstrect_ptr = &tmp_dstrect;
+			}
+			state->is_loading = !is_montage;
+			bool clearedtmp = true;
+			if(form->master_dimensions_set && form->fallback_texture != NULL
+			   && form->master_srcrect.w > 0 && form->master_srcrect.h > 0
+			   && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
+				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage,
+				                                             &tmp_srcrect, &tmp_dstrect);
+				nqiv_apply_zoom_modifications(state, first_frame);
+				nqiv_image_manager_retrieve_zoomrect(
+					&state->images, !is_montage, state->stretch_images, &tmp_srcrect, &tmp_dstrect);
+				if(!nqiv_state_update_alpha_background_dimensions(state, tmp_dstrect.w,
+				                                                  tmp_dstrect.h)) {
 					return false;
 				}
-				if(selected && is_montage) {
-					if(!render_texture(&cleared, NULL, state, state->texture_montage_selection,
-					                   NULL, dstrect)) {
-						return false;
-					}
+				if(!render_texture(&cleared, NULL, state, state->texture_alpha_background, NULL,
+				                   &tmp_dstrect)) {
+					return false;
 				}
-				if(image->marked && is_montage) {
-					if(!render_texture(&cleared, NULL, state, state->texture_montage_mark, NULL,
-					                   dstrect)) {
-						return false;
-					}
+				if(!render_texture(&cleared, NULL, state, form->fallback_texture, &tmp_srcrect,
+				                   &tmp_dstrect)) {
+					return false;
+				}
+				/* Don't clear display if we're just drawing the loading indicator. */
+			} else if(state->show_loading_indicator
+			          && !render_texture(&clearedtmp, dstrect, state,
+			                             state->texture_montage_unloaded_background, NULL,
+			                             tmp_dstrect_ptr)) {
+				return false;
+			}
+			if(selected && is_montage) {
+				if(!render_texture(&cleared, NULL, state, state->texture_montage_selection, NULL,
+				                   dstrect)) {
+					return false;
 				}
 			}
-			return true;
+			if(image->marked && is_montage) {
+				if(!render_texture(&cleared, NULL, state, state->texture_montage_mark, NULL,
+				                   dstrect)) {
+					return false;
+				}
+			}
 		}
+		return true;
 	}
 	/* We must have locked the image by this point. */
 	SDL_Rect  srcrect = {0};
@@ -703,7 +698,7 @@ bool render_from_form(nqiv_state*     state,
 	if(form->width > 0 && form->height > 0 && image->image.width > 0 && image->image.height > 0
 	   && dstrect != NULL) {
 		dstrect_zoom_ptr = &dstrect_zoom;
-		if(is_thumbnail) {
+		if(is_montage) {
 			/* Scale srcrect to thumbnail with appropriate aspect ratio. */
 			srcrect.w = image->image.width;
 			srcrect.h = image->image.height;
@@ -784,7 +779,7 @@ bool render_from_form(nqiv_state*     state,
 			}
 		}
 	}
-	if(!is_thumbnail && state->images.thumbnail.save) {
+	if(!is_montage && state->images.thumbnail.save) {
 		if(!image->thumbnail_attempted) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 			               "Creating thumbnail for instance that won't load it.\n");
@@ -803,7 +798,7 @@ bool render_from_form(nqiv_state*     state,
 	}
 	if(form->error) {
 		/* If we're working with a thumbnail and a successful image, try to recover. */
-		if(is_thumbnail && !image->image.error) {
+		if(is_montage && !image->image.error) {
 			/* If reloading, indicate so. */
 			if(first_frame || hard) {
 				if(!render_texture(&cleared, dstrect, state,
@@ -895,7 +890,7 @@ bool render_from_form(nqiv_state*     state,
 					return false;
 				}
 			}
-			if(is_thumbnail) {
+			if(is_montage) {
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading thumbnail.\n");
 				nqiv_event event = {0};
 				event.type = NQIV_EVENT_IMAGE_LOAD;
@@ -1012,7 +1007,7 @@ bool render_from_form(nqiv_state*     state,
 		}
 	}
 	/* Simple quick overdrawn stuff, selection and mark boxes. */
-	if(selected) {
+	if(selected && is_montage) {
 		if(!render_texture(&cleared, NULL, state, state->texture_montage_selection, NULL,
 		                   dstrect)) {
 			nqiv_image_unlock(image);
@@ -1125,13 +1120,13 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 			               image->image.path, idx);
 			SDL_Rect dstrect;
 			nqiv_montage_get_image_rect(&state->montage, idx, &dstrect);
-			if(!render_from_form(state, image, true, &dstrect, true, true, false,
-			                     state->montage.positions.selection == idx, hard, true, 0)
+			if(!render_from_form(state, image, true, &dstrect, true, false,
+			                     state->montage.positions.selection == idx, hard, 0)
 			   || (idx == state->montage.positions.selection && !set_title(state, image))) {
 				return false;
 			}
-		} else if(!render_from_form(state, image, true, NULL, true, true, false,
-		                            state->montage.positions.selection == idx, hard, true, 1)) {
+		} else if(!render_from_form(state, image, true, NULL, true, false,
+		                            state->montage.positions.selection == idx, hard, 1)) {
 			return false;
 		}
 	}
@@ -1151,7 +1146,7 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 		((nqiv_image**)state->images.images->data)[state->montage.positions.selection];
 	SDL_Rect dstrect = {0};
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
-	if(!render_from_form(state, image, false, &dstrect, false, start, true, false, hard, true, 0)) {
+	if(!render_from_form(state, image, false, &dstrect, start, true, false, hard, 0)) {
 		return false;
 	}
 	const bool render_cleared = state->render_cleared;

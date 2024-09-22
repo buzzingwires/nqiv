@@ -46,12 +46,12 @@ nqiv_array* nqiv_array_create(const int unit_size, const int unit_count)
 void nqiv_array_inherit(nqiv_array* array, void* data, const int unit_size, const int count)
 {
 	/* Overflow check. */
-	assert(length * unit_size >= length);
-	assert(length * unit_size >= unit_size);
+	assert(count * unit_size >= count);
+	assert(count * unit_size >= unit_size);
 	memset(array, 0, sizeof(nqiv_array));
 	array->data = data;
-	array->data_length = length * unit_size;
-	array->max_data_length = length * unit_size;
+	array->data_length = count * unit_size;
+	array->max_data_length = count * unit_size;
 	array->unit_length = unit_size;
 }
 

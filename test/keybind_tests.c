@@ -30,72 +30,77 @@ void keybind_test_parse_print(void)
 {
 	assert(keybind_test_parse_print_entry(
 		true,
-		"Q+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+mode=quit+"
+		"Q+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+caps+mode=quit+"
 		"allow_on_up+allow_on_down",
-		"num+caps+mode+ctrl+shift+alt+Q=allow_on_down+allow_on_up+quit"));
+		"caps+mode+ctrl+shift+alt+Q=allow_on_down+allow_on_up+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
-		"Q+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+mode=quit+"
+		"Q+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+caps+mode=quit+"
 		"allow_on_up+allow_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+minimum_"
 		"delay_100",
-		"num+caps+mode+ctrl+shift+alt+Q=allow_on_down+allow_on_up+start_delay_100+consecutive_"
+		"caps+mode+ctrl+shift+alt+Q=allow_on_down+allow_on_up+start_delay_100+consecutive_"
 		"delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
-		"mouse0_double+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
+		"mouse0_double+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+caps+"
 		"mode=quit+allow_on_up+allow_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
 		"minimum_delay_100",
-		"num+caps+mode+ctrl+shift+alt+mouse0_double=allow_on_down+allow_on_up+start_delay_100+"
+		"caps+mode+ctrl+shift+alt+mouse0_double=allow_on_down+allow_on_up+start_delay_100+"
 		"consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
-		"mouse0_double+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
+		"mouse0_double+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+caps+"
 		"mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
 		"minimum_delay_100",
-		"num+caps+mode+ctrl+shift+alt+mouse0_double=deny_on_down+deny_on_up+start_delay_100+"
+		"caps+mode+ctrl+shift+alt+mouse0_double=deny_on_down+deny_on_up+start_delay_100+"
 		"consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
-		"scroll_forward+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
+		"scroll_forward+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+caps+"
 		"mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
 		"minimum_delay_100",
-		"num+caps+mode+ctrl+shift+alt+scroll_forward=deny_on_down+deny_on_up+start_delay_100+"
+		"caps+mode+ctrl+shift+alt+scroll_forward=deny_on_down+deny_on_up+start_delay_100+"
 		"consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
-		"scroll_backward+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
+		"scroll_backward+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+caps+"
 		"mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
 		"minimum_delay_100",
-		"num+caps+mode+ctrl+shift+alt+scroll_backward=deny_on_down+deny_on_up+start_delay_100+"
+		"caps+mode+ctrl+shift+alt+scroll_backward=deny_on_down+deny_on_up+start_delay_100+"
 		"consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
-		"scroll_left+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
+		"scroll_left+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+caps+"
 		"mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
 		"minimum_delay_100",
-		"num+caps+mode+ctrl+shift+alt+scroll_left=deny_on_down+deny_on_up+start_delay_100+"
+		"caps+mode+ctrl+shift+alt+scroll_left=deny_on_down+deny_on_up+start_delay_100+"
 		"consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		true,
-		"scroll_right+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
+		"scroll_right+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+caps+"
 		"mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_accel_100+"
 		"minimum_delay_100",
-		"num+caps+mode+ctrl+shift+alt+scroll_right=deny_on_down+deny_on_up+start_delay_100+"
+		"caps+mode+ctrl+shift+alt+scroll_right=deny_on_down+deny_on_up+start_delay_100+"
 		"consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		false,
-		"scroll_right+scroll_left+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+"
-		"num+caps+mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_"
+		"scroll_right+scroll_left+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+"
+		"caps+mode=quit+deny_on_up+deny_on_down+start_delay_100+consecutive_delay_100+delay_"
 		"accel_100+minimum_delay_100",
-		"num+caps+mode+ctrl+shift+alt+scroll_right+scroll_left=deny_on_down+deny_on_up+start_delay_"
+		"caps+mode+ctrl+shift+alt+scroll_right+scroll_left=deny_on_down+deny_on_up+start_delay_"
 		"100+consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
 	assert(keybind_test_parse_print_entry(
 		false,
-		"scroll_right+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+"
+		"scroll_right+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+caps+"
 		"mode=quit+deny_on_up+deny_on_down+allow_on_up+start_delay_100+consecutive_delay_100+delay_"
 		"accel_100+minimum_delay_100",
-		"num+caps+mode+ctrl+shift+alt+scroll_right=allow_on_up+deny_on_down+deny_on_up+start_delay_"
+		"caps+mode+ctrl+shift+alt+scroll_right=allow_on_up+deny_on_down+deny_on_up+start_delay_"
 		"100+consecutive_delay_100+delay_accel_100+minimum_delay_100+quit"));
+	assert(keybind_test_parse_print_entry(false, "num+q=quit", "num+q=quit"));
+	assert(keybind_test_parse_print_entry(false, "scroll+q=quit", "scroll+q=quit"));
+	assert(keybind_test_parse_print_entry(false, "gui+q=quit", "gui+q=quit"));
+	assert(keybind_test_parse_print_entry(false, "lgui+q=quit", "lgui+q=quit"));
+	assert(keybind_test_parse_print_entry(false, "rgui+q=quit", "rgui+q=quit"));
 }
 
 bool add_keybind_string(nqiv_keybind_manager* manager, const char* text)
@@ -114,11 +119,8 @@ void keybind_test_lookup(void)
 	match.data.key.mod |= KMOD_SHIFT;
 	match.data.key.mod |= KMOD_CTRL;
 	match.data.key.mod |= KMOD_ALT;
-	match.data.key.mod |= KMOD_GUI;
-	match.data.key.mod |= KMOD_NUM;
 	match.data.key.mod |= KMOD_CAPS;
 	match.data.key.mod |= KMOD_MODE;
-	match.data.key.mod |= KMOD_SCROLL;
 
 	nqiv_log_init(&logger);
 	nqiv_log_set_prefix_format(&logger, "#level# #time:%Y-%m-%d %T%z# ");
@@ -130,12 +132,11 @@ void keybind_test_lookup(void)
 	assert(nqiv_keybind_create_manager(&manager, &logger, STARTING_QUEUE_LENGTH));
 
 	assert(add_keybind_string(
-		&manager,
-		"Q+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+gui+lgui+rgui+num+caps+mode=quit"));
+		&manager, "Q+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+ralt+lalt+caps+mode=quit"));
 	assert(add_keybind_string(&manager, "mouse0_double+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+"
-	                                    "ralt+lalt+gui+lgui+rgui+num+caps+mode=quit"));
+	                                    "ralt+lalt+caps+mode=quit"));
 	assert(add_keybind_string(&manager, "scroll_forward+shift+lshift+rshift+ctrl+rctrl+lctrl+alt+"
-	                                    "ralt+lalt+gui+lgui+rgui+num+caps+mode=quit"));
+	                                    "ralt+lalt+caps+mode=quit"));
 
 	match.mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_KEY_LOOKUP_NOT_FOUND);
