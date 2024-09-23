@@ -20,3 +20,5 @@ AppDir
 nqiv-x86_64.AppImage
 *.gcda
 *.gcno
+env.sh
+make_configure.sh
