@@ -15,6 +15,9 @@ D_VIPS_URL="https://github.com/libvips/build-win64-mxe/releases/download/v8.15.2
 D_JEMALLOC_URL="https://github.com/jemalloc/jemalloc/releases/download/5.3.0/jemalloc-5.3.0.tar.bz2"
 D_ENV_PATH="./env.sh"
 D_CONFIGURE_MAKER_PATH="./make_configure.sh"
+D_EXE_PATH="./src/nqiv.exe"
+D_RELEASE_PATH="."
+D_RELEASE_VERSION="1.0.0"
 
 errcho()
 {
@@ -78,6 +81,12 @@ exit_usage()
 	errcho
 	errcho "'-c' : Path to environment setup file created by 'make-configure'. Default: $D_CONFIGURE_MAKER_PATH"
 	errcho
+	errcho "'-E' : Path to compiled executable. Default: $D_EXE_PATH"
+	errcho
+	errcho "'-R' : Path to write the release zip file to. Default: $D_RELEASE_PATH"
+	errcho
+	errcho "'-r' : Version of nqiv to label release with. Default: $D_RELEASE_VERSION"
+	errcho
 	errcho "Actions:"
 	errcho
 	errcho "'clean-mxe' : Delete the ENTIRE MXE directory and all of its contents."
@@ -99,6 +108,12 @@ exit_usage()
 	errcho "'make-environment' : Generate a script that can be sourced to set the appropriate environment variables but take no further option. Write it to ${D_ENV_PATH}"
 	errcho
 	errcho "'make-configure' : Generate a script to set up the build environment with appropriate environment variables and so on. Write it to ${D_CONFIGURE_MAKER_PATH}"
+	errcho
+	errcho "'clean-package-tmp' : Delete temporary files associated with 'make-package'. Write it to: ${D_RELEASE_PATH}/nqiv-${D_MXE_TARGET}-${D_RELEASE_VERSION}"
+	errcho
+	errcho "'clean-package' : Run 'clean-package-tmp', then delete the zip file containing nqiv.exe and its dependencies from ${D_RELEASE_PATH}/nqiv-${D_MXE_TARGET}-${D_RELEASE_VERSION}[.zip]"
+	errcho
+	errcho "'make-package' : Generate the zip file containing nqiv.exe and its dependencies. Write it to: ${D_RELEASE_PATH}/nqiv-${D_MXE_TARGET}-${D_RELEASE_VERSION}.zip"
 
 	exit "$L_CODE"
 }
@@ -111,6 +126,9 @@ a_vips_url="$D_VIPS_URL"
 a_jemalloc_url="$D_JEMALLOC_URL"
 a_env_path="$D_ENV_PATH"
 a_configure_maker_path="$D_CONFIGURE_MAKER_PATH"
+a_exe_path="$D_EXE_PATH"
+a_release_path="$D_RELEASE_PATH"
+a_release_version="$D_RELEASE_VERSION"
 
 action_clean_mxe()
 {
@@ -230,10 +248,85 @@ action_make_configure()
 	chmod +x "$a_configure_maker_path"
 }
 
+action_clean_package_tmp()
+{
+	local L_RELEASE_BASE="$a_release_path/nqiv-$a_mxe_target-$a_release_version"
+
+	rm -rvf "$L_RELEASE_BASE"
+}
+
+action_clean_package()
+{
+	action_clean_package_tmp
+
+	local L_RELEASE_BASE="$a_release_path/nqiv-$a_mxe_target-$a_release_version"
+
+	rm -vf  "$L_RELEASE_BASE.zip"
+}
+
+action_make_package()
+{
+	action_clean_package
+
+	local L_LIBPATH="$a_mxe_dir/usr/$a_mxe_target/bin"
+	local L_RELEASE_BASE="$a_release_path/nqiv-$a_mxe_target-$a_release_version"
+
+	mkdir -v "$L_RELEASE_BASE"
+
+	cp -v                                             \
+		"$a_exe_path"                                 \
+		"$L_LIBPATH/libtiff-6.dll"                    \
+		"$L_LIBPATH/libxml2-2.dll"                    \
+		"$L_LIBPATH/libc++.dll"                       \
+		"$L_LIBPATH/libunwind.dll"                    \
+		"$L_LIBPATH/libaom.dll"                       \
+		"$L_LIBPATH/libgobject-2.0-0.dll"             \
+		"$L_LIBPATH/libglib-2.0-0.dll"                \
+		"$L_LIBPATH/libvips-42.dll"                   \
+		"$L_LIBPATH/SDL2.dll"                         \
+		"$L_LIBPATH/libffi-8.dll"                     \
+		"$L_LIBPATH/libsamplerate-0.dll"              \
+		"$L_LIBPATH/libgomp-1.dll"                    \
+		"$L_LIBPATH/libgio-2.0-0.dll"                 \
+		"$L_LIBPATH/libgcc_s_sjlj-1.dll"              \
+		"$L_LIBPATH/libexpat-1.dll"                   \
+		"$L_LIBPATH/libz1.dll"                        \
+		"$L_LIBPATH/libarchive-13.dll"                \
+		"$L_LIBPATH/libimagequant.dll"                \
+		"$L_LIBPATH/libexif-12.dll"                   \
+		"$L_LIBPATH/libcgif-0.dll"                    \
+		"$L_LIBPATH/libjpeg-62.dll"                   \
+		"$L_LIBPATH/libspng-0.dll"                    \
+		"$L_LIBPATH/libpangocairo-1.0-0.dll"          \
+		"$L_LIBPATH/libpango-1.0-0.dll"               \
+		"$L_LIBPATH/libfontconfig-1.dll"              \
+		"$L_LIBPATH/librsvg-2-2.dll"                  \
+		"$L_LIBPATH/libpangoft2-1.0-0.dll"            \
+		"$L_LIBPATH/libheif.dll"                      \
+		"$L_LIBPATH/libfribidi-0.dll"                 \
+		"$L_LIBPATH/libpixman-1-0.dll"                \
+		"$L_LIBPATH/libwinpthread-1.dll"              \
+		"$L_LIBPATH/libwebpmux-3.dll"                 \
+		"$L_LIBPATH/libwebpdemux-2.dll"               \
+		"$L_LIBPATH/liblcms2-2.dll"                   \
+		"$L_LIBPATH/libhwy.dll"                       \
+		"$L_LIBPATH/libgmodule-2.0-0.dll"             \
+		"$L_LIBPATH/libharfbuzz-0.dll"                \
+		"$L_LIBPATH/libpng16-16.dll"                  \
+		"$L_LIBPATH/libfreetype-6.dll"                \
+		"$L_LIBPATH/libcairo-2.dll"                   \
+		"$L_LIBPATH/libsharpyuv-0.dll"                \
+		"$L_LIBPATH/libwebp-7.dll"                    \
+		"$L_RELEASE_BASE"
+
+	errcho "RUNNING ZIP"
+	zip -r -9 "$L_RELEASE_BASE.zip" "$L_RELEASE_BASE/"
+}
+
 main()
 {
 	set -efu
-	while getopts "ht:p:d:D:v:j:e:c:" opt;
+	while getopts "ht:p:d:D:v:j:e:c:E:R:r:" opt;
 	do
 		case "$opt" in
 		'h')
@@ -262,6 +355,15 @@ main()
 			;;
 		'c')
 			a_configure_maker_path="$OPTARG"
+			;;
+		'E')
+			a_exe_path="$OPTARG"
+			;;
+		'R')
+			a_release_path="$OPTARG"
+			;;
+		'r')
+			a_release_version="$OPTARG"
 			;;
 		*)
 			errcho "Error: Unrecognized flag '$opt'."
@@ -309,6 +411,15 @@ main()
 			;;
 		'make-configure')
 			action_make_configure
+			;;
+		'clean-package-tmp')
+			action_clean_package_tmp
+			;;
+		'clean-package')
+			action_clean_package
+			;;
+		'make-package')
+			action_make_package
 			;;
 		*)
 			errcho "Error: Unrecognized action '$action'."

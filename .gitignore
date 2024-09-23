@@ -22,3 +22,4 @@ nqiv-x86_64.AppImage
 *.gcno
 env.sh
 make_configure.sh
+nqiv-*
