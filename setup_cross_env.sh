@@ -14,7 +14,7 @@ D_PACKAGE_DIR="./cross/packages"
 D_VIPS_URL="https://github.com/libvips/build-win64-mxe/releases/download/v8.15.2/vips-dev-w64-web-8.15.2.zip"
 D_JEMALLOC_URL="https://github.com/jemalloc/jemalloc/releases/download/5.3.0/jemalloc-5.3.0.tar.bz2"
 D_ENV_PATH="./env.sh"
-D_BUILDER_PATH="./genbuilder.sh"
+D_CONFIGURE_MAKER_PATH="./make_configure.sh"
 
 errcho()
 {
@@ -74,31 +74,31 @@ exit_usage()
 	errcho
 	errcho "'-j' : Download jemalloc from here. Try checking https://github.com/jemalloc/jemalloc/releases for choices. Default: $D_JEMALLOC_URL"
 	errcho
-	errcho "'-e' : Path to environment setup file created by 'genenvfile'. Default: $D_ENV_PATH"
+	errcho "'-e' : Path to environment setup file created by 'make-environment'. Default: $D_ENV_PATH"
 	errcho
-	errcho "'-b' : Path to environment setup file created by 'genbuilder'. Default: $D_BUILDER_PATH"
+	errcho "'-c' : Path to environment setup file created by 'make-configure'. Default: $D_CONFIGURE_MAKER_PATH"
 	errcho
 	errcho "Actions:"
 	errcho
-	errcho "'cleanmxe' : Delete the ENTIRE MXE directory and all of its contents."
+	errcho "'clean-mxe' : Delete the ENTIRE MXE directory and all of its contents."
 	errcho
-	errcho "'loadmxe' : Download MXE and set up its environment."
+	errcho "'load-mxe' : Download MXE and set up its environment."
 	errcho
-	errcho "'cleanvips' : Delete libvips packages and installed files."
+	errcho "'clean-vips' : Delete libvips packages and installed files."
 	errcho
-	errcho "'loadvips' : 'cleanvips', then download libvips and install it in the MXE environment."
+	errcho "'load-vips' : 'clean-vips', then download libvips and install it in the MXE environment."
 	errcho
-	errcho "'cleanjemalloc' : Uninstall jemalloc, then delete its packages."
+	errcho "'clean-jemalloc' : Uninstall jemalloc, then delete its packages."
 	errcho
-	errcho "'loadjemalloc' : 'cleanjemalloc', then download jemalloc, build it, and install it in the MXE environment."
+	errcho "'load-jemalloc' : 'clean-jemalloc', then download jemalloc, build it, and install it in the MXE environment."
 	errcho
-	errcho "'cleantoolchain' : Alias for cleanmxe. Deletes the ENTIRE MXE directory and all of its contents."
+	errcho "'clean-toolchain' : Alias for clean-mxe. Deletes the ENTIRE MXE directory and all of its contents."
 	errcho
-	errcho "'loadtoolchain' : Alias for loadmxe, loadvips, and loadjemalloc"
+	errcho "'load-toolchain' : Alias for load-mxe, load-vips, and load-jemalloc"
 	errcho
-	errcho "'genenvfile' : Generate a script that can be sourced to set the appropriate environment variables but take no further option. Write it to ${D_ENV_PATH}"
+	errcho "'make-environment' : Generate a script that can be sourced to set the appropriate environment variables but take no further option. Write it to ${D_ENV_PATH}"
 	errcho
-	errcho "'genbuilder' : Generate a script to set up the build environment with appropriate environment variables and so on. Write it to ${D_BUILDER_PATH}"
+	errcho "'make-configure' : Generate a script to set up the build environment with appropriate environment variables and so on. Write it to ${D_CONFIGURE_MAKER_PATH}"
 
 	exit "$L_CODE"
 }
@@ -110,14 +110,14 @@ a_package_dir="$D_PACKAGE_DIR"
 a_vips_url="$D_VIPS_URL"
 a_jemalloc_url="$D_JEMALLOC_URL"
 a_env_path="$D_ENV_PATH"
-a_builder_path="$D_BUILDER_PATH"
+a_configure_maker_path="$D_CONFIGURE_MAKER_PATH"
 
-action_cleanmxe()
+action_clean_mxe()
 {
 	rm -vrf "$a_mxe_dir"
 }
 
-action_loadmxe()
+action_load_mxe()
 {
 	mkdir -vp "$a_mxe_dir"
 	git clone "$G_MXE_URL" "$a_mxe_dir" || true
@@ -127,13 +127,13 @@ action_loadmxe()
 	cd -
 }
 
-action_setmxeenv()
+action_set_mxe_env()
 {
 	export PKG_CONFIG_PATH="$a_mxe_dir/usr/$a_mxe_target/lib/pkgconfig/"
 	export PATH="$a_mxe_dir/usr/bin:$PATH"
 }
 
-action_cleanvips()
+action_clean_vips()
 {
 	tracked_delete "$a_package_dir/$a_mxe_target-$G_VIPS_MANIFEST-bin.log"
 	tracked_delete "$a_package_dir/$a_mxe_target-$G_VIPS_MANIFEST-share.log"
@@ -156,9 +156,9 @@ get_package()
 	ln -sfv "$L_FULLNAME" "$L_LINKNAME"
 }
 
-action_loadvips()
+action_load_vips()
 {
-	action_cleanvips
+	action_clean_vips
 	mkdir -vp "$a_package_dir/$G_VIPS_DIR"
 	get_package "$a_vips_url" "$a_package_dir/$G_VIPS_PACKAGE"
 	unzip "$a_package_dir/$G_VIPS_PACKAGE" -d "$a_package_dir/$G_VIPS_DIR"
@@ -171,11 +171,11 @@ action_loadvips()
 	tracked_copy "$a_package_dir/$a_mxe_target-$G_VIPS_MANIFEST-include.log" "$L_VIPS_DIR/include" "$a_mxe_dir/usr/$a_mxe_target"
 }
 
-action_cleanjemalloc()
+action_clean_jemalloc()
 {
 	if [ -e "$a_package_dir/$G_JEMALLOC_DIR" ]
 	then
-		action_setmxeenv
+		action_set_mxe_env
 		cd "$a_package_dir/$G_JEMALLOC_DIR"
 		make uninstall || true
 		cd -
@@ -184,10 +184,10 @@ action_cleanjemalloc()
 	rm -vf "${a_package_dir:?}/$G_JEMALLOC_PACKAGE"
 }
 
-action_loadjemalloc()
+action_load_jemalloc()
 {
-	action_setmxeenv
-	action_cleanjemalloc
+	action_set_mxe_env
+	action_clean_jemalloc
 	mkdir -vp "$a_package_dir/$G_JEMALLOC_DIR"
 	get_package "$a_jemalloc_url" "$a_package_dir/$G_JEMALLOC_PACKAGE"
 	tar jxvf "$a_package_dir/$G_JEMALLOC_PACKAGE" --strip-components=1 -C"$a_package_dir/$G_JEMALLOC_DIR"
@@ -198,42 +198,42 @@ action_loadjemalloc()
 	cd -
 }
 
-action_cleantoolchain()
+action_clean_toolchain()
 {
-	action_cleanmxe
+	action_clean_mxe
 }
 
-action_loadtoolchain()
+action_load_toolchain()
 {
-	action_loadmxe
-	action_loadvips
-	action_loadjemalloc
+	action_load_mxe
+	action_load_vips
+	action_load_jemalloc
 }
 
-print_envfile()
+print_environment_file()
 {
 	echo "export PKG_CONFIG_PATH=\"$a_mxe_dir/usr/$a_mxe_target/lib/pkgconfig/\""
 	echo "export PATH=\"$a_mxe_dir/usr/bin:\$PATH\""
 }
 
-action_genenvfile()
+action_make_environment()
 {
-	print_envfile > "$a_env_path"
+	print_environment_file > "$a_env_path"
 	chmod +x "$a_env_path"
 }
 
-action_genbuilder()
+action_make_configure()
 {
-	print_envfile > "$a_builder_path"
-	echo "autoreconf --install" >> "$a_builder_path"
-	echo "./configure --prefix=\"$a_mxe_dir/usr/$a_mxe_target\" --host=\"$a_mxe_target\" --enable-cross-compile=yes" >> "$a_builder_path"
-	chmod +x "$a_builder_path"
+	print_environment_file > "$a_configure_maker_path"
+	echo "autoreconf --install" >> "$a_configure_maker_path"
+	echo "./configure --prefix=\"$a_mxe_dir/usr/$a_mxe_target\" --host=\"$a_mxe_target\" --enable-cross-compile=yes" >> "$a_configure_maker_path"
+	chmod +x "$a_configure_maker_path"
 }
 
 main()
 {
 	set -efu
-	while getopts "ht:p:d:D:v:j:e:b:" opt;
+	while getopts "ht:p:d:D:v:j:e:c:" opt;
 	do
 		case "$opt" in
 		'h')
@@ -260,8 +260,8 @@ main()
 		'e')
 			a_env_path="$OPTARG"
 			;;
-		'b')
-			a_builder_path="$OPTARG"
+		'c')
+			a_configure_maker_path="$OPTARG"
 			;;
 		*)
 			errcho "Error: Unrecognized flag '$opt'."
@@ -280,35 +280,35 @@ main()
 	for action in "$@"
 	do
 		case "$action" in
-		'cleanmxe')
-			action_cleanmxe
+		'clean-mxe')
+			action_clean_mxe
 			;;
-		'loadmxe')
-			action_loadmxe
+		'load-mxe')
+			action_load_mxe
 			;;
-		'cleanvips')
-			action_cleanvips
+		'clean-vips')
+			action_clean_vips
 			;;
-		'loadvips')
-			action_loadvips
+		'load-vips')
+			action_load_vips
 			;;
-		'cleanjemalloc')
-			action_cleanjemalloc
+		'clean-jemalloc')
+			action_clean_jemalloc
 			;;
-		'loadjemalloc')
-			action_loadjemalloc
+		'load-jemalloc')
+			action_load_jemalloc
 			;;
-		'cleantoolchain')
-			action_cleantoolchain
+		'clean-toolchain')
+			action_clean_toolchain
 			;;
-		'loadtoolchain')
-			action_loadtoolchain
+		'load-toolchain')
+			action_load_toolchain
 			;;
-		'genenvfile')
-			action_genenvfile
+		'make-environment')
+			action_make_environment
 			;;
-		'genbuilder')
-			action_genbuilder
+		'make-configure')
+			action_make_configure
 			;;
 		*)
 			errcho "Error: Unrecognized action '$action'."
