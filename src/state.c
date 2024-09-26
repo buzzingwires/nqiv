@@ -75,7 +75,7 @@ bool nqiv_add_logger_path(nqiv_state* state, const char* path)
 	} else if(strcmp(path, "stderr") == 0) {
 		stream = stderr;
 	} else {
-		stream = fopen(path, "a");
+		stream = nqiv_fopen(path, "a");
 	}
 	if(stream == NULL) {
 		return false;

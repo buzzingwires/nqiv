@@ -430,7 +430,7 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 	if(load_default) {
 		char default_config_path[PATH_MAX + 1] = {0};
 		if(nqiv_get_default_cfg(default_config_path, PATH_MAX)) {
-			FILE* stream = fopen(default_config_path, "r");
+			FILE* stream = nqiv_fopen(default_config_path, "r");
 			if(stream != NULL) {
 				const int c = fgetc(stream);
 				if(c == EOF) {

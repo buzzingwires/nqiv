@@ -131,25 +131,31 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 	assert(image->parent->thumbnail.size > 0);
 	assert(image->parent->thumbnail.root != NULL);
 
+	char raw_root[PATH_MAX + 1] = {0};
+	if( !nqiv_expand_path(raw_root, PATH_MAX, image->parent->thumbnail.root) ) {
+		nqiv_log_write(logger, NQIV_LOG_ERROR, "Could not expand thumbnail root: %s", image->parent->thumbnail.root);
+		return false;
+	}
+
 	nqiv_array builder;
 	/* XXX: We may or may not make a .tmp file with this path, so there should be room for that. */
 	char       fullpath[PATH_MAX - 4 + 1] = {0};
 	nqiv_array_inherit(&builder, fullpath, sizeof(char), PATH_MAX);
 
-	const int raw_rootlen = nqiv_strlen(image->parent->thumbnail.root);
+	const int raw_rootlen = nqiv_strlen(raw_root);
 	assert(raw_rootlen >= 1);
 	const int rootlen =
-		image->parent->thumbnail.root[raw_rootlen - 1] == '/' ? raw_rootlen - 1 : raw_rootlen;
-	if(strncmp(image->image.path, image->parent->thumbnail.root, rootlen) == 0) {
+		raw_root[raw_rootlen - 1] == '/' ? raw_rootlen - 1 : raw_rootlen;
+	if(strncmp(image->image.path, raw_root, rootlen) == 0) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 		               "Image path '%s' matches thumbnail path starting at '%s'. Avoiding "
 		               "recreating thumbnail.\n",
-		               image->image.path, image->parent->thumbnail.root);
+		               image->image.path, raw_root);
 		return false;
 	}
 
 	bool result = true;
-	result = result && nqiv_array_push_str_count(&builder, image->parent->thumbnail.root, rootlen);
+	result = result && nqiv_array_push_str_count(&builder, raw_root, rootlen);
 	result = result && nqiv_array_push_str(&builder, "/thumbnails/");
 	result = result && nqiv_thumbnail_get_type(image->parent, failed, &builder);
 	result = result && nqiv_thumbnail_digest_to_builder(&builder, image);

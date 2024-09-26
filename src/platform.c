@@ -1,6 +1,7 @@
 #include "platform.h"
 
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -26,6 +27,10 @@ bool nqiv_chmod(const char* filename, uint16_t mode)
 	(void)mode;
 	return true; /* Windows doesn't do that */
 }
+bool nqiv_starts_with_home_tilde(const char* path)
+{
+	return strncmp(path, "~/", strlen("~/")) == 0;
+}
 #else
 	#include <stdio.h>
 	#include <stdint.h>
@@ -45,6 +50,10 @@ bool nqiv_mkdir(char* path)
 bool nqiv_chmod(const char* filename, uint16_t mode)
 {
 	return chmod(filename, mode) == 0;
+}
+bool nqiv_starts_with_home_tilde(const char* path)
+{
+	return strncmp(path, "~/", strlen("~/")) == 0 || strncmp(path, "~\\", strlen("~\\")) == 0;
 }
 #endif
 
@@ -91,13 +100,16 @@ bool nqiv_write_path_from_env(char*       output,
 
 bool nqiv_get_default_cfg(char* output, const int length)
 {
-	return nqiv_write_path_from_env(output, length, NQIV_CFG_ENV,
-	                                NQIV_CFG_DIRECTORY NQIV_CFG_FILENAME);
+	nqiv_array builder;
+	nqiv_array_inherit(&builder, output, sizeof(char), length);
+	return nqiv_array_push_str(&builder, "~" NQIV_CFG_PATHSEP NQIV_CFG_DIRECTORY NQIV_CFG_FILENAME);
 }
 
 bool nqiv_get_default_cfg_thumbnail_dir(char* output, const int length)
 {
-	return nqiv_write_path_from_env(output, length, NQIV_CFG_ENV, NQIV_CFG_THUMBNAILS);
+	nqiv_array builder;
+	nqiv_array_inherit(&builder, output, sizeof(char), length);
+	return nqiv_array_push_str(&builder, "~" NQIV_CFG_PATHSEP NQIV_CFG_THUMBNAILS);
 }
 
 void nqiv_suggest_cfg_setup(const char* exe)
@@ -141,4 +153,25 @@ int nqiv_ptrdiff(const void* a, const void* b)
 	assert(diff >= 0);
 	assert(diff <= INT_MAX);
 	return (int)diff;
+}
+
+bool nqiv_expand_path(char* output, const int length, const char* input)
+{
+	if( nqiv_starts_with_home_tilde(input) ) {
+		return nqiv_write_path_from_env(output, length, NQIV_CFG_ENV, input + strlen("~/"));
+	} else {
+		nqiv_array builder;
+		nqiv_array_inherit(&builder, output, sizeof(char), length);
+		return nqiv_array_push_str(&builder, input);
+	}
+}
+
+
+FILE* nqiv_fopen(const char* filename, const char* mode)
+{
+	char path[PATH_MAX + 1] = {0};
+	if( !nqiv_expand_path(path, PATH_MAX, filename) ) {
+		return NULL;
+	}
+	return fopen(path, mode);
 }

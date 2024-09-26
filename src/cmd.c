@@ -2439,7 +2439,7 @@ bool nqiv_cmd_manager_init(nqiv_cmd_manager* manager, nqiv_state* state)
 bool nqiv_cmd_consume_stream_from_path(nqiv_cmd_manager* manager, const char* path)
 {
 	nqiv_log_write(&manager->state->logger, NQIV_LOG_INFO, "Reading commands from %s\n", path);
-	FILE* stream = fopen(path, "r");
+	FILE* stream = nqiv_fopen(path, "r");
 	if(stream == NULL) {
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
 		               "Failed to read commands from %s\n", path);

@@ -28,6 +28,7 @@
 	#define NQIV_CFG_ENV        "USERPROFILE"
 	#define NQIV_CFG_DIRECTORY  "\\AppData\\Roaming\\nqiv\\"
 	#define NQIV_CFG_THUMBNAILS NQIV_CFG_DIRECTORY
+	#define NQIV_CFG_PATHSEP    "\\"
 #else
 	#define NQIV_CFG_CMD        "sh -c"
 	#define NQIV_CFG_ESC        "\\"
@@ -35,10 +36,12 @@
 	#define NQIV_CFG_ENV        "HOME"
 	#define NQIV_CFG_DIRECTORY  "/.config/nqiv/"
 	#define NQIV_CFG_THUMBNAILS "/.cache/"
+	#define NQIV_CFG_PATHSEP    "/"
 #endif
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <time.h>
 
 typedef struct nqiv_stat_data
@@ -60,5 +63,9 @@ int   nqiv_strlen(const char* str);
 int   nqiv_strtoi(const char* str, char** endptr, int base);
 /* Simple pointer arithmetic with result asserted to be within an 0 to INT_MAX */
 int   nqiv_ptrdiff(const void* a, const void* b);
+/* Get realpath and expand starting tilde to user directory. */
+bool  nqiv_expand_path(char* output, const int length, const char* input);
+/* Expand a path, open it, and return its file object. */
+FILE* nqiv_fopen(const char* filename, const char* mode);
 
 #endif /* NQIV_PLATFORM_H */
