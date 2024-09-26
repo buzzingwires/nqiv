@@ -133,7 +133,7 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 
 	char raw_root[PATH_MAX + 1] = {0};
 	if( !nqiv_expand_path(raw_root, PATH_MAX, image->parent->thumbnail.root) ) {
-		nqiv_log_write(logger, NQIV_LOG_ERROR, "Could not expand thumbnail root: %s", image->parent->thumbnail.root);
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Could not expand thumbnail root: %s", image->parent->thumbnail.root);
 		return false;
 	}
 
