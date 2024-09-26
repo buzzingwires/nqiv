@@ -273,6 +273,8 @@ action_make_package()
 
 	mkdir -v "$L_RELEASE_BASE"
 
+	cp -v "./scripts/nqiv_deploy_cmd.bat" "$L_RELEASE_BASE"
+
 	cp -v                                             \
 		"$a_exe_path"                                 \
 		"$L_LIBPATH/libtiff-6.dll"                    \
@@ -319,7 +321,6 @@ action_make_package()
 		"$L_LIBPATH/libwebp-7.dll"                    \
 		"$L_RELEASE_BASE"
 
-	errcho "RUNNING ZIP"
 	zip -r -9 "$L_RELEASE_BASE.zip" "$L_RELEASE_BASE/"
 }
 

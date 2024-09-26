@@ -23,3 +23,7 @@ nqiv-x86_64.AppImage
 env.sh
 make_configure.sh
 nqiv-*
+cross/
+linuxdeploy-i386.AppImage
+linuxdeploy-x86_64.AppImage
+nqiv.AppImage
