@@ -22,11 +22,15 @@
 /* Platform-specific config paths and suggested commands to create them. */
 #define NQIV_CFG_FILENAME "nqiv.cfg"
 #if defined(__MINGW32__)
+	#define NQIV_CFG_CMD        "cmd"
+	#define NQIV_CFG_ESC        "\""
 	#define NQIV_CFG_MKDIR      "md"
 	#define NQIV_CFG_ENV        "USERPROFILE"
 	#define NQIV_CFG_DIRECTORY  "\\AppData\\Roaming\\nqiv\\"
 	#define NQIV_CFG_THUMBNAILS NQIV_CFG_DIRECTORY
 #else
+	#define NQIV_CFG_CMD        "sh -c"
+	#define NQIV_CFG_ESC        "\\"
 	#define NQIV_CFG_MKDIR      "mkdir -p"
 	#define NQIV_CFG_ENV        "HOME"
 	#define NQIV_CFG_DIRECTORY  "/.config/nqiv/"
