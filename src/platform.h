@@ -26,9 +26,8 @@
 	#define NQIV_CFG_ESC        "\""
 	#define NQIV_CFG_MKDIR      "md"
 	#define NQIV_CFG_ENV        "USERPROFILE"
-	#define NQIV_CFG_DIRECTORY  "\\AppData\\Roaming\\nqiv\\"
+	#define NQIV_CFG_DIRECTORY  "/AppData/Roaming/nqiv/"
 	#define NQIV_CFG_THUMBNAILS NQIV_CFG_DIRECTORY
-	#define NQIV_CFG_PATHSEP    "\\"
 #else
 	#define NQIV_CFG_CMD        "sh -c"
 	#define NQIV_CFG_ESC        "\\"
@@ -36,7 +35,6 @@
 	#define NQIV_CFG_ENV        "HOME"
 	#define NQIV_CFG_DIRECTORY  "/.config/nqiv/"
 	#define NQIV_CFG_THUMBNAILS "/.cache/"
-	#define NQIV_CFG_PATHSEP    "/"
 #endif
 
 #include <stdint.h>

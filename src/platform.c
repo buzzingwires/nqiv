@@ -27,10 +27,6 @@ bool nqiv_chmod(const char* filename, uint16_t mode)
 	(void)mode;
 	return true; /* Windows doesn't do that */
 }
-bool nqiv_starts_with_home_tilde(const char* path)
-{
-	return strncmp(path, "~/", strlen("~/")) == 0;
-}
 #else
 	#include <stdio.h>
 	#include <stdint.h>
@@ -50,10 +46,6 @@ bool nqiv_mkdir(char* path)
 bool nqiv_chmod(const char* filename, uint16_t mode)
 {
 	return chmod(filename, mode) == 0;
-}
-bool nqiv_starts_with_home_tilde(const char* path)
-{
-	return strncmp(path, "~/", strlen("~/")) == 0 || strncmp(path, "~\\", strlen("~\\")) == 0;
 }
 #endif
 
@@ -78,6 +70,8 @@ bool nqiv_stat(const char* path, nqiv_stat_data* data)
 	data->mtime = s.st_mtime;
 	return true;
 }
+#endif
+
 bool nqiv_write_path_from_env(char*       output,
                               const int   length,
                               const char* env_name,
@@ -94,22 +88,27 @@ bool nqiv_write_path_from_env(char*       output,
 	if(nqiv_realpath(raw_env, base_path) == NULL) {
 		return false;
 	}
-	return nqiv_array_push_str(&builder, base_path) && nqiv_array_push_str(&builder, sub_path);
+	bool result = nqiv_array_push_str(&builder, base_path);
+	assert(strlen(base_path) == 0 || strncmp(base_path + strlen(base_path) - 1, "/", strlen("/")) != 0);
+	if(strlen(sub_path) == 0 || strncmp(sub_path, "/", strlen("/")) != 0) {
+		result = result && nqiv_array_push_str(&builder, "/");
+	}
+	result = result && nqiv_array_push_str(&builder, sub_path);
+	return result;
 }
-#endif
 
 bool nqiv_get_default_cfg(char* output, const int length)
 {
 	nqiv_array builder;
 	nqiv_array_inherit(&builder, output, sizeof(char), length);
-	return nqiv_array_push_str(&builder, "~" NQIV_CFG_PATHSEP NQIV_CFG_DIRECTORY NQIV_CFG_FILENAME);
+	return nqiv_array_push_str(&builder, "~" NQIV_CFG_DIRECTORY NQIV_CFG_FILENAME);
 }
 
 bool nqiv_get_default_cfg_thumbnail_dir(char* output, const int length)
 {
 	nqiv_array builder;
 	nqiv_array_inherit(&builder, output, sizeof(char), length);
-	return nqiv_array_push_str(&builder, "~" NQIV_CFG_PATHSEP NQIV_CFG_THUMBNAILS);
+	return nqiv_array_push_str(&builder, "~"  NQIV_CFG_THUMBNAILS);
 }
 
 void nqiv_suggest_cfg_setup(const char* exe)
@@ -153,6 +152,11 @@ int nqiv_ptrdiff(const void* a, const void* b)
 	assert(diff >= 0);
 	assert(diff <= INT_MAX);
 	return (int)diff;
+}
+
+bool nqiv_starts_with_home_tilde(const char* path)
+{
+	return strncmp(path, "~/", strlen("~/")) == 0;
 }
 
 bool nqiv_expand_path(char* output, const int length, const char* input)
