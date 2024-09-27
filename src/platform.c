@@ -89,7 +89,8 @@ bool nqiv_write_path_from_env(char*       output,
 		return false;
 	}
 	bool result = nqiv_array_push_str(&builder, base_path);
-	assert(strlen(base_path) == 0 || strncmp(base_path + strlen(base_path) - 1, "/", strlen("/")) != 0);
+	assert(strlen(base_path) == 0
+	       || strncmp(base_path + strlen(base_path) - 1, "/", strlen("/")) != 0);
 	if(strlen(sub_path) == 0 || strncmp(sub_path, "/", strlen("/")) != 0) {
 		result = result && nqiv_array_push_str(&builder, "/");
 	}
@@ -108,7 +109,7 @@ bool nqiv_get_default_cfg_thumbnail_dir(char* output, const int length)
 {
 	nqiv_array builder;
 	nqiv_array_inherit(&builder, output, sizeof(char), length);
-	return nqiv_array_push_str(&builder, "~"  NQIV_CFG_THUMBNAILS);
+	return nqiv_array_push_str(&builder, "~" NQIV_CFG_THUMBNAILS);
 }
 
 void nqiv_suggest_cfg_setup(const char* exe)
@@ -116,8 +117,10 @@ void nqiv_suggest_cfg_setup(const char* exe)
 	char default_config_dir[PATH_MAX + 1] = {0};
 	if(nqiv_write_path_from_env(default_config_dir, PATH_MAX, NQIV_CFG_ENV, NQIV_CFG_DIRECTORY)) {
 		fprintf(stderr,
-		        "Failed to load default config file path. Consider `" NQIV_CFG_CMD " \"" NQIV_CFG_MKDIR
-		        " " NQIV_CFG_ESC "\"%s" NQIV_CFG_ESC "\" && " NQIV_CFG_ESC "\"%s" NQIV_CFG_ESC "\" -c " NQIV_CFG_ESC "\"dumpcfg" NQIV_CFG_ESC "\" > " NQIV_CFG_ESC "\"%s" NQIV_CFG_FILENAME NQIV_CFG_ESC "\"\"` to create it?\n",
+		        "Failed to load default config file path. Consider `" NQIV_CFG_CMD
+		        " \"" NQIV_CFG_MKDIR " " NQIV_CFG_ESC "\"%s" NQIV_CFG_ESC "\" && " NQIV_CFG_ESC
+		        "\"%s" NQIV_CFG_ESC "\" -c " NQIV_CFG_ESC "\"dumpcfg" NQIV_CFG_ESC
+		        "\" > " NQIV_CFG_ESC "\"%s" NQIV_CFG_FILENAME NQIV_CFG_ESC "\"\"` to create it?\n",
 		        default_config_dir, exe, default_config_dir);
 	} else {
 		fprintf(stderr, "Failed to get environment variable '" NQIV_CFG_ENV
@@ -161,7 +164,7 @@ bool nqiv_starts_with_home_tilde(const char* path)
 
 bool nqiv_expand_path(char* output, const int length, const char* input)
 {
-	if( nqiv_starts_with_home_tilde(input) ) {
+	if(nqiv_starts_with_home_tilde(input)) {
 		return nqiv_write_path_from_env(output, length, NQIV_CFG_ENV, input + strlen("~/"));
 	} else {
 		nqiv_array builder;
@@ -170,11 +173,10 @@ bool nqiv_expand_path(char* output, const int length, const char* input)
 	}
 }
 
-
 FILE* nqiv_fopen(const char* filename, const char* mode)
 {
 	char path[PATH_MAX + 1] = {0};
-	if( !nqiv_expand_path(path, PATH_MAX, filename) ) {
+	if(!nqiv_expand_path(path, PATH_MAX, filename)) {
 		return NULL;
 	}
 	return fopen(path, mode);

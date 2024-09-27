@@ -114,7 +114,7 @@ nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* raw_path)
 	assert(logger != NULL);
 
 	char path[PATH_MAX + 1] = {0};
-	if( !nqiv_expand_path(path, PATH_MAX, raw_path) ) {
+	if(!nqiv_expand_path(path, PATH_MAX, raw_path)) {
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Could not expand path for image: %s", raw_path);
 		return NULL;
 	}

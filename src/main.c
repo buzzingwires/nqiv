@@ -1635,9 +1635,7 @@ bool nqiv_master_thread(nqiv_state* state)
 				if((Uint32)input_event.user.code == state->thread_event_number) {
 					render_and_update(state, &running, &result, false, false);
 				} else if((Uint32)input_event.user.code == state->cfg_event_number) {
-					nqiv_handle_keyactions(
-						state, &running, &result, true,
-						NQIV_KEYRATE_ON_DOWN);
+					nqiv_handle_keyactions(state, &running, &result, true, NQIV_KEYRATE_ON_DOWN);
 					render_and_update(state, &running, &result, false, false);
 				}
 			}

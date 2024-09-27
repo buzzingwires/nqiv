@@ -476,7 +476,8 @@ bool nqiv_cmd_parser_remove_image_index(nqiv_cmd_manager* manager, nqiv_cmd_arg_
 
 bool nqiv_cmd_parser_sendkey(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
-	const nqiv_keybind_pair* pair = &(manager->state->keybinds.simulated_lookup[tokens[0]->value.as_key_action]);
+	const nqiv_keybind_pair* pair =
+		&(manager->state->keybinds.simulated_lookup[tokens[0]->value.as_key_action]);
 	return nqiv_queue_push(&manager->state->key_actions, &pair);
 }
 

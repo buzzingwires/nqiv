@@ -132,8 +132,9 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 	assert(image->parent->thumbnail.root != NULL);
 
 	char raw_root[PATH_MAX + 1] = {0};
-	if( !nqiv_expand_path(raw_root, PATH_MAX, image->parent->thumbnail.root) ) {
-		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Could not expand thumbnail root: %s", image->parent->thumbnail.root);
+	if(!nqiv_expand_path(raw_root, PATH_MAX, image->parent->thumbnail.root)) {
+		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR, "Could not expand thumbnail root: %s",
+		               image->parent->thumbnail.root);
 		return false;
 	}
 
@@ -144,8 +145,7 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 
 	const int raw_rootlen = nqiv_strlen(raw_root);
 	assert(raw_rootlen >= 1);
-	const int rootlen =
-		raw_root[raw_rootlen - 1] == '/' ? raw_rootlen - 1 : raw_rootlen;
+	const int rootlen = raw_root[raw_rootlen - 1] == '/' ? raw_rootlen - 1 : raw_rootlen;
 	if(strncmp(image->image.path, raw_root, rootlen) == 0) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 		               "Image path '%s' matches thumbnail path starting at '%s'. Avoiding "

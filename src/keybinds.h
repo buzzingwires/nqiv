@@ -142,9 +142,9 @@ typedef struct nqiv_keybind_pair
 
 typedef struct nqiv_keybind_manager
 {
-	nqiv_log_ctx* logger;
+	nqiv_log_ctx*     logger;
 	/* Array of nqiv_keybind_pair */
-	nqiv_array*   lookup;
+	nqiv_array*       lookup;
 	/* Maintain a list of nqiv_keybind_pair for simulated actions to use. */
 	nqiv_keybind_pair simulated_lookup[NQIV_KEY_ACTION_LENGTH];
 } nqiv_keybind_manager;
