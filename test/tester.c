@@ -20,6 +20,14 @@
  *
  * To run tests, take a list of names from the command line. If it is empty, run them all.
  * Otherwise, only run tests that are named, or the parent of which are named.
+ *
+ * To add tests:
+ *
+ *   - For each header in src/ make a corresponding header suffixed with _tests (Example: logging.h
+ * -> logging_tests.h)
+ *   - Your test function may be written in the corresponding C file. It should return void and take
+ * no parameters. Checks are done using assert()
+ *   - See create_tests() for instructions on adding your test.
  */
 
 #define TEST_NAME_LEN 50
@@ -177,11 +185,14 @@ void run_tests(const test_set* tests, char** names_to_run, const int names_to_ru
 #define FAIL                \
 	destroy_test_set(root); \
 	return NULL;
+/* Specify a set or category of tests. These are added to the root set (so no nested sets for now),
+ * and one must be specified before adding a test. */
 #define S(name)                                                 \
 	current_set = add_test_subset(root, &test_counter, (name)); \
 	if(current_set == NULL) {                                   \
 		FAIL;                                                   \
 	}
+/* Specify a specific test for the last-specified set. */
 #define T(name, func)                                                  \
 	assert(current_set != NULL);                                       \
 	if(add_test(current_set, &test_counter, (name), (func)) == NULL) { \
