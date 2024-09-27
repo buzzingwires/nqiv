@@ -318,8 +318,15 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* de
 	return true;
 }
 
+void nqiv_print_version(void)
+{
+	fprintf(stderr, "nqiv version: " VERSION "\n");
+}
+
 void nqiv_print_args(void)
 {
+	nqiv_print_version();
+	fprintf(stderr, "\n");
 	fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.\n");
 	fprintf(stderr, "-B/--built-in-config Force the built in config to load. It will do so in the "
 	                "order it is specified.\n");
@@ -329,6 +336,7 @@ void nqiv_print_args(void)
 	                "processor. Also pass help to get information about commands.\n");
 	fprintf(stderr, "-C/--cfg <path> Specify a config file to be read by the image viewer's "
 	                "command processor.\n");
+	fprintf(stderr, "-v/--version Print version info.\n");
 	fprintf(stderr, "-h/--help Print this help message.\n");
 }
 
@@ -395,12 +403,13 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 	nqiv_setup_montage(state);
 	const struct optparse_long longopts[] = {
 		{"cmd-from-stdin", 's', OPTPARSE_NONE},
-		{"built-in-config", 'B', OPTPARSE_NONE},
+        {"built-in-config", 'B', OPTPARSE_NONE},
 		{"no-default-cfg", 'N', OPTPARSE_NONE},
-		{"cmd", 'c', OPTPARSE_REQUIRED},
+        {"cmd", 'c', OPTPARSE_REQUIRED},
 		{"cfg", 'C', OPTPARSE_REQUIRED},
+        {"version", 'v', OPTPARSE_NONE},
 		{"help", 'h', OPTPARSE_NONE},
-		{0},
+        {0},
 	};
 	bool            load_default = true;
 	struct optparse options;
@@ -413,6 +422,9 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 			break;
 		case 'h':
 			nqiv_print_args();
+			return false;
+		case 'v':
+			nqiv_print_version();
 			return false;
 		case '?':
 			fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
