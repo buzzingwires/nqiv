@@ -1,5 +1,5 @@
-/* This is not 'our' code. Leave it as is. */
 /* clang-format off */
+/* This is not 'our' code. Leave it as is. */
 /* Optparse --- portable, reentrant, embeddable, getopt-like option parser
  *
  * This is free and unencumbered software released into the public domain.
