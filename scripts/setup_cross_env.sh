@@ -273,7 +273,7 @@ action_make_package()
 
 	mkdir -v "$L_RELEASE_BASE"
 
-	cp -v "./scripts/nqiv_deploy_cmd.bat" "$L_RELEASE_BASE"
+	cp -v "./scripts/nqiv_deploy_cfg.bat" "$L_RELEASE_BASE"
 
 	cp -v                                             \
 		"$a_exe_path"                                 \
