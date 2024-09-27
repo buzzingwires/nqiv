@@ -173,6 +173,9 @@ struct nqiv_cmd_node
 	bool                deprecated;
 };
 
+/* Send an SDL event to main to update based on config parsing. */
+void nqiv_cmd_alert_main(nqiv_cmd_manager* manager);
+
 bool nqiv_cmd_add_line_and_parse(nqiv_cmd_manager* manager, const char* str);
 bool nqiv_cmd_add_string(nqiv_cmd_manager* manager, const char* str);
 bool nqiv_cmd_parse(nqiv_cmd_manager* manager);

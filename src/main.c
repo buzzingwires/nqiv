@@ -171,7 +171,7 @@ bool nqiv_setup_sdl(nqiv_state* state)
 		return false;
 	}
 
-	if(state->thread_event_number != 0) {
+	if(state->thread_event_number == 0) {
 		state->thread_event_number = SDL_RegisterEvents(1);
 		if(state->thread_event_number == 0xFFFFFFFF) {
 			nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
@@ -181,7 +181,7 @@ bool nqiv_setup_sdl(nqiv_state* state)
 		}
 	}
 
-	if(state->cfg_event_number != 0) {
+	if(state->cfg_event_number == 0) {
 		state->cfg_event_number = SDL_RegisterEvents(1);
 		if(state->cfg_event_number == 0xFFFFFFFF) {
 			nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
@@ -500,6 +500,7 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 	if(nqiv_array_get_units_count(state->images.images) > 1) {
 		state->in_montage = true;
 	}
+	nqiv_cmd_alert_main(&state->cmds);
 	return true;
 } /* parse_args */
 
@@ -1218,7 +1219,6 @@ void nqiv_handle_thumbnail_resize_action(nqiv_state* state,
 	render_and_update(state, running, result, false, false);
 }
 
-/* TODO Won't running simulated just also run the events on non-simulated events? */
 void nqiv_handle_keyactions(nqiv_state*                       state,
                             bool*                             running,
                             bool*                             result,
@@ -1597,6 +1597,8 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 		} else if(pair->action == NQIV_KEY_ACTION_RELOAD) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action reload.\n");
 			render_and_update(state, running, result, true, true);
+		} else {
+			assert(false);
 		}
 	}
 }
@@ -1634,8 +1636,8 @@ bool nqiv_master_thread(nqiv_state* state)
 					render_and_update(state, &running, &result, false, false);
 				} else if((Uint32)input_event.user.code == state->cfg_event_number) {
 					nqiv_handle_keyactions(
-						state, &running, &result, false,
-						NQIV_KEYRATE_ON_DOWN); /* TODO No simulated actions for now. */
+						state, &running, &result, true,
+						NQIV_KEYRATE_ON_DOWN);
 					render_and_update(state, &running, &result, false, false);
 				}
 			}

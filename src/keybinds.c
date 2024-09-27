@@ -273,6 +273,15 @@ bool nqiv_text_to_keystate(char* text, const int length, nqiv_keyrate_keystate* 
 	return success;
 }
 
+void nqiv_keybind_init_pair(nqiv_keybind_pair* pair)
+{
+	memset(pair, 0, sizeof(nqiv_keybind_pair));
+	pair->keyrate.settings.start_delay = -1;
+	pair->keyrate.settings.consecutive_delay = -1;
+	pair->keyrate.settings.delay_accel = -1;
+	pair->keyrate.settings.minimum_delay = -1;
+}
+
 int nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* pair)
 {
 	char      text[NQIV_KEYBIND_STRLEN + 1] = {0};
@@ -291,10 +300,7 @@ int nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* p
 		return -1;
 	}
 	nqiv_keybind_pair tmp = {0};
-	tmp.keyrate.settings.start_delay = -1;
-	tmp.keyrate.settings.consecutive_delay = -1;
-	tmp.keyrate.settings.delay_accel = -1;
-	tmp.keyrate.settings.minimum_delay = -1;
+	nqiv_keybind_init_pair(&tmp);
 	tmp.action = NQIV_KEY_ACTION_NONE;
 	int  idx;
 	int  section_start;
@@ -363,6 +369,11 @@ bool nqiv_keybind_create_manager(nqiv_keybind_manager* manager,
 	}
 	manager->lookup = arrayptr;
 	manager->logger = logger;
+	nqiv_key_action a;
+	for(a = NQIV_KEY_ACTION_QUIT; a < NQIV_KEY_ACTION_LENGTH; ++a) {
+		nqiv_keybind_init_pair(&(manager->simulated_lookup[a]));
+		manager->simulated_lookup[a].action = a;
+	}
 	return true;
 }
 

@@ -94,6 +94,7 @@ typedef enum nqiv_key_action
 	NQIV_KEY_ACTION_IMAGE_ZOOM_OUT_MORE,
 	NQIV_KEY_ACTION_RELOAD,
 	NQIV_KEY_ACTION_MAX = NQIV_KEY_ACTION_RELOAD,
+	NQIV_KEY_ACTION_LENGTH,
 } nqiv_key_action;
 
 extern const char* const nqiv_keybind_action_names[];
@@ -142,7 +143,10 @@ typedef struct nqiv_keybind_pair
 typedef struct nqiv_keybind_manager
 {
 	nqiv_log_ctx* logger;
-	nqiv_array*   lookup; /* Array of nqiv_keybind_pair */
+	/* Array of nqiv_keybind_pair */
+	nqiv_array*   lookup;
+	/* Maintain a list of nqiv_keybind_pair for simulated actions to use. */
+	nqiv_keybind_pair simulated_lookup[NQIV_KEY_ACTION_LENGTH];
 } nqiv_keybind_manager;
 
 bool            nqiv_keybind_create_manager(nqiv_keybind_manager* manager,
