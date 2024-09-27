@@ -30,3 +30,8 @@ debug:
 tests:
 	$(MAKE) -C test E_EXTRA_CFLAGS="${L_CFLAGS_STANDARDS} ${L_CFLAGS_DEBUG_OPTS} " E_JEMALLOC_LIBS="${L_JEMALLOC_LIBS} "
 all-debug: debug tests
+
+install-exec-local:
+	mkdir -p "$(DESTDIR)$(bindir)"
+	test -e src/nqiv && cp src/nqiv "$(DESTDIR)$(bindir)"
+	test -e src/nqiv.exe && cp src/nqiv.exe "$(DESTDIR)$(bindir)"
