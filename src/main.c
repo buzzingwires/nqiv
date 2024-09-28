@@ -513,6 +513,9 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 	state->first_frame_pending = true;
 	if(nqiv_array_get_units_count(state->images.images) > 1) {
 		state->in_montage = true;
+	} else if(nqiv_array_get_units_count(state->images.images) == 0) {
+		fprintf(stderr, "No images specified. Quitting.\n");
+		return NQIV_PASS;
 	}
 	nqiv_cmd_alert_main(&state->cmds);
 	return NQIV_SUCCESS;
