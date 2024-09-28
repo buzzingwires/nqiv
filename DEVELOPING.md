@@ -70,8 +70,8 @@ echo "make" >> ./env.sh
 # Build nqiv.
 ./env.sh
 
-# Make the AppImage file.
-./scripts/make_appimage.sh
+# Make the zip package.
+./scripts/setup_cross_env.sh make-package
 ```
 
 #### Linux (AppImage) ###
@@ -100,6 +100,8 @@ Feel free to add yourself to `AUTHORS.md`
 Helper Scripts
 --------------
 
+These scripts are specifically written against the dash shell. They try to be portable and POSIX compliant, with the exception that the `local` keyword is used extensively.
+
 * `format_code.sh`: Use clang-format to format code according to the standard for nqiv.
 
 * `lint_cppcheck.sh`: Lint nqiv code using cppcheck. Quite slow but recommended. This linter is less zealous than clang-tidy, so warnings should be avoided.
@@ -119,7 +121,7 @@ Helper Scripts
 Codebase Overview
 -----------------
 
-nqiv lives in `src/`
+nqiv lives in `src/` and is coded against the C99 standard.
 
 * `optparse.h`: Only slightly modified optparse implementation from <https://github.com/skeeto/optparse/tree/master>
 
@@ -133,7 +135,7 @@ nqiv lives in `src/`
 
 * `thumbnail.h`: Freedesktop Thumbnail Managing Standard implementation.
 
-* `typedefs.h`: Just some forward declares when necessary.
+* `typedefs.h`: Just some forward declares and other circularly shared things, when necessary. This file shouldn't include any other nqiv file and should be included before the circularly referenced elements are needed.
 
 * `array.h`: Essential datastructure functioning in various roles, including array, stack, and stringbuilder. It is very important to get this right, and ideally performant, too.
 

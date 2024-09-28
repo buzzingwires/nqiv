@@ -1,14 +1,14 @@
 nqiv
 ====
 
-nqiv (**n**eo **q**uick **i**mage **v**iewer) is inspired by the lineage of `qiv` and intended to implement modern features such as multithreading and GPU rendering, as well as to reduce dependencies to a handful of mature and well-supported options.
+nqiv (**n**eo **q**uick **i**mage **v**iewer) is inspired by the lineage of `qiv` and intended to implement modern features such as multithreading and GPU rendering, as well as to reduce dependencies to a handful of mature and well-supported choices.
 
 Getting nqiv
 ------------
 
-See the releases for builds. Linux builds are provided as AppImages, while Windows builds are provided as .zip archives containing an executable and needed directory.
+See the releases for builds. Linux builds are provided as AppImages, while Windows builds are provided as .zip archives containing an executable and needed directory. To build nqiv manually, see `DEVELOPMENT.md`
 
-Run nqiv with `-h` for basic help. nqiv is very portable and strives to not change anything on a system without being explicitly told to. Upon running nqiv from the command line, it will look for a config file in a default location, and will offer a command to create it if it isn't available. Given the graphical emphasis of Windows, `scripts/nqiv_deploy_cfg.bat` is also provided to do this same task with a single click.
+Run nqiv with `-h` for basic help. nqiv strives to be portable and to not change anything on a system without being explicitly told to. Upon running nqiv, it will look for a config file in a default location, and will offer a command (to stderr) to create it if it isn't available. Given the graphical emphasis of Windows, `scripts/nqiv_deploy_cfg.bat` is also provided to do this same task with a click.
 
 Features
 --------
