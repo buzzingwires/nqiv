@@ -9,6 +9,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "typedefs.h"
 #include "logging.h"
 #include "array.h"
 #include "queue.h"
@@ -519,14 +520,14 @@ bool nqiv_keybind_compare_match(const nqiv_key_match* a, const nqiv_key_match* b
 	               && a->data.mouse_button.clicks == b->data.mouse_button.clicks));
 }
 
-nqiv_key_lookup_summary
+nqiv_op_result
 nqiv_keybind_lookup(nqiv_keybind_manager* manager, const nqiv_key_match* match, nqiv_queue* output)
 {
 	assert(manager != NULL);
 	assert(manager->lookup != NULL);
 	assert(match != NULL);
 
-	nqiv_key_lookup_summary result = NQIV_KEY_LOOKUP_NOT_FOUND;
+	nqiv_op_result result = NQIV_PASS;
 	const int               lookup_len = nqiv_array_get_units_count(manager->lookup);
 	nqiv_keybind_pair*      lookup = manager->lookup->data;
 	int                     idx;
@@ -534,9 +535,9 @@ nqiv_keybind_lookup(nqiv_keybind_manager* manager, const nqiv_key_match* match, 
 		const nqiv_keybind_pair* pair = &lookup[idx];
 		if(nqiv_keybind_compare_match(&pair->match, match)) {
 			if(output == NULL || !nqiv_queue_push(output, &pair)) {
-				result |= NQIV_KEY_LOOKUP_FAILURE;
+				return NQIV_FAIL;
 			} else {
-				result |= NQIV_KEY_LOOKUP_FOUND;
+				result = NQIV_SUCCESS;
 			}
 		}
 	}

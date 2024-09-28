@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "../src/typedefs.h"
 #include "../src/keybinds.h"
 #include "../src/state.h"
 
@@ -139,29 +140,29 @@ void keybind_test_lookup(void)
 	                                    "ralt+lalt+caps+mode=quit"));
 
 	match.mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
-	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_KEY_LOOKUP_NOT_FOUND);
+	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_PASS);
 
 	match.data.key.scancode = SDL_SCANCODE_Q;
-	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_KEY_LOOKUP_NOT_FOUND);
+	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_PASS);
 
 	match.data.mouse_button.button = 0;
 	match.data.mouse_button.clicks = 2;
-	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_KEY_LOOKUP_NOT_FOUND);
+	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_PASS);
 
 	match.mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD;
-	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_KEY_LOOKUP_FOUND);
+	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_SUCCESS);
 	assert(nqiv_array_get_units_count(queue.array) == 1);
 
 	match.mode |= NQIV_KEY_MATCH_MODE_KEY;
-	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_KEY_LOOKUP_NOT_FOUND);
+	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_PASS);
 
 	match.mode &= ~NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD;
-	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_KEY_LOOKUP_FOUND);
+	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_SUCCESS);
 	assert(nqiv_array_get_units_count(queue.array) == 2);
 
 	match.mode &= ~NQIV_KEY_MATCH_MODE_KEY;
 	match.mode |= NQIV_KEY_MATCH_MODE_MOUSE_BUTTON;
-	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_KEY_LOOKUP_FOUND);
+	assert(nqiv_keybind_lookup(&manager, &match, &queue) == NQIV_SUCCESS);
 	assert(nqiv_array_get_units_count(queue.array) == 3);
 
 	nqiv_queue_destroy(&queue);

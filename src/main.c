@@ -10,6 +10,7 @@
 #include <SDL2/SDL.h>
 #include <omp.h>
 
+#include "typedefs.h"
 #include "logging.h"
 #include "image.h"
 #include "worker.h"
@@ -340,7 +341,7 @@ void nqiv_print_args(void)
 	fprintf(stderr, "-h/--help Print this help message.\n");
 }
 
-bool nqiv_parse_args(char* argv[], nqiv_state* state)
+nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 {
 	state->zoom_default = NQIV_ZOOM_DEFAULT_FIT;
 	state->texture_scale_mode = SDL_ScaleModeBest;
@@ -359,27 +360,27 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 	state->logger_stream_names = nqiv_array_create(sizeof(char*), STARTING_QUEUE_LENGTH);
 	if(state->logger_stream_names == NULL) {
 		fputs("Failed to initialize logger stream names list.\n", stderr);
-		return false;
+		return NQIV_FAIL;
 	}
 	nqiv_log_init(&state->logger);
 	if(!nqiv_cmd_manager_init(&state->cmds, state)) {
-		return false;
+		return NQIV_FAIL;
 	}
 	state->logger.level = NQIV_LOG_WARNING;
 	if(!nqiv_check_and_print_logger_error(&state->logger)) {
-		return false;
+		return NQIV_FAIL;
 	}
 	if(!nqiv_image_manager_init(&state->images, &state->logger, STARTING_QUEUE_LENGTH)) {
 		fputs("Failed to initialize image manager.\n", stderr);
-		return false;
+		return NQIV_FAIL;
 	}
 	if(!nqiv_pruner_init(&state->pruner, &state->logger, STARTING_QUEUE_LENGTH)) {
 		fputs("Failed to initialize pruner.\n", stderr);
-		return false;
+		return NQIV_FAIL;
 	}
 	if(!nqiv_keybind_create_manager(&state->keybinds, &state->logger, STARTING_QUEUE_LENGTH)) {
-		fputs("Failed to initialize image manager.\n", stderr);
-		return false;
+		fputs("Failed to initialize keybind manager.\n", stderr);
+		return NQIV_FAIL;
 	}
 	nqiv_set_keyrate_defaults(&state->keystates);
 	if(!nqiv_priority_queue_init(&state->thread_queue, &state->logger, sizeof(nqiv_event),
@@ -387,18 +388,18 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 	   || !nqiv_priority_queue_set_max_data_length(&state->thread_queue, THREAD_QUEUE_MAX_LENGTH)
 	   || !nqiv_priority_queue_set_min_add_count(&state->thread_queue, THREAD_QUEUE_ADD_COUNT)) {
 		fputs("Failed to initialize thread queue.\n", stderr);
-		return false;
+		return NQIV_FAIL;
 	}
 	state->images.thread_queue = &state->thread_queue;
 	if(!nqiv_queue_init(&state->key_actions, &state->logger, sizeof(nqiv_keybind_pair*),
 	                    STARTING_QUEUE_LENGTH)) {
 		fputs("Failed to initialize key action queue.\n", stderr);
-		return false;
+		return NQIV_FAIL;
 	}
 	nqiv_state_set_default_colors(state);
 	if(!nqiv_setup_sdl(state)) {
 		nqiv_state_clear(state);
-		return false;
+		return NQIV_FAIL;
 	}
 	nqiv_setup_montage(state);
 	const struct optparse_long longopts[] = {
@@ -422,13 +423,13 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 			break;
 		case 'h':
 			nqiv_print_args();
-			return false;
+			return NQIV_PASS;
 		case 'v':
 			nqiv_print_version();
-			return false;
+			return NQIV_PASS;
 		case '?':
 			fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
-			return false;
+			return NQIV_FAIL;
 		case 's':
 		case 'c':
 		case 'B':
@@ -447,7 +448,7 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 				const int c = fgetc(stream);
 				if(c == EOF) {
 					if(!nqiv_load_builtin_config(state, argv[0], default_config_path)) {
-						return false;
+						return NQIV_FAIL;
 					}
 				} else {
 					ungetc(c, stream);
@@ -455,13 +456,13 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 						fprintf(stderr, "Failed to read commands from default config path %s\n",
 						        default_config_path);
 						fclose(stream);
-						return false;
+						return NQIV_FAIL;
 					}
 				}
 				fclose(stream);
 			} else {
 				if(!nqiv_load_builtin_config(state, argv[0], default_config_path)) {
-					return false;
+					return NQIV_FAIL;
 				}
 			}
 		}
@@ -484,10 +485,10 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 			break;
 		case 'h':
 			nqiv_print_args();
-			return false;
+			return NQIV_PASS;
 		case '?':
 			fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
-			return false;
+			return NQIV_FAIL;
 		case 'N':
 			assert(true);
 			break;
@@ -496,16 +497,16 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 		}
 	}
 	if(!success) {
-		return false;
+		return NQIV_FAIL;
 	}
 	if(!nqiv_setup_thread_info(state)) {
 		nqiv_state_clear(state);
-		return false;
+		return NQIV_FAIL;
 	}
 	const char* arg;
 	while((arg = optparse_arg(&options))) {
 		if(!nqiv_image_manager_append(&state->images, arg)) {
-			return false;
+			return NQIV_FAIL;
 		}
 	}
 	state->first_frame_pending = true;
@@ -513,7 +514,7 @@ bool nqiv_parse_args(char* argv[], nqiv_state* state)
 		state->in_montage = true;
 	}
 	nqiv_cmd_alert_main(&state->cmds);
-	return true;
+	return NQIV_SUCCESS;
 } /* parse_args */
 
 bool nqiv_send_thread_event_base(nqiv_state*       state,
@@ -1679,12 +1680,12 @@ bool nqiv_master_thread(nqiv_state* state)
 					match.mode |= NQIV_KEY_MATCH_MODE_KEY_MOD;
 				}
 				memcpy(&match.data.key, &input_event.key.keysym, sizeof(SDL_Keysym));
-				const nqiv_key_lookup_summary lookup_summary =
+				const nqiv_op_result lookup_summary =
 					nqiv_keybind_lookup(&state->keybinds, &match, &state->key_actions);
-				if(lookup_summary == NQIV_KEY_LOOKUP_FAILURE) {
+				if(lookup_summary == NQIV_FAIL) {
 					running = false;
 					result = false;
-				} else if(lookup_summary == NQIV_KEY_LOOKUP_FOUND) {
+				} else if(lookup_summary == NQIV_SUCCESS) {
 					nqiv_handle_keyactions(state, &running, &result, false,
 					                       input_event.type == SDL_KEYUP ? NQIV_KEYRATE_ON_UP
 					                                                     : NQIV_KEYRATE_ON_DOWN);
@@ -1701,12 +1702,12 @@ bool nqiv_master_thread(nqiv_state* state)
 				match.mode |= NQIV_KEY_MATCH_MODE_MOUSE_BUTTON;
 				memcpy(&match.data.mouse_button, &input_event.button, sizeof(SDL_MouseButtonEvent));
 				nqiv_set_match_keymods(&match);
-				const nqiv_key_lookup_summary lookup_summary =
+				const nqiv_op_result lookup_summary =
 					nqiv_keybind_lookup(&state->keybinds, &match, &state->key_actions);
-				if(lookup_summary == NQIV_KEY_LOOKUP_FAILURE) {
+				if(lookup_summary == NQIV_FAIL) {
 					running = false;
 					result = false;
-				} else if(lookup_summary == NQIV_KEY_LOOKUP_FOUND) {
+				} else if(lookup_summary == NQIV_SUCCESS) {
 					nqiv_handle_keyactions(state, &running, &result, false,
 					                       input_event.type == SDL_MOUSEBUTTONUP
 					                           ? NQIV_KEYRATE_ON_UP
@@ -1732,12 +1733,12 @@ bool nqiv_master_thread(nqiv_state* state)
 					match.mode |= NQIV_KEY_MATCH_MODE_MOUSE_WHEEL_FORWARD;
 				}
 				nqiv_set_match_keymods(&match);
-				const nqiv_key_lookup_summary lookup_summary =
+				const nqiv_op_result lookup_summary =
 					nqiv_keybind_lookup(&state->keybinds, &match, &state->key_actions);
-				if(lookup_summary == NQIV_KEY_LOOKUP_FAILURE) {
+				if(lookup_summary == NQIV_FAIL) {
 					running = false;
 					result = false;
-				} else if(lookup_summary == NQIV_KEY_LOOKUP_FOUND) {
+				} else if(lookup_summary == NQIV_SUCCESS) {
 					nqiv_handle_keyactions(state, &running, &result, false,
 					                       NQIV_KEYRATE_ON_DOWN | NQIV_KEYRATE_ON_UP);
 					render_and_update(state, &running, &result, false, false);
@@ -1841,9 +1842,10 @@ int main(int argc, char* argv[])
 		fputs("Failed to initialize vips.\n", stderr);
 	}
 
-	if(!nqiv_parse_args(argv, &state)) {
+	const nqiv_op_result args_result = nqiv_parse_args(argv, &state);
+	if(args_result != NQIV_SUCCESS) {
 		nqiv_state_clear(&state);
-		return 1;
+		return args_result == NQIV_FAIL ? 1 : 0;
 	}
 
 	const bool result = nqiv_run(&state);

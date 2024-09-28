@@ -5,6 +5,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "typedefs.h"
 #include "array.h"
 #include "queue.h"
 #include "logging.h"
@@ -99,14 +100,6 @@ typedef enum nqiv_key_action
 
 extern const char* const nqiv_keybind_action_names[];
 
-typedef enum nqiv_key_lookup_summary
-{
-	NQIV_KEY_LOOKUP_NOT_FOUND = 0,
-	/* If we found key actions, but failed to push them to the output queue. */
-	NQIV_KEY_LOOKUP_FAILURE = 1,
-	NQIV_KEY_LOOKUP_FOUND = 2,
-} nqiv_key_lookup_summary;
-
 /* Describe which data from a key match to use, or specify simple, unambiguous
  * operations like mouse wheel movement. */
 typedef enum nqiv_key_match_mode
@@ -159,9 +152,9 @@ nqiv_key_action nqiv_text_to_key_action(const char* text, const int length);
 int             nqiv_keybind_text_to_keybind(const char* original_text, nqiv_keybind_pair* pair);
 bool            nqiv_keybind_add(nqiv_keybind_manager* manager, const nqiv_keybind_pair* pair);
 bool            nqiv_keybind_to_string(const nqiv_keybind_pair* pair, char* buf);
-nqiv_key_lookup_summary
+nqiv_op_result
 nqiv_keybind_lookup(nqiv_keybind_manager* manager, const nqiv_key_match* match, nqiv_queue* output);
-/*nqiv_key_lookup_summary nqiv_keybind_lookup_text(nqiv_keybind_manager* manager, const char*
+/*nqiv_op_result nqiv_keybind_lookup_text(nqiv_keybind_manager* manager, const char*
  * key);*/
 void nqiv_keybind_destroy_manager(nqiv_keybind_manager* manager);
 
