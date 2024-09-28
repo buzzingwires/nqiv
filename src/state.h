@@ -126,6 +126,9 @@ struct nqiv_state
 	/* In SDL ticks (milliseconds) Check if prune_delay has passed for each render_and_update */
 	Uint64               time_of_last_prune;
 	Uint64               prune_delay;
+	/* Wait on an SDL event this long before timing out, allowing housekeeping tasks (such as
+	 * pruning) to be performed. */
+	int                  event_timeout;
 	/* Base amount worker threads sleep between updates. */
 	int                  extra_wakeup_delay;
 	omp_lock_t           thread_event_transaction_group_lock;

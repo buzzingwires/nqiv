@@ -83,6 +83,12 @@ bool nqiv_cmd_parser_set_prune_delay(nqiv_cmd_manager* manager, nqiv_cmd_arg_tok
 	return true;
 }
 
+bool nqiv_cmd_parser_set_event_timeout(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	manager->state->event_timeout = tokens[0]->value.as_int;
+	return true;
+}
+
 bool nqiv_cmd_parser_set_extra_wakeup_delay(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	manager->state->extra_wakeup_delay = tokens[0]->value.as_int;
@@ -513,6 +519,11 @@ void nqiv_cmd_parser_print_vips_threads(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_prune_delay(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%" PRIu64, manager->state->prune_delay);
+}
+
+void nqiv_cmd_parser_print_event_timeout(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%d", manager->state->event_timeout);
 }
 
 void nqiv_cmd_parser_print_extra_wakeup_delay(nqiv_cmd_manager* manager)
@@ -2165,6 +2176,10 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			  "improve UI responsiveness.",
 			  nqiv_cmd_parser_set_extra_wakeup_delay, nqiv_cmd_parser_print_extra_wakeup_delay,
 			  natural_args);
+			L("event_timeout",
+			  "How long to wait for various events (such as inputs or updates from worker threads) "
+			  "before doing housekeeping activities (such as pruning). 0 to wait infinitely.",
+			  nqiv_cmd_parser_set_event_timeout, nqiv_cmd_parser_print_event_timeout, natural_args);
 		}
 		POP;
 		B("vips", "Settings related to the VIPS library.");

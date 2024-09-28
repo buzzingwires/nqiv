@@ -356,6 +356,7 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 		state->thread_event_interval > 0 ? state->thread_event_interval : 1;
 	state->extra_wakeup_delay = state->thread_count * 20;
 	state->prune_delay = 50000 / state->extra_wakeup_delay;
+	state->event_timeout = 250000 / state->extra_wakeup_delay;
 	vips_concurrency_set(state->vips_threads);
 	state->logger_stream_names = nqiv_array_create(sizeof(char*), STARTING_QUEUE_LENGTH);
 	if(state->logger_stream_names == NULL) {
@@ -1172,13 +1173,8 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	return true;
 }
 
-void render_and_update(
-	nqiv_state* state, bool* running, bool* result, const bool first_render, const bool hard)
+void nqiv_check_pruning(nqiv_state* state, bool* running, bool* result)
 {
-	/* Hard forces reload. first_render basically means to show the first frame. */
-	/* Adapt screen dimensions to montage. */
-	nqiv_update_montage_dimensions(state);
-
 	/* Do pruning if needed. */
 	const Uint64 new_time = SDL_GetTicks64();
 	if(new_time - state->time_of_last_prune > state->prune_delay) {
@@ -1190,6 +1186,17 @@ void render_and_update(
 			*result = false;
 		}
 	}
+}
+
+void render_and_update(
+	nqiv_state* state, bool* running, bool* result, const bool first_render, const bool hard)
+{
+	/* Hard forces reload. first_render basically means to show the first frame. */
+	/* Adapt screen dimensions to montage. */
+	nqiv_update_montage_dimensions(state);
+
+	nqiv_check_pruning(state, running, result);
+
 	/* Update transaction group. */
 	if(state->montage.range_changed) {
 		omp_set_lock(&state->thread_event_transaction_group_lock);
@@ -1633,13 +1640,31 @@ bool nqiv_master_thread(nqiv_state* state)
 	bool running = true;
 	while(running) {
 		SDL_PumpEvents();
-		SDL_Event input_event = {0};
-		const int event_result = SDL_WaitEvent(&input_event);
+		SDL_Event    input_event = {0};
+		const Uint64 wait_start = SDL_GetTicks64();
+		const int    event_result = state->event_timeout > 0
+		                                ? SDL_WaitEventTimeout(&input_event, state->event_timeout)
+		                                : SDL_WaitEvent(&input_event);
 		if(event_result == 0) {
-			nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
-			               "Failed to wait on an SDL event. SDL Error: %s\n", SDL_GetError());
-			running = false;
-			result = false;
+			if(state->event_timeout > 0) {
+				nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
+				               "Failed to wait on an SDL event (with limitless waiting period). "
+				               "SDL Error: %s\n",
+				               SDL_GetError());
+				running = false;
+				result = false;
+			} else {
+				const Uint64 wait_diff = SDL_GetTicks64() - wait_start;
+				/* TODO: It seems SDL_WaitEventTimeout does not guarantee that it will
+				 * wait for at least the time specified, like most sleeping
+				 * functions. During testing, the ticks/ms slept for were sometimes
+				 * off by one. For now, deciding this error check is not worthwhile.*/
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
+				               "Waited for %" PRIu64 "ms with expected delay of %" PRIu64
+				               "ms Checking if a prune is needed.\n",
+				               wait_diff, state->event_timeout);
+				nqiv_check_pruning(state, &running, &result);
+			}
 			continue;
 		}
 		switch(input_event.type) {
