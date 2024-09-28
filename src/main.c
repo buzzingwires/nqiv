@@ -1666,7 +1666,7 @@ bool nqiv_master_thread(nqiv_state* state)
 				               "Waited for %" PRIu64 "ms with expected delay of %" PRIu64
 				               "ms Checking if a prune is needed.\n",
 				               wait_diff, state->event_timeout);
-				nqiv_check_pruning(state, &running, &result);
+				render_and_update(state, &running, &result, false, false);
 			}
 			continue;
 		}
