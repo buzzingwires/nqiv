@@ -74,7 +74,7 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state, const int widt
 	state->dimensions.vertical_margin = state->dimensions.row_space * 2.0;
 	state->dimensions.horizontal_margin = state->dimensions.column_space * 2.0;
 	original.positions.selection = state->positions.selection;
-	state->range_changed = state->range_changed || nqiv_montage_compare_range(&original, state);
+	state->range_changed = state->range_changed || !nqiv_montage_compare_range(&original, state);
 }
 
 void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
@@ -91,13 +91,15 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 	}
 	if(new_idx == state->positions.selection) {
 		original.positions.selection = state->positions.selection;
-		state->range_changed = state->range_changed || nqiv_montage_compare_range(&original, state);
+		state->range_changed =
+			state->range_changed || !nqiv_montage_compare_range(&original, state);
 		return;
 	}
 	if(new_idx >= state->positions.start && new_idx < state->positions.end) {
 		state->positions.selection = new_idx;
 		original.positions.selection = state->positions.selection;
-		state->range_changed = state->range_changed || nqiv_montage_compare_range(&original, state);
+		state->range_changed =
+			state->range_changed || !nqiv_montage_compare_range(&original, state);
 		return;
 	}
 	const int page = new_idx / state->dimensions.count;
@@ -115,7 +117,7 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Setting montage selection to %d.\n",
 	               state->positions.selection);
 	original.positions.selection = state->positions.selection;
-	state->range_changed = state->range_changed || nqiv_montage_compare_range(&original, state);
+	state->range_changed = state->range_changed || !nqiv_montage_compare_range(&original, state);
 }
 
 void nqiv_montage_jump_selection(nqiv_montage_state* state, const int offset)
