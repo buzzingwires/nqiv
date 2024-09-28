@@ -1649,7 +1649,7 @@ bool nqiv_master_thread(nqiv_state* state)
 		                                ? SDL_WaitEventTimeout(&input_event, state->event_timeout)
 		                                : SDL_WaitEvent(&input_event);
 		if(event_result == 0) {
-			if(state->event_timeout > 0) {
+			if(state->event_timeout == 0) {
 				nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
 				               "Failed to wait on an SDL event (with limitless waiting period). "
 				               "SDL Error: %s\n",
