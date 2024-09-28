@@ -1,6 +1,6 @@
 L_CFLAGS_STANDARDS=-std=c99 -Wall -Wpedantic -Wextra -Winline -Wcast-align -Werror -D_REENTRANT -fopenmp 
 L_CFLAGS_DEBUG_OPTS=-O0 -g 
-L_CFLAGS_RELEASE_OPTS=-DNDEBUG -O2 -flto=auto 
+L_CFLAGS_RELEASE_OPTS=-DNDEBUG -O3 -flto=auto 
 
 if USECOV
 L_CFLAGS_STANDARDS+=--coverage 
