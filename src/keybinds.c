@@ -527,10 +527,10 @@ nqiv_keybind_lookup(nqiv_keybind_manager* manager, const nqiv_key_match* match, 
 	assert(manager->lookup != NULL);
 	assert(match != NULL);
 
-	nqiv_op_result result = NQIV_PASS;
-	const int               lookup_len = nqiv_array_get_units_count(manager->lookup);
-	nqiv_keybind_pair*      lookup = manager->lookup->data;
-	int                     idx;
+	nqiv_op_result     result = NQIV_PASS;
+	const int          lookup_len = nqiv_array_get_units_count(manager->lookup);
+	nqiv_keybind_pair* lookup = manager->lookup->data;
+	int                idx;
 	for(idx = 0; idx < lookup_len; ++idx) {
 		const nqiv_keybind_pair* pair = &lookup[idx];
 		if(nqiv_keybind_compare_match(&pair->match, match)) {

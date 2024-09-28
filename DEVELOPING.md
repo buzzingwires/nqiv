@@ -160,11 +160,8 @@ nqiv lives in `src/` and is coded against the C99 standard.
 Branches
 --------
 
-* `master` contains a stable version of nqiv and should be almost always be
-  updated for a release.
+* `master` contains a stable version of nqiv and should be almost always be updated for a release.
 
-* `dev` is code that's actively in development. Contributions go here before
-  being merged into `master`
+* `dev` is code that's actively in development. Contributions go here before being merged into `master`
 
-* Other branches may be opened for special projects such as major features,
-  extensive rewrites, etc'.
+* Other branches may be opened for special projects such as major features, extensive rewrites, etc'.
