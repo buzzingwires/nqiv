@@ -19,6 +19,10 @@
 	#define _GNU_SOURCE
 #endif
 
+#if !defined(VERSION)
+	#error "The build environment must define version string for nqiv."
+#endif
+
 /* Platform-specific config paths and suggested commands to create them. */
 #define NQIV_CFG_FILENAME "nqiv.cfg"
 #if defined(__MINGW32__)
