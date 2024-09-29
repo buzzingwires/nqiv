@@ -146,7 +146,8 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 	const int raw_rootlen = nqiv_strlen(raw_root);
 	assert(raw_rootlen >= 1);
 	const int rootlen = raw_root[raw_rootlen - 1] == '/' ? raw_rootlen - 1 : raw_rootlen;
-	if(strncmp(image->image.path, raw_root, rootlen) == 0) {
+	if(nqiv_strlen(image->image.path) > rootlen && image->image.path[rootlen] == '/'
+	   && strncmp(raw_root, image->image.path, rootlen) == 0) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 		               "Image path '%s' matches thumbnail path starting at '%s'. Avoiding "
 		               "recreating thumbnail.\n",
