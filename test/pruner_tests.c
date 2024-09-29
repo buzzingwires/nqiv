@@ -27,7 +27,7 @@ void pruner_test_default(void)
 	memset(&cmp_desc, 0, sizeof(nqiv_pruner_desc));
 	memset(desc_str, 0, NQIV_PRUNER_DESC_STRLEN);
 	assert(nqiv_pruner_create_desc(
-		&logger, "or thumbnail no image texture self_opened unload surface raw vips", &desc));
+		&logger, "or thumbnail no image texture self_opened unload surface vips", &desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
 	assert(nqiv_pruner_desc_compare(&desc, &cmp_desc));
@@ -36,33 +36,27 @@ void pruner_test_default(void)
 	assert(desc.state_check.and_result == false);
 	assert(desc.state_check.total_sum == 0);
 	assert(nqiv_pruner_desc_dataset_compare(&desc.vips_set, &empty_dataset));
-	assert(nqiv_pruner_desc_dataset_compare(&desc.raw_set, &empty_dataset));
 	assert(nqiv_pruner_desc_dataset_compare(&desc.surface_set, &empty_dataset));
 	assert(nqiv_pruner_desc_dataset_compare(&desc.texture_set, &empty_dataset));
 	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_vips_set, &empty_dataset));
-	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_raw_set, &empty_dataset));
 	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_surface_set, &empty_dataset));
 	assert(desc.thumbnail_texture_set.loaded_self.active);
 	assert(!desc.unload_vips);
-	assert(!desc.unload_raw);
 	assert(!desc.unload_surface);
 	assert(!desc.unload_texture);
 	assert(!desc.unload_thumbnail_vips);
-	assert(!desc.unload_thumbnail_raw);
 	assert(!desc.unload_thumbnail_surface);
 	assert(!desc.unload_thumbnail_texture);
 	assert(!desc.unload_vips_soft);
-	assert(!desc.unload_raw_soft);
 	assert(!desc.unload_surface_soft);
 	assert(desc.unload_thumbnail_vips_soft);
-	assert(desc.unload_thumbnail_raw_soft);
 	assert(desc.unload_thumbnail_surface_soft);
 
 	memset(&desc, 0, sizeof(nqiv_pruner_desc));
 	memset(&cmp_desc, 0, sizeof(nqiv_pruner_desc));
 	memset(desc_str, 0, NQIV_PRUNER_DESC_STRLEN);
 	assert(nqiv_pruner_create_desc(
-		&logger, "and no thumbnail image texture self_opened not_animated unload surface raw vips",
+		&logger, "and no thumbnail image texture self_opened not_animated unload surface vips",
 		&desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
@@ -73,34 +67,28 @@ void pruner_test_default(void)
 	assert(desc.state_check.total_sum == 0);
 
 	assert(nqiv_pruner_desc_dataset_compare(&desc.vips_set, &empty_dataset));
-	assert(nqiv_pruner_desc_dataset_compare(&desc.raw_set, &empty_dataset));
 	assert(nqiv_pruner_desc_dataset_compare(&desc.surface_set, &empty_dataset));
 	assert(desc.texture_set.loaded_self.active);
 	assert(desc.texture_set.not_animated.active);
 	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_vips_set, &empty_dataset));
-	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_raw_set, &empty_dataset));
 	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_surface_set, &empty_dataset));
 	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_texture_set, &empty_dataset));
 	assert(!desc.unload_vips);
-	assert(!desc.unload_raw);
 	assert(!desc.unload_surface);
 	assert(!desc.unload_texture);
 	assert(!desc.unload_thumbnail_vips);
-	assert(!desc.unload_thumbnail_raw);
 	assert(!desc.unload_thumbnail_surface);
 	assert(!desc.unload_thumbnail_texture);
 	assert(desc.unload_vips_soft);
-	assert(desc.unload_raw_soft);
 	assert(desc.unload_surface_soft);
 	assert(!desc.unload_thumbnail_vips_soft);
-	assert(!desc.unload_thumbnail_raw_soft);
 	assert(!desc.unload_thumbnail_surface_soft);
 
 	memset(&desc, 0, sizeof(nqiv_pruner_desc));
 	memset(&cmp_desc, 0, sizeof(nqiv_pruner_desc));
 	memset(desc_str, 0, NQIV_PRUNER_DESC_STRLEN);
 	assert(nqiv_pruner_create_desc(
-		&logger, "or no thumbnail image texture self_opened unload surface raw", &desc));
+		&logger, "or no thumbnail image texture self_opened unload surface", &desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
 	assert(nqiv_pruner_desc_compare(&desc, &cmp_desc));
@@ -109,26 +97,20 @@ void pruner_test_default(void)
 	assert(desc.state_check.and_result == false);
 	assert(desc.state_check.total_sum == 0);
 	assert(nqiv_pruner_desc_dataset_compare(&desc.vips_set, &empty_dataset));
-	assert(nqiv_pruner_desc_dataset_compare(&desc.raw_set, &empty_dataset));
 	assert(nqiv_pruner_desc_dataset_compare(&desc.surface_set, &empty_dataset));
 	assert(desc.texture_set.loaded_self.active);
 	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_vips_set, &empty_dataset));
-	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_raw_set, &empty_dataset));
 	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_surface_set, &empty_dataset));
 	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_texture_set, &empty_dataset));
 	assert(!desc.unload_vips);
-	assert(!desc.unload_raw);
 	assert(!desc.unload_surface);
 	assert(!desc.unload_texture);
 	assert(!desc.unload_thumbnail_vips);
-	assert(!desc.unload_thumbnail_raw);
 	assert(!desc.unload_thumbnail_surface);
 	assert(!desc.unload_thumbnail_texture);
 	assert(!desc.unload_vips_soft);
-	assert(desc.unload_raw_soft);
 	assert(desc.unload_surface_soft);
 	assert(!desc.unload_thumbnail_vips_soft);
-	assert(!desc.unload_thumbnail_raw_soft);
 	assert(!desc.unload_thumbnail_surface_soft);
 
 	memset(&desc, 0, sizeof(nqiv_pruner_desc));
@@ -136,7 +118,7 @@ void pruner_test_default(void)
 	memset(desc_str, 0, NQIV_PRUNER_DESC_STRLEN);
 	assert(nqiv_pruner_create_desc(&logger,
 	                               "and thumbnail no image texture self_opened image no thumbnail "
-	                               "not_animated hard unload image thumbnail surface raw vips",
+	                               "not_animated hard unload image thumbnail surface vips",
 	                               &desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
@@ -146,26 +128,20 @@ void pruner_test_default(void)
 	assert(desc.state_check.and_result == true);
 	assert(desc.state_check.total_sum == 0);
 	assert(nqiv_pruner_desc_dataset_compare(&desc.vips_set, &empty_dataset));
-	assert(nqiv_pruner_desc_dataset_compare(&desc.raw_set, &empty_dataset));
 	assert(nqiv_pruner_desc_dataset_compare(&desc.surface_set, &empty_dataset));
 	assert(desc.texture_set.not_animated.active);
 	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_vips_set, &empty_dataset));
-	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_raw_set, &empty_dataset));
 	assert(nqiv_pruner_desc_dataset_compare(&desc.thumbnail_surface_set, &empty_dataset));
 	assert(desc.thumbnail_texture_set.loaded_self.active);
 	assert(desc.unload_vips);
-	assert(desc.unload_raw);
 	assert(desc.unload_surface);
 	assert(!desc.unload_texture);
 	assert(desc.unload_thumbnail_vips);
-	assert(desc.unload_thumbnail_raw);
 	assert(desc.unload_thumbnail_surface);
 	assert(!desc.unload_thumbnail_texture);
 	assert(!desc.unload_vips_soft);
-	assert(!desc.unload_raw_soft);
 	assert(!desc.unload_surface_soft);
 	assert(!desc.unload_thumbnail_vips_soft);
-	assert(!desc.unload_thumbnail_raw_soft);
 	assert(!desc.unload_thumbnail_surface_soft);
 
 	memset(&desc, 0, sizeof(nqiv_pruner_desc));
@@ -174,8 +150,8 @@ void pruner_test_default(void)
 	assert(nqiv_pruner_create_desc(
 		&logger,
 		"or thumbnail image texture loaded_behind 30 0 loaded_ahead 30 0 surface loaded_behind 30 "
-		"0 loaded_ahead 30 0 raw loaded_behind 30 0 loaded_ahead 30 0 vips loaded_behind 30 0 "
-		"loaded_ahead 30 0 hard unload texture surface raw vips",
+		"0 loaded_ahead 30 0 vips loaded_behind 30 0 "
+		"loaded_ahead 30 0 hard unload texture surface vips",
 		&desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
@@ -190,12 +166,6 @@ void pruner_test_default(void)
 	assert(desc.thumbnail_vips_set.loaded_behind.active);
 	assert(desc.thumbnail_vips_set.loaded_behind.condition.as_int_pair[0] == 30);
 	assert(desc.thumbnail_vips_set.loaded_behind.condition.as_int_pair[1] == 0);
-	assert(desc.thumbnail_raw_set.loaded_ahead.active);
-	assert(desc.thumbnail_raw_set.loaded_ahead.condition.as_int_pair[0] == 30);
-	assert(desc.thumbnail_raw_set.loaded_ahead.condition.as_int_pair[1] == 0);
-	assert(desc.thumbnail_raw_set.loaded_behind.active);
-	assert(desc.thumbnail_raw_set.loaded_behind.condition.as_int_pair[0] == 30);
-	assert(desc.thumbnail_raw_set.loaded_behind.condition.as_int_pair[1] == 0);
 	assert(desc.thumbnail_surface_set.loaded_ahead.active);
 	assert(desc.thumbnail_surface_set.loaded_ahead.condition.as_int_pair[0] == 30);
 	assert(desc.thumbnail_surface_set.loaded_ahead.condition.as_int_pair[1] == 0);
@@ -214,12 +184,6 @@ void pruner_test_default(void)
 	assert(desc.vips_set.loaded_behind.active);
 	assert(desc.vips_set.loaded_behind.condition.as_int_pair[0] == 30);
 	assert(desc.vips_set.loaded_behind.condition.as_int_pair[1] == 0);
-	assert(desc.raw_set.loaded_ahead.active);
-	assert(desc.raw_set.loaded_ahead.condition.as_int_pair[0] == 30);
-	assert(desc.raw_set.loaded_ahead.condition.as_int_pair[1] == 0);
-	assert(desc.raw_set.loaded_behind.active);
-	assert(desc.raw_set.loaded_behind.condition.as_int_pair[0] == 30);
-	assert(desc.raw_set.loaded_behind.condition.as_int_pair[1] == 0);
 	assert(desc.surface_set.loaded_ahead.active);
 	assert(desc.surface_set.loaded_ahead.condition.as_int_pair[0] == 30);
 	assert(desc.surface_set.loaded_ahead.condition.as_int_pair[1] == 0);
@@ -233,18 +197,14 @@ void pruner_test_default(void)
 	assert(desc.texture_set.loaded_behind.condition.as_int_pair[0] == 30);
 	assert(desc.texture_set.loaded_behind.condition.as_int_pair[1] == 0);
 	assert(desc.unload_vips);
-	assert(desc.unload_raw);
 	assert(desc.unload_surface);
 	assert(desc.unload_texture);
 	assert(desc.unload_thumbnail_vips);
-	assert(desc.unload_thumbnail_raw);
 	assert(desc.unload_thumbnail_surface);
 	assert(desc.unload_thumbnail_texture);
 	assert(!desc.unload_vips_soft);
-	assert(!desc.unload_raw_soft);
 	assert(!desc.unload_surface_soft);
 	assert(!desc.unload_thumbnail_vips_soft);
-	assert(!desc.unload_thumbnail_raw_soft);
 	assert(!desc.unload_thumbnail_surface_soft);
 
 	memset(&desc, 0, sizeof(nqiv_pruner_desc));
@@ -253,9 +213,9 @@ void pruner_test_default(void)
 	assert(nqiv_pruner_create_desc(
 		&logger,
 		"or sum 1000000000 thumbnail image texture bytes_ahead 0 1000000000 bytes_behind 0 "
-		"1000000000 surface bytes_ahead 0 1000000000 bytes_behind 0 1000000000 raw bytes_ahead 0 "
-		"1000000000 bytes_behind 0 1000000000 vips bytes_ahead 0 1000000000 bytes_behind 0 "
-		"1000000000 hard unload texture surface raw vips",
+		"1000000000 surface bytes_ahead 0 1000000000 bytes_behind 0 1000000000 "
+		"vips bytes_ahead 0 1000000000 bytes_behind 0 "
+		"1000000000 hard unload texture surface vips",
 		&desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
@@ -271,12 +231,6 @@ void pruner_test_default(void)
 	assert(desc.thumbnail_vips_set.bytes_behind.active);
 	assert(desc.thumbnail_vips_set.bytes_behind.condition.as_int_pair[0] == 0);
 	assert(desc.thumbnail_vips_set.bytes_behind.condition.as_int_pair[1] == 1000000000);
-	assert(desc.thumbnail_raw_set.bytes_ahead.active);
-	assert(desc.thumbnail_raw_set.bytes_ahead.condition.as_int_pair[0] == 0);
-	assert(desc.thumbnail_raw_set.bytes_ahead.condition.as_int_pair[1] == 1000000000);
-	assert(desc.thumbnail_raw_set.bytes_behind.active);
-	assert(desc.thumbnail_raw_set.bytes_behind.condition.as_int_pair[0] == 0);
-	assert(desc.thumbnail_raw_set.bytes_behind.condition.as_int_pair[1] == 1000000000);
 	assert(desc.thumbnail_surface_set.bytes_ahead.active);
 	assert(desc.thumbnail_surface_set.bytes_ahead.condition.as_int_pair[0] == 0);
 	assert(desc.thumbnail_surface_set.bytes_ahead.condition.as_int_pair[1] == 1000000000);
@@ -295,12 +249,6 @@ void pruner_test_default(void)
 	assert(desc.vips_set.bytes_behind.active);
 	assert(desc.vips_set.bytes_behind.condition.as_int_pair[0] == 0);
 	assert(desc.vips_set.bytes_behind.condition.as_int_pair[1] == 1000000000);
-	assert(desc.raw_set.bytes_ahead.active);
-	assert(desc.raw_set.bytes_ahead.condition.as_int_pair[0] == 0);
-	assert(desc.raw_set.bytes_ahead.condition.as_int_pair[1] == 1000000000);
-	assert(desc.raw_set.bytes_behind.active);
-	assert(desc.raw_set.bytes_behind.condition.as_int_pair[0] == 0);
-	assert(desc.raw_set.bytes_behind.condition.as_int_pair[1] == 1000000000);
 	assert(desc.surface_set.bytes_ahead.active);
 	assert(desc.surface_set.bytes_ahead.condition.as_int_pair[0] == 0);
 	assert(desc.surface_set.bytes_ahead.condition.as_int_pair[1] == 1000000000);
@@ -314,18 +262,14 @@ void pruner_test_default(void)
 	assert(desc.texture_set.bytes_behind.condition.as_int_pair[0] == 0);
 	assert(desc.texture_set.bytes_behind.condition.as_int_pair[1] == 1000000000);
 	assert(desc.unload_vips);
-	assert(desc.unload_raw);
 	assert(desc.unload_surface);
 	assert(desc.unload_texture);
 	assert(desc.unload_thumbnail_vips);
-	assert(desc.unload_thumbnail_raw);
 	assert(desc.unload_thumbnail_surface);
 	assert(desc.unload_thumbnail_texture);
 	assert(!desc.unload_vips_soft);
-	assert(!desc.unload_raw_soft);
 	assert(!desc.unload_surface_soft);
 	assert(!desc.unload_thumbnail_vips_soft);
-	assert(!desc.unload_thumbnail_raw_soft);
 	assert(!desc.unload_thumbnail_surface_soft);
 	nqiv_log_destroy(&logger);
 }
@@ -333,22 +277,16 @@ void pruner_test_default(void)
 typedef struct prune_effects
 {
 	bool load_thumbnail_vips;
-	bool load_thumbnail_data;
 	bool load_thumbnail_surface;
 	bool load_image_vips;
-	bool load_image_data;
 	bool load_image_surface;
 	bool unload_thumbnail_vips;
-	bool unload_thumbnail_data;
 	bool unload_thumbnail_surface;
 	bool unload_image_vips;
-	bool unload_image_data;
 	bool unload_image_surface;
 	bool hard_unload_thumbnail_vips;
-	bool hard_unload_thumbnail_data;
 	bool hard_unload_thumbnail_surface;
 	bool hard_unload_image_vips;
-	bool hard_unload_image_data;
 	bool hard_unload_image_surface;
 	bool animated_image;
 	bool animated_thumbnail;
@@ -385,13 +323,13 @@ void pruner_test_check_instance(const char*          pruner_string,
 		img->thumbnail.effective_height = 1;
 		img->thumbnail.effective_width = 1;
 		img->thumbnail.vips = effects->load_thumbnail_vips ? (void*)0xDEADBEEF : NULL;
-		img->thumbnail.data = effects->load_thumbnail_data ? (void*)0xDEADBEEF : NULL;
+		img->thumbnail.data = effects->load_thumbnail_surface ? (void*)0xDEADBEEF : NULL;
 		img->thumbnail.surface = effects->load_thumbnail_surface ? (void*)0xDEADBEEF : NULL;
 		img->thumbnail.animation.exists = effects->animated_thumbnail;
 		img->image.effective_height = 1;
 		img->image.effective_width = 1;
 		img->image.vips = effects->load_image_vips ? (void*)0xDEADBEEF : NULL;
-		img->image.data = effects->load_image_data ? (void*)0xDEADBEEF : NULL;
+		img->image.data = effects->load_image_surface ? (void*)0xDEADBEEF : NULL;
 		img->image.surface = effects->load_image_surface ? (void*)0xDEADBEEF : NULL;
 		img->image.animation.exists = effects->animated_image;
 	}
@@ -425,8 +363,6 @@ void pruner_test_check_instance(const char*          pruner_string,
 		assert(!e.options.image_load.image_options.next_frame);
 		assert(e.options.image_load.image_options.vips == effects->hard_unload_image_vips);
 		assert(e.options.image_load.image_options.vips_soft == effects->unload_image_vips);
-		assert(e.options.image_load.image_options.raw == effects->hard_unload_image_data);
-		assert(e.options.image_load.image_options.raw_soft == effects->unload_image_data);
 		assert(e.options.image_load.image_options.surface == effects->hard_unload_image_surface);
 		assert(e.options.image_load.image_options.surface_soft == effects->unload_image_surface);
 		assert(!e.options.image_load.thumbnail_options.clear_error);
@@ -435,8 +371,6 @@ void pruner_test_check_instance(const char*          pruner_string,
 		assert(!e.options.image_load.thumbnail_options.next_frame);
 		assert(e.options.image_load.thumbnail_options.vips == effects->hard_unload_thumbnail_vips);
 		assert(e.options.image_load.thumbnail_options.vips_soft == effects->unload_thumbnail_vips);
-		assert(e.options.image_load.thumbnail_options.raw == effects->hard_unload_thumbnail_data);
-		assert(e.options.image_load.thumbnail_options.raw_soft == effects->unload_thumbnail_data);
 		assert(e.options.image_load.thumbnail_options.surface
 		       == effects->hard_unload_thumbnail_surface);
 		assert(e.options.image_load.thumbnail_options.surface_soft
@@ -477,34 +411,25 @@ void pruner_test_send_event(prune_effects* effects, const char* pruner, bool* lo
 
 void pruner_test_send_all_events(prune_effects* effects)
 {
-	pruner_test_send_event(effects, "or vips self_opened unload vips raw surface",
+	pruner_test_send_event(effects, "or vips self_opened unload vips surface",
 	                       &effects->load_image_vips, &effects->unload_image_vips);
-	pruner_test_send_event(effects, "or raw self_opened unload vips raw surface",
-	                       &effects->load_image_data, &effects->unload_image_data);
-	pruner_test_send_event(effects, "or surface self_opened unload vips raw surface",
+	pruner_test_send_event(effects, "or surface self_opened unload vips surface",
 	                       &effects->load_image_surface, &effects->unload_image_surface);
 	pruner_test_send_event(effects,
-	                       "or no image thumbnail vips self_opened unload vips raw surface",
+	                       "or no image thumbnail vips self_opened unload vips surface",
 	                       &effects->load_thumbnail_vips, &effects->unload_thumbnail_vips);
-	pruner_test_send_event(effects, "or no image thumbnail raw self_opened unload vips raw surface",
-	                       &effects->load_thumbnail_data, &effects->unload_thumbnail_data);
 	pruner_test_send_event(effects,
-	                       "or no image thumbnail surface self_opened unload vips raw surface",
+	                       "or no image thumbnail surface self_opened unload vips surface",
 	                       &effects->load_thumbnail_surface, &effects->unload_thumbnail_surface);
-	pruner_test_send_event(effects, "or vips self_opened hard unload vips raw surface",
+	pruner_test_send_event(effects, "or vips self_opened hard unload vips surface",
 	                       &effects->load_image_vips, &effects->hard_unload_image_vips);
-	pruner_test_send_event(effects, "or raw self_opened hard unload vips raw surface",
-	                       &effects->load_image_data, &effects->hard_unload_image_data);
-	pruner_test_send_event(effects, "or surface self_opened hard unload vips raw surface",
+	pruner_test_send_event(effects, "or surface self_opened hard unload vips surface",
 	                       &effects->load_image_surface, &effects->hard_unload_image_surface);
 	pruner_test_send_event(effects,
-	                       "or no image thumbnail vips self_opened hard unload vips raw surface",
+	                       "or no image thumbnail vips self_opened hard unload vips surface",
 	                       &effects->load_thumbnail_vips, &effects->hard_unload_thumbnail_vips);
-	pruner_test_send_event(effects,
-	                       "or no image thumbnail raw self_opened hard unload vips raw surface",
-	                       &effects->load_thumbnail_data, &effects->hard_unload_thumbnail_data);
 	pruner_test_send_event(
-		effects, "or no image thumbnail surface self_opened hard unload vips raw surface",
+		effects, "or no image thumbnail surface self_opened hard unload vips surface",
 		&effects->load_thumbnail_surface, &effects->hard_unload_thumbnail_surface);
 }
 

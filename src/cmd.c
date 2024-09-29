@@ -1243,8 +1243,6 @@ void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		print_prefix(manager);
 		fprintf(stdout, "'vips' will cause the following checks to consider vips data only.\n");
 		print_prefix(manager);
-		fprintf(stdout, "'raw' will cause the following checks to consider raw data only.\n");
-		print_prefix(manager);
 		fprintf(stdout,
 		        "'surface' will cause the following checks to consider SDL surface data only.\n");
 		print_prefix(manager);

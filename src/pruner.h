@@ -94,26 +94,20 @@ typedef struct nqiv_pruner_desc
 	nqiv_pruner_count_op     counter;
 	nqiv_pruner_state        state_check; /* Compare against this state. */
 	nqiv_pruner_desc_dataset vips_set;
-	nqiv_pruner_desc_dataset raw_set;
 	nqiv_pruner_desc_dataset surface_set;
 	nqiv_pruner_desc_dataset texture_set;
 	nqiv_pruner_desc_dataset thumbnail_vips_set;
-	nqiv_pruner_desc_dataset thumbnail_raw_set;
 	nqiv_pruner_desc_dataset thumbnail_surface_set;
 	nqiv_pruner_desc_dataset thumbnail_texture_set;
 	bool                     unload_vips;
-	bool                     unload_raw;
 	bool                     unload_surface;
 	bool                     unload_texture;
 	bool                     unload_thumbnail_vips;
-	bool                     unload_thumbnail_raw;
 	bool                     unload_thumbnail_surface;
 	bool                     unload_thumbnail_texture;
 	bool                     unload_vips_soft;
-	bool                     unload_raw_soft;
 	bool                     unload_surface_soft;
 	bool                     unload_thumbnail_vips_soft;
-	bool                     unload_thumbnail_raw_soft;
 	bool                     unload_thumbnail_surface_soft;
 } nqiv_pruner_desc;
 

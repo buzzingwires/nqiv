@@ -89,14 +89,12 @@ bool nqiv_image_form_next_frame(nqiv_image* image, nqiv_image_form* form);
 void nqiv_unload_image_form_vips(nqiv_image_form* form);
 void nqiv_unload_image_form_texture(nqiv_image_form* form);
 void nqiv_unload_image_form_surface(nqiv_image_form* form);
-void nqiv_unload_image_form_raw(nqiv_image_form* form);
 void nqiv_unload_image_form_fallback_texture(nqiv_image_form* form);
 void nqiv_unload_image_form_all_textures(nqiv_image_form* form);
 
 bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_texture(nqiv_image* image, nqiv_image_form* form);
 bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form);
-bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form);
 
 /* Get thumbnail metadata. */
 int nqiv_lookup_vips_png_comment(gchar** values, const char* key);

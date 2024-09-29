@@ -293,18 +293,18 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* de
 		"append keybind scroll_backward=montage_down",
 		"append keybind shift+scroll_forward=zoom_in",
 		"append keybind shift+scroll_backward=zoom_out",
-		"append pruner or thumbnail no image texture self_opened unload surface raw vips",
-		"append pruner and no thumbnail image texture self_opened not_animated unload surface raw "
+		"append pruner or thumbnail no image texture self_opened unload surface vips",
+		"append pruner and no thumbnail image texture self_opened not_animated unload surface "
 		"vips",
-		"append pruner or no thumbnail image texture self_opened unload surface raw",
+		"append pruner or no thumbnail image texture self_opened unload surface",
 		"append pruner and thumbnail no image texture self_opened image no thumbnail not_animated "
-		"hard unload image thumbnail surface raw vips",
+		"hard unload image thumbnail surface vips",
 		"append pruner or thumbnail image texture loaded_behind 0 0 loaded_ahead 0 0 surface "
-		"loaded_behind 0 0 loaded_ahead 0 0 raw loaded_behind 0 0 loaded_ahead 0 0 vips "
-		"loaded_behind 0 0 loaded_ahead 0 0 hard unload texture surface raw vips",
+		"loaded_behind 0 0 loaded_ahead 0 0 vips "
+		"loaded_behind 0 0 loaded_ahead 0 0 hard unload texture surface vips",
 		"append pruner or sum 0 thumbnail image texture bytes_ahead 0 0 bytes_behind 0 0 surface "
-		"bytes_ahead 0 0 bytes_behind 0 0 raw bytes_ahead 0 0 bytes_behind 0 0 vips bytes_ahead 0 "
-		"0 bytes_behind 0 0 hard unload texture surface raw vips",
+		"bytes_ahead 0 0 bytes_behind 0 0 vips bytes_ahead 0 "
+		"0 bytes_behind 0 0 hard unload texture surface vips",
 		NULL,
 	};
 	int idx;
@@ -930,10 +930,8 @@ bool render_from_form(nqiv_state*     state,
 				if(hard || next_frame
 				   || (first_frame && image->thumbnail.vips != NULL
 				       && image->thumbnail.animation.frame != 0)) {
-					event.options.image_load.thumbnail_options.raw = true;
 					event.options.image_load.thumbnail_options.surface = true;
 				} else {
-					event.options.image_load.thumbnail_options.raw_soft = true;
 					event.options.image_load.thumbnail_options.surface_soft = true;
 				}
 				event.options.image_load.thumbnail_options.first_frame = first_frame;
@@ -960,10 +958,8 @@ bool render_from_form(nqiv_state*     state,
 				if(image->image.vips != NULL
 				   && (hard || next_frame || resample_zoom
 				       || (first_frame && image->image.animation.frame != 0))) {
-					event.options.image_load.image_options.raw = true;
 					event.options.image_load.image_options.surface = true;
 				} else {
-					event.options.image_load.image_options.raw_soft = true;
 					event.options.image_load.image_options.surface_soft = true;
 				}
 				event.options.image_load.image_options.first_frame = first_frame;
@@ -1011,7 +1007,6 @@ bool render_from_form(nqiv_state*     state,
 				} else {
 					event.options.image_load.image_options.vips_soft = true;
 				}
-				event.options.image_load.image_options.raw = true;
 				event.options.image_load.image_options.surface = true;
 				event.options.image_load.image_options.first_frame = first_frame;
 				event.options.image_load.image_options.next_frame =

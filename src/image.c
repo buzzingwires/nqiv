@@ -69,13 +69,7 @@ void nqiv_unload_image_form_surface(nqiv_image_form* form)
 	if(form->surface != NULL) {
 		SDL_FreeSurface(form->surface);
 		form->surface = NULL;
-	}
-}
-
-void nqiv_unload_image_form_raw(nqiv_image_form* form)
-{
-	assert(form != NULL);
-	if(form->data != NULL) {
+		assert(form->data != NULL);
 		free(form->data);
 		form->data = NULL;
 	}
@@ -87,7 +81,6 @@ void nqiv_unload_image_form(nqiv_image_form* form)
 	nqiv_unload_image_form_vips(form);
 	nqiv_unload_image_form_all_textures(form);
 	nqiv_unload_image_form_surface(form);
-	nqiv_unload_image_form_raw(form);
 }
 
 void nqiv_image_destroy(nqiv_image* image)
@@ -471,9 +464,14 @@ bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form)
 {
 	assert(image != NULL);
 	assert(form != NULL);
-	assert(form->data != NULL);
+
+	if(!nqiv_image_load_raw(image, form)) {
+		return false;
+	}
+
 	assert(form->effective_width > 0);
 	assert(form->effective_height > 0);
+
 	form->surface = SDL_CreateRGBSurfaceWithFormatFrom(
 		form->data, form->effective_width, form->effective_height, 4 * 8, 4 * form->effective_width,
 		SDL_PIXELFORMAT_ABGR8888);
@@ -590,7 +588,8 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 
 bool nqiv_image_is_form_loaded(const nqiv_image_form* form)
 {
-	return form->vips != NULL || form->data != NULL || form->surface != NULL
+	assert((form->data == NULL && form->surface == NULL) || (form->data != NULL && form->surface != NULL));
+	return form->vips != NULL || form->surface != NULL
 	       || form->texture != NULL;
 }
 
@@ -1142,7 +1141,7 @@ bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const 
 				free(images[idx]->thumbnail.path);
 				images[idx]->thumbnail.path = NULL;
 			}
-			if(images[idx]->thumbnail.vips != NULL || images[idx]->thumbnail.data != NULL
+			if(images[idx]->thumbnail.vips != NULL
 			   || images[idx]->thumbnail.surface != NULL) {
 				nqiv_event event = {0};
 				event.type = NQIV_EVENT_IMAGE_LOAD;
@@ -1151,8 +1150,6 @@ bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const 
 				event.options.image_load.thumbnail_options.unload = true;
 				event.options.image_load.thumbnail_options.vips =
 					images[idx]->thumbnail.vips != NULL;
-				event.options.image_load.thumbnail_options.raw =
-					images[idx]->thumbnail.data != NULL;
 				event.options.image_load.thumbnail_options.surface =
 					images[idx]->thumbnail.surface != NULL;
 				if(!nqiv_priority_queue_push(manager->thread_queue,

@@ -167,17 +167,12 @@ void nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqi
 	 * param 2 (max count) ), void ptr */
 	nqiv_pruner_run_set(pruner, &(desc->vips_set), &image->image, image->image.vips,
 	                    image->image.effective_width * image->image.effective_height * 4);
-	nqiv_pruner_run_set(pruner, &(desc->raw_set), &image->image, image->image.data,
-	                    image->image.effective_width * image->image.effective_height * 4);
 	nqiv_pruner_run_set(pruner, &(desc->surface_set), &image->image, image->image.surface,
 	                    image->image.effective_width * image->image.effective_height * 4);
 	nqiv_pruner_run_set(pruner, &(desc->texture_set), &image->image, image->image.texture,
 	                    image->image.effective_width * image->image.effective_height * 4);
 	nqiv_pruner_run_set(pruner, &(desc->thumbnail_vips_set), &image->thumbnail,
 	                    image->thumbnail.vips,
-	                    image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
-	nqiv_pruner_run_set(pruner, &(desc->thumbnail_raw_set), &image->thumbnail,
-	                    image->thumbnail.data,
 	                    image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
 	nqiv_pruner_run_set(pruner, &(desc->thumbnail_surface_set), &image->thumbnail,
 	                    image->thumbnail.surface,
@@ -250,48 +245,36 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 			 * unload option if the object to be unloaded actually exists. */
 			event_options->image_options.vips = event_options->image_options.vips
 			                                    || (desc->unload_vips && image->image.vips != NULL);
-			event_options->image_options.raw =
-				event_options->image_options.raw || (desc->unload_raw && image->image.data != NULL);
 			event_options->image_options.surface =
 				event_options->image_options.surface
 				|| (desc->unload_surface && image->image.surface != NULL);
 			event_options->image_options.vips_soft =
 				event_options->image_options.vips_soft
 				|| (desc->unload_vips_soft && image->image.vips != NULL);
-			event_options->image_options.raw_soft =
-				event_options->image_options.raw_soft
-				|| (desc->unload_raw_soft && image->image.data != NULL);
 			event_options->image_options.surface_soft =
 				event_options->image_options.surface_soft
 				|| (desc->unload_surface_soft && image->image.surface != NULL);
 			event_options->thumbnail_options.vips =
 				event_options->thumbnail_options.vips
 				|| (desc->unload_thumbnail_vips && image->thumbnail.vips != NULL);
-			event_options->thumbnail_options.raw =
-				event_options->thumbnail_options.raw
-				|| (desc->unload_thumbnail_raw && image->thumbnail.data != NULL);
 			event_options->thumbnail_options.surface =
 				event_options->thumbnail_options.surface
 				|| (desc->unload_thumbnail_surface && image->thumbnail.surface != NULL);
 			event_options->thumbnail_options.vips_soft =
 				event_options->thumbnail_options.vips_soft
 				|| (desc->unload_thumbnail_vips_soft && image->thumbnail.vips != NULL);
-			event_options->thumbnail_options.raw_soft =
-				event_options->thumbnail_options.raw_soft
-				|| (desc->unload_thumbnail_raw_soft && image->thumbnail.data != NULL);
 			event_options->thumbnail_options.surface_soft =
 				event_options->thumbnail_options.surface_soft
 				|| (desc->unload_thumbnail_surface_soft && image->thumbnail.surface != NULL);
 			/* Finally, track if there's anything to do. */
 			send_event =
 				send_event || event.options.image_load.image_options.vips
-				|| event_options->image_options.raw || event_options->image_options.surface
-				|| event_options->image_options.vips_soft || event_options->image_options.raw_soft
+				|| event_options->image_options.surface
+				|| event_options->image_options.vips_soft
 				|| event_options->image_options.surface_soft
-				|| event_options->thumbnail_options.vips || event_options->thumbnail_options.raw
+				|| event_options->thumbnail_options.vips
 				|| event_options->thumbnail_options.surface
 				|| event_options->thumbnail_options.vips_soft
-				|| event_options->thumbnail_options.raw_soft
 				|| event_options->thumbnail_options.surface_soft;
 		}
 	}
@@ -324,11 +307,9 @@ void nqiv_pruner_clean_desc(nqiv_pruner_desc* desc)
 {
 	/* Clean ephemeral state information. */
 	nqiv_pruner_clean_desc_set(&desc->vips_set);
-	nqiv_pruner_clean_desc_set(&desc->raw_set);
 	nqiv_pruner_clean_desc_set(&desc->surface_set);
 	nqiv_pruner_clean_desc_set(&desc->texture_set);
 	nqiv_pruner_clean_desc_set(&desc->thumbnail_vips_set);
-	nqiv_pruner_clean_desc_set(&desc->thumbnail_raw_set);
 	nqiv_pruner_clean_desc_set(&desc->thumbnail_surface_set);
 	nqiv_pruner_clean_desc_set(&desc->thumbnail_texture_set);
 }
@@ -688,61 +669,6 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				}
 				thumbnail_set = &desc->thumbnail_vips_set;
 			}
-		} else if(nqiv_pruner_check_token(text, idx, end, "raw")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'raw' at %s\n", &text[idx]);
-			idx += strlen("raw");
-			if(inside_no) {
-				if(inside_unload) {
-					if(inside_thumbnail) {
-						if(inside_hard) {
-							desc->unload_thumbnail_raw = false;
-						} else {
-							desc->unload_thumbnail_raw_soft = false;
-						}
-					}
-					if(inside_image) {
-						if(inside_hard) {
-							desc->unload_raw = false;
-						} else {
-							desc->unload_raw_soft = false;
-						}
-					}
-				}
-				if(set == &desc->raw_set) {
-					nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling raw\n");
-					set = NULL;
-					unload_setting = NULL;
-					thumbnail_set = NULL;
-					thumbnail_unload_setting = NULL;
-				}
-				inside_no = false;
-			} else if(inside_unload) {
-				if(inside_thumbnail) {
-					if(inside_hard) {
-						desc->unload_thumbnail_raw = true;
-					} else {
-						desc->unload_thumbnail_raw_soft = true;
-					}
-				}
-				if(inside_image) {
-					if(inside_hard) {
-						desc->unload_raw = true;
-					} else {
-						desc->unload_raw_soft = true;
-					}
-				}
-			} else {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling raw\n");
-				set = &desc->raw_set;
-				if(inside_hard) {
-					unload_setting = &desc->unload_raw;
-					thumbnail_unload_setting = &desc->unload_thumbnail_raw;
-				} else {
-					unload_setting = &desc->unload_raw_soft;
-					thumbnail_unload_setting = &desc->unload_thumbnail_raw_soft;
-				}
-				thumbnail_set = &desc->thumbnail_raw_set;
-			}
 		} else if(nqiv_pruner_check_token(text, idx, end, "surface")) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'surface' at %s\n", &text[idx]);
 			idx += strlen("surface");
@@ -1015,29 +941,23 @@ bool nqiv_pruner_desc_compare(const nqiv_pruner_desc* first, const nqiv_pruner_d
 	       && first->state_check.and_result == second->state_check.and_result
 	       && first->state_check.and_is_set == second->state_check.and_is_set
 	       && nqiv_pruner_desc_dataset_compare(&first->vips_set, &second->vips_set)
-	       && nqiv_pruner_desc_dataset_compare(&first->raw_set, &second->raw_set)
 	       && nqiv_pruner_desc_dataset_compare(&first->surface_set, &second->surface_set)
 	       && nqiv_pruner_desc_dataset_compare(&first->texture_set, &second->texture_set)
 	       && nqiv_pruner_desc_dataset_compare(&first->thumbnail_vips_set,
 	                                           &second->thumbnail_vips_set)
-	       && nqiv_pruner_desc_dataset_compare(&first->thumbnail_raw_set,
-	                                           &second->thumbnail_raw_set)
 	       && nqiv_pruner_desc_dataset_compare(&first->thumbnail_surface_set,
 	                                           &second->thumbnail_surface_set)
 	       && nqiv_pruner_desc_dataset_compare(&first->thumbnail_texture_set,
 	                                           &second->thumbnail_texture_set)
-	       && first->unload_vips == second->unload_vips && first->unload_raw == second->unload_raw
+	       && first->unload_vips == second->unload_vips
 	       && first->unload_surface == second->unload_surface
 	       && first->unload_texture == second->unload_texture
 	       && first->unload_thumbnail_vips == second->unload_thumbnail_vips
-	       && first->unload_thumbnail_raw == second->unload_thumbnail_raw
 	       && first->unload_thumbnail_surface == second->unload_thumbnail_surface
 	       && first->unload_thumbnail_texture == second->unload_thumbnail_texture
 	       && first->unload_vips_soft == second->unload_vips_soft
-	       && first->unload_raw_soft == second->unload_raw_soft
 	       && first->unload_surface_soft == second->unload_surface_soft
 	       && first->unload_thumbnail_vips_soft == second->unload_thumbnail_vips_soft
-	       && first->unload_thumbnail_raw_soft == second->unload_thumbnail_raw_soft
 	       && first->unload_thumbnail_surface_soft == second->unload_thumbnail_surface_soft;
 }
 
@@ -1123,9 +1043,6 @@ bool nqiv_pruner_desc_to_string(const nqiv_pruner_desc* desc, char* buf)
 	result = result
 	         && nqiv_pruner_desc_dataset_pair_to_string(&render_state, "vips", &desc->vips_set,
 	                                                    &desc->thumbnail_vips_set, &builder);
-	result = result
-	         && nqiv_pruner_desc_dataset_pair_to_string(&render_state, "raw", &desc->raw_set,
-	                                                    &desc->thumbnail_raw_set, &builder);
 	result =
 		result
 		&& nqiv_pruner_desc_dataset_pair_to_string(&render_state, "surface", &desc->surface_set,
@@ -1135,23 +1052,20 @@ bool nqiv_pruner_desc_to_string(const nqiv_pruner_desc* desc, char* buf)
 		&& nqiv_pruner_desc_dataset_pair_to_string(&render_state, "texture", &desc->texture_set,
 	                                               &desc->thumbnail_texture_set, &builder);
 	/* Do we have anything to unload? */
-	if(desc->unload_vips || desc->unload_raw || desc->unload_surface || desc->unload_texture
-	   || desc->unload_thumbnail_vips || desc->unload_thumbnail_raw
+	if(desc->unload_vips || desc->unload_surface || desc->unload_texture
+	   || desc->unload_thumbnail_vips
 	   || desc->unload_thumbnail_surface || desc->unload_thumbnail_texture || desc->unload_vips_soft
-	   || desc->unload_raw_soft || desc->unload_surface_soft || desc->unload_thumbnail_vips_soft
-	   || desc->unload_thumbnail_raw_soft || desc->unload_thumbnail_surface_soft) {
+	   || desc->unload_surface_soft || desc->unload_thumbnail_vips_soft
+	   || desc->unload_thumbnail_surface_soft) {
 		result = result && nqiv_array_push_sprintf(&builder, "unload ");
 	}
 	/* Add hard unloads. */
-	if(desc->unload_vips || desc->unload_raw || desc->unload_surface || desc->unload_texture
-	   || desc->unload_thumbnail_vips || desc->unload_thumbnail_raw
+	if(desc->unload_vips || desc->unload_surface || desc->unload_texture
+	   || desc->unload_thumbnail_vips
 	   || desc->unload_thumbnail_surface || desc->unload_thumbnail_texture) {
 		result = result
 		         && nqiv_pruner_unload_pair_to_string(&render_state, "vips", desc->unload_vips,
 		                                              desc->unload_thumbnail_vips, true, &builder);
-		result = result
-		         && nqiv_pruner_unload_pair_to_string(&render_state, "raw", desc->unload_raw,
-		                                              desc->unload_thumbnail_raw, true, &builder);
 		result =
 			result
 			&& nqiv_pruner_unload_pair_to_string(&render_state, "surface", desc->unload_surface,
@@ -1162,17 +1076,13 @@ bool nqiv_pruner_desc_to_string(const nqiv_pruner_desc* desc, char* buf)
 		                                         desc->unload_thumbnail_texture, true, &builder);
 	}
 	/* Add soft unloads. */
-	if(desc->unload_vips_soft || desc->unload_raw_soft || desc->unload_surface_soft
-	   || desc->unload_thumbnail_vips_soft || desc->unload_thumbnail_raw_soft
+	if(desc->unload_vips_soft || desc->unload_surface_soft
+	   || desc->unload_thumbnail_vips_soft
 	   || desc->unload_thumbnail_surface_soft) {
 		result =
 			result
 			&& nqiv_pruner_unload_pair_to_string(&render_state, "vips", desc->unload_vips_soft,
 		                                         desc->unload_thumbnail_vips_soft, false, &builder);
-		result =
-			result
-			&& nqiv_pruner_unload_pair_to_string(&render_state, "raw", desc->unload_raw_soft,
-		                                         desc->unload_thumbnail_raw_soft, false, &builder);
 		result = result
 		         && nqiv_pruner_unload_pair_to_string(
 					 &render_state, "surface", desc->unload_surface_soft,

@@ -18,9 +18,6 @@ void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_options
 		if(options->surface || (options->surface_soft && form->texture != NULL)) {
 			nqiv_unload_image_form_surface(form);
 		}
-		if(options->raw || (options->raw_soft && form->texture != NULL)) {
-			nqiv_unload_image_form_raw(form);
-		}
 		if(options->vips || (options->vips_soft && form->texture != NULL)) {
 			nqiv_unload_image_form_vips(form);
 		}
@@ -67,16 +64,6 @@ void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_options
 		}
 		if(success && options->next_frame) {
 			success = nqiv_image_form_next_frame(image, form);
-		}
-		if(success && (options->raw || options->raw_soft)) {
-			if(form->data != NULL) {
-				if(options->raw) {
-					nqiv_unload_image_form_raw(form);
-					success = nqiv_image_load_raw(image, form);
-				}
-			} else {
-				success = nqiv_image_load_raw(image, form);
-			}
 		}
 		if(success && (options->surface || options->surface_soft)) {
 			if(form->surface != NULL) {

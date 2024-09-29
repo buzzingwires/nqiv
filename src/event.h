@@ -17,13 +17,11 @@ typedef struct nqiv_event_image_load_form_options
 	bool clear_error;
 	bool unload;
 	bool vips;
+	/* If unload is set, soft operations will only work if the texture of the given form exists. If
+	 * it is not set, it will avoid reloading a form data that is already loaded. */
 	bool vips_soft;
 	bool first_frame;
 	bool next_frame;
-	bool raw;
-	/* If unload is set, soft operations will only work if the texture of the given form exists. If
-	 * it is not set, it will avoid reloading a form data that is already loaded. */
-	bool raw_soft;
 	bool surface;
 	bool surface_soft;
 } nqiv_event_image_load_form_options;
