@@ -509,6 +509,9 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 {
 	memset(desc, 0, sizeof(nqiv_pruner_desc));
 	/* TODO Make it so we can set multiple sets at once? */
+	/* If we have to deprecate something, write it to the dummy objects. */
+	nqiv_pruner_desc_dataset  dummy_set = {0};
+	bool                      dummy_bool = false;
 	nqiv_pruner_desc_dataset* set = NULL;
 	nqiv_pruner_desc_dataset* thumbnail_set = NULL;
 	bool*                     unload_setting = NULL;
@@ -668,6 +671,27 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 					thumbnail_unload_setting = &desc->unload_thumbnail_vips_soft;
 				}
 				thumbnail_set = &desc->thumbnail_vips_set;
+			}
+		} else if(nqiv_pruner_check_token(text, idx, end, "raw")) {
+			nqiv_log_write(logger, NQIV_LOG_WARNING, "Skipping deprecated 'raw' at at %s\n", &text[idx]);
+			idx += strlen("raw");
+			if(inside_no) {
+				if(set == &dummy_set) {
+					nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling dummy object for raw\n");
+					set = NULL;
+					unload_setting = NULL;
+					thumbnail_set = NULL;
+					thumbnail_unload_setting = NULL;
+				}
+				inside_no = false;
+			} else if(inside_unload) {
+				/* NOOP */
+			} else {
+				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Writing raw to dummy object\n");
+				set = &dummy_set;
+				unload_setting = &dummy_bool;
+				thumbnail_unload_setting = &dummy_bool;
+				thumbnail_set = &dummy_set;
 			}
 		} else if(nqiv_pruner_check_token(text, idx, end, "surface")) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'surface' at %s\n", &text[idx]);
