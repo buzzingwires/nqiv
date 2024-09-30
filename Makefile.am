@@ -33,5 +33,6 @@ all-debug: debug tests
 
 install-exec-local:
 	mkdir -p "$(DESTDIR)$(bindir)"
-	test -e src/nqiv && cp src/nqiv "$(DESTDIR)$(bindir)"
-	test -e src/nqiv.exe && cp src/nqiv.exe "$(DESTDIR)$(bindir)"
+	(test -e src/nqiv && cp src/nqiv "$(DESTDIR)$(bindir)") \
+	|| (test -e src/nqiv.exe && cp src/nqiv.exe "$(DESTDIR)$(bindir)") \
+	|| true
