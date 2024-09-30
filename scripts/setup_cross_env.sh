@@ -279,6 +279,17 @@ action_make_package()
 	cp -v "./AUTHORS.md" "$L_RELEASE_BASE"
 	cp -v "./LICENSE" "$L_RELEASE_BASE"
 
+	if [ -f "$L_LIBPATH/libgcc_s_seh-1.dll" ]
+	then
+		cp -v "$L_LIBPATH/libgcc_s_seh-1.dll" "$L_RELEASE_BASE"
+	elif [ -f "$L_LIBPATH/libgcc_s_sjlj-1.dll" ]
+	then
+		cp -v "$L_LIBPATH/libgcc_s_sjlj-1.dll" "$L_RELEASE_BASE"
+	else
+		errcho "Failed to find exception handler to copy to package. Quitting."
+		exit 1
+	fi
+
 	cp -v                                             \
 		"$a_exe_path"                                 \
 		"$L_LIBPATH/libtiff-6.dll"                    \
@@ -294,7 +305,6 @@ action_make_package()
 		"$L_LIBPATH/libsamplerate-0.dll"              \
 		"$L_LIBPATH/libgomp-1.dll"                    \
 		"$L_LIBPATH/libgio-2.0-0.dll"                 \
-		"$L_LIBPATH/libgcc_s_sjlj-1.dll"              \
 		"$L_LIBPATH/libexpat-1.dll"                   \
 		"$L_LIBPATH/libz1.dll"                        \
 		"$L_LIBPATH/libarchive-13.dll"                \
