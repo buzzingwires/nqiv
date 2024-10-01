@@ -76,7 +76,7 @@ echo "make" >> ./env.sh
 
 #### Linux (AppImage) ###
 
-A few changes to the standard process are needed to make the AppImage. Requires `./configure --prefix=/usr` and for `./scripts/make_appimage.sh` to then be run.
+A few changes to the standard process are needed to make the AppImage. Requires `./configure --prefix=/usr` and for `./scripts/make_appimage.sh` to then be run after building.
 
 Contributing
 ------------

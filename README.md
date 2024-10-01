@@ -6,7 +6,7 @@ nqiv (**n**eo **q**uick **i**mage **v**iewer) is inspired by the lineage of `qiv
 Getting nqiv
 ------------
 
-See the releases for builds. Linux builds are provided as AppImages, while Windows builds are provided as .zip archives containing an executable and needed directory. To build nqiv manually, see `DEVELOPMENT.md`
+See the releases for builds. GNU Linux builds are provided as AppImages, while Windows 10+ builds are provided as .zip archives containing an executable and needed directory. To build nqiv manually, see `DEVELOPMENT.md`
 
 Run nqiv with `-h` for basic help. nqiv strives to be portable and to not change anything on a system without being explicitly told to. Upon running nqiv, it will look for a config file in a default location, and will offer a command (to stderr) to create it if it isn't available. Given the graphical emphasis of Windows, `scripts/nqiv_deploy_cfg.bat` is also provided to do this same task with a click.
 
@@ -17,7 +17,7 @@ Features
 
 * Massive images are supported by means of partial loading for best fidelity, or by resizing the entire image to the maximum texture size (typically 16K by 16K) for best performance.
 
-* nqiv runs on a variety of platforms, including GNU Linux, Linux with libmusl, and FreeBSD. A Windows build is also available and 32-bit builds have been tested.
+* nqiv builds on a variety of platforms, including GNU Linux, Linux with libmusl, FreeBSD, and MSYS2 on Windows. A cross-compiled Windows build is also available and 32-bit builds have been tested.
 
 * There is mouse and keyboard support through a configurable bind system.
 
