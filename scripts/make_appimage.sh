@@ -1,5 +1,7 @@
 #!/bin/sh -efu
 
+G_VERSION="1.0.0-beta"
+
 errcho()
 {
 	>&2 echo "$@";
@@ -31,3 +33,5 @@ make install DESTDIR=./src/AppDir
 					--icon-file ./media/nqiv_icon_48x48.png \
 					--desktop-file ./scripts/nqiv.desktop   \
 					--output appimage
+
+mv -v "nqiv-$G_ARCH.AppImage" "nqiv-$G_VERSION-$G_ARCH.AppImage"
