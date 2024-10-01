@@ -25,8 +25,7 @@ make
 make install
 ```
 
-It is recommended to also check `./configure --help`. Note that `CFLAGS` will be
-appended after any automatic ones.
+It is recommended to also check `./configure --help`. Note that `CFLAGS` will be appended after any automatic ones.
 
 ### Dependencies ###
 

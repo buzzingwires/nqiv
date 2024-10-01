@@ -276,7 +276,8 @@ void pruner_test_default(void)
 	memset(&cmp_desc, 0, sizeof(nqiv_pruner_desc));
 	memset(desc_str, 0, NQIV_PRUNER_DESC_STRLEN);
 	assert(nqiv_pruner_create_desc(
-		&logger, "or thumbnail no image texture self_opened raw self_opened unload raw surface", &desc));
+		&logger, "or thumbnail no image texture self_opened raw self_opened unload raw surface",
+		&desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
 	assert(nqiv_pruner_desc_compare(&desc, &cmp_desc));
@@ -304,8 +305,8 @@ void pruner_test_default(void)
 	memset(&desc, 0, sizeof(nqiv_pruner_desc));
 	memset(&cmp_desc, 0, sizeof(nqiv_pruner_desc));
 	memset(desc_str, 0, NQIV_PRUNER_DESC_STRLEN);
-	assert(nqiv_pruner_create_desc(
-		&logger, "or thumbnail no image raw self_opened unload raw", &desc));
+	assert(nqiv_pruner_create_desc(&logger, "or thumbnail no image raw self_opened unload raw",
+	                               &desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
 	assert(nqiv_pruner_desc_compare(&desc, &cmp_desc));
@@ -474,11 +475,9 @@ void pruner_test_send_all_events(prune_effects* effects)
 	                       &effects->load_image_vips, &effects->unload_image_vips);
 	pruner_test_send_event(effects, "or surface self_opened unload vips surface",
 	                       &effects->load_image_surface, &effects->unload_image_surface);
-	pruner_test_send_event(effects,
-	                       "or no image thumbnail vips self_opened unload vips surface",
+	pruner_test_send_event(effects, "or no image thumbnail vips self_opened unload vips surface",
 	                       &effects->load_thumbnail_vips, &effects->unload_thumbnail_vips);
-	pruner_test_send_event(effects,
-	                       "or no image thumbnail surface self_opened unload vips surface",
+	pruner_test_send_event(effects, "or no image thumbnail surface self_opened unload vips surface",
 	                       &effects->load_thumbnail_surface, &effects->unload_thumbnail_surface);
 	pruner_test_send_event(effects, "or vips self_opened hard unload vips surface",
 	                       &effects->load_image_vips, &effects->hard_unload_image_vips);
@@ -579,8 +578,5 @@ void pruner_test_check(void)
 	pruner_test_check_instance("or vips bytes_behind 0 24 unload vips", 12, 11, &effects);
 
 	reset_prune_effects(&effects);
-	pruner_test_check_instance("or raw loaded_ahead 0 2 unload raw",
-	                                8,
-	                                1,
-	                                &effects);
+	pruner_test_check_instance("or raw loaded_ahead 0 2 unload raw", 8, 1, &effects);
 }

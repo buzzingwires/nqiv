@@ -588,9 +588,9 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 
 bool nqiv_image_is_form_loaded(const nqiv_image_form* form)
 {
-	assert((form->data == NULL && form->surface == NULL) || (form->data != NULL && form->surface != NULL));
-	return form->vips != NULL || form->surface != NULL
-	       || form->texture != NULL;
+	assert((form->data == NULL && form->surface == NULL)
+	       || (form->data != NULL && form->surface != NULL));
+	return form->vips != NULL || form->surface != NULL || form->texture != NULL;
 }
 
 bool nqiv_image_has_loaded_form(nqiv_image* image)
@@ -1141,8 +1141,7 @@ bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const 
 				free(images[idx]->thumbnail.path);
 				images[idx]->thumbnail.path = NULL;
 			}
-			if(images[idx]->thumbnail.vips != NULL
-			   || images[idx]->thumbnail.surface != NULL) {
+			if(images[idx]->thumbnail.vips != NULL || images[idx]->thumbnail.surface != NULL) {
 				nqiv_event event = {0};
 				event.type = NQIV_EVENT_IMAGE_LOAD;
 				event.transaction_group = -1;

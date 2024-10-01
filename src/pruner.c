@@ -269,11 +269,9 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 			/* Finally, track if there's anything to do. */
 			send_event =
 				send_event || event.options.image_load.image_options.vips
-				|| event_options->image_options.surface
-				|| event_options->image_options.vips_soft
+				|| event_options->image_options.surface || event_options->image_options.vips_soft
 				|| event_options->image_options.surface_soft
-				|| event_options->thumbnail_options.vips
-				|| event_options->thumbnail_options.surface
+				|| event_options->thumbnail_options.vips || event_options->thumbnail_options.surface
 				|| event_options->thumbnail_options.vips_soft
 				|| event_options->thumbnail_options.surface_soft;
 		}
@@ -673,7 +671,8 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				thumbnail_set = &desc->thumbnail_vips_set;
 			}
 		} else if(nqiv_pruner_check_token(text, idx, end, "raw")) {
-			nqiv_log_write(logger, NQIV_LOG_WARNING, "Skipping deprecated 'raw' at at %s\n", &text[idx]);
+			nqiv_log_write(logger, NQIV_LOG_WARNING, "Skipping deprecated 'raw' at at %s\n",
+			               &text[idx]);
 			idx += strlen("raw");
 			if(inside_no) {
 				if(set == &dummy_set) {
@@ -1077,16 +1076,15 @@ bool nqiv_pruner_desc_to_string(const nqiv_pruner_desc* desc, char* buf)
 	                                               &desc->thumbnail_texture_set, &builder);
 	/* Do we have anything to unload? */
 	if(desc->unload_vips || desc->unload_surface || desc->unload_texture
-	   || desc->unload_thumbnail_vips
-	   || desc->unload_thumbnail_surface || desc->unload_thumbnail_texture || desc->unload_vips_soft
-	   || desc->unload_surface_soft || desc->unload_thumbnail_vips_soft
-	   || desc->unload_thumbnail_surface_soft) {
+	   || desc->unload_thumbnail_vips || desc->unload_thumbnail_surface
+	   || desc->unload_thumbnail_texture || desc->unload_vips_soft || desc->unload_surface_soft
+	   || desc->unload_thumbnail_vips_soft || desc->unload_thumbnail_surface_soft) {
 		result = result && nqiv_array_push_sprintf(&builder, "unload ");
 	}
 	/* Add hard unloads. */
 	if(desc->unload_vips || desc->unload_surface || desc->unload_texture
-	   || desc->unload_thumbnail_vips
-	   || desc->unload_thumbnail_surface || desc->unload_thumbnail_texture) {
+	   || desc->unload_thumbnail_vips || desc->unload_thumbnail_surface
+	   || desc->unload_thumbnail_texture) {
 		result = result
 		         && nqiv_pruner_unload_pair_to_string(&render_state, "vips", desc->unload_vips,
 		                                              desc->unload_thumbnail_vips, true, &builder);
@@ -1100,8 +1098,7 @@ bool nqiv_pruner_desc_to_string(const nqiv_pruner_desc* desc, char* buf)
 		                                         desc->unload_thumbnail_texture, true, &builder);
 	}
 	/* Add soft unloads. */
-	if(desc->unload_vips_soft || desc->unload_surface_soft
-	   || desc->unload_thumbnail_vips_soft
+	if(desc->unload_vips_soft || desc->unload_surface_soft || desc->unload_thumbnail_vips_soft
 	   || desc->unload_thumbnail_surface_soft) {
 		result =
 			result
