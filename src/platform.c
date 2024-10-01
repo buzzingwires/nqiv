@@ -118,9 +118,9 @@ void nqiv_suggest_cfg_setup(const char* exe)
 	if(nqiv_write_path_from_env(default_config_dir, PATH_MAX, NQIV_CFG_ENV, NQIV_CFG_DIRECTORY)) {
 		fprintf(stderr,
 		        "Failed to load default config file path. Consider `" NQIV_CFG_CMD
-		        " \"" NQIV_CFG_MKDIR " " NQIV_CFG_ESC "\"%s" NQIV_CFG_ESC "\" && " NQIV_CFG_ESC
+		        NQIV_CFG_MKDIR " " NQIV_CFG_ESC "\"%s" NQIV_CFG_ESC "\" && " NQIV_CFG_ESC
 		        "\"%s" NQIV_CFG_ESC "\" -c " NQIV_CFG_ESC "\"dumpcfg" NQIV_CFG_ESC
-		        "\" > " NQIV_CFG_ESC "\"%s" NQIV_CFG_FILENAME NQIV_CFG_ESC "\"\"` to create it?\n",
+		        "\" > " NQIV_CFG_ESC "\"%s" NQIV_CFG_FILENAME NQIV_CFG_ESC "\"" NQIV_CFG_CMD_END "` to create it?\n",
 		        default_config_dir, exe, default_config_dir);
 	} else {
 		fprintf(stderr, "Failed to get environment variable '" NQIV_CFG_ENV
