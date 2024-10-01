@@ -244,7 +244,7 @@ action_make_configure()
 {
 	print_environment_file > "$a_configure_maker_path"
 	echo "autoreconf --install" >> "$a_configure_maker_path"
-	echo "./configure --prefix=\"$a_mxe_dir/usr/$a_mxe_target\" --host=\"$a_mxe_target\" --enable-cross-compile=yes" >> "$a_configure_maker_path"
+	echo "./configure --prefix=\"$a_mxe_dir/usr/$a_mxe_target\" --host=\"$a_mxe_target\" --enable-cross-compile=yes --enable-define-prefix=yes" >> "$a_configure_maker_path"
 	chmod +x "$a_configure_maker_path"
 }
 

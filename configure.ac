@@ -8,6 +8,12 @@ AC_ARG_ENABLE([cross-compile],
 					 [test "$enable_cross_compile" = "no"], [],
 					 [AC_MSG_ERROR([Bad value ${enable_cross_compile} for --enable-cross-compile], [])])],
 			  [enable_cross_compiler=no])
+AC_ARG_ENABLE([define-prefix],
+			  AS_HELP_STRING([--enable-define-prefix], [Enable passing --define-prefix to package config, to choose path prefixes based on the location of the files. Useful for alternate toolchains, such as in the case of cross-compiling.]),
+			  [AS_IF([test "$enable_define_prefix" = "yes"], [],
+					 [test "$enable_define_prefix" = "no"], [],
+					 [AC_MSG_ERROR([Bad value ${enable_define_prefix} for --enable-define_prefix], [])])],
+			  [enable_define_prefix=no])
 AC_ARG_ENABLE([coverage],
 			  AS_HELP_STRING([--enable-coverage], [Pass --coverage for coverage analysis.]),
 			  [AS_IF([test "$enable_coverage" = "yes"], [],
@@ -20,6 +26,7 @@ AC_ARG_ENABLE([no-jemalloc],
 					 [AC_MSG_ERROR([Bad value ${enable_no_jemalloc} for --enable-no-jemalloc], [])])],
 			  [enable_no_jemalloc=no])
 AM_CONDITIONAL([ISCROSS], [test "$enable_cross_compile" = "yes"])
+AM_CONDITIONAL([DEFINEPREFIX], [test "$enable_define_prefix" = "yes"])
 AM_CONDITIONAL([USECOV], [test "$enable_coverage" = "yes"])
 AM_CONDITIONAL([USEJEMALLOC], [test "$enable_no_jemalloc" = "no"])
 AC_CONFIG_FILES([Makefile src/Makefile test/Makefile])
