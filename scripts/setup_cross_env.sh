@@ -1,4 +1,4 @@
-#!/bin/sh -efu
+#!/bin/sh -eu
 
 G_MXE_URL="https://github.com/mxe/mxe.git"
 G_VIPS_PACKAGE="libvips.zip"
@@ -279,68 +279,15 @@ action_make_package()
 	cp -v "./AUTHORS.md" "$L_RELEASE_BASE"
 	cp -v "./LICENSE" "$L_RELEASE_BASE"
 
-	if [ -f "$L_LIBPATH/libgcc_s_seh-1.dll" ]
-	then
-		cp -v "$L_LIBPATH/libgcc_s_seh-1.dll" "$L_RELEASE_BASE"
-	elif [ -f "$L_LIBPATH/libgcc_s_sjlj-1.dll" ]
-	then
-		cp -v "$L_LIBPATH/libgcc_s_sjlj-1.dll" "$L_RELEASE_BASE"
-	else
-		errcho "Failed to find exception handler to copy to package. Quitting."
-		exit 1
-	fi
-
-	cp -v                                             \
-		"$a_exe_path"                                 \
-		"$L_LIBPATH/libtiff-6.dll"                    \
-		"$L_LIBPATH/libxml2-2.dll"                    \
-		"$L_LIBPATH/libc++.dll"                       \
-		"$L_LIBPATH/libunwind.dll"                    \
-		"$L_LIBPATH/libaom.dll"                       \
-		"$L_LIBPATH/libgobject-2.0-0.dll"             \
-		"$L_LIBPATH/libglib-2.0-0.dll"                \
-		"$L_LIBPATH/libvips-42.dll"                   \
-		"$L_LIBPATH/SDL2.dll"                         \
-		"$L_LIBPATH/libffi-8.dll"                     \
-		"$L_LIBPATH/libsamplerate-0.dll"              \
-		"$L_LIBPATH/libgomp-1.dll"                    \
-		"$L_LIBPATH/libgio-2.0-0.dll"                 \
-		"$L_LIBPATH/libexpat-1.dll"                   \
-		"$L_LIBPATH/libz1.dll"                        \
-		"$L_LIBPATH/libarchive-13.dll"                \
-		"$L_LIBPATH/libimagequant.dll"                \
-		"$L_LIBPATH/libexif-12.dll"                   \
-		"$L_LIBPATH/libcgif-0.dll"                    \
-		"$L_LIBPATH/libjpeg-62.dll"                   \
-		"$L_LIBPATH/libspng-0.dll"                    \
-		"$L_LIBPATH/libpangocairo-1.0-0.dll"          \
-		"$L_LIBPATH/libpango-1.0-0.dll"               \
-		"$L_LIBPATH/libfontconfig-1.dll"              \
-		"$L_LIBPATH/librsvg-2-2.dll"                  \
-		"$L_LIBPATH/libpangoft2-1.0-0.dll"            \
-		"$L_LIBPATH/libheif.dll"                      \
-		"$L_LIBPATH/libfribidi-0.dll"                 \
-		"$L_LIBPATH/libpixman-1-0.dll"                \
-		"$L_LIBPATH/libwinpthread-1.dll"              \
-		"$L_LIBPATH/libwebpmux-3.dll"                 \
-		"$L_LIBPATH/libwebpdemux-2.dll"               \
-		"$L_LIBPATH/liblcms2-2.dll"                   \
-		"$L_LIBPATH/libhwy.dll"                       \
-		"$L_LIBPATH/libgmodule-2.0-0.dll"             \
-		"$L_LIBPATH/libharfbuzz-0.dll"                \
-		"$L_LIBPATH/libpng16-16.dll"                  \
-		"$L_LIBPATH/libfreetype-6.dll"                \
-		"$L_LIBPATH/libcairo-2.dll"                   \
-		"$L_LIBPATH/libsharpyuv-0.dll"                \
-		"$L_LIBPATH/libwebp-7.dll"                    \
-		"$L_RELEASE_BASE"
+	cp -v "$a_exe_path" "$L_RELEASE_BASE"
+	cp -v "$L_LIBPATH"/*.dll "$L_RELEASE_BASE"
 
 	zip -r -9 "$L_RELEASE_BASE.zip" "$L_RELEASE_BASE/"
 }
 
 main()
 {
-	set -efu
+	set -eu
 	while getopts "ht:p:d:D:v:j:e:c:E:R:r:" opt;
 	do
 		case "$opt" in
