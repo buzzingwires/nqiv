@@ -281,6 +281,7 @@ action_make_package()
 
 	cp -v "$a_exe_path" "$L_RELEASE_BASE"
 	cp -v "$L_LIBPATH"/*.dll "$L_RELEASE_BASE"
+	cp -v "$a_mxe_dir/usr/$a_mxe_target/lib/jemalloc.dll" "$L_RELEASE_BASE"
 
 	zip -r -9 "$L_RELEASE_BASE.zip" "$L_RELEASE_BASE/"
 }
