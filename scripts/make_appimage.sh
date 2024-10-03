@@ -28,10 +28,10 @@ fi
 
 rm -rf ./src/AppDir/
 make install DESTDIR=./src/AppDir
-"./$G_LINUXDEPLOY"  --appdir=./src/AppDir/                  \
-					--executable=./src/AppDir/usr/bin/nqiv  \
-					--icon-file ./media/nqiv_icon_48x48.png \
-					--desktop-file ./scripts/nqiv.desktop   \
+"./$G_LINUXDEPLOY"  --appdir=./src/AppDir/                    \
+					--executable=./src/AppDir/usr/bin/nqiv    \
+					--icon-file ./media/nqiv_icon_256x256.png \
+					--desktop-file ./scripts/nqiv.desktop     \
 					--output appimage
 
 mv -v "nqiv-$G_ARCH.AppImage" "nqiv-$G_VERSION-$G_ARCH.AppImage"
