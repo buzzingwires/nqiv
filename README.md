@@ -25,7 +25,7 @@ Features
 
 * The FreeDesktop Thumbnail Managing standard is can be used to manipulate thumbnails that are shared with other software.
 
-* nqiv is designed to work with other Unix-like apps, both by accepting instructions through stdin, and printing a list of selected images through stdout.
+* nqiv is designed to work with other Unix-like apps, both by accepting commands through stdin, and printing a list of selected images through stdout.
 
 * Configurable dynamic unloading of images allows managing of nqiv's memory footprint while browsing a massive number of images.
 

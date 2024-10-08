@@ -16,7 +16,7 @@ Developing nqiv
 Building
 --------
 
-In short, a release version of nqiv can be built by the typical steps of:
+In short, a release version of nqiv can be built and installed by the typical steps of:
 
 ```sh
 autoreconf --install
@@ -25,7 +25,7 @@ make
 make install
 ```
 
-It is recommended to also check `./configure --help`. Note that `CFLAGS` will be appended after any automatic ones.
+It is recommended to also check `./configure --help`. Note that `CFLAGS` set from the shell will be appended after any automatic ones set for the build targets.
 
 ### Dependencies ###
 
@@ -41,8 +41,8 @@ It is recommended to also check `./configure --help`. Note that `CFLAGS` will be
 * `default-optimization`: Minimalist build option with no specified optimizations, and assertions left on, leaving full freedom to specify whatever through `CFLAGS`.
 * `all`: Default target. Make a release build of nqiv. Optimizations on, assertions off, and executable stripped.
 * `debug`: Make a debug build of nqiv. Debugging symbols and assertions on. No optimizations.
-* `tests`: Build tests. Run them with test/tester.
-* `all-debug`: Do the debug and tests targets.
+* `tests`: Build tests. Run them with `test/tester`.
+* `all-debug`: Do the `debug` and `tests` targets.
 
 ### Platform Notes ###
 
@@ -86,9 +86,9 @@ It is recommended to understand the tools and processes described in this file b
 
 Run `scripts/update_default_cfg.sh` and check whether `default.cfg` has been unintentionally changed by then running `git diff`
 
-It is recommended to run the linters `scripts/lint_cppcheck.sh` and `scripts/lint_clang-tidy.sh` (in that order of importance).
+It is recommended to run the linters `scripts/lint_cppcheck.sh` (slow and exhaustive) and `scripts/lint_clang-tidy.sh` (in that order of importance).
 
-Also consider `scripts/show_icon.sh` and `scripts/show_logo.sh` for basic functionality tests.
+`scripts/show_icon.sh` and `scripts/show_logo.sh` provide basic functionality tests.
 
 Further, consider running nqiv with valgrind.
 
@@ -159,7 +159,7 @@ nqiv lives in `src/` and is coded against the C99 standard.
 Branches
 --------
 
-* `master` contains a stable version of nqiv and should be almost always be updated for a release.
+* `master` contains a stable version of nqiv and should mostly be updated by merging the `dev` branch for releases.
 
 * `dev` is code that's actively in development. Contributions go here before being merged into `master`
 

@@ -23,7 +23,7 @@
  * texture, which is what will actually be displayed. Each stage may be
  * performed in a worker thread, except for texture loading and unloading, which
  * must be performed from the master, due to the constraints of OpenGL, which
- * backs SDL2's textures a the time of writing.
+ * backs SDL2's textures at the time of writing.
  */
 
 typedef struct nqiv_image_form_animation
