@@ -314,6 +314,7 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* de
 		}
 	}
 	if(default_config_path != NULL) {
+		fprintf(stderr, "Unable to find default config path. ");
 		nqiv_suggest_cfg_setup(exe);
 	}
 	return true;
@@ -324,7 +325,7 @@ void nqiv_print_version(void)
 	fprintf(stderr, "nqiv version: " VERSION "\n");
 }
 
-void nqiv_print_args(void)
+void nqiv_print_args(const char* exe)
 {
 	nqiv_print_version();
 	fprintf(stderr, "\n");
@@ -339,6 +340,8 @@ void nqiv_print_args(void)
 	                "command processor.\n");
 	fprintf(stderr, "-v/--version Print version info.\n");
 	fprintf(stderr, "-h/--help Print this help message.\n");
+	fprintf(stderr, "\n");
+	nqiv_suggest_cfg_setup(exe);
 }
 
 nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
@@ -423,7 +426,7 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 			load_default = false;
 			break;
 		case 'h':
-			nqiv_print_args();
+			nqiv_print_args(argv[0]);
 			return NQIV_PASS;
 		case 'v':
 			nqiv_print_version();
@@ -485,7 +488,7 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 			success = success && nqiv_cmd_consume_stream_from_path(&state->cmds, options.optarg);
 			break;
 		case 'h':
-			nqiv_print_args();
+			nqiv_print_args(argv[0]);
 			return NQIV_PASS;
 		case '?':
 			fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
