@@ -1,6 +1,8 @@
 nqiv
 ====
 
+![nqiv Logo](/media/logo.png "nqiv Logo")
+
 nqiv (**n**eo **q**uick **i**mage **v**iewer) is inspired by the lineage of `qiv` and intended to implement modern features such as multithreading and GPU rendering, as well as to reduce dependencies to a handful of mature and well-supported choices.
 
 Getting nqiv
