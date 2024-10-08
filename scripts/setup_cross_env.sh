@@ -277,7 +277,7 @@ action_make_package()
 	cp -v "./README.md" "$L_RELEASE_BASE"
 	cp -v "./CHANGELOG.md" "$L_RELEASE_BASE"
 	cp -v "./AUTHORS.md" "$L_RELEASE_BASE"
-	cp -v "./LICENSE" "$L_RELEASE_BASE"
+	cp -v "./COPYING" "$L_RELEASE_BASE/LICENSE"
 
 	cp -v "$a_exe_path" "$L_RELEASE_BASE"
 	cp -v "$L_LIBPATH"/*.dll "$L_RELEASE_BASE"
