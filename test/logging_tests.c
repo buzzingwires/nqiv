@@ -12,7 +12,8 @@ size_t get_file_contents(FILE* f, char* buf, const int n)
 	fseek(f, 0, SEEK_SET);
 	const size_t bytes_read = fread(buf, 1, n, f);
 	fseek(f, orig_pos, SEEK_SET);
-	assert(ftell(f) == orig_pos);
+	const long told_pos = ftell(f);
+	assert(told_pos == orig_pos);
 	return bytes_read;
 }
 
