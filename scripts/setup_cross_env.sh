@@ -279,6 +279,19 @@ action_make_package()
 	cp -v "./AUTHORS.md" "$L_RELEASE_BASE"
 	cp -v "./COPYING" "$L_RELEASE_BASE/LICENSE"
 
+	local L_SDL_LICENSE_PATH="$a_package_dir/SDL2.LICENSE"
+	if [ ! -e "$L_SDL_LICENSE_PATH" ]
+	then
+		curl -L "https://raw.githubusercontent.com/libsdl-org/SDL/refs/heads/SDL2/LICENSE.txt" -o "$L_SDL_LICENSE_PATH"
+	fi
+	cp -v "$L_SDL_LICENSE_PATH" "$L_RELEASE_BASE/"
+
+	local L_VIPS_DIR=
+	L_VIPS_DIR="$(find "$a_package_dir/$G_VIPS_DIR" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+	cp -v "$L_VIPS_DIR/LICENSE" "$L_RELEASE_BASE/libvips.LICENSE"
+
+	cp -v "$a_package_dir/$G_JEMALLOC_DIR/COPYING" "$L_RELEASE_BASE/jemalloc.LICENSE"
+
 	cp -v "$a_exe_path" "$L_RELEASE_BASE"
 	cp -v "$L_LIBPATH"/*.dll "$L_RELEASE_BASE"
 	cp -v "$a_mxe_dir/usr/$a_mxe_target/lib/jemalloc.dll" "$L_RELEASE_BASE"
