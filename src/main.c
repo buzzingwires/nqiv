@@ -1240,6 +1240,19 @@ void nqiv_handle_thumbnail_resize_action(nqiv_state* state,
 	render_and_update(state, running, result, false, false);
 }
 
+void nqiv_mark_op(nqiv_state* state, bool* running, bool* result, nqiv_image* image, const bool value)
+{
+	image->marked = value;
+	nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n",
+	               image->marked ? "Unm" : "M", image->image.path);
+	render_and_update(state, running, result, false, false);
+}
+
+void nqiv_mark_op_toggle(nqiv_state* state, bool* running, bool* result, nqiv_image* image)
+{
+	nqiv_mark_op(state, running, result, image, !image->marked);
+}
+
 void nqiv_handle_keyactions(nqiv_state*                       state,
                             bool*                             running,
                             bool*                             result,
@@ -1502,22 +1515,13 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 			render_and_update(state, running, result, false, false);
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_MARK_TOGGLE) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image mark.\n");
-			image->marked = !image->marked;
-			nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n",
-			               image->marked ? "Unm" : "M", image->image.path);
-			render_and_update(state, running, result, false, false);
+			nqiv_mark_op_toggle(state, running, result, image);
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_MARK) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image mark.\n");
-			image->marked = true;
-			nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n",
-			               image->marked ? "Unm" : "M", image->image.path);
-			render_and_update(state, running, result, false, false);
+			nqiv_mark_op(state, running, result, image, true);
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_UNMARK) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image unmark.\n");
-			image->marked = false;
-			nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n",
-			               image->marked ? "Unm" : "M", image->image.path);
-			render_and_update(state, running, result, false, false);
+			nqiv_mark_op(state, running, result, image, false);
 		} else if(pair->action == NQIV_KEY_ACTION_PRINT_MARKED) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 			               "Received nqiv action image print marked.\n");
@@ -1546,10 +1550,7 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 				SDL_GetMouseState(&x, &y);
 				nqiv_image* tmp_image =
 					images[nqiv_montage_find_index_at_point(&state->montage, x, y)];
-				tmp_image->marked = true;
-				nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n",
-				               tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
-				render_and_update(state, running, result, false, false);
+				nqiv_mark_op(state, running, result, tmp_image, true);
 			}
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_UNMARK_AT_MOUSE) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
@@ -1559,10 +1560,7 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 				SDL_GetMouseState(&x, &y);
 				nqiv_image* tmp_image =
 					images[nqiv_montage_find_index_at_point(&state->montage, x, y)];
-				tmp_image->marked = false;
-				nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n",
-				               tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
-				render_and_update(state, running, result, false, false);
+				nqiv_mark_op(state, running, result, tmp_image, false);
 			}
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_MARK_TOGGLE_AT_MOUSE) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
@@ -1572,10 +1570,7 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 				SDL_GetMouseState(&x, &y);
 				nqiv_image* tmp_image =
 					images[nqiv_montage_find_index_at_point(&state->montage, x, y)];
-				tmp_image->marked = !tmp_image->marked;
-				nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n",
-				               tmp_image->marked ? "Unm" : "M", tmp_image->image.path);
-				render_and_update(state, running, result, false, false);
+				nqiv_mark_op_toggle(state, running, result, tmp_image);
 			}
 		} else if(pair->action == NQIV_KEY_ACTION_START_MOUSE_PAN) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
