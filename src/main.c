@@ -1240,11 +1240,12 @@ void nqiv_handle_thumbnail_resize_action(nqiv_state* state,
 	render_and_update(state, running, result, false, false);
 }
 
-void nqiv_mark_op(nqiv_state* state, bool* running, bool* result, nqiv_image* image, const bool value)
+void nqiv_mark_op(
+	nqiv_state* state, bool* running, bool* result, nqiv_image* image, const bool value)
 {
 	image->marked = value;
-	nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n",
-	               image->marked ? "Unm" : "M", image->image.path);
+	nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", image->marked ? "Unm" : "M",
+	               image->image.path);
 	render_and_update(state, running, result, false, false);
 }
 
@@ -1514,7 +1515,8 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 			}
 			render_and_update(state, running, result, false, false);
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_MARK_TOGGLE) {
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image mark toggle.\n");
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
+			               "Received nqiv action image mark toggle.\n");
 			nqiv_mark_op_toggle(state, running, result, image);
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_MARK) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image mark.\n");
