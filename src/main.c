@@ -1514,7 +1514,7 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 			}
 			render_and_update(state, running, result, false, false);
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_MARK_TOGGLE) {
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image mark.\n");
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image mark toggle.\n");
 			nqiv_mark_op_toggle(state, running, result, image);
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_MARK) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action image mark.\n");
@@ -1564,7 +1564,7 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 			}
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_MARK_TOGGLE_AT_MOUSE) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
-			               "Received nqiv action image unmark at mouse.\n");
+			               "Received nqiv action image toggle at mouse.\n");
 			if(state->in_montage) {
 				int x, y;
 				SDL_GetMouseState(&x, &y);
