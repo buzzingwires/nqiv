@@ -1254,6 +1254,13 @@ void nqiv_mark_op_toggle(nqiv_state* state, bool* running, bool* result, nqiv_im
 	nqiv_mark_op(state, running, result, image, !image->marked);
 }
 
+int nqiv_get_index_at_mouse(nqiv_state* state)
+{
+	int x, y;
+	SDL_GetMouseState(&x, &y);
+	return nqiv_montage_find_index_at_point(&state->montage, x, y);
+}
+
 void nqiv_handle_keyactions(nqiv_state*                       state,
                             bool*                             running,
                             bool*                             result,
@@ -1538,41 +1545,38 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 			               "Received nqiv action montage select at mouse.\n");
 			if(state->in_montage) {
-				int x, y;
-				SDL_GetMouseState(&x, &y);
-				nqiv_montage_set_selection(&state->montage,
-				                           nqiv_montage_find_index_at_point(&state->montage, x, y));
-				render_and_update(state, running, result, false, false);
+				const int i = nqiv_get_index_at_mouse(state);
+				if(i >= 0) {
+					nqiv_montage_set_selection(&state->montage, i);
+					render_and_update(state, running, result, false, false);
+				}
 			}
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_MARK_AT_MOUSE) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 			               "Received nqiv action image mark at mouse.\n");
 			if(state->in_montage) {
-				int x, y;
-				SDL_GetMouseState(&x, &y);
-				nqiv_image* tmp_image =
-					images[nqiv_montage_find_index_at_point(&state->montage, x, y)];
-				nqiv_mark_op(state, running, result, tmp_image, true);
+				const int i = nqiv_get_index_at_mouse(state);
+				if(i >= 0) {
+					nqiv_mark_op(state, running, result, images[i], true);
+				}
 			}
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_UNMARK_AT_MOUSE) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 			               "Received nqiv action image unmark at mouse.\n");
 			if(state->in_montage) {
-				int x, y;
-				SDL_GetMouseState(&x, &y);
-				nqiv_image* tmp_image =
-					images[nqiv_montage_find_index_at_point(&state->montage, x, y)];
-				nqiv_mark_op(state, running, result, tmp_image, false);
+				const int i = nqiv_get_index_at_mouse(state);
+				if(i >= 0) {
+					nqiv_mark_op(state, running, result, images[i], false);
+				}
 			}
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_MARK_TOGGLE_AT_MOUSE) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 			               "Received nqiv action image toggle at mouse.\n");
 			if(state->in_montage) {
-				int x, y;
-				SDL_GetMouseState(&x, &y);
-				nqiv_image* tmp_image =
-					images[nqiv_montage_find_index_at_point(&state->montage, x, y)];
-				nqiv_mark_op_toggle(state, running, result, tmp_image);
+				const int i = nqiv_get_index_at_mouse(state);
+				if(i >= 0) {
+					nqiv_mark_op_toggle(state, running, result, images[i]);
+				}
 			}
 		} else if(pair->action == NQIV_KEY_ACTION_START_MOUSE_PAN) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
