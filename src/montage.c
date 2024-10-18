@@ -59,6 +59,9 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state, const int widt
 	if(state->positions.start > state->positions.selection) {
 		state->positions.start = state->positions.selection;
 	}
+	if(state->positions.start < 0) {
+		state->positions.start = 0;
+	}
 	state->positions.end = state->positions.start + state->dimensions.count;
 	const int images_len = nqiv_array_get_units_count(state->images->images);
 	while(state->positions.selection >= state->positions.end) {
@@ -67,6 +70,9 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state, const int widt
 		if(state->positions.end > images_len) {
 			state->positions.end = images_len;
 		}
+	}
+	if(state->positions.end > images_len) {
+		state->positions.end = images_len;
 	}
 	state->dimensions.row_space = row_leftover / ((double)count_per_column + 3.0);
 	state->dimensions.column_space =
@@ -111,8 +117,8 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 	if(state->positions.start < 0) {
 		state->positions.start = 0;
 	}
-	if(state->positions.end >= images_len) {
-		state->positions.end = images_len - 1;
+	if(state->positions.end > images_len) {
+		state->positions.end = images_len;
 	}
 	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Setting montage selection to %d.\n",
 	               state->positions.selection);
