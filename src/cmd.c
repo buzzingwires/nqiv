@@ -2161,16 +2161,20 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			  "threads. See 'set vips threads' for that.",
 			  nqiv_cmd_parser_set_thread_count, nqiv_cmd_parser_print_thread_count, positive_args);
 			L("event_interval",
-			  "Threads will update the master after processing this many events. 0 to process all.",
+			  "After waking, worker threads will check for events and process at most this many "
+			  "before waking the master and going back to sleep. Longer times might produce longer "
+			  "loading delays, but "
+			  "help UI responsiveness. 0 means they will process all available events.",
 			  nqiv_cmd_parser_set_thread_event_interval,
 			  nqiv_cmd_parser_print_thread_event_interval, natural_args);
 			L("prune_delay",
-			  "A pruning cycle will be allowed to run after this many milliseconds since the last "
+			  "During updates to nqiv's state, a pruning cycle will be allowed to run if this many "
+			  "milliseconds has passed since the last "
 			  "one. 0 always allow prune cycles.",
 			  nqiv_cmd_parser_set_prune_delay, nqiv_cmd_parser_print_prune_delay, uint64_args);
 			L("extra_wakeup_delay",
-			  "In addition to an internal algorithm, wait this long to wait to let the master "
-			  "thread lock a worker. Longer times might produce longer loading delays, but help "
+			  "In addition to an internal algorithm, wait this long before a worker thread awakens "
+			  "to check for events. Longer times might produce longer loading delays, but help "
 			  "improve UI responsiveness.",
 			  nqiv_cmd_parser_set_extra_wakeup_delay, nqiv_cmd_parser_print_extra_wakeup_delay,
 			  natural_args);
