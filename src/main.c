@@ -358,7 +358,7 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 	state->thread_event_interval =
 		state->thread_event_interval > 0 ? state->thread_event_interval : 1;
 	state->extra_wakeup_delay = state->thread_count * 20;
-	state->prune_delay = 50000 / state->extra_wakeup_delay;
+	state->prune_delay = 5000 / state->extra_wakeup_delay;
 	state->event_timeout = 250000 / state->extra_wakeup_delay;
 	vips_concurrency_set(state->vips_threads);
 	state->logger_stream_names = nqiv_array_create(sizeof(char*), STARTING_QUEUE_LENGTH);
