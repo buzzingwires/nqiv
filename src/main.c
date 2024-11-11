@@ -646,9 +646,6 @@ bool render_from_form(nqiv_state*     state,
 {
 	bool             cleared = is_montage;
 	nqiv_image_form* form = is_montage ? &image->thumbnail : &image->image;
-	if(is_montage) {
-		state->is_loading = false;
-	}
 	/* We try to lock the image. Don't wait on it and block the whole program, if not. Just use
 	 * its fallback texture and return early. */
 	if(!nqiv_image_test_lock(image)) {
@@ -867,7 +864,9 @@ bool render_from_form(nqiv_state*     state,
 			}
 			/* If we can't recover, just show the error background. */
 		} else {
-			state->is_loading = false;
+			if(dstrect != NULL) {
+				state->is_loading = false;
+			}
 			if(!render_texture(&cleared, dstrect, state, state->texture_montage_error_background,
 			                   NULL, dstrect_zoom_ptr == NULL ? dstrect : dstrect_zoom_ptr)) {
 				nqiv_image_unlock(image);
@@ -977,7 +976,6 @@ bool render_from_form(nqiv_state*     state,
 		}
 		/* Draw thumbnail if it exists. */
 		if(form->texture != NULL) {
-			state->is_loading = false;
 			if(dstrect_zoom_ptr != NULL
 			   && !nqiv_state_update_alpha_background_dimensions(state, dstrect_zoom_ptr->w,
 			                                                     dstrect_zoom_ptr->h)) {
@@ -996,6 +994,9 @@ bool render_from_form(nqiv_state*     state,
 				nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to draw image texture.\n");
 				nqiv_image_unlock(image);
 				return false;
+			}
+			if(dstrect != NULL) {
+				state->is_loading = false;
 			}
 			state->first_frame_pending = false;
 			/* Special operation to load next thumbnail frame right away. */
@@ -1037,7 +1038,7 @@ bool render_from_form(nqiv_state*     state,
 		}
 	}
 	nqiv_image_unlock(image);
-	if(is_montage) {
+	if(is_montage && dstrect != NULL) {
 		state->is_loading = false;
 	}
 	return true;
