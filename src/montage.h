@@ -51,13 +51,14 @@ typedef struct nqiv_montage_state
 	bool                    range_changed;
 } nqiv_montage_state;
 
+/* Set operations set to a specific value, jump operations set to an offset from the current value,
+ * next and previous respectively jump at an offset of 1 and -1 */
+void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx);
+
 /* Update montage to new dimensions. */
 void nqiv_montage_calculate_dimensions(nqiv_montage_state* state,
                                        const int           width,
                                        const int           height);
-/* Set operations set to a specific value, jump operations set to an offset from the current value,
- * next and previous respectively jump at an offset of 1 and -1 */
-void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx);
 void nqiv_montage_jump_selection(nqiv_montage_state* state, const int offset);
 void nqiv_montage_next_selection(nqiv_montage_state* state);
 void nqiv_montage_previous_selection(nqiv_montage_state* state);
