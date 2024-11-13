@@ -15,7 +15,9 @@ exit_usage()
 	errcho
 	errcho "'-h' : Print this message, then quit."
 	errcho
-	errcho "'-r' : Scan for images recursively."
+	errcho "'-d' : Maximum depth to search for. Overrides -r"
+	errcho
+	errcho "'-r' : Scan for images recursively with unlimited depth. Overrides -d"
 	errcho
 	errcho "'-e' : Add extension for nqiv to open."
 	errcho "       Default, case insensitive, containing:"
@@ -105,7 +107,7 @@ main()
 	local a_sort_base="| sort --stable --field-separator '	' --key"
 	local a_name_sort_key="2"
 	local a_passthrough_args=""
-	while getopts "he:f:tSRrpnBNc:C:" opt;
+	while getopts "he:f:tSRrd:pnBNc:C:" opt;
 	do
 		case "$opt" in
 		'h')
@@ -113,6 +115,9 @@ main()
 			;;
 		'r')
 			a_depth=""
+			;;
+		'd')
+			a_depth="-maxdepth $OPTARG"
 			;;
 		'e')
 			a_extensions="$(append_extension "$a_extensions" "$OPTARG")"
