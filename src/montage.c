@@ -97,9 +97,6 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state, const int widt
 	assert(state->logger != NULL);
 	assert(width > 0);
 	assert(height > 0);
-	if(state->dimensions.window_width == width && state->dimensions.window_height == height) {
-		return;
-	}
 	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Calculating montage dimensions.\n");
 	nqiv_montage_state original = {0};
 	memcpy(&original, state, sizeof(nqiv_montage_state));
