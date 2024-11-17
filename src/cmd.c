@@ -2058,6 +2058,7 @@ nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool*          status,
 	assert(nqiv_array_get_units_count(&stack) > 0); \
 	nqiv_array_pop(&stack, NULL);                   \
 	SET_CURRENT;
+// NOLINTBEGIN(google-readability-function-size,readability-function-size)
 bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 {
 	const nqiv_cmd_arg_desc* sendkey_args[] = {&nqiv_parser_arg_type_key_action, NULL};
@@ -2413,6 +2414,7 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 	}
 	return status;
 }
+// NOLINTEND(google-readability-function-size,readability-function-size)
 #undef POP
 #undef B
 #undef L

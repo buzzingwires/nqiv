@@ -6,7 +6,9 @@
 #include <time.h>
 
 #include <omp.h>
+// NOLINTBEGIN
 #include <glib.h>
+// NOLINTEND
 
 #include "array.h"
 #include "state.h"

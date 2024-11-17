@@ -12,6 +12,7 @@
  * behavior can affect the behavior of other headers.
  */
 
+// NOLINTBEGIN
 #if !defined(__unix__) && !defined(__linux__) && !defined(__gnu_linux__) && !defined(__MINGW32__)
 	#error "Currently, only Unix, Linux, and windows through MinGW are supported."
 #else
@@ -22,6 +23,7 @@
 #if !defined(VERSION)
 	#error "The build environment must define version string for nqiv."
 #endif
+// NOLINTEND
 
 /* Platform-specific config paths and suggested commands to create them. */
 #define NQIV_CFG_FILENAME "nqiv.cfg"

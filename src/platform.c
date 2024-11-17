@@ -7,7 +7,9 @@
 #include <errno.h>
 #include <assert.h>
 
+// NOLINTBEGIN
 #include <glib.h>
+// NOLINTEND
 
 #if defined(__MINGW32__)
 	#include <errno.h>

@@ -11,6 +11,7 @@
 
 #include "pruner_tests.h"
 
+// NOLINTBEGIN(google-readability-function-size,readability-function-size)
 void pruner_test_default(void)
 {
 	nqiv_log_ctx logger = {0};
@@ -333,6 +334,7 @@ void pruner_test_default(void)
 
 	nqiv_log_destroy(&logger);
 }
+// NOLINTEND(google-readability-function-size,readability-function-size)
 
 typedef struct prune_effects
 {

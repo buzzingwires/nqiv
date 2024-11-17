@@ -39,4 +39,7 @@ Checks: >
     -modernize-macro-to-enum,
     -cppcoreguidelines-init-variables,
     -cppcoreguidelines-avoid-magic-numbers,
-    -readability-isolate-declaration
+    -readability-isolate-declaration,
+    -readability-else-after-return,
+    -readability-suspicious-call-argument,
+    -bugprone-suspicious-missing-comma
