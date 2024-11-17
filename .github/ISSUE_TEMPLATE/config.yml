@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: General Discussion
+    url: https://github.com/buzzingwires/nqiv/discussions
+    about: Ask questions, discuss ideas in an informal manner, etc'
+  - name: Security Disclosure
+    url: https://github.com/buzzingwires/nqiv/security
+	about: Privately share security-related concerns
