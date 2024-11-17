@@ -1,3 +1,8 @@
+---
+name: Bug Report
+about: Description of an issue and steps to reproduce
+---
+
 <!-- Thank you for contributing to nqiv! -->
 <!-- In general, a bug report should describe the issue and how to reproduce it. -->
 <!-- Please try to check for duplicate bug reports before making a new one. -->

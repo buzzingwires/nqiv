@@ -1,3 +1,8 @@
+---
+name: Feature request
+about: Propose a new feature and the rationale behind it
+---
+
 <!-- Thank you for contributing to nqiv! -->
 <!-- In general, a feature request should propose a feature to be added and a rationale for it. -->
 <!-- Please try to check for duplicate feature requests before making a new one. -->
