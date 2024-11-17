@@ -1,6 +1,6 @@
 #!/bin/sh -efu
 
-G_VERSION="1.0.0-beta"
+G_VERSION="1.1.0-beta"
 
 errcho()
 {

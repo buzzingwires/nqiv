@@ -17,7 +17,7 @@ D_ENV_PATH="./env.sh"
 D_CONFIGURE_MAKER_PATH="./make_configure.sh"
 D_EXE_PATH="./src/nqiv.exe"
 D_RELEASE_PATH="."
-D_RELEASE_VERSION="1.0.0-beta"
+D_RELEASE_VERSION="1.1.0-beta"
 
 errcho()
 {
