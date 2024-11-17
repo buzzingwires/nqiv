@@ -12,6 +12,8 @@ See the releases for builds. GNU Linux builds are provided as AppImages, while W
 
 Run nqiv with `-h` for basic help. nqiv strives to be portable and to not change anything on a system without being explicitly told to. Upon running nqiv, it will look for a config file in a default location, and will offer a command (to stderr) to create it if it isn't available. Given the graphical emphasis of Windows, `scripts/nqiv_deploy_cfg.bat` is also provided to do this same task with a click.
 
+For POSIX-like systems, consider `scripts/nqivf.sh` as a frontend helper script for nqiv which can scan directories, find, and sort files for nqiv to open.
+
 Features
 --------
 
