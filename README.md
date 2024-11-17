@@ -8,7 +8,7 @@ nqiv (**n**eo **q**uick **i**mage **v**iewer) is inspired by the lineage of `qiv
 Getting nqiv
 ------------
 
-See the releases for builds. GNU Linux builds are provided as AppImages, while Windows 10+ builds are provided as .zip archives containing an executable and needed directory. To build nqiv manually or contribute, see `.github/CONTRIBUTING.md`
+See the releases for builds. GNU Linux builds are provided as AppImages, while Windows 10+ builds are provided as .zip archives containing an executable and needed directory. To build nqiv manually or contribute, see `CONTRIBUTING.md`
 
 Run nqiv with `-h` for basic help. nqiv strives to be portable and to not change anything on a system without being explicitly told to. Upon running nqiv, it will look for a config file in a default location, and will offer a command (to stderr) to create it if it isn't available. Given the graphical emphasis of Windows, `scripts/nqiv_deploy_cfg.bat` is also provided to do this same task with a click.
 
