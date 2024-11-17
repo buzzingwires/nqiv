@@ -5,4 +5,4 @@ contact_links:
     about: Ask questions, discuss ideas in an informal manner, etc'
   - name: Security Disclosure
     url: https://github.com/buzzingwires/nqiv/security
-	about: Privately share security-related concerns
+    about: Privately share security-related concerns

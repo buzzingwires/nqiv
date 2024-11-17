@@ -4,7 +4,7 @@
 
 ### System information
 <!--  add fields after "|" character -->
-|
+Name|Value
 --------------------|---
 OS Name	            |
 OS Version	        |
