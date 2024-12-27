@@ -104,7 +104,7 @@ main()
 	local a_reverse_sort=""
 	local a_reverse_reversed_sort="-r"
 	local a_reverse_natural=""
-	local a_sort_base="| sort --stable --field-separator '	' --key"
+	local a_sort_base="| sort --version-sort --stable --field-separator '	' --key"
 	local a_name_sort_key="2"
 	local a_passthrough_args=""
 	while getopts "he:f:tSRrd:pnBNc:C:" opt;

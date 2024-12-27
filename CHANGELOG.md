@@ -1,6 +1,11 @@
 nqiv Changelog
 ==============
 
+Unreleased
+----------
+
+* `nqivf.sh` now version sorts its results as the default behavior. It should correctly sort numbers (1, 2, 10, etc' instead of 1, 10, 2), in addition to letters.
+
 1.1.0-beta
 ----------
 
