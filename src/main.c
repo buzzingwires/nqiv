@@ -269,6 +269,7 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* de
 		"append keybind C=pan_center",
 		"append keybind S=toggle_stretch",
 		"append keybind '=image_mark_toggle",
+		"append keybind ctrl+shift+[=clear_marked",
 		"append keybind shift+'=print_marked",
 		"append keybind ;=allow_on_down+deny_on_up+image_mark",
 		"append keybind ;=allow_on_down+deny_on_up+montage_right",
@@ -1540,6 +1541,14 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 				if(images[iidx]->marked) {
 					fprintf(stdout, "%s\n", images[iidx]->image.path);
 				}
+			}
+			render_and_update(state, running, result, false, false);
+		} else if(pair->action == NQIV_KEY_ACTION_CLEAR_MARKED) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
+			               "Received nqiv action image clear marked.\n");
+			int iidx;
+			for(iidx = 0; iidx < images_count; ++iidx) {
+				nqiv_mark_op(state, running, result, images[iidx], false);
 			}
 			render_and_update(state, running, result, false, false);
 		} else if(pair->action == NQIV_KEY_ACTION_MONTAGE_SELECT_AT_MOUSE) {

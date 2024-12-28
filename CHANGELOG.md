@@ -6,6 +6,8 @@ Unreleased
 
 * `nqivf.sh` now version sorts its results as the default behavior. It should correctly sort numbers (1, 2, 10, etc' instead of 1, 10, 2), in addition to letters.
 
+* Added a `clear_marked` key action. By default, it will be bound to `ctrl+shift+[` and will remove any marks from all loaded images.
+
 1.1.0-beta
 ----------
 
