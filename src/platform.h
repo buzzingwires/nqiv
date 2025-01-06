@@ -73,5 +73,8 @@ int   nqiv_ptrdiff(const void* a, const void* b);
 bool  nqiv_expand_path(char* output, const int length, const char* input);
 /* Expand a path, open it, and return its file object. */
 FILE* nqiv_fopen(const char* filename, const char* mode);
+/* Grab a character from the given stream without blocking. If there are none, return 0, return -1
+ * on error. */
+int   nqiv_agetc(FILE* stream);
 
 #endif /* NQIV_PLATFORM_H */

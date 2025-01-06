@@ -2,6 +2,7 @@
 #define NQIV_STATE_H
 
 #include "platform.h"
+#include "event.h"
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -113,8 +114,14 @@ struct nqiv_state
 	Uint32               thread_event_number;
 	/* SDL events returned to master from configuration. */
 	Uint32               cfg_event_number;
-	/* Number of worker threads. */
+	/* Shared state variable to tell if nqiv is running. */
+	nqiv_shared_var      running;
+	/* Number of worker threads to start next. */
+	int                  pending_thread_count;
+	/* Current number of worker threads. */
 	int                  thread_count;
+	/* Should threads be started or restarted? */
+	bool                 restart_threads;
 	/* Threads will update the master after processing this many events. 0 to process all. */
 	int                  thread_event_interval;
 	int                  vips_threads;
@@ -131,6 +138,7 @@ struct nqiv_state
 	int                  event_timeout;
 	/* Base amount worker threads sleep between updates. */
 	int                  extra_wakeup_delay;
+	nqiv_shared_var      active_thread_count;
 	omp_lock_t           thread_event_transaction_group_lock;
 	/* Used to tell when the display needs to be redrawn. */
 	bool                 render_cleared;
@@ -161,6 +169,8 @@ struct nqiv_state
 	 * attempt to continue. */
 	bool                 cmd_parse_error_quit;
 	bool                 cmd_apply_error_quit;
+	/* Whether to read commands from stdin while running. */
+	bool                 cmd_read_stdin;
 };
 
 /* Check if logger has error message. If it does, print it and return false. */

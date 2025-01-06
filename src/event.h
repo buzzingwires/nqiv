@@ -1,8 +1,12 @@
 #ifndef NQIV_EVENT_H
 #define NQIV_EVENT_H
 
+#include "typedefs.h"
+
 #include <stdbool.h>
 #include <stdint.h>
+
+#include <omp.h>
 
 #include "image.h"
 
@@ -55,5 +59,27 @@ typedef struct nqiv_event
 	int64_t            transaction_group;
 	nqiv_event_options options;
 } nqiv_event;
+
+typedef union nqiv_shared_var_types
+{
+	nqiv_op_result as_op_result;
+	int            as_int;
+} nqiv_shared_var_types;
+
+typedef struct nqiv_shared_var
+{
+	omp_lock_t            lock;
+	nqiv_shared_var_types data;
+} nqiv_shared_var;
+
+void           nqiv_shared_var_init(nqiv_shared_var* var);
+void           nqiv_shared_var_destroy(nqiv_shared_var* var);
+void           nqiv_shared_var_lock(nqiv_shared_var* var);
+void           nqiv_shared_var_unlock(nqiv_shared_var* var);
+void           nqiv_shared_var_set_op_result(nqiv_shared_var* var, const nqiv_op_result value);
+nqiv_op_result nqiv_shared_var_get_op_result(nqiv_shared_var* var);
+void           nqiv_shared_var_inc_int(nqiv_shared_var* var);
+void           nqiv_shared_var_dec_int(nqiv_shared_var* var);
+int            nqiv_shared_var_get_int(nqiv_shared_var* var);
 
 #endif /* NQIV_EVENT_H */

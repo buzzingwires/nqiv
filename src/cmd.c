@@ -50,6 +50,12 @@ void nqiv_cmd_tmpret(char* data, const int pos, const char value)
 	data[pos] = value;
 }
 
+void nqiv_cmd_set_and_flag_new_int(int* storage, const int value, bool* flag)
+{
+	*flag = *flag || *storage != value;
+	*storage = value;
+}
+
 bool nqiv_cmd_parser_set_none(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	(void)manager;
@@ -59,14 +65,16 @@ bool nqiv_cmd_parser_set_none(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** to
 
 bool nqiv_cmd_parser_set_thread_count(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
-	manager->state->thread_count = tokens[0]->value.as_int;
+	nqiv_cmd_set_and_flag_new_int(&(manager->state->pending_thread_count), tokens[0]->value.as_int,
+	                              &(manager->state->restart_threads));
 	return true;
 }
 
 bool nqiv_cmd_parser_set_thread_event_interval(nqiv_cmd_manager*    manager,
                                                nqiv_cmd_arg_token** tokens)
 {
-	manager->state->thread_event_interval = tokens[0]->value.as_int;
+	nqiv_cmd_set_and_flag_new_int(&(manager->state->thread_event_interval), tokens[0]->value.as_int,
+	                              &(manager->state->restart_threads));
 	return true;
 }
 
@@ -91,7 +99,8 @@ bool nqiv_cmd_parser_set_event_timeout(nqiv_cmd_manager* manager, nqiv_cmd_arg_t
 
 bool nqiv_cmd_parser_set_extra_wakeup_delay(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
-	manager->state->extra_wakeup_delay = tokens[0]->value.as_int;
+	nqiv_cmd_set_and_flag_new_int(&(manager->state->extra_wakeup_delay), tokens[0]->value.as_int,
+	                              &(manager->state->restart_threads));
 	return true;
 }
 
@@ -260,17 +269,21 @@ bool nqiv_cmd_parser_set_thumbnail_path(nqiv_cmd_manager* manager, nqiv_cmd_arg_
 
 bool nqiv_cmd_parser_set_log_level(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
+	omp_set_lock(&manager->state->logger.lock);
 	const char data_end = nqiv_cmd_tmpterm(tokens[0]->raw, tokens[0]->length);
 	manager->state->logger.level = tokens[0]->value.as_log_level;
 	nqiv_cmd_tmpret(tokens[0]->raw, tokens[0]->length, data_end);
+	omp_unset_lock(&manager->state->logger.lock);
 	return true;
 }
 
 bool nqiv_cmd_parser_set_log_prefix(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
+	omp_set_lock(&manager->state->logger.lock);
 	const char data_end = nqiv_cmd_tmpterm(tokens[0]->raw, tokens[0]->length);
 	nqiv_log_set_prefix_format(&manager->state->logger, tokens[0]->raw);
 	nqiv_cmd_tmpret(tokens[0]->raw, tokens[0]->length, data_end);
+	omp_unset_lock(&manager->state->logger.lock);
 	return true;
 }
 
@@ -459,9 +472,11 @@ bool nqiv_cmd_parser_append_keybind(nqiv_cmd_manager* manager, nqiv_cmd_arg_toke
 
 bool nqiv_cmd_parser_append_log_stream(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
+	omp_set_lock(&manager->state->logger.lock);
 	const char data_end = nqiv_cmd_tmpterm(tokens[0]->raw, tokens[0]->length);
 	const bool output = nqiv_add_logger_path(manager->state, tokens[0]->raw);
 	nqiv_cmd_tmpret(tokens[0]->raw, tokens[0]->length, data_end);
+	omp_unset_lock(&manager->state->logger.lock);
 	return output;
 }
 
@@ -503,7 +518,7 @@ void nqiv_cmd_parser_print_none(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_thread_count(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%d", manager->state->thread_count);
+	fprintf(stdout, "%d", manager->state->pending_thread_count);
 }
 
 void nqiv_cmd_parser_print_thread_event_interval(nqiv_cmd_manager* manager)
@@ -698,16 +713,20 @@ void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_log_level(nqiv_cmd_manager* manager)
 {
+	omp_set_lock(&manager->state->logger.lock);
 	fprintf(stdout, "%s", nqiv_log_level_names[manager->state->logger.level / 10]);
+	omp_unset_lock(&manager->state->logger.lock);
 }
 
 void nqiv_cmd_parser_print_log_prefix(nqiv_cmd_manager* manager)
 {
+	omp_set_lock(&manager->state->logger.lock);
 	if(strlen(manager->state->logger.prefix_format) == 0 && !manager->print_settings.dumpcfg) {
 		fprintf(stdout, "UNSET");
 	} else {
 		fprintf(stdout, "%s", manager->state->logger.prefix_format);
 	}
+	omp_unset_lock(&manager->state->logger.lock);
 }
 
 void nqiv_cmd_parser_print_parse_error_quit(nqiv_cmd_manager* manager)
@@ -830,7 +849,9 @@ void nqiv_cmd_print_str_list(const nqiv_cmd_manager* manager, const nqiv_array* 
 
 void nqiv_cmd_parser_print_log_stream(nqiv_cmd_manager* manager)
 {
+	omp_set_lock(&manager->state->logger.lock);
 	nqiv_cmd_print_str_list(manager, manager->state->logger_stream_names);
+	omp_unset_lock(&manager->state->logger.lock);
 }
 
 void nqiv_cmd_parser_print_pruner(nqiv_cmd_manager* manager)
@@ -1842,27 +1863,51 @@ bool nqiv_cmd_add_line_and_parse(nqiv_cmd_manager* manager, const char* str)
 	return nqiv_cmd_add_line(manager, str) && nqiv_cmd_parse(manager);
 }
 
+nqiv_op_result
+nqiv_cmd_add_stream_line(nqiv_cmd_manager* manager, FILE* stream, const bool nonblocking)
+{
+	while(true) {
+		int c = -1;
+		if(nonblocking) {
+			c = nqiv_agetc(stream);
+			if(c == -1) {
+				nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
+				               "Error reading config stream.\n");
+				return NQIV_FAIL;
+			} else if(c == 0) {
+				return NQIV_PASS;
+			}
+		} else {
+			c = fgetc(stream);
+			if(c == EOF) {
+				if(ferror(stream)) {
+					nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
+					               "Error reading config stream.\n");
+					return NQIV_FAIL;
+				}
+				return NQIV_PASS;
+			}
+		}
+		assert(c != -1);
+		if(!nqiv_cmd_add_byte(manager, (char)c)) {
+			return NQIV_FAIL;
+		}
+		if(c == '\r' || c == '\n') {
+			return NQIV_SUCCESS;
+		}
+	}
+}
+
 bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream)
 {
 	while(true) {
-		const int c = fgetc(stream);
-		if(c == EOF) {
-			break;
-		}
-		if(!nqiv_cmd_add_byte(manager, (char)c)) {
+		const nqiv_op_result result = nqiv_cmd_add_stream_line(manager, stream, false);
+		if(result == NQIV_PASS) {
+			return true;
+		} else if(result == NQIV_FAIL || !nqiv_cmd_parse(manager)) {
 			return false;
 		}
-		if(c == '\r' || c == '\n') {
-			if(!nqiv_cmd_parse(manager)) {
-				return false;
-			}
-		}
 	}
-	if(ferror(stream)) {
-		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR, "Error reading config stream.\n");
-		return false;
-	}
-	return true;
 }
 
 nqiv_cmd_node* nqiv_cmd_get_last_peer(nqiv_cmd_node* first_peer)
@@ -2159,7 +2204,8 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			L("count",
 			  "Set the number of worker threads used by the software. Starts as the number of "
 			  "threads on the machine divided by three (or one). This does not count toward VIPs "
-			  "threads. See 'set vips threads' for that.",
+			  "threads. See 'set vips threads' for that. Note that there may be a delay in the "
+			  "actual number of threads matching the number set here as they restart.",
 			  nqiv_cmd_parser_set_thread_count, nqiv_cmd_parser_print_thread_count, positive_args);
 			L("event_interval",
 			  "After waking, worker threads will check for events and process at most this many "

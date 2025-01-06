@@ -8,6 +8,7 @@
 
 #include "queue.h"
 #include "image.h"
+#include "event.h"
 
 /*
  * Worker threads function by polling their queue by a certain wait time. They
@@ -27,6 +28,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
                       const int            event_interval,
                       const Uint32         event_code,
                       const int64_t*       transaction_group,
-                      omp_lock_t*          transaction_group_lock);
+                      omp_lock_t*          transaction_group_lock,
+                      nqiv_shared_var*     active_count);
 
 #endif /* NQIV_WORKER_H */

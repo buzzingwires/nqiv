@@ -93,7 +93,8 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
                       const int            event_interval,
                       const Uint32         event_code,
                       const int64_t*       transaction_group,
-                      omp_lock_t*          transaction_group_lock)
+                      omp_lock_t*          transaction_group_lock,
+                      nqiv_shared_var*     active_count)
 {
 	/* Stagger events by their thread num to prevent stampeding herd problems. */
 	int  wait_time = delay_base + omp_get_thread_num();
@@ -128,6 +129,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 				break;
 			case NQIV_EVENT_IMAGE_LOAD:
 				{
+					nqiv_shared_var_inc_int(active_count);
 					nqiv_event_image_load_options* image_load = &event.options.image_load;
 					nqiv_image*                    image = image_load->image;
 					nqiv_log_write(logger, NQIV_LOG_DEBUG,
@@ -189,6 +191,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 						nqiv_image_borrow_thumbnail_dimensions(image);
 					}
 					nqiv_image_unlock(image);
+					nqiv_shared_var_dec_int(active_count);
 					break;
 				}
 			}

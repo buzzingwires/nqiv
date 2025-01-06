@@ -14,6 +14,9 @@
 #if defined(__MINGW32__)
 	#include <errno.h>
 	#include <direct.h>
+	#include <fileapi.h>
+	#include <synchapi.h>
+	#include <ioapiset.h>
 char* nqiv_realpath(const char* path, char* resolved_path)
 {
 	return _fullpath(resolved_path, path, PATH_MAX);
@@ -29,6 +32,27 @@ bool nqiv_chmod(const char* filename, uint16_t mode)
 	(void)mode;
 	return true; /* Windows doesn't do that */
 }
+int nqiv_agetc(FILE* stream)
+{
+	OVERLAPPED overlapped = {0};
+	HANDLE     handle = (HANDLE)_get_osfhandle(_fileno(stream));
+	overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	DWORD bytes_read;
+	char  c = 0;
+	if(!ReadFile(handle, &c, sizeof(char), &bytes_read, &overlapped)) {
+		if(GetLastError() == ERROR_IO_PENDING) {
+			WaitForSingleObject(overlapped.hEvent, 0);
+			if(GetOverlappedResult(handle, &overlapped, &bytes_read, FALSE)) {
+				return c;
+			} else {
+				return 0;
+			}
+		} else {
+			return -1
+		}
+	}
+	return c;
+}
 #else
 	#include <stdio.h>
 	#include <stdint.h>
@@ -36,6 +60,7 @@ bool nqiv_chmod(const char* filename, uint16_t mode)
 	#include <errno.h>
 	#include <sys/types.h>
 	#include <sys/stat.h>
+	#include <poll.h>
 char* nqiv_realpath(const char* path, char* resolved_path)
 {
 	return realpath(path, resolved_path);
@@ -48,6 +73,32 @@ bool nqiv_mkdir(char* path)
 bool nqiv_chmod(const char* filename, uint16_t mode)
 {
 	return chmod(filename, mode) == 0;
+}
+int nqiv_agetc(FILE* stream)
+{
+	const int     sfd = fileno(stream);
+	struct pollfd fds = {.fd = sfd, .events = POLLIN, .revents = 0};
+	const int     poll_result = poll(&fds, 1, 0);
+	if(poll_result == 0) {
+		return 0;
+	} else if(poll_result == -1) {
+		return -1;
+	}
+	assert(poll_result == 1);
+	if((fds.revents & POLLERR) == POLLERR || (fds.revents & POLLNVAL) == POLLNVAL) {
+		return -1;
+	} else if((fds.revents & POLLIN) != POLLIN) {
+		return 0;
+	}
+	char          c = 0;
+	const ssize_t chars_read = read(sfd, &c, sizeof(c));
+	if(chars_read == 0) {
+		return 0;
+	} else if(chars_read <= -1) {
+		return -1;
+	} else {
+		return c;
+	}
 }
 #endif
 
