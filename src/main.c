@@ -1830,18 +1830,6 @@ nqiv_op_result nqiv_master_thread(nqiv_state* state)
 		}
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Finished waiting on events.\n");
-	int idx;
-	for(idx = 0; idx < state->thread_count; ++idx) {
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Killing worker %d.\n", idx);
-		nqiv_event output_event = {0};
-		output_event.type = NQIV_EVENT_WORKER_STOP;
-		if(!nqiv_send_thread_event(state, 0, &output_event)) {
-			nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
-			               "Failed to politely kill worker %d. Quitting.\n", idx);
-			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
-			nqiv_send_thread_event_force(state, 0, &output_event);
-		}
-	}
 	return nqiv_shared_var_get_op_result(&state->running);
 }
 
@@ -1850,6 +1838,7 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 	nqiv_shared_var_init(&state->active_thread_count);
 	nqiv_shared_var* active_thread_count_ptr = &state->active_thread_count;
 	nqiv_shared_var_set_op_result(&state->running, NQIV_SUCCESS);
+	nqiv_shared_var* running_ptr = &state->running;
 	state->thread_count = state->pending_thread_count;
 	nqiv_op_result       result;
 	nqiv_op_result*      result_ptr = &result;
@@ -1862,36 +1851,38 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 	const Uint32         event_code = state->thread_event_number;
 	/* clang-format insists on unindenting pragmas. */
 	/* clang-format off */
-	#pragma omp parallel                                  \
-		default(none)                                     \
-		firstprivate(state,                               \
-					 logger,                              \
-					 thread_count,                        \
-					 extra_wakeup_delay,                  \
-					 thread_event_interval,               \
-					 thread_queue,                        \
-					 event_code,                          \
-					 result_ptr,                          \
-					 thread_event_transaction_group,      \
-					 active_thread_count_ptr) \
+	#pragma omp parallel                             \
+		default(none)                                \
+		firstprivate(state,                          \
+					 logger,                         \
+					 thread_count,                   \
+					 extra_wakeup_delay,             \
+					 thread_event_interval,          \
+					 thread_queue,                   \
+					 event_code,                     \
+					 result_ptr,                     \
+					 thread_event_transaction_group, \
+					 active_thread_count_ptr,        \
+					 running_ptr) \
 		num_threads(thread_count + 1)
 	{
 		#pragma omp master
 		{
 			int thread;
 			for(thread = 0; thread < thread_count; ++thread) {
-				#pragma omp task                                      \
-					default(none)                                     \
-					firstprivate(logger,                              \
-								 thread_queue,                        \
-								 extra_wakeup_delay,                  \
-								 thread_event_interval,               \
-								 event_code,                          \
-								 thread_event_transaction_group,      \
-								 active_thread_count_ptr)
+				#pragma omp task                                 \
+					default(none)                                \
+					firstprivate(logger,                         \
+								 thread_queue,                   \
+								 extra_wakeup_delay,             \
+								 thread_event_interval,          \
+								 event_code,                     \
+								 thread_event_transaction_group, \
+								 active_thread_count_ptr,        \
+								 running_ptr)
 				nqiv_worker_main(logger, thread_queue, extra_wakeup_delay, thread_event_interval,
 				                 event_code, thread_event_transaction_group,
-								 active_thread_count_ptr);
+								 active_thread_count_ptr, running_ptr);
 			}
 			state->restart_threads = false;
 			*result_ptr = nqiv_master_thread(state);

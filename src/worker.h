@@ -28,6 +28,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
                       const int            event_interval,
                       const Uint32         event_code,
                       nqiv_shared_var*     transaction_group,
-                      nqiv_shared_var*     active_count);
+                      nqiv_shared_var*     active_count,
+                      nqiv_shared_var*     running);
 
 #endif /* NQIV_WORKER_H */

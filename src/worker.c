@@ -93,13 +93,13 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
                       const int            event_interval,
                       const Uint32         event_code,
                       nqiv_shared_var*     transaction_group,
-                      nqiv_shared_var*     active_count)
+                      nqiv_shared_var*     active_count,
+                      nqiv_shared_var*     running)
 {
 	/* Stagger events by their thread num to prevent stampeding herd problems. */
-	int  wait_time = delay_base + omp_get_thread_num();
-	bool running = true;
-	int  events_processed = 0;
-	while(running) {
+	int wait_time = delay_base + omp_get_thread_num();
+	int events_processed = 0;
+	while(nqiv_shared_var_get_op_result(running) == NQIV_SUCCESS) {
 		nqiv_event event = {0};
 		bool       event_found = false;
 		/* Find valid events */
@@ -121,7 +121,6 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 			case NQIV_EVENT_WORKER_STOP:
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Received stop event on thread %d.\n",
 				               omp_get_thread_num());
-				running = false;
 				break;
 			case NQIV_EVENT_IMAGE_LOAD:
 				{
@@ -206,7 +205,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 					nqiv_log_write(logger, NQIV_LOG_ERROR,
 					               "Failed to send SDL event from thread %d. SDL Error: %s\n",
 					               omp_get_thread_num(), SDL_GetError());
-					running = false;
+					nqiv_shared_var_set_op_result(running, NQIV_FAIL);
 				}
 			} else {
 				SDL_Delay(wait_time);
