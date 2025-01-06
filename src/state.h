@@ -129,7 +129,7 @@ struct nqiv_state
 	 * event is less than the current number, it is considered out of date and discarded. An event
 	 * with a transaction group of -1 is never out of date. This feature primarily exists to solve
 	 * the problem of events still being queued for images that are no longer visible. */
-	int64_t              thread_event_transaction_group;
+	nqiv_shared_var      thread_event_transaction_group;
 	/* In SDL ticks (milliseconds) Check if prune_delay has passed for each render_and_update */
 	Uint64               time_of_last_prune;
 	Uint64               prune_delay;
@@ -139,7 +139,6 @@ struct nqiv_state
 	/* Base amount worker threads sleep between updates. */
 	int                  extra_wakeup_delay;
 	nqiv_shared_var      active_thread_count;
-	omp_lock_t           thread_event_transaction_group_lock;
 	/* Used to tell when the display needs to be redrawn. */
 	bool                 render_cleared;
 	/* Is montage mode? Otherwise image mode. */

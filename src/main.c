@@ -112,8 +112,8 @@ void nqiv_state_clear(nqiv_state* state)
 	if(state->SDL_inited) {
 		SDL_Quit();
 	}
-	if(state->thread_event_transaction_group > 0) {
-		omp_destroy_lock(&state->thread_event_transaction_group_lock);
+	if(nqiv_shared_var_get_int(&state->thread_event_transaction_group) > 0) {
+		nqiv_shared_var_destroy(&state->thread_event_transaction_group);
 		nqiv_shared_var_destroy(&state->running);
 	}
 	memset(state, 0, sizeof(nqiv_state));
@@ -221,9 +221,9 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	if(state->pending_thread_count == 0) {
 		state->pending_thread_count = 1;
 	}
-	omp_init_lock(&state->thread_event_transaction_group_lock);
-	assert(state->thread_event_transaction_group == 0);
-	state->thread_event_transaction_group = 1;
+	nqiv_shared_var_init(&state->thread_event_transaction_group);
+	assert(nqiv_shared_var_get_int(&state->thread_event_transaction_group) == 0);
+	nqiv_shared_var_set_int(&state->thread_event_transaction_group, 1);
 	nqiv_shared_var_init(&state->running);
 	return true;
 }
@@ -554,9 +554,7 @@ bool nqiv_send_thread_event_base(nqiv_state*       state,
 
 bool nqiv_send_thread_event(nqiv_state* state, const int level, nqiv_event* event)
 {
-	omp_set_lock(&state->thread_event_transaction_group_lock);
-	event->transaction_group = state->thread_event_transaction_group;
-	omp_unset_lock(&state->thread_event_transaction_group_lock);
+	event->transaction_group = nqiv_shared_var_get_int(&state->thread_event_transaction_group);
 	return nqiv_send_thread_event_base(state, level, event, false);
 }
 
@@ -1208,13 +1206,15 @@ void render_and_update(nqiv_state* state, const bool first_render, const bool ha
 
 	/* Update transaction group. */
 	if(state->montage.range_changed) {
-		omp_set_lock(&state->thread_event_transaction_group_lock);
-		state->thread_event_transaction_group += 1;
-		state->pruner.thread_event_transaction_group = state->thread_event_transaction_group;
+		nqiv_shared_var_lock(&state->thread_event_transaction_group);
+		state->thread_event_transaction_group.data.as_int += 1;
+		state->pruner.thread_event_transaction_group =
+			state->thread_event_transaction_group.data.as_int;
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 		               "Increased transaction group value to %" PRIi64 " at position %d.\n",
-		               state->thread_event_transaction_group, state->montage.positions.selection);
-		omp_unset_lock(&state->thread_event_transaction_group_lock);
+		               state->thread_event_transaction_group.data.as_int,
+		               state->montage.positions.selection);
+		nqiv_shared_var_unlock(&state->thread_event_transaction_group);
 		state->montage.range_changed = false;
 	}
 	if(state->in_montage) {
@@ -1657,7 +1657,7 @@ bool check_cmds(nqiv_state* state)
 	while(true) {
 		if(!locked) {
 			omp_set_lock(&(state->thread_queue.bins->lock));
-			omp_set_lock(&state->thread_event_transaction_group_lock);
+			nqiv_shared_var_lock(&state->thread_event_transaction_group);
 			nqiv_shared_var_lock(&state->active_thread_count);
 			locked = true;
 			assert(state->active_thread_count.data.as_int >= 0);
@@ -1680,7 +1680,7 @@ bool check_cmds(nqiv_state* state)
 	}
 	if(locked) {
 		nqiv_shared_var_unlock(&state->active_thread_count);
-		omp_unset_lock(&state->thread_event_transaction_group_lock);
+		nqiv_shared_var_unlock(&state->thread_event_transaction_group);
 		omp_unset_lock(&(state->thread_queue.bins->lock));
 	}
 	return nqiv_shared_var_get_op_result(&state->running) != NQIV_FAIL;
@@ -1858,9 +1858,8 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 	const int            extra_wakeup_delay = state->extra_wakeup_delay;
 	nqiv_log_ctx*        logger = &state->logger;
 	nqiv_priority_queue* thread_queue = &state->thread_queue;
-	const int64_t*       thread_event_transaction_group = &state->thread_event_transaction_group;
-	omp_lock_t*  thread_event_transaction_group_lock = &state->thread_event_transaction_group_lock;
-	const Uint32 event_code = state->thread_event_number;
+	nqiv_shared_var*     thread_event_transaction_group = &state->thread_event_transaction_group;
+	const Uint32         event_code = state->thread_event_number;
 	/* clang-format insists on unindenting pragmas. */
 	/* clang-format off */
 	#pragma omp parallel                                  \
@@ -1874,7 +1873,6 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 					 event_code,                          \
 					 result_ptr,                          \
 					 thread_event_transaction_group,      \
-					 thread_event_transaction_group_lock, \
 					 active_thread_count_ptr) \
 		num_threads(thread_count + 1)
 	{
@@ -1890,11 +1888,10 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 								 thread_event_interval,               \
 								 event_code,                          \
 								 thread_event_transaction_group,      \
-								 thread_event_transaction_group_lock, \
 								 active_thread_count_ptr)
 				nqiv_worker_main(logger, thread_queue, extra_wakeup_delay, thread_event_interval,
 				                 event_code, thread_event_transaction_group,
-				                 thread_event_transaction_group_lock, active_thread_count_ptr);
+								 active_thread_count_ptr);
 			}
 			state->restart_threads = false;
 			*result_ptr = nqiv_master_thread(state);

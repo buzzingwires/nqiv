@@ -1,5 +1,6 @@
 #include "typedefs.h"
 
+#include <inttypes.h>
 #include <string.h>
 
 #include <omp.h>
@@ -57,10 +58,17 @@ void nqiv_shared_var_dec_int(nqiv_shared_var* var)
 	nqiv_shared_var_unlock(var);
 }
 
-int nqiv_shared_var_get_int(nqiv_shared_var* var)
+int64_t nqiv_shared_var_get_int(nqiv_shared_var* var)
 {
 	nqiv_shared_var_lock(var);
-	const int result = var->data.as_int;
+	const int64_t result = var->data.as_int;
 	nqiv_shared_var_unlock(var);
 	return result;
+}
+
+void nqiv_shared_var_set_int(nqiv_shared_var* var, const int64_t value)
+{
+	nqiv_shared_var_lock(var);
+	var->data.as_int = value;
+	nqiv_shared_var_unlock(var);
 }

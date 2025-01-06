@@ -92,8 +92,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
                       const int            delay_base,
                       const int            event_interval,
                       const Uint32         event_code,
-                      const int64_t*       transaction_group,
-                      omp_lock_t*          transaction_group_lock,
+                      nqiv_shared_var*     transaction_group,
                       nqiv_shared_var*     active_count)
 {
 	/* Stagger events by their thread num to prevent stampeding herd problems. */
@@ -110,13 +109,10 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 				if(!event_found || event.transaction_group == -1) {
 					break;
 				}
-				omp_set_lock(transaction_group_lock);
-				if(event.transaction_group >= *transaction_group) {
-					omp_unset_lock(transaction_group_lock);
+				if(event.transaction_group >= nqiv_shared_var_get_int(transaction_group)) {
 					break;
 					/* NOOP */
 				}
-				omp_unset_lock(transaction_group_lock);
 			}
 		}
 		if(event_found) {

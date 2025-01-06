@@ -63,7 +63,7 @@ typedef struct nqiv_event
 typedef union nqiv_shared_var_types
 {
 	nqiv_op_result as_op_result;
-	int            as_int;
+	int64_t        as_int;
 } nqiv_shared_var_types;
 
 typedef struct nqiv_shared_var
@@ -80,6 +80,7 @@ void           nqiv_shared_var_set_op_result(nqiv_shared_var* var, const nqiv_op
 nqiv_op_result nqiv_shared_var_get_op_result(nqiv_shared_var* var);
 void           nqiv_shared_var_inc_int(nqiv_shared_var* var);
 void           nqiv_shared_var_dec_int(nqiv_shared_var* var);
-int            nqiv_shared_var_get_int(nqiv_shared_var* var);
+int64_t        nqiv_shared_var_get_int(nqiv_shared_var* var);
+void           nqiv_shared_var_set_int(nqiv_shared_var* var, const int64_t value);
 
 #endif /* NQIV_EVENT_H */
