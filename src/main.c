@@ -353,6 +353,10 @@ void nqiv_print_args(const char* exe)
 
 nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 {
+	if(!nqiv_setup_thread_info(state)) {
+		nqiv_state_clear(state);
+		return NQIV_FAIL;
+	}
 	state->zoom_default = NQIV_ZOOM_DEFAULT_FIT;
 	state->texture_scale_mode = SDL_ScaleModeBest;
 	state->no_resample_oversized = true;
@@ -512,10 +516,6 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 	if(!success) {
 		return NQIV_FAIL;
 	}
-	if(!nqiv_setup_thread_info(state)) {
-		nqiv_state_clear(state);
-		return NQIV_FAIL;
-	}
 	const char* arg;
 	while((arg = optparse_arg(&options))) {
 		if(!nqiv_image_manager_append(&state->images, arg)) {
@@ -529,8 +529,7 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 		fprintf(stderr, "No images specified. Quitting.\n");
 		return NQIV_PASS;
 	}
-	nqiv_cmd_alert_main(&state->cmds);
-	return NQIV_SUCCESS;
+	return nqiv_cmd_alert_main(&state->cmds) ? NQIV_SUCCESS : NQIV_FAIL;
 } /* parse_args */
 
 bool nqiv_send_thread_event_base(nqiv_state*       state,
@@ -556,12 +555,6 @@ bool nqiv_send_thread_event(nqiv_state* state, const int level, nqiv_event* even
 {
 	event->transaction_group = nqiv_shared_var_get_int(&state->thread_event_transaction_group);
 	return nqiv_send_thread_event_base(state, level, event, false);
-}
-
-bool nqiv_send_thread_event_force(nqiv_state* state, const int level, nqiv_event* event)
-{
-	event->transaction_group = -1;
-	return nqiv_send_thread_event_base(state, level, event, true);
 }
 
 bool render_texture(bool*           cleared,

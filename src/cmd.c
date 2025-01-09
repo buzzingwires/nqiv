@@ -19,7 +19,7 @@
 #include "keyrate.h"
 #include "pruner.h"
 
-void nqiv_cmd_alert_main(nqiv_cmd_manager* manager)
+bool nqiv_cmd_alert_main(nqiv_cmd_manager* manager)
 {
 	SDL_Event e = {0};
 	e.type = SDL_USEREVENT;
@@ -28,14 +28,14 @@ void nqiv_cmd_alert_main(nqiv_cmd_manager* manager)
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
 		               "Failed to send SDL event from thread %d. SDL Error: %s\n",
 		               omp_get_thread_num(), SDL_GetError());
+		return false;
 	}
+	return true;
 }
 
 void nqiv_cmd_force_quit_main(nqiv_cmd_manager* manager)
 {
-	nqiv_key_action action = NQIV_KEY_ACTION_QUIT;
-	nqiv_queue_push_force(&manager->state->key_actions, &action);
-	nqiv_cmd_alert_main(manager);
+	nqiv_shared_var_set_op_result(&manager->state->running, NQIV_FAIL);
 }
 
 char nqiv_cmd_tmpterm(char* data, const int pos)
@@ -499,7 +499,7 @@ bool nqiv_cmd_parser_sendkey(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tok
 {
 	const nqiv_keybind_pair* pair =
 		&(manager->state->keybinds.simulated_lookup[tokens[0]->value.as_key_action]);
-	return nqiv_queue_push(&manager->state->key_actions, &pair);
+	return nqiv_queue_push(&manager->state->key_actions, &pair) && nqiv_cmd_alert_main(manager);
 }
 
 void nqiv_cmd_print_indent(const nqiv_cmd_manager* manager)
@@ -1796,6 +1796,8 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 			child = child->peer;
 		}
 		if(!found_node) {
+			/* We haven't found the child node and there are no arguments, either. */
+			error = current_node->args == NULL;
 			break;
 		}
 	}
