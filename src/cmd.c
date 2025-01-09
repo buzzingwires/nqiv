@@ -1801,7 +1801,7 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 			break;
 		}
 	}
-	if(dumpcfg) {
+	if(dumpcfg && !error) {
 		nqiv_cmd_dumpcfg(manager, current_node, true, current_cmd);
 	} else if(help) {
 		nqiv_cmd_print_help(manager, current_node, help_levels);
