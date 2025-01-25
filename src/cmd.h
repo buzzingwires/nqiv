@@ -21,9 +21,8 @@
  * Branch nodes may have other branch nodes or leaf nodes as children. Leaf
  * nodes point to functions that allow their relevant values to be stored or
  * printed and have a list of arguments that are handled by their store
- * function. They are expected to have at least a store function, though a print
- * function is optional, as some commands only perform an action, rather than
- * storing a value.
+ * function. They are expected to have at least a print or store function. Some perform actions
+ * only, while others are internal state that should only be accessed for debugging and the like.
  *
  * Commands are case-sensitive and terminate at the end of a line. Each 'node'
  * is traversed based on a space-separated name. A line may begin with # to make
@@ -132,16 +131,17 @@ typedef struct nqiv_cmd_arg_token
 	nqiv_cmd_arg_value value;
 } nqiv_cmd_arg_token;
 
+typedef struct nqiv_cmd_node nqiv_cmd_node;
+
 typedef struct nqiv_cmd_manager_print_settings
 {
 	/* Loose information needed for various tasks related to printing the
 	 * command tree. */
-	int   indent;
-	bool  dumpcfg;
-	char* prefix;
+	int            indent;
+	bool           dumpcfg;
+	char*          prefix;
+	nqiv_cmd_node* current_node;
 } nqiv_cmd_manager_print_settings;
-
-typedef struct nqiv_cmd_node nqiv_cmd_node;
 
 struct nqiv_cmd_manager
 {
@@ -161,6 +161,9 @@ struct nqiv_cmd_node
 {
 	char* name;
 	char* description;
+	/* Pointer to the data handled by this node. This may or may not be used, depending on whether
+	 * the store/print functions are specialized. */
+	void* data;
 	bool (*store_value)(nqiv_cmd_manager*, nqiv_cmd_arg_token**);
 	void (*print_value)(nqiv_cmd_manager*);
 	nqiv_cmd_arg_desc** args;

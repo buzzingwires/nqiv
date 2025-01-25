@@ -14,9 +14,14 @@ typedef struct nqiv_montage_dimensions
 {
 	int    window_width;
 	int    window_height;
+	/* Margins and spaces are ratios of the window dimensions. 1.0 == 100% */
+	/* Left and right sides. */
 	double horizontal_margin;
+	/* Top and bottom. */
 	double vertical_margin;
+	/* Between columns. */
 	double column_space;
+	/* Between rows. */
 	double row_space;
 	int    count_per_row;
 	/* Number of thumbnails per 'page' */

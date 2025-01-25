@@ -379,9 +379,6 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 		return NQIV_FAIL;
 	}
 	nqiv_log_init(&state->logger);
-	if(!nqiv_cmd_manager_init(&state->cmds, state)) {
-		return NQIV_FAIL;
-	}
 	state->logger.level = NQIV_LOG_WARNING;
 	if(!nqiv_check_and_print_logger_error(&state->logger)) {
 		return NQIV_FAIL;
@@ -418,6 +415,9 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 		return NQIV_FAIL;
 	}
 	nqiv_setup_montage(state);
+	if(!nqiv_cmd_manager_init(&state->cmds, state)) {
+		return NQIV_FAIL;
+	}
 	const struct optparse_long longopts[] = {
 		{"cmd-from-stdin", 's', OPTPARSE_NONE},
         {"built-in-config", 'B', OPTPARSE_NONE},
@@ -1649,8 +1649,7 @@ bool check_cmds(nqiv_state* state)
 	bool locked = false;
 	while(true) {
 		if(!locked) {
-			omp_set_lock(&(state->thread_queue.bins->lock));
-			nqiv_shared_var_lock(&state->thread_event_transaction_group);
+			nqiv_priority_queue_lock(&(state->thread_queue));
 			nqiv_shared_var_lock(&state->active_thread_count);
 			locked = true;
 			assert(state->active_thread_count.data.as_int >= 0);
@@ -1673,8 +1672,7 @@ bool check_cmds(nqiv_state* state)
 	}
 	if(locked) {
 		nqiv_shared_var_unlock(&state->active_thread_count);
-		nqiv_shared_var_unlock(&state->thread_event_transaction_group);
-		omp_unset_lock(&(state->thread_queue.bins->lock));
+		nqiv_priority_queue_unlock(&(state->thread_queue));
 	}
 	return nqiv_shared_var_get_op_result(&state->running) != NQIV_FAIL;
 }

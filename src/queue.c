@@ -185,55 +185,77 @@ void nqiv_priority_queue_push_force(nqiv_priority_queue* queue, const int level,
 	nqiv_queue_push_force(&(queue->bins[level]), entry);
 }
 
-bool nqiv_priority_queue_pop_op(nqiv_priority_queue* queue,
-                                void*                entry,
-                                bool (*op)(nqiv_queue*, void*))
+bool nqiv_queue_set_max_data_length(nqiv_queue* queue, void* count)
+{
+	nqiv_array_set_max_data_length(queue->array, (*(int*)count));
+	return true;
+}
+
+bool nqiv_queue_set_min_add_count(nqiv_queue* queue, void* count)
+{
+	queue->array->min_add_count = *((int*)count);
+	return true;
+}
+
+bool nqiv_queue_lock(nqiv_queue* queue, void* value)
+{
+	(void)value;
+	omp_set_lock(&queue->lock);
+	return true;
+}
+
+bool nqiv_queue_unlock(nqiv_queue* queue, void* value)
+{
+	(void)value;
+	omp_unset_lock(&queue->lock);
+	return true;
+}
+
+bool nqiv_priority_queue_apply(nqiv_priority_queue* queue,
+                               void*                entry,
+                               bool (*op)(nqiv_queue*, void*),
+                               const bool lazy)
 {
 	int idx;
 	for(idx = 0; idx < queue->bin_count; ++idx) {
-		if(op(&(queue->bins[idx]), entry)) {
-			return true;
+		/* If we are lazy, we quit immediately on success, otherwise we quit on failure, checking
+		 * everything on success. */
+		if(lazy) {
+			if(op(&(queue->bins[idx]), entry)) {
+				return true;
+			}
+		} else {
+			if(!op(&(queue->bins[idx]), entry)) {
+				return false;
+			}
 		}
 	}
-	return false;
+	return !lazy;
 }
 
 bool nqiv_priority_queue_pop(nqiv_priority_queue* queue, void* entry)
 {
-	return nqiv_priority_queue_pop_op(queue, entry, nqiv_queue_pop);
-}
-
-bool nqiv_queue_set_max_data_length(nqiv_queue* queue, const int count)
-{
-	nqiv_array_set_max_data_length(queue->array, count);
-	return true;
-}
-
-bool nqiv_queue_set_min_add_count(nqiv_queue* queue, const int count)
-{
-	queue->array->min_add_count = count;
-	return true;
-}
-
-bool nqiv_priority_queue_apply_int(nqiv_priority_queue* queue,
-                                   bool (*op)(nqiv_queue*, int),
-                                   const int value)
-{
-	int idx;
-	for(idx = 0; idx < queue->bin_count; ++idx) {
-		if(!op(&(queue->bins[idx]), value)) {
-			return false;
-		}
-	}
-	return true;
+	return nqiv_priority_queue_apply(queue, entry, nqiv_queue_pop, true);
 }
 
 bool nqiv_priority_queue_set_max_data_length(nqiv_priority_queue* queue, const int length)
 {
-	return nqiv_priority_queue_apply_int(queue, nqiv_queue_set_max_data_length, length);
+	int tmp_length = length;
+	return nqiv_priority_queue_apply(queue, &tmp_length, nqiv_queue_set_max_data_length, false);
 }
 
 bool nqiv_priority_queue_set_min_add_count(nqiv_priority_queue* queue, const int count)
 {
-	return nqiv_priority_queue_apply_int(queue, nqiv_queue_set_min_add_count, count);
+	int tmp_count = count;
+	return nqiv_priority_queue_apply(queue, &tmp_count, nqiv_queue_set_min_add_count, false);
+}
+
+void nqiv_priority_queue_lock(nqiv_priority_queue* queue)
+{
+	nqiv_priority_queue_apply(queue, NULL, nqiv_queue_lock, false);
+}
+
+void nqiv_priority_queue_unlock(nqiv_priority_queue* queue)
+{
+	nqiv_priority_queue_apply(queue, NULL, nqiv_queue_unlock, false);
 }
