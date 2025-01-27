@@ -1864,46 +1864,54 @@ void nqiv_cmd_destroy_node(nqiv_cmd_node* node)
 	assert(node != NULL);
 	assert(node->name != NULL);
 	assert(node->description != NULL);
-	memset(node->name, 0, strlen(node->name));
-	free(node->name);
-	memset(node->description, 0, strlen(node->description));
-	free(node->description);
-	if(node->args != NULL) {
-		memset(node->args, 0, nqiv_cmd_get_args_length(node));
-		free(node->args);
-	}
 	if(node->child != NULL) {
 		nqiv_cmd_destroy_node(node->child);
 	}
 	if(node->peer != NULL) {
 		nqiv_cmd_destroy_node(node->peer);
 	}
+	if(node->args != NULL) {
+		memset(node->args, 0,
+		       nqiv_cmd_get_args_list_length((const nqiv_cmd_arg_desc**)node->args)
+		           * sizeof(nqiv_cmd_arg_desc*));
+	}
+	memset(node->description, 0, strlen(node->description));
+	memset(node->name, 0, strlen(node->name));
 	memset(node, 0, sizeof(nqiv_cmd_node));
 	free(node);
 }
 
-nqiv_cmd_node* nqiv_cmd_make_base_node(bool* status, const char* name, const char* description)
+nqiv_cmd_node* nqiv_cmd_make_base_node(bool*                     status,
+                                       const char*               name,
+                                       const char*               description,
+                                       const nqiv_cmd_arg_desc** args)
 {
-	nqiv_cmd_node* node = (nqiv_cmd_node*)calloc(1, sizeof(nqiv_cmd_node));
+	const size_t node_size = sizeof(nqiv_cmd_node);
+	const size_t name_size = (strlen(name) + 1) * sizeof(char);
+	const size_t description_size = (strlen(description) + 1) * sizeof(char);
+	assert(name_size >= 2 * sizeof(char));
+	assert(description_size >= 2 * sizeof(char));
+	const size_t args_size =
+		args != NULL ? nqiv_cmd_get_args_list_length(args) * sizeof(nqiv_cmd_arg_desc*) : 0;
+	nqiv_cmd_node* node =
+		(nqiv_cmd_node*)calloc(1, node_size + name_size + description_size + args_size);
 	if(node == NULL) {
 		*status = *status && false;
 		return NULL;
 	}
-	node->name = (char*)calloc(strlen(name) + 1, sizeof(char));
-	if(node->name == NULL) {
-		free(node);
-		*status = *status && false;
-		return NULL;
-	}
-	node->description = (char*)calloc(strlen(description) + 1, sizeof(char));
-	if(node->description == NULL) {
-		free(node->name);
-		free(node);
-		*status = *status && false;
-		return NULL;
+	node->name = (char*)(((char*)node) + node_size);
+	node->description = (char*)(node->name + name_size);
+	if(args_size > 0) {
+		node->args = (nqiv_cmd_arg_desc**)(node->description + description_size);
+		memcpy(node->args, args, args_size);
 	}
 	strcpy(node->name, name);
+	assert(node->name[strlen(name)] == '\0');
+	assert(strcmp(node->name, name) == 0);
 	strcpy(node->description, description);
+	assert(node->description[strlen(description)] == '\0');
+	assert(strcmp(node->description, description) == 0);
+	assert(node->args == NULL || node->args[nqiv_cmd_get_args_list_length(args) - 1] == NULL);
 	*status = *status && true;
 	return node;
 }
@@ -1916,7 +1924,7 @@ nqiv_cmd_node* nqiv_cmd_make_leaf_node(bool*       status,
                                        void (*print_value)(nqiv_cmd_manager*),
                                        const nqiv_cmd_arg_desc** args)
 {
-	nqiv_cmd_node* node = nqiv_cmd_make_base_node(status, name, description);
+	nqiv_cmd_node* node = nqiv_cmd_make_base_node(status, name, description, args);
 	if(node == NULL) {
 		*status = *status && false;
 		return NULL;
@@ -1925,16 +1933,6 @@ nqiv_cmd_node* nqiv_cmd_make_leaf_node(bool*       status,
 	node->store_value = store_value;
 	node->print_value = print_value;
 	node->data = data;
-	if(args != NULL) {
-		const int arg_count = nqiv_cmd_get_args_list_length(args);
-		node->args = (nqiv_cmd_arg_desc**)calloc(arg_count, sizeof(nqiv_cmd_arg_desc*));
-		if(node->args == NULL) {
-			nqiv_cmd_destroy_node(node);
-			*status = *status && false;
-			return NULL;
-		}
-		memcpy(node->args, args, arg_count * sizeof(nqiv_cmd_arg_desc*));
-	}
 	*status = *status && true;
 	return node;
 }
@@ -1947,7 +1945,7 @@ nqiv_cmd_node* nqiv_cmd_add_child_branch_node(bool*          status,
 	if(parent == NULL || !*status) {
 		return NULL;
 	}
-	nqiv_cmd_node* node = nqiv_cmd_make_base_node(status, name, description);
+	nqiv_cmd_node* node = nqiv_cmd_make_base_node(status, name, description, NULL);
 	nqiv_cmd_add_child_or_peer(parent, node);
 	return node;
 }
@@ -2100,7 +2098,8 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		"Root of parsing tree. Prefix help to get help messages on commands, helptree to do the "
 		"same recursively, helpchildren to only recurse one level, or dumpcfg to dump functional "
 		"commands to set the current configuration. Lines can also be commented by prefixing with "
-		"#");
+		"#",
+		NULL);
 	nqiv_cmd_node* current_node;
 	nqiv_cmd_node* tmp_node = NULL;
 	bool           deprecated = false;
