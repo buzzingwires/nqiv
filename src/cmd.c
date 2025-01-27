@@ -1972,33 +1972,82 @@ nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool*          status,
 }
 
 #define STACKLEN 16
-#define SET_CURRENT                                                         \
-	assert(nqiv_array_get_units_count(&stack) > 0);                         \
-	assert(nqiv_array_get_units_count(&stack) < STACKLEN);                  \
-	current_node = NULL;                                                    \
-	nqiv_array_get(&stack, nqiv_array_get_last_idx(&stack), &current_node); \
-	assert(current_node != NULL);
-#define DEPRECATE                \
-	assert(deprecated == false); \
-	deprecated = true;
-#define APPLY_DEPRECATE                \
-	tmp_node->deprecated = deprecated; \
-	deprecated = false;
+
+void nqiv_cmd_manager_build_cmdtree_set_current(nqiv_cmd_node** current_node, nqiv_array* stack)
+{
+	assert(nqiv_array_get_units_count(stack) > 0);
+	assert(nqiv_array_get_units_count(stack) < STACKLEN);
+	*current_node = NULL;
+	nqiv_array_get(stack, nqiv_array_get_last_idx(stack), current_node);
+	assert(*current_node != NULL);
+}
+
+void nqiv_cmd_manager_build_cmdtree_deprecate(bool* deprecated)
+{
+	assert(*deprecated == false);
+	*deprecated = true;
+}
+
+void nqiv_cmd_manager_build_cmdtree_apply_deprecate(nqiv_cmd_node* tmp_node, bool* deprecated)
+{
+	tmp_node->deprecated = *deprecated;
+	*deprecated = false;
+}
+
+void nqiv_cmd_manager_build_cmdtree_b(nqiv_cmd_node** current_node,
+                                      nqiv_array*     stack,
+                                      nqiv_cmd_node** tmp_node,
+                                      bool*           deprecated,
+                                      bool*           status,
+                                      const char*     name,
+                                      const char*     description)
+{
+	nqiv_cmd_manager_build_cmdtree_set_current(current_node, stack);
+	assert(*tmp_node == NULL);
+	*tmp_node = nqiv_cmd_add_child_branch_node(status, *current_node, name, description);
+	nqiv_cmd_manager_build_cmdtree_apply_deprecate(*tmp_node, deprecated);
+	nqiv_array_push(stack, tmp_node);
+	*tmp_node = NULL;
+}
+
+void nqiv_cmd_manager_build_cmdtree_l(nqiv_cmd_node** current_node,
+                                      nqiv_array*     stack,
+                                      nqiv_cmd_node** tmp_node,
+                                      bool*           deprecated,
+                                      bool*           status,
+                                      const char*     name,
+                                      const char*     description,
+                                      void*           data,
+                                      bool (*store_value)(nqiv_cmd_manager*, nqiv_cmd_arg_token**),
+                                      void (*print_value)(nqiv_cmd_manager*),
+                                      const nqiv_cmd_arg_desc** args)
+{
+	nqiv_cmd_manager_build_cmdtree_set_current(current_node, stack);
+	assert(args == NULL || nqiv_cmd_get_args_list_length(args) < NQIV_CMD_MAX_ARGS);
+	assert(*tmp_node == NULL);
+	*tmp_node = nqiv_cmd_add_child_leaf_node(status, *current_node, name, description, data,
+	                                         store_value, print_value, args);
+	nqiv_cmd_manager_build_cmdtree_apply_deprecate(*tmp_node, deprecated);
+	*tmp_node = NULL;
+}
+
+void nqiv_cmd_manager_build_cmdtree_pop(nqiv_cmd_node** current_node, nqiv_array* stack)
+{
+	assert(nqiv_array_get_units_count(stack) > 0);
+	nqiv_array_pop(stack, NULL);
+	nqiv_cmd_manager_build_cmdtree_set_current(current_node, stack);
+}
+
+#define SET_CURRENT     nqiv_cmd_manager_build_cmdtree_set_current(&current_node, &stack);
+#define DEPRECATE       nqiv_cmd_manager_build_cmdtree_deprecate(&deprecated);
+#define APPLY_DEPRECATE nqiv_cmd_manager_build_cmdtree_apply_deprecate(tmp_node, &deprecated);
 #define B(NAME, DESCRIPTION)                                                                 \
-	SET_CURRENT;                                                                             \
-	assert(tmp_node == NULL);                                                                \
-	tmp_node = nqiv_cmd_add_child_branch_node(&status, current_node, (NAME), (DESCRIPTION)); \
-	APPLY_DEPRECATE;                                                                         \
-	nqiv_array_push(&stack, &tmp_node);                                                      \
-	tmp_node = NULL;
+	nqiv_cmd_manager_build_cmdtree_b(&current_node, &stack, &tmp_node, &deprecated, &status, \
+	                                 (NAME), (DESCRIPTION));
 #define L(NAME, DESCRIPTION, DATA, STORE_VALUE, PRINT_VALUE, ARGS)                                \
-	SET_CURRENT;                                                                                  \
-	assert((ARGS) == NULL || nqiv_cmd_get_args_list_length(ARGS) < NQIV_CMD_MAX_ARGS);            \
-	assert(tmp_node == NULL);                                                                     \
-	tmp_node = nqiv_cmd_add_child_leaf_node(&status, current_node, (NAME), (DESCRIPTION), (DATA), \
-	                                        (STORE_VALUE), (PRINT_VALUE), (ARGS));                \
-	APPLY_DEPRECATE;                                                                              \
-	tmp_node = NULL;
+	nqiv_cmd_manager_build_cmdtree_l(&current_node, &stack, &tmp_node, &deprecated, &status,      \
+	                                 (NAME), (DESCRIPTION), (DATA), (STORE_VALUE), (PRINT_VALUE), \
+	                                 (ARGS));
 /* Leaf node with NULL (0) data. Specialized config/legacy code. */
 #define L0(NAME, DESCRIPTION, STORE_VALUE, PRINT_VALUE, ARGS) \
 	L(NAME, DESCRIPTION, NULL, STORE_VALUE, PRINT_VALUE, ARGS)
@@ -2011,10 +2060,7 @@ nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool*          status,
 #define LA(NAME, DESCRIPTION, STORE_VALUE, ARGS) L(NAME, DESCRIPTION, NULL, STORE_VALUE, NULL, ARGS)
 /* Leaf node for specialized printing. No data or storage specified. */
 #define LP(NAME, DESCRIPTION, PRINT_VALUE) L(NAME, DESCRIPTION, NULL, NULL, PRINT_VALUE, NULL)
-#define POP                                         \
-	assert(nqiv_array_get_units_count(&stack) > 0); \
-	nqiv_array_pop(&stack, NULL);                   \
-	SET_CURRENT;
+#define POP                                nqiv_cmd_manager_build_cmdtree_pop(&current_node, &stack);
 // NOLINTBEGIN(google-readability-function-size,readability-function-size)
 bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 {
