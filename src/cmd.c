@@ -85,112 +85,10 @@ bool nqiv_cmd_parser_set_vips_threads(nqiv_cmd_manager* manager, nqiv_cmd_arg_to
 	return true;
 }
 
-bool nqiv_cmd_parser_set_prune_delay(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->prune_delay = tokens[0]->value.as_Uint64;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_event_timeout(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->event_timeout = tokens[0]->value.as_int;
-	return true;
-}
-
 bool nqiv_cmd_parser_set_extra_wakeup_delay(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	nqiv_cmd_set_and_flag_new_int(&(manager->state->extra_wakeup_delay), tokens[0]->value.as_int,
 	                              &(manager->state->restart_threads));
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_down_amount(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.pan_down_amount = tokens[0]->value.as_double;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_in_amount(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.zoom_in_amount = tokens[0]->value.as_double;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_left_amount(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.pan_left_amount = tokens[0]->value.as_double;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_out_amount(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.zoom_out_amount = tokens[0]->value.as_double;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_right_amount(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.pan_right_amount = tokens[0]->value.as_double;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_up_amount(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.pan_up_amount = tokens[0]->value.as_double;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_down_amount_more(nqiv_cmd_manager*    manager,
-                                               nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.pan_down_amount_more = tokens[0]->value.as_double;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_in_amount_more(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.zoom_in_amount_more = tokens[0]->value.as_double;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_left_amount_more(nqiv_cmd_manager*    manager,
-                                               nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.pan_left_amount_more = tokens[0]->value.as_double;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_out_amount_more(nqiv_cmd_manager*    manager,
-                                              nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.zoom_out_amount_more = tokens[0]->value.as_double;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_right_amount_more(nqiv_cmd_manager*    manager,
-                                                nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.pan_right_amount_more = tokens[0]->value.as_double;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_up_amount_more(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.pan_up_amount_more = tokens[0]->value.as_double;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_up_coordinate_x_times(nqiv_cmd_manager*    manager,
-                                                    nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.pan_coordinate_x_multiplier = tokens[0]->value.as_double;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_zoom_up_coordinate_y_times(nqiv_cmd_manager*    manager,
-                                                    nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.pan_coordinate_y_multiplier = tokens[0]->value.as_double;
 	return true;
 }
 
@@ -219,43 +117,11 @@ bool nqiv_cmd_parser_set_zoom_scale_mode(nqiv_cmd_manager* manager, nqiv_cmd_arg
 	return true;
 }
 
-bool nqiv_cmd_parser_set_thumbnail_load(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.thumbnail.load = tokens[0]->value.as_bool;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_thumbnail_save(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.thumbnail.save = tokens[0]->value.as_bool;
-	return true;
-}
-
 bool nqiv_cmd_parser_set_thumbnail_size(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	const int old_size = manager->state->images.thumbnail.size;
 	manager->state->images.thumbnail.size = tokens[0]->value.as_int;
 	return nqiv_image_manager_reattempt_thumbnails(&manager->state->images, old_size);
-}
-
-bool nqiv_cmd_parser_set_default_frame_time(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.default_frame_time = tokens[0]->value.as_int;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_thumbnail_zoom_amount(nqiv_cmd_manager*    manager,
-                                               nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.thumbnail_adjust = tokens[0]->value.as_int;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_thumbnail_zoom_amount_more(nqiv_cmd_manager*    manager,
-                                                    nqiv_cmd_arg_token** tokens)
-{
-	manager->state->images.zoom.thumbnail_adjust_more = tokens[0]->value.as_int;
-	return true;
 }
 
 bool nqiv_cmd_parser_set_thumbnail_path(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
@@ -284,32 +150,6 @@ bool nqiv_cmd_parser_set_log_prefix(nqiv_cmd_manager* manager, nqiv_cmd_arg_toke
 	nqiv_log_set_prefix_format(&manager->state->logger, tokens[0]->raw);
 	nqiv_cmd_tmpret(tokens[0]->raw, tokens[0]->length, data_end);
 	omp_unset_lock(&manager->state->logger.lock);
-	return true;
-}
-
-bool nqiv_cmd_parser_set_no_resample_oversized(nqiv_cmd_manager*    manager,
-                                               nqiv_cmd_arg_token** tokens)
-{
-	manager->state->no_resample_oversized = tokens[0]->value.as_bool;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_show_loading_indicator(nqiv_cmd_manager*    manager,
-                                                nqiv_cmd_arg_token** tokens)
-{
-	manager->state->show_loading_indicator = tokens[0]->value.as_bool;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_parse_error_quit(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->cmd_parse_error_quit = tokens[0]->value.as_bool;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_apply_error_quit(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->cmd_apply_error_quit = tokens[0]->value.as_bool;
 	return true;
 }
 
@@ -382,18 +222,6 @@ bool nqiv_cmd_parser_set_mark_color(nqiv_cmd_manager* manager, nqiv_cmd_arg_toke
 	                                   "mark outline color", nqiv_state_recreate_mark_texture);
 }
 
-bool nqiv_cmd_parser_set_preload_ahead(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->montage.preload.ahead = tokens[0]->value.as_int;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_preload_behind(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->montage.preload.behind = tokens[0]->value.as_int;
-	return true;
-}
-
 bool nqiv_cmd_parser_set_window_height(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
 {
 	int w;
@@ -409,45 +237,6 @@ bool nqiv_cmd_parser_set_window_width(nqiv_cmd_manager* manager, nqiv_cmd_arg_to
 	int h;
 	SDL_GetWindowSizeInPixels(manager->state->window, &w, &h);
 	SDL_SetWindowSize(manager->state->window, tokens[0]->value.as_int, h);
-	return true;
-}
-
-bool nqiv_cmd_parser_set_minimum_delay_default(nqiv_cmd_manager*    manager,
-                                               nqiv_cmd_arg_token** tokens)
-{
-	manager->state->keystates.settings.minimum_delay = (Sint64)(tokens[0]->value.as_int);
-	return true;
-}
-
-bool nqiv_cmd_parser_set_repeat_delay_default(nqiv_cmd_manager*    manager,
-                                              nqiv_cmd_arg_token** tokens)
-{
-	manager->state->keystates.settings.consecutive_delay = (Sint64)(tokens[0]->value.as_int);
-	return true;
-}
-
-bool nqiv_cmd_parser_set_send_on_down_default(nqiv_cmd_manager*    manager,
-                                              nqiv_cmd_arg_token** tokens)
-{
-	manager->state->keystates.send_on_down = tokens[0]->value.as_bool;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_send_on_up_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->keystates.send_on_up = tokens[0]->value.as_bool;
-	return true;
-}
-
-bool nqiv_cmd_parser_set_start_delay_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->keystates.settings.start_delay = (Sint64)(tokens[0]->value.as_int);
-	return true;
-}
-
-bool nqiv_cmd_parser_set_delay_accel_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
-{
-	manager->state->keystates.settings.delay_accel = (Sint64)(tokens[0]->value.as_int);
 	return true;
 }
 
@@ -525,6 +314,30 @@ void nqiv_cmd_parser_print_log_error_message(nqiv_cmd_manager* manager)
 		fprintf(stdout, "EMPTY");
 	}
 	omp_unset_lock(&manager->state->logger.lock);
+}
+
+bool nqiv_cmd_parser_set_data_double(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	*((double*)manager->print_settings.current_node->data) = tokens[0]->value.as_double;
+	return true;
+}
+
+bool nqiv_cmd_parser_set_data_int(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	*((int*)manager->print_settings.current_node->data) = tokens[0]->value.as_int;
+	return true;
+}
+
+bool nqiv_cmd_parser_set_data_uint64(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	*((Uint64*)manager->print_settings.current_node->data) = tokens[0]->value.as_Uint64;
+	return true;
+}
+
+bool nqiv_cmd_parser_set_data_bool(nqiv_cmd_manager* manager, nqiv_cmd_arg_token** tokens)
+{
+	*((bool*)manager->print_settings.current_node->data) = tokens[0]->value.as_bool;
+	return true;
 }
 
 void nqiv_cmd_parser_print_data_double(nqiv_cmd_manager* manager)
@@ -618,22 +431,22 @@ void nqiv_cmd_parser_print_data_images(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_data_int64(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%" PRIi64, *((int64_t*)manager->print_settings.current_node->data));
+	fprintf(stdout, "%" PRIi64, *((Sint64*)manager->print_settings.current_node->data));
 }
 
 void nqiv_cmd_parser_print_data_bool(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%s", *((bool*)manager->print_settings.current_node->data) ? "TRUE" : "FALSE");
+	fprintf(stdout, "%s", *((bool*)manager->print_settings.current_node->data) ? "true" : "false");
 }
 
 void nqiv_cmd_parser_print_data_uint64(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%" PRIu64, *((uint64_t*)manager->print_settings.current_node->data));
+	fprintf(stdout, "%" PRIu64, *((Uint64*)manager->print_settings.current_node->data));
 }
 
 void nqiv_cmd_parser_print_data_uint32(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%" PRIu32, *((uint32_t*)manager->print_settings.current_node->data));
+	fprintf(stdout, "%" PRIu32, *((Uint32*)manager->print_settings.current_node->data));
 }
 
 void nqiv_cmd_parser_print_data_shared_op_result(nqiv_cmd_manager* manager)
@@ -771,106 +584,6 @@ void nqiv_cmd_parser_print_data_event_queue(nqiv_cmd_manager* manager)
 	manager->print_settings.indent -= 1;
 }
 
-void nqiv_cmd_parser_print_thread_count(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%d", manager->state->pending_thread_count);
-}
-
-void nqiv_cmd_parser_print_thread_event_interval(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%d", manager->state->thread_event_interval);
-}
-
-void nqiv_cmd_parser_print_vips_threads(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%d", manager->state->vips_threads);
-}
-
-void nqiv_cmd_parser_print_prune_delay(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%" PRIu64, manager->state->prune_delay);
-}
-
-void nqiv_cmd_parser_print_event_timeout(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%d", manager->state->event_timeout);
-}
-
-void nqiv_cmd_parser_print_extra_wakeup_delay(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%d", manager->state->extra_wakeup_delay);
-}
-
-void nqiv_cmd_parser_print_zoom_down_amount(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.pan_down_amount);
-}
-
-void nqiv_cmd_parser_print_zoom_in_amount(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.zoom_in_amount);
-}
-
-void nqiv_cmd_parser_print_zoom_left_amount(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.pan_left_amount);
-}
-
-void nqiv_cmd_parser_print_zoom_out_amount(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.zoom_out_amount);
-}
-
-void nqiv_cmd_parser_print_zoom_right_amount(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.pan_right_amount);
-}
-
-void nqiv_cmd_parser_print_zoom_up_amount(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.pan_up_amount);
-}
-
-void nqiv_cmd_parser_print_zoom_down_amount_more(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.pan_down_amount_more);
-}
-
-void nqiv_cmd_parser_print_zoom_in_amount_more(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.zoom_in_amount_more);
-}
-
-void nqiv_cmd_parser_print_zoom_left_amount_more(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.pan_left_amount_more);
-}
-
-void nqiv_cmd_parser_print_zoom_out_amount_more(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.zoom_out_amount_more);
-}
-
-void nqiv_cmd_parser_print_zoom_right_amount_more(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.pan_right_amount_more);
-}
-
-void nqiv_cmd_parser_print_zoom_up_amount_more(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.pan_up_amount_more);
-}
-
-void nqiv_cmd_parser_print_zoom_up_coordinate_x_times(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.pan_coordinate_x_multiplier);
-}
-
-void nqiv_cmd_parser_print_zoom_up_coordinate_y_times(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%f", manager->state->images.zoom.pan_coordinate_y_multiplier);
-}
-
 void nqiv_cmd_parser_print_zoom_default(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%s", nqiv_zoom_default_names[manager->state->zoom_default]);
@@ -881,36 +594,6 @@ void nqiv_cmd_parser_print_zoom_scale_mode(nqiv_cmd_manager* manager)
 	fprintf(stdout, "%s", nqiv_scale_mode_to_text(manager->state->texture_scale_mode));
 }
 
-void nqiv_cmd_parser_print_thumbnail_load(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%s", manager->state->images.thumbnail.load ? "true" : "false");
-}
-
-void nqiv_cmd_parser_print_thumbnail_save(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%s", manager->state->images.thumbnail.save ? "true" : "false");
-}
-
-void nqiv_cmd_parser_print_thumbnail_size(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%d", manager->state->images.thumbnail.size);
-}
-
-void nqiv_cmd_parser_print_default_frame_time(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%d", manager->state->images.default_frame_time);
-}
-
-void nqiv_cmd_parser_print_thumbnail_zoom_amount(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%d", manager->state->images.zoom.thumbnail_adjust);
-}
-
-void nqiv_cmd_parser_print_thumbnail_zoom_amount_more(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%d", manager->state->images.zoom.thumbnail_adjust_more);
-}
-
 void nqiv_cmd_parser_print_thumbnail_path(nqiv_cmd_manager* manager)
 {
 	if(manager->state->images.thumbnail.root != NULL) {
@@ -918,16 +601,6 @@ void nqiv_cmd_parser_print_thumbnail_path(nqiv_cmd_manager* manager)
 	} else if(!manager->print_settings.dumpcfg) {
 		fprintf(stdout, "UNSET");
 	}
-}
-
-void nqiv_cmd_parser_print_no_resample_oversized(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%s", manager->state->no_resample_oversized ? "true" : "false");
-}
-
-void nqiv_cmd_parser_print_show_loading_indicator(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%s", manager->state->show_loading_indicator ? "true" : "false");
 }
 
 void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
@@ -984,16 +657,6 @@ void nqiv_cmd_parser_print_log_prefix(nqiv_cmd_manager* manager)
 	omp_unset_lock(&manager->state->logger.lock);
 }
 
-void nqiv_cmd_parser_print_parse_error_quit(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%s", manager->state->cmd_parse_error_quit ? "true" : "false");
-}
-
-void nqiv_cmd_parser_print_apply_error_quit(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%s", manager->state->cmd_parse_error_quit ? "true" : "false");
-}
-
 void nqiv_cmd_parser_print_alpha_background_color_one(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%hhu %hhu %hhu %hhu", manager->state->alpha_checker_color_one.r,
@@ -1043,16 +706,6 @@ void nqiv_cmd_parser_print_mark_color(nqiv_cmd_manager* manager)
 	        manager->state->mark_color.a);
 }
 
-void nqiv_cmd_parser_print_preload_ahead(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%d", manager->state->montage.preload.ahead);
-}
-
-void nqiv_cmd_parser_print_preload_behind(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%d", manager->state->montage.preload.behind);
-}
-
 void nqiv_cmd_parser_print_window_height(nqiv_cmd_manager* manager)
 {
 	int w;
@@ -1067,11 +720,6 @@ void nqiv_cmd_parser_print_window_width(nqiv_cmd_manager* manager)
 	int h;
 	SDL_GetWindowSizeInPixels(manager->state->window, &w, &h);
 	fprintf(stdout, "%d", w);
-}
-
-void nqiv_cmd_parser_print_delay_accel_default(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%" PRIu64, manager->state->keystates.settings.delay_accel);
 }
 
 void nqiv_cmd_print_str_list(const nqiv_cmd_manager* manager, const nqiv_array* list)
@@ -1170,36 +818,11 @@ void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
 	}
 }
 
-void nqiv_cmd_parser_print_minimum_delay_default(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%" PRIu64, manager->state->keystates.settings.minimum_delay);
-}
-
-void nqiv_cmd_parser_print_repeat_delay_default(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%" PRIu64, manager->state->keystates.settings.consecutive_delay);
-}
-
-void nqiv_cmd_parser_print_start_delay_default(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%" PRIu64, manager->state->keystates.settings.start_delay);
-}
-
 const char* const nqiv_press_action_names[] = {
 	"default",
 	"allow",
 	"deny",
 };
-
-void nqiv_cmd_parser_print_send_on_down_default(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%s", manager->state->keystates.send_on_down ? "true" : "false");
-}
-
-void nqiv_cmd_parser_print_send_on_up_default(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%s", manager->state->keystates.send_on_up ? "true" : "false");
-}
 
 const nqiv_cmd_arg_desc nqiv_parser_arg_type_int_natural = {
 	.type = NQIV_CMD_ARG_INT,
@@ -2376,11 +1999,18 @@ nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool*          status,
 	                                        (STORE_VALUE), (PRINT_VALUE), (ARGS));                \
 	APPLY_DEPRECATE;                                                                              \
 	tmp_node = NULL;
-/* Leaf node with NULL (0) data. */
+/* Leaf node with NULL (0) data. Specialized config/legacy code. */
 #define L0(NAME, DESCRIPTION, STORE_VALUE, PRINT_VALUE, ARGS) \
 	L(NAME, DESCRIPTION, NULL, STORE_VALUE, PRINT_VALUE, ARGS)
 /* Leaf node for inspection. No storage or args. */
 #define LI(NAME, DESCRIPTION, DATA, PRINT_VALUE) L(NAME, DESCRIPTION, DATA, NULL, PRINT_VALUE, NULL)
+/* Leaf node for a configuration option. Specific data with print, store, and args. */
+#define LC(NAME, DESCRIPTION, DATA, STORE_VALUE, PRINT_VALUE, ARGS) \
+	L(NAME, DESCRIPTION, DATA, STORE_VALUE, PRINT_VALUE, ARGS)
+/* Leaf node for action. Specialized storage function and args with no printable data. */
+#define LA(NAME, DESCRIPTION, STORE_VALUE, ARGS) L(NAME, DESCRIPTION, NULL, STORE_VALUE, NULL, ARGS)
+/* Leaf node for specialized printing. No data or storage specified. */
+#define LP(NAME, DESCRIPTION, PRINT_VALUE) L(NAME, DESCRIPTION, NULL, NULL, PRINT_VALUE, NULL)
 #define POP                                         \
 	assert(nqiv_array_get_units_count(&stack) > 0); \
 	nqiv_array_pop(&stack, NULL);                   \
@@ -2430,20 +2060,20 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 	bool           deprecated = false;
 	nqiv_array_push(&stack, &root_node);
 
-	L0("sendkey", "Issue a simulated keyboard action to the program.", nqiv_cmd_parser_sendkey,
-	   NULL, sendkey_args);
+	LA("sendkey", "Issue a simulated keyboard action to the program.", nqiv_cmd_parser_sendkey,
+	   sendkey_args);
 	B("insert", "Add a value to a particular location.");
 	{
-		L0("image", "Insert an image path to be opened at a particular index.",
-		   nqiv_cmd_parser_insert_image, NULL, idxname_args);
+		LA("image", "Insert an image path to be opened at a particular index.",
+		   nqiv_cmd_parser_insert_image, idxname_args);
 	}
 	POP;
 	B("remove", "Remove a value from a particular location.");
 	{
 		B("image", "Remove an image from the list to be opened.");
 		{
-			L0("index", "Delete the image from the given index.",
-			   nqiv_cmd_parser_remove_image_index, NULL, natural_args);
+			LA("index", "Delete the image from the given index.",
+			   nqiv_cmd_parser_remove_image_index, natural_args);
 		}
 		POP;
 	}
@@ -2456,7 +2086,7 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			   nqiv_cmd_parser_print_log_stream, stringfull_args);
 		}
 		POP;
-		L0("image", "Add an image path to the be opened.", nqiv_cmd_parser_append_image, NULL,
+		LA("image", "Add an image path to the be opened.", nqiv_cmd_parser_append_image,
 		   stringfull_args);
 		L0("pruner",
 		   "Declaratively specified pruning instructions. Use help to get list of commands.",
@@ -2484,100 +2114,104 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		POP;
 		B("thread", "Settings related to thread behavior.");
 		{
-			L0("count",
+			LC("count",
 			   "Set the number of worker threads used by the software. Starts as the number of "
 			   "threads on the machine divided by three (or one). This does not count toward VIPs "
 			   "threads. See 'set vips threads' for that. Note that there may be a delay in the "
 			   "actual number of threads matching the number set here as they restart.",
-			   nqiv_cmd_parser_set_thread_count, nqiv_cmd_parser_print_thread_count, positive_args);
-			L0("event_interval",
+			   &(manager->state->pending_thread_count), nqiv_cmd_parser_set_thread_count,
+			   nqiv_cmd_parser_print_data_int, positive_args);
+			LC("event_interval",
 			   "After waking, worker threads will check for events and process at most this many "
 			   "before waking the master and going back to sleep. Longer times might produce "
 			   "longer "
 			   "loading delays, but "
 			   "help UI responsiveness. 0 means they will process all available events.",
-			   nqiv_cmd_parser_set_thread_event_interval,
-			   nqiv_cmd_parser_print_thread_event_interval, natural_args);
-			L0("prune_delay",
+			   &(manager->state->thread_event_interval), nqiv_cmd_parser_set_thread_event_interval,
+			   nqiv_cmd_parser_print_data_int, natural_args);
+			LC("prune_delay",
 			   "During updates to nqiv's state, a pruning cycle will be allowed to run if this "
 			   "many "
 			   "milliseconds has passed since the last "
 			   "one. 0 always allow prune cycles.",
-			   nqiv_cmd_parser_set_prune_delay, nqiv_cmd_parser_print_prune_delay, uint64_args);
-			L0("extra_wakeup_delay",
+			   &(manager->state->prune_delay), nqiv_cmd_parser_set_data_uint64,
+			   nqiv_cmd_parser_print_data_uint64, uint64_args);
+			LC("extra_wakeup_delay",
 			   "In addition to an internal algorithm, wait this long before a worker thread "
 			   "awakens "
 			   "to check for events. Longer times might produce longer loading delays, but help "
 			   "improve UI responsiveness.",
-			   nqiv_cmd_parser_set_extra_wakeup_delay, nqiv_cmd_parser_print_extra_wakeup_delay,
-			   natural_args);
-			L0("event_timeout",
+			   &(manager->state->extra_wakeup_delay), nqiv_cmd_parser_set_extra_wakeup_delay,
+			   nqiv_cmd_parser_print_data_int, natural_args);
+			LC("event_timeout",
 			   "How long to wait for various events (such as inputs or updates from worker "
 			   "threads) "
 			   "before doing housekeeping activities (such as pruning). 0 to wait infinitely.",
-			   nqiv_cmd_parser_set_event_timeout, nqiv_cmd_parser_print_event_timeout,
-			   natural_args);
+			   &(manager->state->event_timeout), nqiv_cmd_parser_set_data_int,
+			   nqiv_cmd_parser_print_data_int, natural_args);
 		}
 		POP;
 		B("vips", "Settings related to the VIPS library.");
 		{
-			L0("threads",
+			LC("threads",
 			   "Set the number of threads used by the VIPs library. The default is the number of "
 			   "available threads divided by two (or one). If set to 0, it is determined by the "
 			   "environment variable VIPS_CONCURRENCY, or if unset, the number of threads "
 			   "available "
 			   "on the machine.",
-			   nqiv_cmd_parser_set_vips_threads, nqiv_cmd_parser_print_vips_threads, natural_args);
+			   &(manager->state->vips_threads), nqiv_cmd_parser_set_vips_threads,
+			   nqiv_cmd_parser_print_data_int, natural_args);
 		}
 		POP;
 		B("zoom", "Set operations related to zooming.");
 		{
-			L0("left_amount", "Amount to pan the zoom left with each action.",
-			   nqiv_cmd_parser_set_zoom_left_amount, nqiv_cmd_parser_print_zoom_left_amount,
-			   doublenegativeone_args);
-			L0("right_amount", "Amount to pan the zoom right with each action",
-			   nqiv_cmd_parser_set_zoom_right_amount, nqiv_cmd_parser_print_zoom_right_amount,
+			LC("left_amount", "Amount to pan the zoom left with each action.",
+			   &(manager->state->images.zoom.pan_left_amount), nqiv_cmd_parser_set_data_double,
+			   nqiv_cmd_parser_print_data_double, doublenegativeone_args);
+			LC("right_amount", "Amount to pan the zoom right with each action",
+			   &(manager->state->images.zoom.pan_right_amount), nqiv_cmd_parser_set_data_double,
+			   nqiv_cmd_parser_print_data_double, doublepositiveone_args);
+			LC("down_amount", "Amount to pan the zoom down with each action",
+			   &(manager->state->images.zoom.pan_down_amount), nqiv_cmd_parser_set_data_double,
+			   nqiv_cmd_parser_print_data_double, doublepositiveone_args);
+			LC("up_amount", "Amount to pan the zoom up with each action",
+			   &(manager->state->images.zoom.pan_up_amount), nqiv_cmd_parser_set_data_double,
+			   nqiv_cmd_parser_print_data_double, doublenegativeone_args);
+			LC("out_amount", "Amount to pan the zoom out with each action",
+			   &(manager->state->images.zoom.zoom_out_amount), nqiv_cmd_parser_set_data_double,
+			   nqiv_cmd_parser_print_data_double, doublepositive_args);
+			LC("in_amount", "Amount to pan the zoom in with each action",
+			   &(manager->state->images.zoom.zoom_in_amount), nqiv_cmd_parser_set_data_double,
+			   nqiv_cmd_parser_print_data_double, doublenegative_args);
+			LC("left_amount_more", "Higher amount to pan the zoom left with each action.",
+			   &(manager->state->images.zoom.pan_left_amount_more), nqiv_cmd_parser_set_data_double,
+			   nqiv_cmd_parser_print_data_double, doublenegativeone_args);
+			LC("right_amount_more", "Higher amount to pan the zoom right with each action",
+			   &(manager->state->images.zoom.pan_right_amount_more),
+			   nqiv_cmd_parser_set_data_double, nqiv_cmd_parser_print_data_double,
 			   doublepositiveone_args);
-			L0("down_amount", "Amount to pan the zoom down with each action",
-			   nqiv_cmd_parser_set_zoom_down_amount, nqiv_cmd_parser_print_zoom_down_amount,
-			   doublepositiveone_args);
-			L0("up_amount", "Amount to pan the zoom up with each action",
-			   nqiv_cmd_parser_set_zoom_up_amount, nqiv_cmd_parser_print_zoom_up_amount,
-			   doublenegativeone_args);
-			L0("out_amount", "Amount to pan the zoom out with each action",
-			   nqiv_cmd_parser_set_zoom_out_amount, nqiv_cmd_parser_print_zoom_out_amount,
-			   doublepositive_args);
-			L0("in_amount", "Amount to pan the zoom in with each action",
-			   nqiv_cmd_parser_set_zoom_in_amount, nqiv_cmd_parser_print_zoom_in_amount,
-			   doublenegative_args);
-			L0("left_amount_more", "Higher amount to pan the zoom left with each action.",
-			   nqiv_cmd_parser_set_zoom_left_amount_more,
-			   nqiv_cmd_parser_print_zoom_left_amount_more, doublenegativeone_args);
-			L0("right_amount_more", "Higher amount to pan the zoom right with each action",
-			   nqiv_cmd_parser_set_zoom_right_amount_more,
-			   nqiv_cmd_parser_print_zoom_right_amount_more, doublepositiveone_args);
-			L0("down_amount_more", "Higher amount to pan the zoom down with each action",
-			   nqiv_cmd_parser_set_zoom_down_amount_more,
-			   nqiv_cmd_parser_print_zoom_down_amount_more, doublepositiveone_args);
-			L0("up_amount_more", "Higher amount to pan the zoom up with each action",
-			   nqiv_cmd_parser_set_zoom_up_amount_more, nqiv_cmd_parser_print_zoom_up_amount_more,
-			   doublenegativeone_args);
-			L0("out_amount_more", "Higher amount to pan the zoom out with each action",
-			   nqiv_cmd_parser_set_zoom_out_amount_more, nqiv_cmd_parser_print_zoom_out_amount_more,
-			   doublepositive_args);
-			L0("in_amount_more", "Higher amount to pan the zoom in with each action",
-			   nqiv_cmd_parser_set_zoom_in_amount_more, nqiv_cmd_parser_print_zoom_in_amount_more,
-			   doublenegative_args);
-			L0("up_coordinate_x_times",
+			LC("down_amount_more", "Higher amount to pan the zoom down with each action",
+			   &(manager->state->images.zoom.pan_down_amount_more), nqiv_cmd_parser_set_data_double,
+			   nqiv_cmd_parser_print_data_double, doublepositiveone_args);
+			LC("up_amount_more", "Higher amount to pan the zoom up with each action",
+			   &(manager->state->images.zoom.pan_up_amount_more), nqiv_cmd_parser_set_data_double,
+			   nqiv_cmd_parser_print_data_double, doublenegativeone_args);
+			LC("out_amount_more", "Higher amount to pan the zoom out with each action",
+			   &(manager->state->images.zoom.zoom_out_amount_more), nqiv_cmd_parser_set_data_double,
+			   nqiv_cmd_parser_print_data_double, doublepositive_args);
+			LC("in_amount_more", "Higher amount to pan the zoom in with each action",
+			   &(manager->state->images.zoom.zoom_in_amount_more), nqiv_cmd_parser_set_data_double,
+			   nqiv_cmd_parser_print_data_double, doublenegative_args);
+			LC("up_coordinate_x_times",
 			   "This is multiplied against x axis panning caused by relative motion (like mouse "
 			   "panning)",
-			   nqiv_cmd_parser_set_zoom_up_coordinate_x_times,
-			   nqiv_cmd_parser_print_zoom_up_coordinate_x_times, double_args);
-			L0("up_coordinate_y_times",
+			   &(manager->state->images.zoom.pan_coordinate_x_multiplier),
+			   nqiv_cmd_parser_set_data_double, nqiv_cmd_parser_print_data_double, double_args);
+			LC("up_coordinate_y_times",
 			   "This is multiplied against y axis panning caused by relative motion (like mouse "
 			   "panning)",
-			   nqiv_cmd_parser_set_zoom_up_coordinate_y_times,
-			   nqiv_cmd_parser_print_zoom_up_coordinate_y_times, double_args);
+			   &(manager->state->images.zoom.pan_coordinate_y_multiplier),
+			   nqiv_cmd_parser_set_data_double, nqiv_cmd_parser_print_data_double, double_args);
 			L0("default",
 			   "Default zoom setting when loading an image- 'keep' old zoom, 'fit' to display, or "
 			   "set 'actual_size'.",
@@ -2594,30 +2228,32 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			L0("path", "Path thumbnails are stored under. This directory must exist.",
 			   nqiv_cmd_parser_set_thumbnail_path, nqiv_cmd_parser_print_thumbnail_path,
 			   stringfull_args);
-			L0("size_adjust",
+			LC("size_adjust",
 			   "Number of pixels to resize thumbnails by with 'zoom' action in montage mode.",
-			   nqiv_cmd_parser_set_thumbnail_zoom_amount,
-			   nqiv_cmd_parser_print_thumbnail_zoom_amount, intpositive_args);
-			L0("size_adjust_more",
+			   &(manager->state->images.zoom.thumbnail_adjust), nqiv_cmd_parser_set_data_int,
+			   nqiv_cmd_parser_print_data_int, intpositive_args);
+			LC("size_adjust_more",
 			   "Higher number of pixels to resize thumbnails by with 'zoom' action in montage "
 			   "mode.",
-			   nqiv_cmd_parser_set_thumbnail_zoom_amount_more,
-			   nqiv_cmd_parser_print_thumbnail_zoom_amount_more, intpositive_args);
-			L0("load", "Whether to read thumbnails from the disk.",
-			   nqiv_cmd_parser_set_thumbnail_load, nqiv_cmd_parser_print_thumbnail_load, bool_args);
-			L0("save",
+			   &(manager->state->images.zoom.thumbnail_adjust_more), nqiv_cmd_parser_set_data_int,
+			   nqiv_cmd_parser_print_data_int, intpositive_args);
+			LC("load", "Whether to read thumbnails from the disk.",
+			   &(manager->state->images.thumbnail.load), nqiv_cmd_parser_set_data_bool,
+			   nqiv_cmd_parser_print_data_bool, bool_args);
+			LC("save",
 			   "Whether to save thumbnails to the disk. Note that if thumbnail_load is not set to "
 			   "true, then thumbnails will always be saved, even if they are up to date on the "
 			   "disk.",
-			   nqiv_cmd_parser_set_thumbnail_save, nqiv_cmd_parser_print_thumbnail_save, bool_args);
-			L0("size", "Width and height of thumbnails are the same value.",
-			   nqiv_cmd_parser_set_thumbnail_size, nqiv_cmd_parser_print_thumbnail_size,
-			   intpositive_args);
+			   &(manager->state->images.thumbnail.save), nqiv_cmd_parser_set_data_bool,
+			   nqiv_cmd_parser_print_data_bool, bool_args);
+			LC("size", "Width and height of thumbnails are the same value.",
+			   &(manager->state->images.thumbnail.size), nqiv_cmd_parser_set_thumbnail_size,
+			   nqiv_cmd_parser_print_data_int, intpositive_args);
 		}
 		POP;
-		L0("default_frame_time", "If an animated image does not provide a frame time, use this.",
-		   nqiv_cmd_parser_set_default_frame_time, nqiv_cmd_parser_print_default_frame_time,
-		   intpositive_args);
+		LC("default_frame_time", "If an animated image does not provide a frame time, use this.",
+		   &(manager->state->images.default_frame_time), nqiv_cmd_parser_set_data_int,
+		   nqiv_cmd_parser_print_data_int, intpositive_args);
 		B("keypress", "Settings for delaying and registering keypresses.");
 		{
 			DEPRECATE B(
@@ -2648,25 +2284,25 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			POP;
 			B("default", "Default settings for delaying and registering keypresses.");
 			{
-				L0("start_delay", "Before a key is registered, it must be pressed for this long.",
-				   nqiv_cmd_parser_set_start_delay_default,
-				   nqiv_cmd_parser_print_start_delay_default, natural_args);
-				L0("repeat_delay", "This is the starting delay for repeating a key.",
-				   nqiv_cmd_parser_set_repeat_delay_default,
-				   nqiv_cmd_parser_print_repeat_delay_default, natural_args);
-				L0("delay_accel",
+				LC("start_delay", "Before a key is registered, it must be pressed for this long.",
+				   &(manager->state->keystates.settings.start_delay), nqiv_cmd_parser_set_data_int,
+				   nqiv_cmd_parser_print_data_int, natural_args);
+				LC("repeat_delay", "This is the starting delay for repeating a key.",
+				   &(manager->state->keystates.settings.consecutive_delay),
+				   nqiv_cmd_parser_set_data_int, nqiv_cmd_parser_print_data_int, natural_args);
+				LC("delay_accel",
 				   "The repeat delay will be reduced by this amount for each repetition.",
-				   nqiv_cmd_parser_set_delay_accel_default,
-				   nqiv_cmd_parser_print_delay_accel_default, natural_args);
-				L0("minimum_delay", "The delay will never be less than this.",
-				   nqiv_cmd_parser_set_minimum_delay_default,
-				   nqiv_cmd_parser_print_minimum_delay_default, natural_args);
-				L0("send_on_up", "Register releasing of the key.",
-				   nqiv_cmd_parser_set_send_on_up_default, nqiv_cmd_parser_print_send_on_up_default,
-				   bool_args);
-				L0("send_on_down", "Register pressing of the key.",
-				   nqiv_cmd_parser_set_send_on_down_default,
-				   nqiv_cmd_parser_print_send_on_down_default, bool_args);
+				   &(manager->state->keystates.settings.delay_accel), nqiv_cmd_parser_set_data_int,
+				   nqiv_cmd_parser_print_data_int, natural_args);
+				LC("minimum_delay", "The delay will never be less than this.",
+				   &(manager->state->keystates.settings.minimum_delay),
+				   nqiv_cmd_parser_set_data_int, nqiv_cmd_parser_print_data_int, natural_args);
+				LC("send_on_up", "Register releasing of the key.",
+				   &(manager->state->keystates.send_on_up), nqiv_cmd_parser_set_data_bool,
+				   nqiv_cmd_parser_print_data_bool, bool_args);
+				LC("send_on_down", "Register pressing of the key.",
+				   &(manager->state->keystates.send_on_down), nqiv_cmd_parser_set_data_bool,
+				   nqiv_cmd_parser_print_data_bool, bool_args);
 			}
 			POP;
 			/*L0("", "", nqiv_cmd_parser_set_, nqiv_cmd_parser_print_, _args);*/
@@ -2699,28 +2335,28 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		POP;
 		B("preload", "Set options related to preloading images not yet in view.");
 		{
-			L0("ahead", "This number of images ahead of the current montage are loaded.",
-			   nqiv_cmd_parser_set_preload_ahead, nqiv_cmd_parser_print_preload_ahead,
-			   natural_args);
-			L0("behind", "This number of images behind of the current montage are loaded.",
-			   nqiv_cmd_parser_set_preload_behind, nqiv_cmd_parser_print_preload_behind,
-			   natural_args);
+			LC("ahead", "This number of images ahead of the current montage are loaded.",
+			   &(manager->state->montage.preload.ahead), nqiv_cmd_parser_set_data_int,
+			   nqiv_cmd_parser_print_data_int, natural_args);
+			LC("behind", "This number of images behind of the current montage are loaded.",
+			   &(manager->state->montage.preload.behind), nqiv_cmd_parser_set_data_int,
+			   nqiv_cmd_parser_print_data_int, natural_args);
 		}
 		POP;
-		L0("no_resample_oversized",
+		LC("no_resample_oversized",
 		   "Normally, if the image is larger than the platform's maximum texture size, it will be "
 		   "reloaded for each "
 		   "zoom. This keeps the normal behavior with the entire image downsized.",
-		   nqiv_cmd_parser_set_no_resample_oversized, nqiv_cmd_parser_print_no_resample_oversized,
-		   bool_args);
+		   &(manager->state->no_resample_oversized), nqiv_cmd_parser_set_data_bool,
+		   nqiv_cmd_parser_print_data_bool, bool_args);
 		B("show", "Settings related to displaying optional entities.");
 		{
-			L0("loading_indicator",
+			LC("loading_indicator",
 			   "Determine whether the loading indicator is rendered in image mode (achieve the "
 			   "same "
 			   "in montage mode by setting `set color loading` to match `set color background`).",
-			   nqiv_cmd_parser_set_show_loading_indicator,
-			   nqiv_cmd_parser_print_show_loading_indicator, bool_args);
+			   &(manager->state->show_loading_indicator), nqiv_cmd_parser_set_data_bool,
+			   nqiv_cmd_parser_print_data_bool, bool_args);
 		}
 		POP;
 		DEPRECATE L0(
@@ -2740,12 +2376,12 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		POP;
 		B("cmd", "Set operations related to the commands.");
 		{
-			L0("parse_error_quit", "Quit if there are errors parsing commands.",
-			   nqiv_cmd_parser_set_parse_error_quit, nqiv_cmd_parser_print_parse_error_quit,
-			   bool_args);
-			L0("apply_error_quit", "Quit if there are errors applying correctly-parsed commands.",
-			   nqiv_cmd_parser_set_apply_error_quit, nqiv_cmd_parser_print_apply_error_quit,
-			   bool_args);
+			LC("parse_error_quit", "Quit if there are errors parsing commands.",
+			   &(manager->state->cmd_parse_error_quit), nqiv_cmd_parser_set_data_bool,
+			   nqiv_cmd_parser_print_data_bool, bool_args);
+			LC("apply_error_quit", "Quit if there are errors applying correctly-parsed commands.",
+			   &(manager->state->cmd_apply_error_quit), nqiv_cmd_parser_set_data_bool,
+			   nqiv_cmd_parser_print_data_bool, bool_args);
 		}
 		POP;
 	}
@@ -2754,8 +2390,8 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 	{
 		B("log", "Internal logging values.");
 		{
-			LI("error_message",
-			   "Error description for logger. This is an empty string if there is none.", NULL,
+			LP("error_message",
+			   "Error description for logger. This is an empty string if there is none.",
 			   nqiv_cmd_parser_print_log_error_message);
 		}
 		POP;
@@ -2915,7 +2551,11 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 #undef POP
 #undef B
 #undef L
+#undef LI
 #undef L0
+#undef LC
+#undef LA
+#undef LP
 #undef APPLY_DEPRECATE
 #undef DEPRECATE
 #undef SET_CURRENT
