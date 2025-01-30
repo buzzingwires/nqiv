@@ -42,8 +42,21 @@ exit_usage()
 	exit "$L_CODE"
 }
 
+check_fifo()
+{
+	local L_PATH="$1"
+	[ -p "$L_PATH" ]
+}
+
+check_file()
+{
+	local L_PATH="$1"
+	[ -f "$L_PATH" ]
+}
+
 run_nqiv()
 {
+	# Args
 	local L_TARGETS="$1"
 	local L_DEPTH="$2"
 	local L_SORT="$3"
@@ -51,10 +64,53 @@ run_nqiv()
 	local L_FILTER="$5"
 	local L_PASSTHROUGH_ARGS="$6"
 
+	# Create file list
+	local l_filelist_create="mkfifo"
+	local l_filelist_check="check_fifo"
+	if ! command -v mkfifo >/dev/null 2>&1;
+	then
+		l_filelist_create="touch"
+		l_filelist_check="check_file"
+	fi
+
+	local l_filelist_dir="/tmp"
+	local l_filelist_file="nqivf-tmp-files"
+	local l_filelist_file_number="1"
+	if command -v mktemp >/dev/null 2>&1;
+	then
+		l_filelist_dir="$(mktemp -p "$l_filelist_dir" -d .nqivf.XXXXXXXXXX)"
+	else
+		while [ $l_filelist_file_number -le 1000 ] && "$l_filelist_check" "$l_filelist_dir/$l_filelist_file-$l_filelist_file_number";
+		do
+			l_filelist_file_number="$((l_filelist_file_number + 1))"
+		done
+	fi
+
+	local l_filelist_path="$l_filelist_dir/$l_filelist_file-$l_filelist_file_number"
+
+	if [ -e "$l_filelist_path" ] || [ $l_filelist_file_number -gt 1000 ]
+	then
+		errcho "Path of '$l_filelist_path' must not exist, and must be numbered less than or equal to 1000."
+		exit 1
+	fi
+
+	"$l_filelist_create" "$l_filelist_path"
+
+	# Populate file list
 	eval find $L_TARGETS "$L_DEPTH" "$L_EXTENSIONS" "$L_FILTER" -type f -printf "%T@\\\t%f\\\t%p\\\n" \
 	| eval "$L_SORT" \
 	| sed --quiet --posix --sandbox -E -e 's/^.+\t.+\t(.+)$/append image \1/' -e 'p' \
-	| eval nqiv -s "$L_PASSTHROUGH_ARGS"
+	> "$l_filelist_path" &
+
+	# Actually run nqiv
+	eval nqiv -C "$l_filelist_path" -s "$L_PASSTHROUGH_ARGS"
+
+	# Cleanup
+	rm "$l_filelist_path"
+	if [ "$l_filelist_dir" != "/tmp" ]
+	then
+		rmdir "$l_filelist_dir"
+	fi
 }
 
 append_with_space()
