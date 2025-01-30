@@ -1598,6 +1598,13 @@ bool nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
 	return false;
 }
 
+void nqiv_cmd_acknowledge(nqiv_cmd_manager* manager, const char* cmd, const Uint64 time)
+{
+	if(manager->state->cmd_acknowledge) {
+		fprintf(stdout, "Executed command '%s' in %" PRIu64 "ms\n", cmd, time);
+	}
+}
+
 bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 {
 	memset(&manager->print_settings, 0, sizeof(nqiv_cmd_manager_print_settings));
@@ -1628,7 +1635,8 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 		nqiv_array_remove_count(manager->buffer, 0, eolpos);
 		return true; /* This line is a comment- ignore it. */
 	}
-	const char eolc = nqiv_cmd_tmpterm(data, eolpos);
+	const Uint64 cmd_start_ticks = SDL_GetTicks64();
+	const char   eolc = nqiv_cmd_tmpterm(data, eolpos);
 	nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd parsing input %s\n", data + idx);
 	nqiv_cmd_tmpret(data, eolpos, eolc);
 	if(strncmp(&data[idx], "helptree", strlen("helptree")) == 0) {
@@ -1710,6 +1718,9 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 			error = false;
 		}
 	}
+	const char eola = nqiv_cmd_tmpterm(data, eolpos);
+	nqiv_cmd_acknowledge(manager, data, SDL_GetTicks64() - cmd_start_ticks);
+	nqiv_cmd_tmpret(data, eolpos, eola);
 	nqiv_array_remove_count(manager->buffer, 0, eolpos + 1);
 	assert(current_cmd_success);
 	return !error;
@@ -1797,14 +1808,19 @@ nqiv_cmd_add_stream_line(nqiv_cmd_manager* manager, FILE* stream, const bool non
 
 bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream)
 {
-	while(true) {
-		const nqiv_op_result result = nqiv_cmd_add_stream_line(manager, stream, false);
-		if(result == NQIV_PASS) {
-			return true;
-		} else if(result == NQIV_FAIL || !nqiv_cmd_parse(manager)) {
-			return false;
+	const Uint64   stream_time = SDL_GetTicks64();
+	nqiv_op_result result = NQIV_SUCCESS;
+	while(result == NQIV_SUCCESS) {
+		result = nqiv_cmd_add_stream_line(manager, stream, false);
+		if(result == NQIV_PASS || result == NQIV_FAIL) {
+			break;
+		} else if(!nqiv_cmd_parse(manager)) {
+			result = NQIV_FAIL;
+			break;
 		}
 	}
+	nqiv_cmd_acknowledge(manager, "STREAM", SDL_GetTicks64() - stream_time);
+	return result == NQIV_FAIL ? false : true;
 }
 
 nqiv_cmd_node* nqiv_cmd_get_last_peer(nqiv_cmd_node* first_peer)
@@ -2426,6 +2442,13 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			   nqiv_cmd_parser_print_data_bool, bool_args);
 			LC("apply_error_quit", "Quit if there are errors applying correctly-parsed commands.",
 			   &(manager->state->cmd_apply_error_quit), nqiv_cmd_parser_set_data_bool,
+			   nqiv_cmd_parser_print_data_bool, bool_args);
+			LC("acknowledge",
+			   "When finished with commands (successfully or unsuccessfully), print a message to "
+			   "stdout acknowledging this and offering "
+			   "basic stats. Also print messages saying when stdin is or isn't available for "
+			   "commands, if nqiv is set to accept commands from it.",
+			   &(manager->state->cmd_acknowledge), nqiv_cmd_parser_set_data_bool,
 			   nqiv_cmd_parser_print_data_bool, bool_args);
 		}
 		POP;

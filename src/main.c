@@ -1679,6 +1679,9 @@ bool check_cmds(nqiv_state* state)
 
 nqiv_op_result nqiv_master_thread(nqiv_state* state)
 {
+	if(state->cmd_acknowledge && state->cmd_read_stdin) {
+		fprintf(stdout, "Ready for commands from stdin.\n");
+	}
 	while(nqiv_shared_var_get_op_result(&state->running) == NQIV_SUCCESS && check_cmds(state)) {
 		SDL_PumpEvents();
 		SDL_Event    input_event = {0};
@@ -1819,6 +1822,9 @@ nqiv_op_result nqiv_master_thread(nqiv_state* state)
 		default:
 			assert(true);
 		}
+	}
+	if(state->cmd_acknowledge && state->cmd_read_stdin) {
+		fprintf(stdout, "No longer checking commands from stdin.\n");
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Finished waiting on events.\n");
 	return nqiv_shared_var_get_op_result(&state->running);

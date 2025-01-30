@@ -168,6 +168,10 @@ struct nqiv_state
 	 * attempt to continue. */
 	bool                 cmd_parse_error_quit;
 	bool                 cmd_apply_error_quit;
+	/* Whether to print a message to stdout containing basic stat information after handling
+	 * commands (successfully or unsuccessfully), and to tell when stdin command handling has come
+	 * into effect after the initial config has been completed (if it is enabled). */
+	bool                 cmd_acknowledge;
 	/* Whether to read commands from stdin while running. */
 	bool                 cmd_read_stdin;
 };
