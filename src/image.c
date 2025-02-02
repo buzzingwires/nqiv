@@ -219,9 +219,10 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 		return false;
 	}
 	assert(idx >= 0);
-	const long int delay_value = strtol(delay_string + idx, NULL, 10);
+	char* end = NULL;
+	const long int delay_value = strtol(delay_string + idx, &end, 10);
 	g_free(delay_string);
-	if(errno == ERANGE || delay_value > INT_MAX) {
+	if(errno == ERANGE || delay_value > INT_MAX || end == NULL || delay_string + idx == end) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 		               "Delay for frame %d of '%s' is not a valid integer.\n",
 		               form->animation.frame, image->image.path);
@@ -566,14 +567,16 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 		return false;
 	}
 	g_strfreev(header_field_names);
-	const int width_value = nqiv_strtoi(width_string, NULL, 10);
-	if(width_value <= 0 || errno == ERANGE) {
+	char* end = NULL;
+	const int width_value = nqiv_strtoi(width_string, &end, 10);
+	if(width_value <= 0 || errno == ERANGE || end == NULL || width_string == end) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 		               "Invalid width for thumbnail of %s\n", image->image.path);
 		return false;
 	}
-	const int height_value = nqiv_strtoi(height_string, NULL, 10);
-	if(height_value <= 0 || errno == ERANGE) {
+	end = NULL;
+	const int height_value = nqiv_strtoi(height_string, &end, 10);
+	if(height_value <= 0 || errno == ERANGE || end == NULL || height_string == end) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 		               "Invalid height for thumbnail of %s\n", image->image.path);
 		return false;

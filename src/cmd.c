@@ -1378,7 +1378,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			               current_node->name, data);
 			char*          end = NULL;
 			const long int tmp = strtol(data, &end, 10);
-			if(errno != ERANGE && end != NULL && tmp >= desc->setting.of_int.min
+			if(errno != ERANGE && end != NULL && data != end && tmp >= desc->setting.of_int.min
 			   && tmp <= desc->setting.of_int.max) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 				               "Cmd int arg at %d for token %s is %ld for input %s\n", tidx,
@@ -1399,7 +1399,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			               current_node->name, data);
 			char*        end = NULL;
 			const double tmp = strtod(data, &end);
-			if(errno != ERANGE && end != NULL && tmp >= desc->setting.of_double.min
+			if(errno != ERANGE && end != NULL && data != end && tmp >= desc->setting.of_double.min
 			   && tmp <= desc->setting.of_double.max) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 				               "Cmd double at %d for token %s is %f for input %s\n", tidx,
@@ -1420,7 +1420,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			               current_node->name, data);
 			char*                   end = NULL;
 			const unsigned long int tmp = strtoul(data, &end, 10);
-			if(errno != ERANGE && end != NULL
+			if(errno != ERANGE && end != NULL && data != end
 			   && (uintmax_t)tmp >= (uintmax_t)desc->setting.of_Uint64.min
 			   && (uintmax_t)tmp <= (uintmax_t)desc->setting.of_Uint64.max) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
@@ -1442,7 +1442,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			               current_node->name, data);
 			char*          end = NULL;
 			const long int tmp = strtol(data, &end, 10);
-			if(errno != ERANGE && end != NULL && tmp >= 0 && tmp <= 255) {
+			if(errno != ERANGE && end != NULL && data != end && tmp >= 0 && tmp <= 255) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 				               "Cmd uint8 arg at %d for token %s is %d for input %s\n", tidx,
 				               current_node->name, tmp, data);

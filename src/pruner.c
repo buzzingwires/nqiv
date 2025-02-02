@@ -362,7 +362,7 @@ int nqiv_pruner_parse_int(
 	nqiv_log_write(logger, NQIV_LOG_DEBUG, "Trying to get integer at %s\n", &text[nidx]);
 	char*          end = NULL;
 	const long int tmp = strtol(&text[nidx], &end, 10);
-	if(errno != ERANGE && end != NULL && tmp >= INT_MIN && tmp <= INT_MAX) {
+	if(errno != ERANGE && end != NULL && &text[nidx] != end && tmp >= INT_MIN && tmp <= INT_MAX) {
 		nqiv_log_write(logger, NQIV_LOG_DEBUG, "Int arg is %d for input %s\n", tmp, &text[nidx]);
 		*output = (int)tmp;
 		nidx = nqiv_ptrdiff(end, text);
