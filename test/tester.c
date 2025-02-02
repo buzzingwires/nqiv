@@ -10,6 +10,7 @@
 #include "queue_tests.h"
 #include "keybind_tests.h"
 #include "keyrate_tests.h"
+#include "worker_tests.h"
 
 /*
  * Run automated, self-contained tests.
@@ -216,6 +217,7 @@ test_set* create_tests(void)
 	S("queue");
 	T("queue_test_default", queue_test_default);
 	T("queue_test_priority_default", queue_test_priority_default);
+	T("queue_test_priority_pop_bins", queue_test_priority_pop_bins);
 
 	S("logging");
 	T("logging_general", logging_test_general);
@@ -231,6 +233,9 @@ test_set* create_tests(void)
 
 	S("keyrate");
 	T("keyrate_default", keyrate_test_default);
+
+	S("worker");
+	T("worker_spec_parse_print", worker_test_spec_parse_print);
 
 	return root;
 }

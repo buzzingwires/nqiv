@@ -116,6 +116,9 @@ void nqiv_state_clear(nqiv_state* state)
 		nqiv_shared_var_destroy(&state->thread_event_transaction_group);
 		nqiv_shared_var_destroy(&state->running);
 	}
+	if(state->thread_specs != NULL) {
+		nqiv_array_destroy(state->thread_specs);
+	}
 	memset(state, 0, sizeof(nqiv_state));
 	vips_shutdown();
 }
@@ -218,6 +221,11 @@ void nqiv_setup_montage(nqiv_state* state)
 
 bool nqiv_setup_thread_info(nqiv_state* state)
 {
+	state->thread_specs = nqiv_array_create(sizeof(nqiv_worker_spec), STARTING_QUEUE_LENGTH);
+	if(state->thread_specs == NULL) {
+		fputs("Failed to initialize worker thread spec list.\n", stderr);
+		return false;
+	}
 	if(state->pending_thread_count == 0) {
 		state->pending_thread_count = 1;
 	}
@@ -312,6 +320,7 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* de
 		"append pruner or sum 0 thumbnail image texture bytes_ahead 0 0 bytes_behind 0 0 surface "
 		"bytes_ahead 0 0 bytes_behind 0 0 vips bytes_ahead 0 "
 		"0 bytes_behind 0 0 hard unload texture surface vips",
+		"append thread bins 1 4",
 		NULL,
 	};
 	int idx;
@@ -1846,6 +1855,11 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 	nqiv_priority_queue* thread_queue = &state->thread_queue;
 	nqiv_shared_var*     thread_event_transaction_group = &state->thread_event_transaction_group;
 	const Uint32         event_code = state->thread_event_number;
+	int standard_event_bins[THREAD_QUEUE_BIN_COUNT + 1];
+	int c;
+	for(c = 0; c < THREAD_QUEUE_BIN_COUNT; ++c) {standard_event_bins[c] = c;}
+	standard_event_bins[THREAD_QUEUE_BIN_COUNT] = -1;
+	const int          thread_specs_len = nqiv_array_get_units_count(state->thread_specs);
 	/* clang-format insists on unindenting pragmas. */
 	/* clang-format off */
 	#pragma omp parallel                             \
@@ -1853,20 +1867,22 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 		firstprivate(state,                          \
 					 logger,                         \
 					 thread_count,                   \
+					 thread_specs_len,               \
 					 extra_wakeup_delay,             \
 					 thread_event_interval,          \
 					 thread_queue,                   \
 					 event_code,                     \
 					 result_ptr,                     \
 					 thread_event_transaction_group, \
+					 standard_event_bins,            \
 					 active_thread_count_ptr,        \
 					 running_ptr) \
-		num_threads(thread_count + 1)
+		num_threads(thread_count + thread_specs_len + 1)
 	{
 		#pragma omp master
 		{
-			int thread;
-			for(thread = 0; thread < thread_count; ++thread) {
+			int t;
+			for(t = 0; t < thread_count; ++t) {
 				#pragma omp task                                 \
 					default(none)                                \
 					firstprivate(logger,                         \
@@ -1875,9 +1891,31 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 								 thread_event_interval,          \
 								 event_code,                     \
 								 thread_event_transaction_group, \
+								 standard_event_bins,            \
 								 active_thread_count_ptr,        \
 								 running_ptr)
-				nqiv_worker_main(logger, thread_queue, extra_wakeup_delay, thread_event_interval,
+				nqiv_worker_main(logger, thread_queue, extra_wakeup_delay, thread_event_interval, standard_event_bins,
+				                 event_code, thread_event_transaction_group,
+								 active_thread_count_ptr, running_ptr);
+			}
+			nqiv_worker_spec* thread_specs = state->thread_specs->data;
+			for(t = 0; t < thread_specs_len; ++t) {
+				nqiv_worker_spec* spec = &thread_specs[t];
+				const int this_extra_wakeup_delay = spec->delay_base == -1 ? extra_wakeup_delay : spec->delay_base;
+				const int this_event_interval = spec->event_interval == -1 ? thread_event_interval : spec->event_interval;
+				const int* this_event_bins = spec->queue_bins[0] == -1 ? standard_event_bins : spec->queue_bins;
+				#pragma omp task                                 \
+					default(none)                                \
+					firstprivate(logger,                         \
+								 thread_queue,                   \
+								 this_extra_wakeup_delay,        \
+								 this_event_interval,            \
+								 event_code,                     \
+								 thread_event_transaction_group, \
+								 this_event_bins,                \
+								 active_thread_count_ptr,        \
+								 running_ptr)
+				nqiv_worker_main(logger, thread_queue, this_extra_wakeup_delay, this_event_interval, this_event_bins,
 				                 event_code, thread_event_transaction_group,
 								 active_thread_count_ptr, running_ptr);
 			}

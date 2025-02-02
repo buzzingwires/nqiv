@@ -11,6 +11,7 @@
 #include "keybinds.h"
 #include "keyrate.h"
 #include "pruner.h"
+#include "worker.h"
 
 /*
  * The nqiv_cmd_manager is the primary means by which configuration directives
@@ -63,6 +64,7 @@ typedef enum nqiv_cmd_arg_type
 	NQIV_CMD_ARG_KEYBIND,
 	NQIV_CMD_ARG_STRING,
 	NQIV_CMD_ARG_PRUNER,
+	NQIV_CMD_ARG_WORKER_SPEC,
 } nqiv_cmd_arg_type;
 
 typedef struct nqiv_cmd_arg_desc_setting_int
@@ -121,6 +123,7 @@ typedef union nqiv_cmd_arg_value
 	nqiv_key_action           as_key_action;
 	nqiv_keybind_pair         as_keybind;
 	nqiv_pruner_desc          as_pruner;
+	nqiv_worker_spec          as_worker_spec;
 } nqiv_cmd_arg_value;
 
 typedef struct nqiv_cmd_arg_token

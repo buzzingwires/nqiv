@@ -101,3 +101,67 @@ void queue_test_priority_default(void)
 	nqiv_priority_queue_destroy(&queue);
 	nqiv_log_destroy(&logger);
 }
+
+
+void queue_test_priority_pop_bins(void)
+{
+	nqiv_log_ctx        logger = {0};
+	nqiv_priority_queue queue = {0};
+	int                 c = 0;
+
+	nqiv_log_init(&logger);
+	nqiv_log_set_prefix_format(&logger, "#level# #time:%Y-%m-%d %T%z# ");
+	nqiv_log_add_stream(&logger, stderr);
+	logger.level = NQIV_LOG_ERROR;
+	assert(!nqiv_log_has_error(&logger));
+
+	assert(nqiv_priority_queue_init(&queue, &logger, sizeof(int), QUEUE_TEST_STANDARD_SIZE,
+	                                QUEUE_TEST_BIN_COUNT));
+
+	c = 0;
+	assert(nqiv_priority_queue_push(&queue, 0, &c));
+	assert(nqiv_priority_queue_push(&queue, 0, &c));
+	c = 1;
+	assert(nqiv_priority_queue_push(&queue, 1, &c));
+
+	c = -1;
+	int bins[] = {0, -1, -1};
+	assert(nqiv_priority_queue_pop_bins(&queue, bins, &c));
+	assert(c == 0);
+	c = -1;
+	assert(nqiv_priority_queue_pop_bins(&queue, bins, &c));
+	assert(c == 0);
+	c = -1;
+	assert(!nqiv_priority_queue_pop_bins(&queue, bins, &c));
+	assert(c == -1);
+	bins[0] = 1;
+	assert(nqiv_priority_queue_pop_bins(&queue, bins, &c));
+	assert(c == 1);
+	c = -1;
+	assert(!nqiv_priority_queue_pop_bins(&queue, bins, &c));
+	assert(c == -1);
+	bins[1] = 0;
+	assert(!nqiv_priority_queue_pop_bins(&queue, bins, &c));
+	assert(c == -1);
+
+	c = 0;
+	assert(nqiv_priority_queue_push(&queue, 0, &c));
+	assert(nqiv_priority_queue_push(&queue, 0, &c));
+	c = 1;
+	assert(nqiv_priority_queue_push(&queue, 1, &c));
+	assert(nqiv_priority_queue_pop_bins(&queue, bins, &c));
+	assert(c == 1);
+	c = -1;
+	assert(nqiv_priority_queue_pop_bins(&queue, bins, &c));
+	assert(c == 0);
+	c = -1;
+	assert(nqiv_priority_queue_pop_bins(&queue, bins, &c));
+	assert(c == 0);
+	c = -1;
+	assert(!nqiv_priority_queue_pop_bins(&queue, bins, &c));
+	assert(c == -1);
+	c = -1;
+
+	nqiv_priority_queue_destroy(&queue);
+	nqiv_log_destroy(&logger);
+}

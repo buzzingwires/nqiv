@@ -24,41 +24,11 @@
 
 /* Common, sufficient queue length in respective units. */
 #define STARTING_QUEUE_LENGTH 512
-/* Bins for thread priority queue. This is one bigger than necessary so preload events can be placed
- * after events for currently-displayed images. See nqiv_event_priority. */
-#define THREAD_QUEUE_BIN_COUNT 10
-/* min_add_count for thread queue bin arrays. It's pretty big to prevent a lot of reallocations. */
-#define THREAD_QUEUE_ADD_COUNT 10000
-/* Max length in units for thread queue bin arrays. Will influence max_data_length. If a queue
- * reaches this size, there's probably something wrong. */
-#define THREAD_QUEUE_MAX_LENGTH 1000000
 /* Used to calculate the dimensions of alpha background checks. Divided against average of window
  * width and height */
 #define ALPHA_BACKGROUND_CHECKER_PROPORTION 32
 /* Sufficient for PATH_MAX and other info. */
 #define WINDOW_TITLE_LEN (1024 + PATH_MAX)
-
-typedef enum nqiv_event_priority
-{
-	/* When told to quit, do so immediately */
-	NQIV_EVENT_PRIORITY_QUIT = 0,
-	/* Fulfill animation frames early for low latency. */
-	NQIV_EVENT_PRIORITY_IMAGE_LOAD_ANIMATION = 1,
-	/* Unload old thumbnails right away when a new size is needed. */
-	NQIV_EVENT_PRIORITY_REATTEMPT_THUMBNAIL = 2,
-	/* Prune old stuff before loading new. */
-	NQIV_EVENT_PRIORITY_PRUNE = 3,
-	/* Loading a displayed image should be higher priority than thumbnails. */
-	NQIV_EVENT_PRIORITY_IMAGE_LOAD = 4,
-	/* Loading thumbnails from image data is slower than thumbnail files. Do it first. */
-	NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD_EPHEMERAL = 5,
-	/* First attempt to load a normal thumbnail file. */
-	NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD = 6,
-	/* Then try to create the file if it's not available. */
-	NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_FAIL = 7,
-	/* Finally save a thumbnail we'll never even try to use. */
-	NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO = 8,
-} nqiv_event_priority;
 
 /* When we load an image, we can decide how to adjust the zoom for it. */
 typedef enum nqiv_zoom_default
@@ -120,6 +90,8 @@ struct nqiv_state
 	int                  pending_thread_count;
 	/* Current number of worker threads. */
 	int                  thread_count;
+	/* Array of thread specs- custom configured in addition to the standard worker threads controlled by thread_count. */
+	nqiv_array*          thread_specs;
 	/* Should threads be started or restarted? */
 	bool                 restart_threads;
 	/* Threads will update the master after processing this many events. 0 to process all. */

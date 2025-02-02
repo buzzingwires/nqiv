@@ -238,6 +238,18 @@ bool nqiv_priority_queue_pop(nqiv_priority_queue* queue, void* entry)
 	return nqiv_priority_queue_apply(queue, entry, nqiv_queue_pop, true);
 }
 
+bool nqiv_priority_queue_pop_bins(nqiv_priority_queue* queue, const int* bins, void* entry)
+{
+	int idx;
+	for(idx = 0; bins[idx] >= 0; ++idx) {
+		assert(bins[idx] < queue->bin_count);
+		if(nqiv_queue_pop(&(queue->bins[bins[idx]]), entry)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 bool nqiv_priority_queue_set_max_data_length(nqiv_priority_queue* queue, const int length)
 {
 	int tmp_length = length;
