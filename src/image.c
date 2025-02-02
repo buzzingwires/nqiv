@@ -219,7 +219,7 @@ bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 		return false;
 	}
 	assert(idx >= 0);
-	char* end = NULL;
+	char*          end = NULL;
 	const long int delay_value = strtol(delay_string + idx, &end, 10);
 	g_free(delay_string);
 	if(errno == ERANGE || delay_value > INT_MAX || end == NULL || delay_string + idx == end) {
@@ -567,7 +567,7 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 		return false;
 	}
 	g_strfreev(header_field_names);
-	char* end = NULL;
+	char*     end = NULL;
 	const int width_value = nqiv_strtoi(width_string, &end, 10);
 	if(width_value <= 0 || errno == ERANGE || end == NULL || width_string == end) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,

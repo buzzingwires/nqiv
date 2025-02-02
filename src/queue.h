@@ -50,7 +50,8 @@ bool nqiv_priority_queue_init(nqiv_priority_queue* queue,
                               const int            bin_count);
 bool nqiv_priority_queue_push(nqiv_priority_queue* queue, const int level, const void* entry);
 void nqiv_priority_queue_push_force(nqiv_priority_queue* queue, const int level, const void* entry);
-/* Iterate the bin indices and return with the first successfully popped value. bins is terminated with a negative value and we assert that all indices are present. */
+/* Iterate the bin indices and return with the first successfully popped value. bins is terminated
+ * with a negative value and we assert that all indices are present. */
 bool nqiv_priority_queue_pop_bins(nqiv_priority_queue* queue, const int* bins, void* entry);
 bool nqiv_priority_queue_pop(nqiv_priority_queue* queue, void* entry);
 bool nqiv_priority_queue_set_max_data_length(nqiv_priority_queue* queue, const int count);

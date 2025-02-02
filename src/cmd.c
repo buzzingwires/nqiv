@@ -829,10 +829,10 @@ void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_thread(nqiv_cmd_manager* manager)
 {
-	const int          list_len = nqiv_array_get_units_count(manager->state->thread_specs);
+	const int         list_len = nqiv_array_get_units_count(manager->state->thread_specs);
 	nqiv_worker_spec* thread_specs = manager->state->thread_specs->data;
-	bool               taken = false;
-	int                idx;
+	bool              taken = false;
+	int               idx;
 	for(idx = 0; idx < list_len; ++idx) {
 		const nqiv_worker_spec* spec = &thread_specs[idx];
 		taken = true;
@@ -1226,21 +1226,36 @@ void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		print_prefix(manager);
 		fprintf(stdout, "A worker spec specifies the settings for a worker thread.\n");
 		print_prefix(manager);
-		fprintf(stdout, "Each worker spec consists of a space-separated list of keys and values.\n");
+		fprintf(stdout,
+		        "Each worker spec consists of a space-separated list of keys and values.\n");
 		print_prefix(manager);
-		fprintf(stdout, "A key is specified, then its value (or a space-separated list of values) comes after. Lists end at the end of the spec itself, or when the next key is encountered.\n");
+		fprintf(
+			stdout,
+			"A key is specified, then its value (or a space-separated list of values) comes after. "
+		    "Lists end at the end of the spec itself, or when the next key is encountered.\n");
 		print_prefix(manager);
 		fprintf(stdout, "Keys:\n");
 		print_prefix(manager);
-		fprintf(stdout, "'extra_wakeup_delay <INT(0-2147483647)>' - Extra time to wait for a worker thread to awaken. If unset, the default from 'set thread extra_wakeup_delay' is used. See this command's help for further explanation.\n");
+		fprintf(stdout,
+		        "'extra_wakeup_delay <INT(0-2147483647)>' - Extra time to wait for a worker thread "
+		        "to awaken. If unset, the default from 'set thread extra_wakeup_delay' is used. "
+		        "See this command's help for further explanation.\n");
 		print_prefix(manager);
-		fprintf(stdout, "'event_interval <INT(0-2147483647)>' - Number of events to process between polling cycles. If unset, the default from 'set thread event_interval' is used. See this command's help for further explanation.\n");
+		fprintf(stdout,
+		        "'event_interval <INT(0-2147483647)>' - Number of events to process between "
+		        "polling cycles. If unset, the default from 'set thread event_interval' is used. "
+		        "See this command's help for further explanation.\n");
 		print_prefix(manager);
-		fprintf(stdout, "'bins <INT(0-%d)>...' - The thread will process events of the priorities specified here, in the order that they are specified. The 'natural' order of the bins is how workers handle events by default.\n", THREAD_QUEUE_BIN_COUNT - 1);
+		fprintf(stdout,
+		        "'bins <INT(0-%d)>...' - The thread will process events of the priorities "
+		        "specified here, in the order that they are specified. The 'natural' order of the "
+		        "bins is how workers handle events by default.\n",
+		        THREAD_QUEUE_BIN_COUNT - 1);
 		print_prefix(manager);
 		fprintf(stdout, "Priorities and their purposes:\n");
 		print_prefix(manager);
-		fprintf(stdout, "0 - Normal quitting is not done through the event queue, so this may be safely left out.\n");
+		fprintf(stdout, "0 - Normal quitting is not done through the event queue, so this may be "
+		                "safely left out.\n");
 		print_prefix(manager);
 		fprintf(stdout, "1 - Load frames of an animated image.\n");
 		print_prefix(manager);
@@ -1250,7 +1265,8 @@ void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		print_prefix(manager);
 		fprintf(stdout, "4 - Load the currently-displayed image.\n");
 		print_prefix(manager);
-		fprintf(stdout, "5 - Load thumbnail info from image data, without creating thumbnail files.\n");
+		fprintf(stdout,
+		        "5 - Load thumbnail info from image data, without creating thumbnail files.\n");
 		print_prefix(manager);
 		fprintf(stdout, "6 - Load thumbnail info from thumbnail files.\n");
 		print_prefix(manager);
@@ -1594,9 +1610,10 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 				memcpy(&token->value.as_worker_spec, &tmp, sizeof(nqiv_worker_spec));
 				output = eolpos - start_idx;
 			} else {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
-				               "Cmd error parsing worker_spec arg at %d for token %s with input %s\n",
-				               tidx, current_node->name, data);
+				nqiv_log_write(
+					&manager->state->logger, NQIV_LOG_WARNING,
+					"Cmd error parsing worker_spec arg at %d for token %s with input %s\n", tidx,
+					current_node->name, data);
 			}
 		}
 		break;
@@ -2083,7 +2100,8 @@ nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool*          status,
 
 #define STACKLEN 16
 
-void nqiv_cmd_manager_build_cmdtree_set_current(nqiv_cmd_node** current_node, const nqiv_array* stack)
+void nqiv_cmd_manager_build_cmdtree_set_current(nqiv_cmd_node**   current_node,
+                                                const nqiv_array* stack)
 {
 	assert(nqiv_array_get_units_count(stack) > 0);
 	assert(nqiv_array_get_units_count(stack) < STACKLEN);
@@ -2120,14 +2138,14 @@ void nqiv_cmd_manager_build_cmdtree_b(nqiv_cmd_node** current_node,
 	*tmp_node = NULL;
 }
 
-void nqiv_cmd_manager_build_cmdtree_l(nqiv_cmd_node** current_node,
-                                      const nqiv_array*     stack,
-                                      nqiv_cmd_node** tmp_node,
-                                      bool*           deprecated,
-                                      bool*           status,
-                                      const char*     name,
-                                      const char*     description,
-                                      void*           data,
+void nqiv_cmd_manager_build_cmdtree_l(nqiv_cmd_node**   current_node,
+                                      const nqiv_array* stack,
+                                      nqiv_cmd_node**   tmp_node,
+                                      bool*             deprecated,
+                                      bool*             status,
+                                      const char*       name,
+                                      const char*       description,
+                                      void*             data,
                                       bool (*store_value)(nqiv_cmd_manager*, nqiv_cmd_arg_token**),
                                       void (*print_value)(nqiv_cmd_manager*),
                                       const nqiv_cmd_arg_desc** args)
@@ -2256,8 +2274,10 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			nqiv_cmd_parser_set_none, nqiv_cmd_parser_print_none, string_args);
 		L0("keybind", "Add a keybind.", nqiv_cmd_parser_append_keybind,
 		   nqiv_cmd_parser_print_keybind, keybind_args);
-		L0("thread", "In addition to the number of threads controlled by 'set thread count' custom threads may be specially added.", nqiv_cmd_parser_append_thread,
-		   nqiv_cmd_parser_print_thread, worker_spec_args);
+		L0("thread",
+		   "In addition to the number of threads controlled by 'set thread count' custom threads "
+		   "may be specially added.",
+		   nqiv_cmd_parser_append_thread, nqiv_cmd_parser_print_thread, worker_spec_args);
 	}
 	POP;
 	B("set", "Alter a singular value.");

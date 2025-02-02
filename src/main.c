@@ -1855,11 +1855,13 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 	nqiv_priority_queue* thread_queue = &state->thread_queue;
 	nqiv_shared_var*     thread_event_transaction_group = &state->thread_event_transaction_group;
 	const Uint32         event_code = state->thread_event_number;
-	int standard_event_bins[THREAD_QUEUE_BIN_COUNT + 1];
-	int c;
-	for(c = 0; c < THREAD_QUEUE_BIN_COUNT; ++c) {standard_event_bins[c] = c;}
+	int                  standard_event_bins[THREAD_QUEUE_BIN_COUNT + 1];
+	int                  c;
+	for(c = 0; c < THREAD_QUEUE_BIN_COUNT; ++c) {
+		standard_event_bins[c] = c;
+	}
 	standard_event_bins[THREAD_QUEUE_BIN_COUNT] = -1;
-	const int          thread_specs_len = nqiv_array_get_units_count(state->thread_specs);
+	const int thread_specs_len = nqiv_array_get_units_count(state->thread_specs);
 	/* clang-format insists on unindenting pragmas. */
 	/* clang-format off */
 	#pragma omp parallel                             \

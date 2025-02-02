@@ -90,7 +90,8 @@ struct nqiv_state
 	int                  pending_thread_count;
 	/* Current number of worker threads. */
 	int                  thread_count;
-	/* Array of thread specs- custom configured in addition to the standard worker threads controlled by thread_count. */
+	/* Array of thread specs- custom configured in addition to the standard worker threads
+	 * controlled by thread_count. */
 	nqiv_array*          thread_specs;
 	/* Should threads be started or restarted? */
 	bool                 restart_threads;

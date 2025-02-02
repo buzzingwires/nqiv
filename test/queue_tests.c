@@ -102,7 +102,6 @@ void queue_test_priority_default(void)
 	nqiv_log_destroy(&logger);
 }
 
-
 void queue_test_priority_pop_bins(void)
 {
 	nqiv_log_ctx        logger = {0};

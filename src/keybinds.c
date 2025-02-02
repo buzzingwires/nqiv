@@ -192,7 +192,8 @@ bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 		} else {
 			char*          end = NULL;
 			const long int tmp = strtol(text + strlen("mouse"), &end, 10);
-			if(errno == ERANGE || end == NULL || text + strlen("mouse") == end || tmp < 0 || tmp > 255 || end > text + length) {
+			if(errno == ERANGE || end == NULL || text + strlen("mouse") == end || tmp < 0
+			   || tmp > 255 || end > text + length) {
 				success = false;
 			} else {
 				match->mode |= NQIV_KEY_MATCH_MODE_MOUSE_BUTTON;
@@ -240,7 +241,8 @@ bool nqiv_text_to_keystate_numerical(char*       text,
 	   && strncmp(text, prefix, strlen(prefix)) == 0) {
 		char*          end = NULL;
 		const long int tmp = strtol(text + strlen(prefix), &end, 10);
-		if(errno != ERANGE && end != NULL && text + strlen(prefix) != end && tmp > 0 && tmp <= INT_MAX && end <= text + length) {
+		if(errno != ERANGE && end != NULL && text + strlen(prefix) != end && tmp > 0
+		   && tmp <= INT_MAX && end <= text + length) {
 			success = true;
 			*output = (Sint64)tmp;
 		}

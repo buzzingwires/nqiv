@@ -348,7 +348,7 @@ uintmax_t nqiv_thumbnail_get_field(bool*             output,
 		return 0;
 	}
 
-	char* end = NULL;
+	char*           end = NULL;
 	const uintmax_t thumbnail_value = strtoumax(field_string, &end, 10);
 	if(thumbnail_value == 0 || errno == ERANGE || end == NULL || field_string == end) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
