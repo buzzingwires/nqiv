@@ -2683,8 +2683,6 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		   "Running status. SUCCESS means nqiv is running. PASS means it has stopped, but there is "
 		   "no error. FAIL means it has stopped due to an error.",
 		   &(manager->state->running), nqiv_cmd_parser_print_data_shared_op_result);
-		LI("pending_thread_count", "Number of threads that will be started in the future.",
-		   &(manager->state->pending_thread_count), nqiv_cmd_parser_print_data_int);
 		LI("thread_count", "Current number of running threads.", &(manager->state->thread_count),
 		   nqiv_cmd_parser_print_data_int);
 		LI("restart_threads", "Should threads be restarted should they quit?",
