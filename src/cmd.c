@@ -489,7 +489,7 @@ void nqiv_cmd_parser_print_data_key_action_queue(nqiv_cmd_manager* manager)
 	manager->print_settings.indent += 1;
 	for(idx = 0; idx < num_pairs; ++idx) {
 		fprintf(stdout, "\n");
-		char       buf[NQIV_KEYBIND_STRLEN] = {0};
+		char       buf[NQIV_KEYBIND_STRLEN + 1] = {0};
 		const bool result = nqiv_keybind_to_string(pairs[idx], buf);
 		assert(result);
 		(void)result;
