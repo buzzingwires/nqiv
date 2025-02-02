@@ -1700,7 +1700,7 @@ bool nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
 	return false;
 }
 
-void nqiv_cmd_acknowledge(nqiv_cmd_manager* manager, const char* cmd, const Uint64 time)
+void nqiv_cmd_acknowledge(const nqiv_cmd_manager* manager, const char* cmd, const Uint64 time)
 {
 	if(manager->state->cmd_acknowledge) {
 		fprintf(stdout, "Executed command '%s' in %" PRIu64 "ms\n", cmd, time);
@@ -1946,12 +1946,6 @@ int nqiv_cmd_get_args_list_length(const nqiv_cmd_arg_desc** args)
 	return count + 1;
 }
 
-int nqiv_cmd_get_args_length(const nqiv_cmd_node* node)
-{
-	assert(node != NULL);
-	return nqiv_cmd_get_args_list_length((const nqiv_cmd_arg_desc**)node->args);
-}
-
 void nqiv_cmd_add_child_node(nqiv_cmd_node* parent, nqiv_cmd_node* child)
 {
 	assert(parent != NULL);
@@ -2017,8 +2011,8 @@ nqiv_cmd_node* nqiv_cmd_make_base_node(bool*                     status,
 		*status = *status && false;
 		return NULL;
 	}
-	node->name = (char*)(((char*)node) + node_size);
-	node->description = (char*)(node->name + name_size);
+	node->name = ((char*)node) + node_size;
+	node->description = node->name + name_size;
 	if(args_size > 0) {
 		node->args = (nqiv_cmd_arg_desc**)(node->description + description_size);
 		memcpy(node->args, args, args_size);
@@ -2089,7 +2083,7 @@ nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool*          status,
 
 #define STACKLEN 16
 
-void nqiv_cmd_manager_build_cmdtree_set_current(nqiv_cmd_node** current_node, nqiv_array* stack)
+void nqiv_cmd_manager_build_cmdtree_set_current(nqiv_cmd_node** current_node, const nqiv_array* stack)
 {
 	assert(nqiv_array_get_units_count(stack) > 0);
 	assert(nqiv_array_get_units_count(stack) < STACKLEN);
@@ -2127,7 +2121,7 @@ void nqiv_cmd_manager_build_cmdtree_b(nqiv_cmd_node** current_node,
 }
 
 void nqiv_cmd_manager_build_cmdtree_l(nqiv_cmd_node** current_node,
-                                      nqiv_array*     stack,
+                                      const nqiv_array*     stack,
                                       nqiv_cmd_node** tmp_node,
                                       bool*           deprecated,
                                       bool*           status,
