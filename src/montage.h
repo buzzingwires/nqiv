@@ -78,6 +78,10 @@ void nqiv_montage_previous_selection_page(nqiv_montage_state* state);
 void nqiv_montage_jump_selection_start(nqiv_montage_state* state);
 void nqiv_montage_jump_selection_end(nqiv_montage_state* state);
 
+/* Jump to marked image- if it exists. */
+void nqiv_montage_previous_marked_selection(nqiv_montage_state* state);
+void nqiv_montage_next_marked_selection(nqiv_montage_state* state);
+
 /* Get image index of thumbnail at particular X/Y coordinates. */
 int nqiv_montage_find_index_at_point(nqiv_montage_state* state, const int x, const int y);
 

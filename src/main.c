@@ -262,6 +262,8 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* de
 		"append keybind Down=allow_on_down+deny_on_up+montage_down",
 		"append keybind Space=allow_on_down+deny_on_up+image_next",
 		"append keybind Space=allow_on_down+deny_on_up+montage_right",
+		"append keybind shift+,=allow_on_down+deny_on_up+marked_previous",
+		"append keybind shift+.=allow_on_down+deny_on_up+marked_next",
 		"append keybind Return=set_viewing",
 		"append keybind M=toggle_montage",
 		"append keybind Left=allow_on_down+deny_on_up+pan_left",
@@ -1551,6 +1553,14 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 				nqiv_mark_op(state, images[iidx], false);
 			}
 			render_and_update(state, false, false);
+		} else if(pair->action == NQIV_KEY_ACTION_MARKED_PREVIOUS) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action previous next.\n");
+			nqiv_montage_previous_marked_selection(&state->montage);
+			render_and_update(state, !state->in_montage, false);
+		} else if(pair->action == NQIV_KEY_ACTION_MARKED_NEXT) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action marked next.\n");
+			nqiv_montage_next_marked_selection(&state->montage);
+			render_and_update(state, !state->in_montage, false);
 		} else if(pair->action == NQIV_KEY_ACTION_MONTAGE_SELECT_AT_MOUSE) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 			               "Received nqiv action montage select at mouse.\n");

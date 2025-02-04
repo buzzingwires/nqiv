@@ -177,6 +177,38 @@ void nqiv_montage_jump_selection_end(nqiv_montage_state* state)
 	nqiv_montage_set_selection(state, nqiv_array_get_last_idx(state->images->images));
 }
 
+int nqiv_montage_scan_marked(nqiv_montage_state* state, const int start, const int increment)
+{
+	nqiv_image** images = state->images->images->data;
+	int          idx;
+	for(idx = start; idx >= 0 && idx < nqiv_array_get_units_count(state->images->images);
+	    idx += increment) {
+		if(idx != start && images[idx]->marked) {
+			return idx;
+		}
+	}
+	return -1;
+}
+
+void nqiv_montage_set_existing_selection(nqiv_montage_state* state, const int idx)
+{
+	if(idx >= 0) {
+		nqiv_montage_set_selection(state, idx);
+	}
+}
+
+void nqiv_montage_previous_marked_selection(nqiv_montage_state* state)
+{
+	nqiv_montage_set_existing_selection(
+		state, nqiv_montage_scan_marked(state, state->positions.selection, -1));
+}
+
+void nqiv_montage_next_marked_selection(nqiv_montage_state* state)
+{
+	nqiv_montage_set_existing_selection(
+		state, nqiv_montage_scan_marked(state, state->positions.selection, 1));
+}
+
 void nqiv_montage_get_image_rect(nqiv_montage_state* state, const int idx, SDL_Rect* rect)
 {
 	assert(idx >= 0);

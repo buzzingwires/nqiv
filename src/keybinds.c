@@ -81,6 +81,8 @@ const char* const nqiv_keybind_action_names[] = {
 	"image_unmark",
 	"print_marked",
 	"clear_marked",
+	"marked_previous",
+	"marked_next",
 	"montage_select_at_mouse",
 	"image_mark_at_mouse",
 	"image_unmark_at_mouse",
