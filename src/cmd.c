@@ -1232,7 +1232,7 @@ void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		fprintf(
 			stdout,
 			"A key is specified, then its value (or a space-separated list of values) comes after. "
-		    "Lists end at the end of the spec itself, or when the next key is encountered.\n");
+			"Lists end at the end of the spec itself, or when the next key is encountered.\n");
 		print_prefix(manager);
 		fprintf(stdout, "Keys:\n");
 		print_prefix(manager);
@@ -1253,9 +1253,6 @@ void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		        THREAD_QUEUE_BIN_COUNT - 1);
 		print_prefix(manager);
 		fprintf(stdout, "Priorities and their purposes:\n");
-		print_prefix(manager);
-		fprintf(stdout, "0 - Normal quitting is not done through the event queue, so this may be "
-		                "safely left out.\n");
 		print_prefix(manager);
 		fprintf(stdout, "1 - Load frames of an animated image.\n");
 		print_prefix(manager);

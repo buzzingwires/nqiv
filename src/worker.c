@@ -45,7 +45,8 @@ bool nqiv_worker_spec_to_string(const nqiv_worker_spec* spec, char* string)
 		success && nqiv_worker_int_kv_to_string("extra_wakeup_delay", spec->delay_base, &builder);
 	success =
 		success && nqiv_worker_int_kv_to_string("event_interval", spec->event_interval, &builder);
-	success = success && nqiv_worker_int_kv_list_to_string("bins", spec->queue_bins, &builder);
+	success =
+		success && nqiv_worker_int_kv_list_to_string("bins", &(spec->queue_bins[1]), &builder);
 	if(success && string[nqiv_array_get_last_idx(&builder)] == ' ') {
 		string[nqiv_array_get_last_idx(&builder)] = '\0';
 	}
@@ -80,23 +81,24 @@ int nqiv_worker_string_to_int_list(const char* string,
                                    const int   end_idx,
                                    int*        output)
 {
-	int oidx = 0;
+	int oidx = 1;
 	int cidx = idx;
 	while(true) {
+		assert(oidx != 0);
 		int nidx = nqiv_cmd_scan_not_whitespace(string, cidx, end_idx, NULL);
 		if(nidx == -1) {
 			return cidx; /* Nothing more to parse. Caller's responsibility. */
 		}
-		if(oidx != 0 && cidx == nidx) {
+		if(oidx > 1 && cidx == nidx) {
 			return -1; /* Make sure there are spaces between items. */
 		}
 		bool is_non_int = false;
 		int  tmp;
-		nidx = nqiv_worker_string_to_int(string, nidx, 0, THREAD_QUEUE_BIN_COUNT - 1, &is_non_int,
+		nidx = nqiv_worker_string_to_int(string, nidx, 1, THREAD_QUEUE_BIN_COUNT - 1, &is_non_int,
 		                                 &tmp);
 		/* Allow successful handling of next key by checking beyond the length of the bin count for
 		 * a non-int. */
-		if(nidx == -1 || oidx > THREAD_QUEUE_BIN_COUNT) {
+		if(nidx == -1 || oidx >= THREAD_QUEUE_BIN_COUNT) {
 			if(is_non_int) {
 				return cidx;
 			}
@@ -112,9 +114,10 @@ bool nqiv_worker_string_to_spec(const char* string, nqiv_worker_spec* spec)
 {
 	nqiv_worker_spec new_spec = {.delay_base = -1, .event_interval = -1, .queue_bins = {0}};
 	int              idx;
-	for(idx = 0; idx < THREAD_QUEUE_BIN_COUNT + 1; ++idx) {
+	for(idx = 1; idx < THREAD_QUEUE_BIN_COUNT + 1; ++idx) {
 		new_spec.queue_bins[idx] = -1;
 	}
+	assert(new_spec.queue_bins[0] == 0);
 	bool      success = true;
 	const int end_idx = nqiv_strlen(string);
 	if(end_idx >= NQIV_WORKER_SPEC_STRLEN) {
@@ -162,6 +165,7 @@ bool nqiv_worker_string_to_spec(const char* string, nqiv_worker_spec* spec)
 		}
 	}
 	if(success && key[0] == '\0') {
+		assert(new_spec.queue_bins[THREAD_QUEUE_BIN_COUNT] == -1);
 		memcpy(spec, &new_spec, sizeof(nqiv_worker_spec));
 		return true;
 	}
