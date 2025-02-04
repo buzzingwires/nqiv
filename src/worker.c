@@ -302,9 +302,6 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 					    && image->parent->thumbnail.root != NULL)
 					   && image->thumbnail.path == NULL
 					   && !nqiv_thumbnail_calculate_path(image, &image->thumbnail.path, false)) {
-						nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-						               "Failed to create thumbnail path for %s\n",
-						               image->image.path);
 						image->thumbnail_attempted = true;
 					}
 					nqiv_worker_handle_image_load_form(&image_load->image_options, image,
