@@ -522,6 +522,11 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 	const int                 end = nqiv_strlen(text);
 	int                       idx = 0;
 	nqiv_log_write(logger, NQIV_LOG_DEBUG, "Generating pruner desc from %s\n", text);
+	if(end > NQIV_PRUNER_DESC_STRLEN) {
+		nqiv_log_write(logger, NQIV_LOG_ERROR, "Pruner desc must be %d characters or less.\n",
+		               NQIV_PRUNER_DESC_STRLEN);
+		return false;
+	}
 	while(idx < end) {
 		idx = nqiv_cmd_scan_not_whitespace(text, idx, end, NULL);
 		if(idx == -1) {
