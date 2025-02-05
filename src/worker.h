@@ -22,7 +22,7 @@
  * polling process.
  */
 
-#define NQIV_WORKER_SPEC_STRLEN 256
+#define NQIV_WORKER_SPEC_STRLEN 512
 
 typedef struct nqiv_worker_spec
 {

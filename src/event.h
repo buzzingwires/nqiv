@@ -32,9 +32,15 @@ typedef enum nqiv_event_priority
 	NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_FAIL = 7,
 	/* Finally save a thumbnail we'll never even try to use. */
 	NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO = 8,
+	/* We have equivalents to main events for preloading of images. */
+	NQIV_EVENT_PRIORITY_PRELOAD_IMAGE_LOAD = 9,
+	NQIV_EVENT_PRIORITY_PRELOAD_THUMBNAIL_LOAD_EPHEMERAL = 10,
+	NQIV_EVENT_PRIORITY_PRELOAD_THUMBNAIL_LOAD = 11,
+	NQIV_EVENT_PRIORITY_PRELOAD_THUMBNAIL_SAVE_LOAD_FAIL = 12,
+	NQIV_EVENT_PRIORITY_PRELOAD_THUMBNAIL_SAVE_LOAD_NO = 13,
 	/* Helpers for iterating through priorities. */
 	NQIV_EVENT_PRIORITY_FIRST = NQIV_EVENT_PRIORITY_IMAGE_LOAD_ANIMATION,
-	NQIV_EVENT_PRIORITY_LAST = NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO,
+	NQIV_EVENT_PRIORITY_LAST = NQIV_EVENT_PRIORITY_PRELOAD_THUMBNAIL_SAVE_LOAD_NO,
 } nqiv_event_priority;
 
 /* Bins for thread priority queue. This is one bigger than necessary so preload events can be placed
