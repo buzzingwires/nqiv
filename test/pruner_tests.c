@@ -582,3 +582,63 @@ void pruner_test_check(void)
 	reset_prune_effects(&effects);
 	pruner_test_check_instance("or raw loaded_ahead 0 2 unload raw", 8, 1, &effects);
 }
+
+void pruner_test_error(void)
+{
+	nqiv_log_ctx logger = {0};
+
+	nqiv_log_init(&logger);
+	assert(!nqiv_log_has_error(&logger));
+
+	nqiv_pruner_desc               desc = {0};
+
+	assert(!nqiv_pruner_create_desc(
+		&logger, "unload or", &desc));
+	assert(!nqiv_pruner_create_desc(
+		&logger, "texture unload or", &desc));
+	assert(!nqiv_pruner_create_desc(
+		&logger, "or loaded_ahead 0 0", &desc));
+	assert(!nqiv_pruner_create_desc(
+		&logger, "loaded_ahead 0 0", &desc));
+	assert(!nqiv_pruner_create_desc(
+		&logger, "texture no texture self_opened", &desc));
+	assert(!nqiv_pruner_create_desc(
+		&logger, "surface no surface self_opened", &desc));
+	assert(!nqiv_pruner_create_desc(
+		&logger, "vips no vips self_opened", &desc));
+	assert(!nqiv_pruner_create_desc(
+		&logger, "raw no raw self_opened", &desc));
+
+	nqiv_log_destroy(&logger);
+}
+
+void pruner_test_string_simplification(nqiv_log_ctx* logger, const char* start, const char* result)
+{
+	char                           desc_str[NQIV_PRUNER_DESC_STRLEN + 1] = {0};
+	nqiv_pruner_desc               desc = {0};
+
+	memset(&desc, 0, sizeof(nqiv_pruner_desc));
+	memset(desc_str, 0, NQIV_PRUNER_DESC_STRLEN);
+
+	assert(nqiv_pruner_create_desc(
+		logger, start, &desc));
+	assert(nqiv_pruner_desc_to_string(&desc, desc_str));
+	assert(strcmp(desc_str, result) == 0);
+}
+
+void pruner_test_toggle(void)
+{
+	nqiv_log_ctx logger = {0};
+
+	nqiv_log_init(&logger);
+	assert(!nqiv_log_has_error(&logger));
+
+	pruner_test_string_simplification(&logger, "or no or and no and sum 1000 no sum image unload no unload texture", "");
+	pruner_test_string_simplification(&logger, "texture self_opened surface self_opened vips self_opened raw self_opened no texture no surface no vips no raw", "vips self_opened surface self_opened texture self_opened");
+	pruner_test_string_simplification(&logger, "texture self_opened surface self_opened vips self_opened raw self_opened texture no self_opened surface no self_opened texture no self_opened vips no self_opened raw no self_opened", "");
+	pruner_test_string_simplification(&logger, "image thumbnail unload vips raw surface texture hard", "unload thumbnail hard texture no hard vips surface");
+	pruner_test_string_simplification(&logger, "image thumbnail unload vips raw surface texture hard vips raw surface texture ", "unload thumbnail hard vips surface texture no hard vips surface");
+	pruner_test_string_simplification(&logger, "unload no hard texture", "unload hard texture");
+
+	nqiv_log_destroy(&logger);
+}

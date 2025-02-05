@@ -226,6 +226,8 @@ test_set* create_tests(void)
 	S("pruner");
 	T("pruner_default", pruner_test_default);
 	T("pruner_check", pruner_test_check);
+	T("pruner_error", pruner_test_error);
+	T("pruner_toggle", pruner_test_toggle);
 
 	S("keybind");
 	T("keybind_parse_print", keybind_test_parse_print);
