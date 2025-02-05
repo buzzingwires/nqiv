@@ -7,6 +7,42 @@
 
 #include "event.h"
 
+const char* const nqiv_event_priority_names[] = {
+	"quit",
+	"image_load_animation",
+	"reattempt_thumbnail",
+	"prune",
+	"image_load",
+	"thumbnail_load_ephemeral",
+	"thumbnail_load",
+	"thumbnail_save_load_fail",
+	"thumbnail_save_load_no",
+};
+
+const char* const nqiv_event_priority_descriptions[] = {
+	"Stop the thread.",
+	"Load frames of an animation.",
+	"Reload thumbnails- usually if the size changes or something.",
+	"Prune images.",
+	"Load a displayed image.",
+	"Load thumbnail from existing image data.",
+	"Load thumbnail from disc.",
+	"Create thumbnail after failing to load it from disc.",
+	"Create thumbnail we don't actually intend to view.",
+};
+
+nqiv_event_priority nqiv_text_to_event_priority(const char* text, const int length)
+{
+	nqiv_event_priority priority = NQIV_EVENT_PRIORITY_UNKNOWN;
+	for(priority = NQIV_EVENT_PRIORITY_FIRST; priority <= NQIV_EVENT_PRIORITY_LAST; ++priority) {
+		if(strncmp(text, nqiv_event_priority_names[priority], length) == 0
+		   && (size_t)length == strlen(nqiv_event_priority_names[priority])) {
+			return priority;
+		}
+	}
+	return NQIV_EVENT_PRIORITY_UNKNOWN;
+}
+
 void nqiv_shared_var_init(nqiv_shared_var* var)
 {
 	memset(var, 0, sizeof(nqiv_shared_var));

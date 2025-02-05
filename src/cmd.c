@@ -18,6 +18,7 @@
 #include "keybinds.h"
 #include "keyrate.h"
 #include "pruner.h"
+#include "event.h"
 
 bool nqiv_cmd_alert_main(nqiv_cmd_manager* manager)
 {
@@ -531,7 +532,7 @@ void nqiv_cmd_parser_print_data_event_queue(nqiv_cmd_manager* manager)
 	for(bin = 0; bin < queue->bin_count; ++bin) {
 		fprintf(stdout, "\n");
 		nqiv_cmd_print_indent(manager);
-		fprintf(stdout, "BIN %d\n", bin);
+		fprintf(stdout, "BIN %s\n", nqiv_event_priority_names[bin]);
 		const int   num_events = nqiv_array_get_units_count(queue->bins[bin].array);
 		nqiv_event* events = queue->bins[bin].array->data;
 		int         idx;
@@ -1247,29 +1248,16 @@ void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		        "See this command's help for further explanation.\n");
 		print_prefix(manager);
 		fprintf(stdout,
-		        "'bins <INT(0-%d)>...' - The thread will process events of the priorities "
-		        "specified here, in the order that they are specified. The 'natural' order of the "
-		        "bins is how workers handle events by default.\n",
-		        THREAD_QUEUE_BIN_COUNT - 1);
+		        "'priorities <priority_name>,...' - The thread will process events of the priorities "
+		        "specified in this comma-separated list, in the order that they are specified. The 'natural' order of the "
+		        "priorities is how workers handle events by default.\n");
 		print_prefix(manager);
-		fprintf(stdout, "Priorities and their purposes:\n");
-		print_prefix(manager);
-		fprintf(stdout, "1 - Load frames of an animated image.\n");
-		print_prefix(manager);
-		fprintf(stdout, "2 - Unload thumbnails because a new size is needed.\n");
-		print_prefix(manager);
-		fprintf(stdout, "3 - Perform prunes.\n");
-		print_prefix(manager);
-		fprintf(stdout, "4 - Load the currently-displayed image.\n");
-		print_prefix(manager);
-		fprintf(stdout,
-		        "5 - Load thumbnail info from image data, without creating thumbnail files.\n");
-		print_prefix(manager);
-		fprintf(stdout, "6 - Load thumbnail info from thumbnail files.\n");
-		print_prefix(manager);
-		fprintf(stdout, "7 - Create thumbnail file after attempting to load a nonexistent one.\n");
-		print_prefix(manager);
-		fprintf(stdout, "8 - Create thumbnail file nqiv is not expected to open.\n");
+		fprintf(stdout, "Priorities:\n");
+		nqiv_event_priority priority = NQIV_EVENT_PRIORITY_UNKNOWN;
+		for(priority = NQIV_EVENT_PRIORITY_FIRST; priority <= NQIV_EVENT_PRIORITY_LAST; ++priority) {
+			print_prefix(manager);
+			fprintf(stdout, "%s - %s\n", nqiv_event_priority_names[priority], nqiv_event_priority_descriptions[priority]);
+		}
 		manager->print_settings.indent -= 1;
 		break;
 	}

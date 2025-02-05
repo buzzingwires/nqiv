@@ -10,17 +10,10 @@
 
 #include "image.h"
 
-/* Bins for thread priority queue. This is one bigger than necessary so preload events can be placed
- * after events for currently-displayed images. See nqiv_event_priority. */
-#define THREAD_QUEUE_BIN_COUNT 9
-/* min_add_count for thread queue bin arrays. It's pretty big to prevent a lot of reallocations. */
-#define THREAD_QUEUE_ADD_COUNT 10000
-/* Max length in units for thread queue bin arrays. Will influence max_data_length. If a queue
- * reaches this size, there's probably something wrong. */
-#define THREAD_QUEUE_MAX_LENGTH 1000000
-
 typedef enum nqiv_event_priority
 {
+	/* Error/initial status. */
+	NQIV_EVENT_PRIORITY_UNKNOWN = -1,
 	/* When told to quit, do so immediately */
 	NQIV_EVENT_PRIORITY_QUIT = 0,
 	/* Fulfill animation frames early for low latency. */
@@ -39,7 +32,22 @@ typedef enum nqiv_event_priority
 	NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_FAIL = 7,
 	/* Finally save a thumbnail we'll never even try to use. */
 	NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO = 8,
+	/* Helpers for iterating through priorities. */
+	NQIV_EVENT_PRIORITY_FIRST = NQIV_EVENT_PRIORITY_IMAGE_LOAD_ANIMATION,
+	NQIV_EVENT_PRIORITY_LAST = NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO,
 } nqiv_event_priority;
+
+/* Bins for thread priority queue. This is one bigger than necessary so preload events can be placed
+ * after events for currently-displayed images. See nqiv_event_priority. */
+#define THREAD_QUEUE_BIN_COUNT (NQIV_EVENT_PRIORITY_LAST + 1)
+/* min_add_count for thread queue bin arrays. It's pretty big to prevent a lot of reallocations. */
+#define THREAD_QUEUE_ADD_COUNT 10000
+/* Max length in units for thread queue bin arrays. Will influence max_data_length. If a queue
+ * reaches this size, there's probably something wrong. */
+#define THREAD_QUEUE_MAX_LENGTH 1000000
+
+extern const char* const nqiv_event_priority_names[];
+extern const char* const nqiv_event_priority_descriptions[];
 
 typedef enum nqiv_event_type
 {
@@ -113,5 +121,7 @@ void           nqiv_shared_var_inc_int(nqiv_shared_var* var);
 void           nqiv_shared_var_dec_int(nqiv_shared_var* var);
 int64_t        nqiv_shared_var_get_int(nqiv_shared_var* var);
 void           nqiv_shared_var_set_int(nqiv_shared_var* var, const int64_t value);
+
+nqiv_event_priority nqiv_text_to_event_priority(const char* text, const int length);
 
 #endif /* NQIV_EVENT_H */
