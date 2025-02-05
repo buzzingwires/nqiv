@@ -457,14 +457,13 @@ int nqiv_pruner_parse_check(nqiv_log_ctx*               logger,
 	int nidx = idx;
 	int tidx = -1;
 	if(inside_image) {
-		tidx = nqiv_pruner_parse_set_check(logger, text, nidx, end, inside_no, point,
-		                                   parse_func);
+		tidx = nqiv_pruner_parse_set_check(logger, text, nidx, end, inside_no, point, parse_func);
 	}
 	if(!inside_thumbnail) {
 		nidx = tidx;
 	} else if(tidx != -1 || !inside_image) {
-		nidx = nqiv_pruner_parse_set_check(logger, text, nidx, end, inside_no,
-		                                   thumbnail_point, parse_func);
+		nidx = nqiv_pruner_parse_set_check(logger, text, nidx, end, inside_no, thumbnail_point,
+		                                   parse_func);
 	}
 	return nidx;
 }
@@ -545,8 +544,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 			} else {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling unload\n");
 				if(set != NULL) {
-					nqiv_log_write(logger, NQIV_LOG_DEBUG,
-					               "Disabling checks for unload\n");
+					nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling checks for unload\n");
 					set = NULL;
 					thumbnail_set = NULL;
 				}
@@ -721,7 +719,8 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 			}
 		} else if(inside_unload) {
 			nqiv_log_write(logger, NQIV_LOG_ERROR,
-			               "Unload still enabled while parsing checks and comparisons at %s\n", &text[idx]);
+			               "Unload still enabled while parsing checks and comparisons at %s\n",
+			               &text[idx]);
 			return false;
 			/* Determine which checks to run. */
 		} else if(nqiv_pruner_check_token(text, idx, end, "sum")) {
@@ -781,36 +780,36 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 		} else if(nqiv_pruner_check_token(text, idx, end, "loaded_ahead")) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'loaded_ahead' %s\n", &text[idx]);
 			idx += strlen("loaded_ahead");
-			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no,
-			                              inside_image, inside_thumbnail, &set->loaded_ahead,
+			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_image,
+			                              inside_thumbnail, &set->loaded_ahead,
 			                              &thumbnail_set->loaded_ahead, nqiv_pruner_parse_int_pair);
 			inside_no = false;
 		} else if(nqiv_pruner_check_token(text, idx, end, "loaded_behind")) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'loaded_behind' %s\n", &text[idx]);
 			idx += strlen("loaded_behind");
-			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no,
-			                              inside_image, inside_thumbnail, &set->loaded_behind,
-			                              &thumbnail_set->loaded_behind, nqiv_pruner_parse_int_pair);
+			idx = nqiv_pruner_parse_check(
+				logger, text, idx, end, inside_no, inside_image, inside_thumbnail,
+				&set->loaded_behind, &thumbnail_set->loaded_behind, nqiv_pruner_parse_int_pair);
 			inside_no = false;
 		} else if(nqiv_pruner_check_token(text, idx, end, "bytes_ahead")) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'bytes_ahead' %s\n", &text[idx]);
 			idx += strlen("bytes_ahead");
-			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no,
-			                              inside_image, inside_thumbnail, &set->bytes_ahead,
+			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_image,
+			                              inside_thumbnail, &set->bytes_ahead,
 			                              &thumbnail_set->bytes_ahead, nqiv_pruner_parse_int_pair);
 			inside_no = false;
 		} else if(nqiv_pruner_check_token(text, idx, end, "bytes_behind")) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'bytes_behind' %s\n", &text[idx]);
 			idx += strlen("bytes_behind");
-			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no,
-			                              inside_image, inside_thumbnail, &set->bytes_behind,
+			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_image,
+			                              inside_thumbnail, &set->bytes_behind,
 			                              &thumbnail_set->bytes_behind, nqiv_pruner_parse_int_pair);
 			inside_no = false;
 		} else if(nqiv_pruner_check_token(text, idx, end, "self_opened")) {
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'self_opened' %s\n", &text[idx]);
 			idx += strlen("self_opened");
-			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no,
-			                              inside_image, inside_thumbnail, &set->loaded_self,
+			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_image,
+			                              inside_thumbnail, &set->loaded_self,
 			                              &thumbnail_set->loaded_self, nqiv_pruner_set_true);
 			inside_no = false;
 		} else {

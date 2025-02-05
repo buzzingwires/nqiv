@@ -54,23 +54,21 @@ bool nqiv_worker_spec_to_string(const nqiv_worker_spec* spec, char* string)
 		success && nqiv_worker_int_kv_to_string("event_interval", spec->event_interval, &builder);
 	success =
 		success && nqiv_worker_bins_kv_to_string("priorities", &(spec->queue_bins[1]), &builder);
-	if(success && (string[nqiv_array_get_last_idx(&builder)] == ' ' || string[nqiv_array_get_last_idx(&builder)] == ',')) {
+	if(success
+	   && (string[nqiv_array_get_last_idx(&builder)] == ' '
+	       || string[nqiv_array_get_last_idx(&builder)] == ',')) {
 		string[nqiv_array_get_last_idx(&builder)] = '\0';
 	}
 	return success;
 }
 
-int nqiv_worker_string_to_int(const char* string,
-                              const int   idx,
-                              const int   value_min,
-                              const int   value_max,
-                              int*        output)
+int nqiv_worker_string_to_int(
+	const char* string, const int idx, const int value_min, const int value_max, int* output)
 {
 	const char* start = string + idx;
 	char*       end = NULL;
 	const int   tmp = nqiv_strtoi(start, &end, 10);
-	if(errno != ERANGE && end != NULL && end != start && tmp >= value_min
-	          && tmp <= value_max) {
+	if(errno != ERANGE && end != NULL && end != start && tmp >= value_min && tmp <= value_max) {
 		*output = tmp;
 		assert(end - start < NQIV_WORKER_SPEC_STRLEN);
 		return (int)(idx + (end - start));
@@ -113,7 +111,8 @@ int nqiv_worker_string_to_bin_list(const char* string,
 			seg_end_idx = end_idx;
 		}
 
-		const nqiv_event_priority priority = nqiv_text_to_event_priority(string + nidx, seg_end_idx - nidx);
+		const nqiv_event_priority priority =
+			nqiv_text_to_event_priority(string + nidx, seg_end_idx - nidx);
 		if(priority == NQIV_EVENT_PRIORITY_UNKNOWN) {
 			return cidx; /* Let caller decide what to do with unknown name. */
 		}
@@ -164,11 +163,9 @@ bool nqiv_worker_string_to_spec(const char* string, nqiv_worker_spec* spec)
 			idx = seg_end_idx;
 		} else {
 			if(strcmp(key, "extra_wakeup_delay") == 0) {
-				idx =
-					nqiv_worker_string_to_int(string, idx, 0, INT_MAX, &new_spec.delay_base);
+				idx = nqiv_worker_string_to_int(string, idx, 0, INT_MAX, &new_spec.delay_base);
 			} else if(strcmp(key, "event_interval") == 0) {
-				idx = nqiv_worker_string_to_int(string, idx, 0, INT_MAX,
-				                                &new_spec.event_interval);
+				idx = nqiv_worker_string_to_int(string, idx, 0, INT_MAX, &new_spec.event_interval);
 			} else if(strcmp(key, "priorities") == 0) {
 				idx = nqiv_worker_string_to_bin_list(string, idx, end_idx, new_spec.queue_bins);
 			} else {

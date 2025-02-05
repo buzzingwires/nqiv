@@ -1182,26 +1182,29 @@ void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		        "'and' will use boolean and with the result of all checks to determine success.\n");
 		print_prefix(manager);
 		fprintf(stdout, "'unload' will cause specified image datatypes to be unloaded in the event "
-		                "of a failed check. Unload cannot be active when specifying checks or check comparisons ('sum', 'or', etc')\n");
+		                "of a failed check. Unload cannot be active when specifying checks or "
+		                "check comparisons ('sum', 'or', etc')\n");
 		print_prefix(manager);
 		fprintf(stdout, "'hard' will cause 'unload' to always work. Otherwise, they will only be "
 		                "unloaded if the corresponding texture is exists (this can prevent "
-		                "prematurely unloading things needed for the texture). Textures themselves are always hard-unloaded.\n");
+		                "prematurely unloading things needed for the texture). Textures themselves "
+		                "are always hard-unloaded.\n");
 		print_prefix(manager);
-		fprintf(
-			stdout,
-			"'thumbnail' will cause thumbnail images to be considered by the following operations.\n");
+		fprintf(stdout, "'thumbnail' will cause thumbnail images to be considered by the following "
+		                "operations.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'image' will cause normal images to be considered by the following checks "
+		                "(Default behavior)\n");
+		print_prefix(manager);
+		fprintf(stdout, "'vips' will cause the following checks to consider VIPS data only, or for "
+		                "this data to be unloaded.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'surface' will cause the following checks to consider SDL surface data "
+		                "only, or for this data to be unloaded.\n");
 		print_prefix(manager);
 		fprintf(stdout,
-		        "'image' will cause normal images to be considered by the following checks (Default behavior)\n");
-		print_prefix(manager);
-		fprintf(stdout, "'vips' will cause the following checks to consider VIPS data only, or for this data to be unloaded.\n");
-		print_prefix(manager);
-		fprintf(stdout,
-		        "'surface' will cause the following checks to consider SDL surface data only, or for this data to be unloaded.\n");
-		print_prefix(manager);
-		fprintf(stdout,
-		        "'texture' will cause the following checks to consider SDL texture data only, or for this data to be unloaded. Textures are always hard-unloaded.\n");
+		        "'texture' will cause the following checks to consider SDL texture data only, or "
+		        "for this data to be unloaded. Textures are always hard-unloaded.\n");
 		print_prefix(manager);
 		fprintf(stdout, "'loaded_ahead' <THRESHOLD> <MAX> will check for whether the number of "
 		                "loaded images after the threshold is greater than max.\n");
@@ -1247,16 +1250,20 @@ void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		        "polling cycles. If unset, the default from 'set thread event_interval' is used. "
 		        "See this command's help for further explanation.\n");
 		print_prefix(manager);
-		fprintf(stdout,
-		        "'priorities <priority_name>,...' - The thread will process events of the priorities "
-		        "specified in this comma-separated list, in the order that they are specified. The 'natural' order of the "
-		        "priorities is how workers handle events by default.\n");
+		fprintf(
+			stdout,
+			"'priorities <priority_name>,...' - The thread will process events of the priorities "
+			"specified in this comma-separated list, in the order that they are specified. The "
+		    "'natural' order of the "
+			"priorities is how workers handle events by default.\n");
 		print_prefix(manager);
 		fprintf(stdout, "Priorities:\n");
 		nqiv_event_priority priority = NQIV_EVENT_PRIORITY_UNKNOWN;
-		for(priority = NQIV_EVENT_PRIORITY_FIRST; priority <= NQIV_EVENT_PRIORITY_LAST; ++priority) {
+		for(priority = NQIV_EVENT_PRIORITY_FIRST; priority <= NQIV_EVENT_PRIORITY_LAST;
+		    ++priority) {
 			print_prefix(manager);
-			fprintf(stdout, "%s - %s\n", nqiv_event_priority_names[priority], nqiv_event_priority_descriptions[priority]);
+			fprintf(stdout, "%s - %s\n", nqiv_event_priority_names[priority],
+			        nqiv_event_priority_descriptions[priority]);
 		}
 		manager->print_settings.indent -= 1;
 		break;

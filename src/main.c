@@ -590,7 +590,10 @@ int nqiv_promote_event(const int level, const bool is_preload)
 	return new_level;
 }
 
-bool nqiv_send_thread_event(nqiv_state* state, const int level, nqiv_event* event, const bool is_preload)
+bool nqiv_send_thread_event(nqiv_state* state,
+                            const int   level,
+                            nqiv_event* event,
+                            const bool  is_preload)
 {
 	event->transaction_group = nqiv_shared_var_get_int(&state->thread_event_transaction_group);
 	return nqiv_send_thread_event_base(state, nqiv_promote_event(level, is_preload), event, false);
@@ -843,8 +846,8 @@ bool render_from_form(nqiv_state*     state,
 			event.options.image_load.set_thumbnail_path = true;
 			event.options.image_load.thumbnail_options.clear_error = true;
 			event.options.image_load.create_thumbnail = true;
-			if(!nqiv_send_thread_event(
-				   state, NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO, &event, dstrect == NULL)) {
+			if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO, &event,
+			                           dstrect == NULL)) {
 				nqiv_image_unlock(image);
 				return false;
 			}
@@ -872,9 +875,8 @@ bool render_from_form(nqiv_state*     state,
 				event.options.image_load.thumbnail_options.clear_error =
 					state->images.thumbnail.save;
 				event.options.image_load.create_thumbnail = true;
-				if(!nqiv_send_thread_event(
-					   state, NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_FAIL,
-					   &event, dstrect == NULL)) {
+				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_FAIL,
+				                           &event, dstrect == NULL)) {
 					nqiv_image_unlock(image);
 					return false;
 				}
@@ -891,9 +893,8 @@ bool render_from_form(nqiv_state*     state,
 				} else {
 					event.options.image_load.thumbnail_options.vips_soft = true;
 				}
-				if(!nqiv_send_thread_event(
-					   state, NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD_EPHEMERAL,
-					   &event, dstrect == NULL)) {
+				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD_EPHEMERAL,
+				                           &event, dstrect == NULL)) {
 					nqiv_image_unlock(image);
 					return false;
 				}
@@ -975,8 +976,8 @@ bool render_from_form(nqiv_state*     state,
 				event.options.image_load.thumbnail_options.first_frame = first_frame;
 				event.options.image_load.thumbnail_options.next_frame =
 					next_frame && !first_frame && form->animation.frame_rendered;
-				if(!nqiv_send_thread_event(
-					   state, NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD, &event, dstrect == NULL)) {
+				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD, &event,
+				                           dstrect == NULL)) {
 					nqiv_image_unlock(image);
 					return false;
 				}
@@ -1003,8 +1004,8 @@ bool render_from_form(nqiv_state*     state,
 				event.options.image_load.image_options.first_frame = first_frame;
 				event.options.image_load.image_options.next_frame =
 					next_frame && !first_frame && form->animation.frame_rendered;
-				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_IMAGE_LOAD,
-				                           &event, dstrect == NULL)) {
+				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_IMAGE_LOAD, &event,
+				                           dstrect == NULL)) {
 					nqiv_image_unlock(image);
 					return false;
 				}
@@ -1051,8 +1052,8 @@ bool render_from_form(nqiv_state*     state,
 				event.options.image_load.image_options.first_frame = first_frame;
 				event.options.image_load.image_options.next_frame =
 					next_frame && !first_frame && form->animation.frame_rendered;
-				if(!nqiv_send_thread_event(
-					   state, NQIV_EVENT_PRIORITY_IMAGE_LOAD_ANIMATION, &event, dstrect == NULL)) {
+				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_IMAGE_LOAD_ANIMATION, &event,
+				                           dstrect == NULL)) {
 					nqiv_image_unlock(image);
 					return false;
 				}
