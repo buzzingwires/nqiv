@@ -650,10 +650,7 @@ bool render_from_form(nqiv_state*     state,
                       /* Selected in montage mode? */
                       const bool      selected,
                       /* Force reload */
-                      const bool      hard,
-                      /* Preload events will have lower priority (higher number), so actual priority
-                         is added to this. */
-                      const int       base_priority)
+                      const bool      hard)
 {
 	bool             cleared = is_montage;
 	nqiv_image_form* form = is_montage ? &image->thumbnail : &image->image;
@@ -819,7 +816,7 @@ bool render_from_form(nqiv_state*     state,
 			event.options.image_load.thumbnail_options.clear_error = true;
 			event.options.image_load.create_thumbnail = true;
 			if(!nqiv_send_thread_event(
-				   state, base_priority + NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO, &event)) {
+				   state, NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO, &event)) {
 				nqiv_image_unlock(image);
 				return false;
 			}
@@ -848,7 +845,7 @@ bool render_from_form(nqiv_state*     state,
 					state->images.thumbnail.save;
 				event.options.image_load.create_thumbnail = true;
 				if(!nqiv_send_thread_event(
-					   state, base_priority + NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_FAIL,
+					   state, NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_FAIL,
 					   &event)) {
 					nqiv_image_unlock(image);
 					return false;
@@ -867,7 +864,7 @@ bool render_from_form(nqiv_state*     state,
 					event.options.image_load.thumbnail_options.vips_soft = true;
 				}
 				if(!nqiv_send_thread_event(
-					   state, base_priority + NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD_EPHEMERAL,
+					   state, NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD_EPHEMERAL,
 					   &event)) {
 					nqiv_image_unlock(image);
 					return false;
@@ -951,7 +948,7 @@ bool render_from_form(nqiv_state*     state,
 				event.options.image_load.thumbnail_options.next_frame =
 					next_frame && !first_frame && form->animation.frame_rendered;
 				if(!nqiv_send_thread_event(
-					   state, base_priority + NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD, &event)) {
+					   state, NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD, &event)) {
 					nqiv_image_unlock(image);
 					return false;
 				}
@@ -978,7 +975,7 @@ bool render_from_form(nqiv_state*     state,
 				event.options.image_load.image_options.first_frame = first_frame;
 				event.options.image_load.image_options.next_frame =
 					next_frame && !first_frame && form->animation.frame_rendered;
-				if(!nqiv_send_thread_event(state, base_priority + NQIV_EVENT_PRIORITY_IMAGE_LOAD,
+				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_IMAGE_LOAD,
 				                           &event)) {
 					nqiv_image_unlock(image);
 					return false;
@@ -1027,7 +1024,7 @@ bool render_from_form(nqiv_state*     state,
 				event.options.image_load.image_options.next_frame =
 					next_frame && !first_frame && form->animation.frame_rendered;
 				if(!nqiv_send_thread_event(
-					   state, base_priority + NQIV_EVENT_PRIORITY_IMAGE_LOAD_ANIMATION, &event)) {
+					   state, NQIV_EVENT_PRIORITY_IMAGE_LOAD_ANIMATION, &event)) {
 					nqiv_image_unlock(image);
 					return false;
 				}
@@ -1149,12 +1146,12 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 			SDL_Rect dstrect;
 			nqiv_montage_get_image_rect(&state->montage, idx, &dstrect);
 			if(!render_from_form(state, image, true, &dstrect, true, false,
-			                     state->montage.positions.selection == idx, hard, 0)
+			                     state->montage.positions.selection == idx, hard)
 			   || (idx == state->montage.positions.selection && !set_title(state, image))) {
 				return false;
 			}
 		} else if(!render_from_form(state, image, true, NULL, true, false,
-		                            state->montage.positions.selection == idx, hard, 1)) {
+		                            state->montage.positions.selection == idx, hard)) {
 			return false;
 		}
 	}
@@ -1174,7 +1171,7 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 		((nqiv_image**)state->images.images->data)[state->montage.positions.selection];
 	SDL_Rect dstrect = {0};
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
-	if(!render_from_form(state, image, false, &dstrect, start, true, false, hard, 0)) {
+	if(!render_from_form(state, image, false, &dstrect, start, true, false, hard)) {
 		return false;
 	}
 	const bool render_cleared = state->render_cleared;
