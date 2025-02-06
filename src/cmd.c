@@ -377,7 +377,7 @@ void nqiv_cmd_parser_print_value_sdlrect(const char* name, const SDL_Rect* value
 
 void nqiv_cmd_parser_print_value_image_form(nqiv_cmd_manager* manager, const nqiv_image_form* form)
 {
-	fprintf(stdout, "path: %s\n", form->path);
+	fprintf(stdout, "path: %s\n", form->path != NULL ? form->path : "UNSET");
 	manager->print_settings.indent += 1;
 	nqiv_cmd_print_indent(manager);
 	fprintf(stdout, "Dimensions %dx%d Effective Dimensions %dx%d ", form->width, form->height,
