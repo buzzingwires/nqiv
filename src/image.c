@@ -454,7 +454,7 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	}
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
 	               "Loaded raw of size %zu for image form %s frame %d with pixel offset %d at "
-	               "delay of %d at path %s\n",
+	               "delay of %d for %s of image path %s\n",
 	               data_size, form == &image->image ? "image" : "thumbnail", form->animation.frame,
 	               frame_offset, form->animation.delay,
 	               form == &image->image ? "image" : "thumbnail", image->image.path);

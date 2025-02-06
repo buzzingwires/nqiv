@@ -1011,7 +1011,7 @@ bool render_from_form(nqiv_state*     state,
 				}
 			}
 		}
-		/* Draw thumbnail if it exists. */
+		/* Draw texture if it exists. */
 		if(form->texture != NULL) {
 			if(dstrect_zoom_ptr != NULL
 			   && !nqiv_state_update_alpha_background_dimensions(state, dstrect_zoom_ptr->w,
