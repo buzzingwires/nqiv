@@ -1217,7 +1217,7 @@ bool nqiv_image_form_first_frame(nqiv_image* image, nqiv_image_form* form)
 	}
 	form->animation.frame = 0;
 	form->animation.frame_rendered = false;
-	form->animation.last_frame_time = clock();
+	form->animation.last_frame_time = SDL_GetTicks64();
 	if(!nqiv_image_form_set_frame_delay(image, form)) {
 		return false;
 	}
