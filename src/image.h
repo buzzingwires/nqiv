@@ -62,6 +62,7 @@ typedef struct nqiv_image_form
 	SDL_Rect                  master_srcrect;
 	SDL_Rect                  master_dstrect;
 	bool                      master_dimensions_set;
+	bool                      master_animation_exists;
 	/* Have we tried and failed to load a thumbnail? If the thumbnail is
 	 * successfully created later on, this may be reset. */
 	bool                      thumbnail_load_failed;

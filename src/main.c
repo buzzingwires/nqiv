@@ -687,6 +687,10 @@ bool render_from_form(nqiv_state*     state,
 		state->first_frame_pending = state->first_frame_pending || first_frame;
 	}
 	bool             cleared = is_montage;
+	/* Unload the texture so we can return to the first frame. */
+	if( (form->texture != NULL || form->fallback_texture != NULL) && !is_montage && (first_frame || state->first_frame_pending) && form->master_animation_exists) {
+		nqiv_unload_image_form_all_textures(form);
+	}
 	/* We try to lock the image. Don't wait on it and block the whole program, if not. Just use
 	 * its fallback texture and return early. */
 	if(!nqiv_image_test_lock(image)) {
@@ -748,6 +752,7 @@ bool render_from_form(nqiv_state*     state,
 		return true;
 	}
 	/* We must have locked the image by this point. */
+	form->master_animation_exists = true;
 	SDL_Rect  srcrect = {0};
 	SDL_Rect* srcrect_ptr = &srcrect;
 	SDL_Rect  dstrect_zoom = {0};
@@ -914,10 +919,6 @@ bool render_from_form(nqiv_state*     state,
 		}
 		/* No error */
 	} else {
-		/* Unload the texture so we can return to the first frame. */
-		if(form->texture != NULL && !is_montage && (first_frame || state->first_frame_pending) && form->animation.exists) {
-			nqiv_unload_image_form_texture(form);
-		}
 		/* If we have a texture and don't need to render the next frame, do nothing. */
 		if(form->texture != NULL && !form->animation.frame_rendered) {
 			/* NOOP */

@@ -400,6 +400,7 @@ void nqiv_cmd_parser_print_value_image_form(nqiv_cmd_manager* manager, const nqi
 	fprintf(stdout, "\n");
 	nqiv_cmd_print_indent(manager);
 	fprintf(stdout, "ANIMATION: ");
+	nqiv_cmd_parser_print_value_bool("master_animation_exists", form->master_animation_exists);
 	nqiv_cmd_parser_print_value_bool("animation.exists", form->animation.exists);
 	nqiv_cmd_parser_print_value_bool("animation.frame_rendered", form->animation.frame_rendered);
 	fprintf(stdout, "frame: %d ", form->animation.frame);
@@ -2720,7 +2721,7 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		LI("first_frame_pending",
 		   "Are we still waiting for the first frame to render. Used for an edge case where the "
 		   "first frame an image is requested but not yet available, preventing zoom defaults "
-		   "being loaded.",
+		   "being loaded and causing inconsistent animation behaviors.",
 		   &(manager->state->first_frame_pending), nqiv_cmd_parser_print_data_bool);
 		LI("is_mouse_panning", "Should we follow the image to the mouse movement.",
 		   &(manager->state->is_mouse_panning), nqiv_cmd_parser_print_data_bool);

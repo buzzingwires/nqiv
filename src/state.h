@@ -121,7 +121,7 @@ struct nqiv_state
 	/* Try to fill entire display area with image, disregarding aspect ratio. */
 	bool                 stretch_images;
 	/* Used to handle edge case of first frame being passed, but not being rendered yet. Otherwise,
-	 * zoom defaults may not be set. */
+	 * zoom defaults may not be set and animations may act inconsistently. */
 	bool                 first_frame_pending;
 	nqiv_zoom_default    zoom_default;
 	/* Should we pan the image according to mouse motion right now? */

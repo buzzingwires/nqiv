@@ -1221,7 +1221,6 @@ bool nqiv_image_form_first_frame(nqiv_image* image, nqiv_image_form* form)
 	if(!nqiv_image_form_set_frame_delay(image, form)) {
 		return false;
 	}
-	nqiv_image_form_delay_frame(form);
 	return true;
 }
 
@@ -1232,9 +1231,10 @@ bool nqiv_image_form_next_frame(nqiv_image* image, nqiv_image_form* form)
 	if(!form->animation.exists) {
 		return true;
 	}
-	if(form->texture != NULL && !form->animation.frame_rendered) {
+	if(!form->animation.frame_rendered) {
 		return false;
 	}
+	nqiv_image_form_delay_frame(form);
 	form->animation.frame += 1;
 	if(form->animation.frame >= form->animation.frame_count) {
 		form->animation.frame = 0;
@@ -1243,6 +1243,5 @@ bool nqiv_image_form_next_frame(nqiv_image* image, nqiv_image_form* form)
 	if(!nqiv_image_form_set_frame_delay(image, form)) {
 		return false;
 	}
-	nqiv_image_form_delay_frame(form);
 	return true;
 }
