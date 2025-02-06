@@ -102,10 +102,12 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state, const int widt
 	memcpy(&original, state, sizeof(nqiv_montage_state));
 	state->dimensions.window_width = width;
 	state->dimensions.window_height = height;
-	const double width_ratio =
+	const double raw_width_ratio =
 		(double)(state->images->thumbnail.size) / (double)(state->dimensions.window_width);
-	const double height_ratio =
+	const double raw_height_ratio =
 		(double)(state->images->thumbnail.size) / (double)(state->dimensions.window_height);
+	const double width_ratio = raw_width_ratio >= 1.0 ? 1.0 : raw_width_ratio;
+	const double height_ratio = raw_height_ratio >= 1.0 ? 1.0 : raw_height_ratio;
 	int          count_per_column;
 	const double row_leftover = nqiv_montage_calculate_axis(&count_per_column, height_ratio);
 	const double column_leftover =
