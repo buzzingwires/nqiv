@@ -677,14 +677,16 @@ bool render_from_form(nqiv_state*     state,
                       /* Where to draw to. */
                       const SDL_Rect* dstrect,
                       const bool      first_frame,
-                      const bool      next_frame,
                       /* Selected in montage mode? */
                       const bool      selected,
                       /* Force reload */
                       const bool      hard)
 {
-	bool             cleared = is_montage;
 	nqiv_image_form* form = is_montage ? &image->thumbnail : &image->image;
+	if(!is_montage) {
+		state->first_frame_pending = state->first_frame_pending || first_frame;
+	}
+	bool             cleared = is_montage;
 	/* We try to lock the image. Don't wait on it and block the whole program, if not. Just use
 	 * its fallback texture and return early. */
 	if(!nqiv_image_test_lock(image)) {
@@ -857,7 +859,7 @@ bool render_from_form(nqiv_state*     state,
 		/* If we're working with a thumbnail and a successful image, try to recover. */
 		if(is_montage && !image->image.error) {
 			/* If reloading, indicate so. */
-			if(first_frame || hard) {
+			if(first_frame || state->first_frame_pending || hard) {
 				if(!render_texture(&cleared, dstrect, state,
 				                   state->texture_montage_unloaded_background, NULL,
 				                   dstrect_zoom_ptr == NULL ? dstrect : dstrect_zoom_ptr)) {
@@ -913,16 +915,16 @@ bool render_from_form(nqiv_state*     state,
 		/* No error */
 	} else {
 		/* Unload the texture so we can return to the first frame. */
-		if(form->texture != NULL && !is_montage && first_frame && form->animation.exists) {
+		if(form->texture != NULL && !is_montage && (first_frame || state->first_frame_pending) && form->animation.exists) {
 			nqiv_unload_image_form_texture(form);
 		}
 		/* If we have a texture and don't need to render the next frame, do nothing. */
-		if(form->texture != NULL && (!next_frame || !form->animation.frame_rendered)) {
+		if(form->texture != NULL && !form->animation.frame_rendered) {
 			/* NOOP */
 			/* Use the surface we have to make a texture, no need to resample or grab the next
 			 * frame. */
 		} else if(form->surface != NULL && !resample_zoom
-		          && (is_montage || !first_frame || !form->animation.exists)) {
+		          && (is_montage || !(first_frame || state->first_frame_pending) || !form->animation.exists)) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading texture for image %s\n",
 			               image->image.path);
 			form->texture = SDL_CreateTextureFromSurface(state->renderer, form->surface);
@@ -937,7 +939,7 @@ bool render_from_form(nqiv_state*     state,
 			}
 			/* Otherwise, we set the loading indicator where relevant and start sending events. */
 		} else {
-			if(first_frame || hard) {
+			if(first_frame || state->first_frame_pending || hard) {
 				state->is_loading = true;
 				if(state->show_loading_indicator
 				   && !render_texture(&cleared, dstrect, state,
@@ -963,19 +965,10 @@ bool render_from_form(nqiv_state*     state,
 					event.options.image_load.thumbnail_options.vips_soft = true;
 					event.options.image_load.borrow_thumbnail_dimension_metadata = true;
 				}
-				/* Force reload if we may not have the currently-needed data, for whatever reason.
-				 * Most of this should never happen because thumbnails aren't animated at this time.
-				 */
-				if(hard || next_frame
-				   || (first_frame && image->thumbnail.vips != NULL
-				       && image->thumbnail.animation.frame != 0)) {
-					event.options.image_load.thumbnail_options.surface = true;
-				} else {
-					event.options.image_load.thumbnail_options.surface_soft = true;
-				}
-				event.options.image_load.thumbnail_options.first_frame = first_frame;
+				event.options.image_load.thumbnail_options.surface = true;
+				event.options.image_load.thumbnail_options.first_frame = (first_frame || state->first_frame_pending);
 				event.options.image_load.thumbnail_options.next_frame =
-					next_frame && !first_frame && form->animation.frame_rendered;
+					!(first_frame || state->first_frame_pending) && form->animation.frame_rendered;
 				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD, &event,
 				                           dstrect == NULL)) {
 					nqiv_image_unlock(image);
@@ -992,18 +985,10 @@ bool render_from_form(nqiv_state*     state,
 				} else {
 					event.options.image_load.image_options.vips_soft = true;
 				}
-				/* If due to animation, hard loading, or need for resampling, hard load data and
-				 * surface. */
-				if(image->image.vips != NULL
-				   && (hard || next_frame || resample_zoom
-				       || (first_frame && image->image.animation.frame != 0))) {
-					event.options.image_load.image_options.surface = true;
-				} else {
-					event.options.image_load.image_options.surface_soft = true;
-				}
-				event.options.image_load.image_options.first_frame = first_frame;
+				event.options.image_load.image_options.surface = true;
+				event.options.image_load.image_options.first_frame = (first_frame || state->first_frame_pending);
 				event.options.image_load.image_options.next_frame =
-					next_frame && !first_frame && form->animation.frame_rendered;
+					!(first_frame || state->first_frame_pending) && form->animation.frame_rendered;
 				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_IMAGE_LOAD, &event,
 				                           dstrect == NULL)) {
 					nqiv_image_unlock(image);
@@ -1035,9 +1020,8 @@ bool render_from_form(nqiv_state*     state,
 			if(dstrect != NULL) {
 				state->is_loading = false;
 			}
-			state->first_frame_pending = false;
 			/* Special operation to load next thumbnail frame right away. */
-			if(form->animation.exists && next_frame && !is_montage) {
+			if(form->animation.exists && !(first_frame || state->first_frame_pending) && !is_montage) {
 				nqiv_unload_image_form_texture(form);
 				form->animation.frame_rendered = true;
 				nqiv_event event = {0};
@@ -1049,15 +1033,16 @@ bool render_from_form(nqiv_state*     state,
 					event.options.image_load.image_options.vips_soft = true;
 				}
 				event.options.image_load.image_options.surface = true;
-				event.options.image_load.image_options.first_frame = first_frame;
+				event.options.image_load.image_options.first_frame = (first_frame || state->first_frame_pending);
 				event.options.image_load.image_options.next_frame =
-					next_frame && !first_frame && form->animation.frame_rendered;
+					!(first_frame || state->first_frame_pending) && form->animation.frame_rendered;
 				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_IMAGE_LOAD_ANIMATION, &event,
 				                           dstrect == NULL)) {
 					nqiv_image_unlock(image);
 					return false;
 				}
 			}
+			state->first_frame_pending = false;
 		}
 	}
 	/* Simple quick overdrawn stuff, selection and mark boxes. */
@@ -1184,17 +1169,17 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 			               image->image.path, idx);
 			SDL_Rect dstrect;
 			nqiv_montage_get_image_rect(&state->montage, idx, &dstrect);
-			if(!render_from_form(state, image, true, &dstrect, true, false,
+			if(!render_from_form(state, image, true, &dstrect, true,
 			                     state->montage.positions.selection == idx, hard)
 			   || (idx == state->montage.positions.selection && !set_title(state, image))) {
 				return false;
 			}
 		} else {
-			if(idx >= montage_preload_start_idx && idx < montage_preload_end && !render_from_form(state, image, true, NULL, true, false,
+			if(idx >= montage_preload_start_idx && idx < montage_preload_end && !render_from_form(state, image, true, NULL, true,
 			                            state->montage.positions.selection == idx, hard)) {
 				return false;
 			}
-			if(!state->in_montage && state->montage.positions.selection != idx && idx >= image_preload_start_idx && idx < image_preload_end && !render_from_form(state, image, false, NULL, true, false,
+			if(!state->in_montage && state->montage.positions.selection != idx && idx >= image_preload_start_idx && idx < image_preload_end && !render_from_form(state, image, false, NULL, true,
 			                            state->montage.positions.selection == idx, hard)) {
 				return false;
 			}
@@ -1216,7 +1201,7 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 		((nqiv_image**)state->images.images->data)[state->montage.positions.selection];
 	SDL_Rect dstrect = {0};
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
-	if(!render_from_form(state, image, false, &dstrect, start, true, false, hard)) {
+	if(!render_from_form(state, image, false, &dstrect, start, false, hard)) {
 		return false;
 	}
 	const bool render_cleared = state->render_cleared;
