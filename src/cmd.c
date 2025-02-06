@@ -2507,6 +2507,16 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		POP;
 		B("preload", "Set options related to preloading images not yet in view.");
 		{
+			B("image", "Set preloading options for images (not thumbnails) ahead of the currently-viewed one (if one is being viewed).")
+			{
+				LC("ahead", "This number of images ahead of the current image are loaded.",
+				   &(manager->state->image_preload.ahead), nqiv_cmd_parser_set_data_int,
+				   nqiv_cmd_parser_print_data_int, natural_args);
+				LC("behind", "This number of images behind of the current image are loaded.",
+				   &(manager->state->image_preload.behind), nqiv_cmd_parser_set_data_int,
+				   nqiv_cmd_parser_print_data_int, natural_args);
+			}
+			POP;
 			LC("ahead", "This number of images ahead of the current montage are loaded.",
 			   &(manager->state->montage.preload.ahead), nqiv_cmd_parser_set_data_int,
 			   nqiv_cmd_parser_print_data_int, natural_args);

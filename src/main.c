@@ -1155,8 +1155,18 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 	}
 	state->render_cleared = !preload_only;
 	const int    images_len = nqiv_array_get_units_count(state->images.images);
-	const int    raw_start_idx = state->montage.positions.start - state->montage.preload.behind;
-	const int    raw_end = state->montage.positions.end + state->montage.preload.ahead;
+	const int    biggest_preload_behind = state->image_preload.behind > state->montage.preload.behind ? state->image_preload.behind : state->montage.preload.behind;
+	const int    biggest_preload_ahead = state->image_preload.ahead > state->montage.preload.ahead ? state->image_preload.ahead : state->montage.preload.ahead;
+	const int    raw_start_idx = state->montage.positions.start - biggest_preload_behind;
+	const int    raw_end = state->montage.positions.end + biggest_preload_ahead;
+	const int    raw_montage_preload_start_idx = state->montage.positions.start - state->montage.preload.behind;
+	const int    raw_image_preload_start_idx = state->montage.positions.selection - state->image_preload.behind;
+	const int    raw_montage_preload_end = state->montage.positions.end + state->montage.preload.ahead;
+	const int    raw_image_preload_end = state->montage.positions.selection + state->image_preload.ahead;
+	const int    montage_preload_start_idx = raw_montage_preload_start_idx >= 0 ? raw_montage_preload_start_idx : 0;
+	const int    montage_preload_end = raw_montage_preload_end <= images_len ? raw_montage_preload_end : images_len;
+	const int    image_preload_start_idx = raw_image_preload_start_idx >= 0 ? raw_image_preload_start_idx : 0;
+	const int    image_preload_end = raw_image_preload_end <= images_len ? raw_image_preload_end : images_len;
 	const int    start_idx = raw_start_idx >= 0 ? raw_start_idx : 0;
 	const int    end = raw_end <= images_len ? raw_end : images_len;
 	nqiv_image** images = state->images.images->data;
@@ -1179,9 +1189,15 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 			   || (idx == state->montage.positions.selection && !set_title(state, image))) {
 				return false;
 			}
-		} else if(!render_from_form(state, image, true, NULL, true, false,
-		                            state->montage.positions.selection == idx, hard)) {
-			return false;
+		} else {
+			if(idx >= montage_preload_start_idx && idx < montage_preload_end && !render_from_form(state, image, true, NULL, true, false,
+			                            state->montage.positions.selection == idx, hard)) {
+				return false;
+			}
+			if(!state->in_montage && state->montage.positions.selection != idx && idx >= image_preload_start_idx && idx < image_preload_end && !render_from_form(state, image, false, NULL, true, false,
+			                            state->montage.positions.selection == idx, hard)) {
+				return false;
+			}
 		}
 	}
 	return true;

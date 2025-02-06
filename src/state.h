@@ -116,6 +116,8 @@ struct nqiv_state
 	bool                 render_cleared;
 	/* Is montage mode? Otherwise image mode. */
 	bool                 in_montage;
+	/* If in image mode, how many images adjacent to the current one will be loaded. */
+	nqiv_montage_preload image_preload;
 	/* Try to fill entire display area with image, disregarding aspect ratio. */
 	bool                 stretch_images;
 	/* Used to handle edge case of first frame being passed, but not being rendered yet. Otherwise,
