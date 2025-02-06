@@ -920,7 +920,7 @@ bool render_from_form(nqiv_state*     state,
 		/* No error */
 	} else {
 		/* If we have a texture and don't need to render the next frame, do nothing. */
-		if(form->texture != NULL && !form->animation.frame_rendered) {
+		if(form->texture != NULL && ((first_frame || state->first_frame_pending) || !form->animation.frame_rendered)) {
 			/* NOOP */
 			/* Use the surface we have to make a texture, no need to resample or grab the next
 			 * frame. */
@@ -966,7 +966,16 @@ bool render_from_form(nqiv_state*     state,
 					event.options.image_load.thumbnail_options.vips_soft = true;
 					event.options.image_load.borrow_thumbnail_dimension_metadata = true;
 				}
-				event.options.image_load.thumbnail_options.surface = true;
+				/* Force reload if we may not have the currently-needed data, for whatever reason.
+				 * Most of this should never happen because thumbnails aren't animated at this time.
+				 */
+				if(hard || !(first_frame || state->first_frame_pending)
+				   || ((first_frame || state->first_frame_pending) && image->thumbnail.vips != NULL
+				       && image->thumbnail.animation.frame != 0)) {
+					event.options.image_load.thumbnail_options.surface = true;
+				} else {
+					event.options.image_load.thumbnail_options.surface_soft = true;
+				}
 				event.options.image_load.thumbnail_options.first_frame = (first_frame || state->first_frame_pending);
 				event.options.image_load.thumbnail_options.next_frame =
 					!(first_frame || state->first_frame_pending) && form->animation.frame_rendered;
@@ -986,7 +995,15 @@ bool render_from_form(nqiv_state*     state,
 				} else {
 					event.options.image_load.image_options.vips_soft = true;
 				}
-				event.options.image_load.image_options.surface = true;
+				/* If due to animation, hard loading, or need for resampling, hard load data and
+				 * surface. */
+				if(image->image.vips != NULL
+				   && (hard || !(first_frame || state->first_frame_pending) || resample_zoom
+				       || ((first_frame || state->first_frame_pending) && image->image.animation.frame != 0))) {
+					event.options.image_load.image_options.surface = true;
+				} else {
+					event.options.image_load.image_options.surface_soft = true;
+				}
 				event.options.image_load.image_options.first_frame = (first_frame || state->first_frame_pending);
 				event.options.image_load.image_options.next_frame =
 					!(first_frame || state->first_frame_pending) && form->animation.frame_rendered;
