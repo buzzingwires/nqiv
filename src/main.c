@@ -1062,9 +1062,7 @@ bool render_from_form(nqiv_state*     state,
 					return false;
 				}
 			}
-			if(dstrect != NULL && selected && !is_montage) {
-				state->first_frame_pending = false;
-			}
+			state->first_frame_pending = false;
 		}
 	}
 	/* Simple quick overdrawn stuff, selection and mark boxes. */
