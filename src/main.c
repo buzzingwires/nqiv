@@ -940,7 +940,7 @@ bool render_from_form(nqiv_state*     state,
 			}
 			/* Otherwise, we set the loading indicator where relevant and start sending events. */
 		} else {
-			if(first_frame || state->first_frame_pending || hard) {
+			if(first_frame || state->first_frame_pending || hard || resample_zoom) {
 				if(dstrect != NULL) {
 					state->is_loading = true;
 				}
