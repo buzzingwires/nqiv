@@ -291,7 +291,7 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 		}
 	}
 
-	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Form %s vips for loaded for image %s\n",
+	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Form %s vips loaded for image %s\n",
 	               form == &image->image ? "image" : "thumbnail", image->image.path);
 	return true;
 }
