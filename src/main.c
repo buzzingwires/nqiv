@@ -919,6 +919,7 @@ bool render_from_form(nqiv_state*     state,
 		}
 		/* No error */
 	} else {
+		assert(!resample_zoom || form->texture == NULL);
 		/* If we have a texture and don't need to render the next frame, do nothing. */
 		if(form->texture != NULL && ((first_frame || state->first_frame_pending) || !form->animation.frame_rendered)) {
 			/* NOOP */

@@ -199,7 +199,7 @@ void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_options
 			nqiv_unload_image_form_vips(form);
 		}
 	} else {
-		if(form->texture != NULL) {
+		if(form->texture != NULL && !(options->vips || options->surface)) {
 			return;
 		}
 		bool success = true;
