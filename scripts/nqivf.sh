@@ -23,7 +23,7 @@ exit_usage()
 	errcho "       Default, case insensitive, containing:"
 	errcho "       .jpg .jpeg .png .webp .gif .tiff .svg"
 	errcho
-	errcho "'-f' : Exclude the given pattern from images."
+	errcho "'-f' : Exclude the given pattern from image paths."
 	errcho
 	errcho "'-t' : Sort by modification time. Most recent first."
 	errcho
@@ -164,7 +164,7 @@ append_filter()
 {
 	local L_FILTER="$1"
 	local L_PATTERN="$2"
-	echo "$L_FILTER ! -iname '$L_PATTERN'"
+	echo "$L_FILTER ! -ipath '$L_PATTERN'"
 }
 
 prepare_args()
