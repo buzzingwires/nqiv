@@ -1838,8 +1838,7 @@ bool nqiv_cmd_parse(nqiv_cmd_manager* manager)
 
 bool nqiv_cmd_add_byte(nqiv_cmd_manager* manager, const char byte)
 {
-	const char buf[NQIV_CMD_ADD_BYTE_BUFFER_LENGTH] = {byte};
-	if(!nqiv_array_push_count(manager->buffer, buf, NQIV_CMD_ADD_BYTE_BUFFER_LENGTH)) {
+	if(!nqiv_array_push(manager->buffer, &byte)) {
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
 		               "Failed to append byte %c to nqiv command parser of length %d.\n", byte,
 		               manager->buffer->data_length);

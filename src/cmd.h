@@ -42,8 +42,6 @@
 #define NQIV_CMD_MAX_ARGS 8
 /* Used to build the full name of a command from nodes. */
 #define NQIV_CMD_DUMPCFG_BUFFER_LENGTH 1024
-/* Buffer length for an individual char */
-#define NQIV_CMD_ADD_BYTE_BUFFER_LENGTH (sizeof(char) * 1)
 /* Buffer length for unprocessed commands. */
 #define NQIV_CMD_READ_BUFFER_LENGTH     131072
 #define NQIV_CMD_READ_BUFFER_LENGTH_MAX 1048576
