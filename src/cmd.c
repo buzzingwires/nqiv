@@ -972,68 +972,55 @@ bool nqiv_keyrate_press_action_from_string(const char* data, nqiv_keyrate_press_
 	return false;
 }
 
-int nqiv_cmd_scan_subs(const char*  data,
-                       const int    start,
-                       const int    end,
-                       const bool   negated,
-                       const char** subs,
-                       int*         length)
+int nqiv_cmd_scan_whitespace(const char* data, const int start, const int end)
 {
-	int offset = -1;
 	int bidx;
 	for(bidx = start; bidx < end; ++bidx) {
-		int sidx = 0;
-		while(subs[sidx] != NULL) {
-			if(!negated) {
-				if(strncmp(&data[bidx], subs[sidx], strlen(subs[sidx])) == 0) {
-					if(length != NULL) {
-						*length = nqiv_strlen(subs[sidx]);
-					}
-					goto found;
-				}
-			} else {
-				if(strncmp(&data[bidx], subs[sidx], strlen(subs[sidx])) == 0) {
-					break;
-				}
-			}
-			++sidx;
-		}
-		if(negated && subs[sidx] == NULL) {
-			goto found;
+		if(data[bidx] == ' ' || data[bidx] == '\t') {
+			return bidx;
 		}
 	}
-	goto end;
-found:
-	offset = bidx;
-end:
-	return offset;
+	return -1;
+}
+
+int nqiv_cmd_scan_not_whitespace(const char* data, const int start, const int end)
+{
+	int bidx;
+	for(bidx = start; bidx < end; ++bidx) {
+		if(data[bidx] != ' ' && data[bidx] != '\t') {
+			return bidx;
+		}
+	}
+	return -1;
+}
+
+int nqiv_cmd_scan_eol(const char* data, const int start, const int end)
+{
+	int bidx;
+	for(bidx = start; bidx < end; ++bidx) {
+		if(bidx < end - 1) {
+			if((data[bidx] == '\r' && data[bidx + 1] == '\n') || (data[bidx] == '\n' && data[bidx + 1] == '\r')) {
+				return bidx;
+			}
+		}
+		if(data[bidx] == '\r' || data[bidx] == '\n') {
+			return bidx;
+		}
+	}
+	return -1;
 }
 
 int nqiv_cmd_scan_not_whitespace_and_eol(const char* data,
                                          const int   start,
-                                         const int   end,
-                                         int*        length)
+                                         const int   end)
 {
-	const char* whitespace_and_eol[] = {"\r\n", "\n\r", "\n", "\r", " ", "\t", NULL};
-	return nqiv_cmd_scan_subs(data, start, end, true, whitespace_and_eol, length);
-}
-
-int nqiv_cmd_scan_not_whitespace(const char* data, const int start, const int end, int* length)
-{
-	const char* whitespace[] = {" ", "\t", NULL};
-	return nqiv_cmd_scan_subs(data, start, end, true, whitespace, length);
-}
-
-int nqiv_cmd_scan_whitespace(const char* data, const int start, const int end, int* length)
-{
-	const char* whitespace[] = {" ", "\t", NULL};
-	return nqiv_cmd_scan_subs(data, start, end, false, whitespace, length);
-}
-
-int nqiv_cmd_scan_eol(const char* data, const int start, const int end, int* length)
-{
-	const char* eol[] = {"\r\n", "\n\r", "\n", "\r", NULL};
-	return nqiv_cmd_scan_subs(data, start, end, false, eol, length);
+	int bidx;
+	for(bidx = start; bidx < end; ++bidx) {
+		if(data[bidx] != '\r' && data[bidx] != '\n' && data[bidx] != ' ' && data[bidx] != '\t') {
+			return bidx;
+		}
+	}
+	return -1;
 }
 
 void nqiv_cmd_print_comment_prefix(const nqiv_cmd_manager* manager)
@@ -1532,7 +1519,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd checking key action arg at %d for token %s for input %s\n", tidx,
 			               current_node->name, data);
-			int arg_end = nqiv_cmd_scan_whitespace(mutdata, start_idx, eolpos, NULL);
+			int arg_end = nqiv_cmd_scan_whitespace(mutdata, start_idx, eolpos);
 			if(arg_end == -1 || arg_end > eolpos) {
 				arg_end = eolpos;
 			}
@@ -1615,7 +1602,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd checking spaceless arg at %d for token %s for input %s\n", tidx,
 			               current_node->name, data);
-			const int length = nqiv_cmd_scan_whitespace(data, 0, eolpos - start_idx, NULL);
+			const int length = nqiv_cmd_scan_whitespace(data, 0, eolpos - start_idx);
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd spaceless string at %d for token %s for input %s\n", tidx,
 			               current_node->name, data);
@@ -1654,7 +1641,7 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
 
 	while(current_node->args[tidx] != NULL) {
 		assert(tidx < NQIV_CMD_MAX_ARGS);
-		const int next_text_offset = nqiv_cmd_scan_not_whitespace(data, idx, eolpos, NULL);
+		const int next_text_offset = nqiv_cmd_scan_not_whitespace(data, idx, eolpos);
 		if(next_text_offset != -1) {
 			idx = next_text_offset;
 		} else {
@@ -1669,7 +1656,7 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
 		idx += parse_result;
 		++tidx;
 	}
-	if(error || nqiv_cmd_scan_not_whitespace(data, idx, eolpos, NULL) != -1) {
+	if(error || nqiv_cmd_scan_not_whitespace(data, idx, eolpos) != -1) {
 		nqiv_cmd_print_help(manager, current_node, 0);
 		if(manager->state->cmd_parse_error_quit) {
 			nqiv_cmd_force_quit_main(manager);
@@ -1730,12 +1717,12 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 	int   help_levels = 0;
 	bool  dumpcfg = false;
 	char* data = manager->buffer->data;
-	int   idx = nqiv_cmd_scan_not_whitespace_and_eol(data, 0, manager->buffer->position, NULL);
+	int   idx = nqiv_cmd_scan_not_whitespace_and_eol(data, 0, manager->buffer->position);
 	if(idx == -1) {
 		nqiv_array_clear(manager->buffer);
 		return true; /* The entire string must be whitespace- nothing to do. */
 	}
-	const int eolpos = nqiv_cmd_scan_eol(data, idx, manager->buffer->position, NULL);
+	const int eolpos = nqiv_cmd_scan_eol(data, idx, manager->buffer->position);
 	if(eolpos == -1) {
 		return true; /* We don't have an EOL yet. Nothing to do. */
 	}
@@ -1751,25 +1738,26 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 	const char   eolc = nqiv_cmd_tmpterm(data, eolpos);
 	nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd parsing input %s\n", data + idx);
 	nqiv_cmd_tmpret(data, eolpos, eolc);
+
 	if(strncmp(&data[idx], "helptree", strlen("helptree")) == 0) {
-		idx += strlen("helptree");
+	    idx += strlen("helptree");
 		help = true;
 		help_levels = -1;
 	} else if(strncmp(&data[idx], "helpchildren", strlen("helpchildren")) == 0) {
-		idx += strlen("helpchildren");
+	    idx += strlen("helpchildren");
 		help = true;
 		help_levels = 1;
 	} else if(strncmp(&data[idx], "help", strlen("help")) == 0) {
-		idx += strlen("help");
+	    idx += strlen("help");
 		help = true;
 	} else if(strncmp(&data[idx], "dumpcfg", strlen("dumpcfg")) == 0) {
-		idx += strlen("dumpcfg");
+	    idx += strlen("dumpcfg");
 		dumpcfg = true;
 	}
 	nqiv_cmd_node* current_node = manager->root_node;
 	assert(!manager->root_node->deprecated);
 	while(idx < eolpos) {
-		const int next_text_offset = nqiv_cmd_scan_not_whitespace(data, idx, eolpos, NULL);
+		const int next_text_offset = nqiv_cmd_scan_not_whitespace(data, idx, eolpos);
 		if(next_text_offset != -1) {
 			idx = next_text_offset;
 		} else if(help || current_node != manager->root_node) {
@@ -1783,7 +1771,7 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 			               "Cmd checking token %s child %s for input %s\n", current_node->name,
 			               child->name, data + idx);
 			nqiv_cmd_tmpret(data, eolpos, tmp);
-			int data_end = nqiv_cmd_scan_whitespace(data, idx, eolpos, NULL);
+			int data_end = nqiv_cmd_scan_whitespace(data, idx, eolpos);
 			if(data_end == -1 || data_end > eolpos) {
 				data_end = eolpos;
 			}
@@ -1840,7 +1828,7 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 
 bool nqiv_cmd_parse(nqiv_cmd_manager* manager)
 {
-	while(nqiv_cmd_scan_eol(manager->buffer->data, 0, manager->buffer->position, NULL) != -1) {
+	while(nqiv_cmd_scan_eol(manager->buffer->data, 0, manager->buffer->position) != -1) {
 		if(!nqiv_cmd_parse_line(manager)) {
 			return false;
 		}

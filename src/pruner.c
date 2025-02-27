@@ -354,7 +354,7 @@ int nqiv_pruner_parse_int(
 	nqiv_log_ctx* logger, const char* text, const int idx, const int end_idx, int* output)
 {
 	int nidx = idx;
-	nidx = nqiv_cmd_scan_not_whitespace(text, nidx, end_idx, NULL);
+	nidx = nqiv_cmd_scan_not_whitespace(text, nidx, end_idx);
 	if(nidx == -1) {
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to get non-whitespace for integer value\n");
 		return nidx;
@@ -380,7 +380,7 @@ int nqiv_pruner_parse_int_pair(nqiv_log_ctx*                       logger,
                                nqiv_pruner_desc_datapoint_content* output)
 {
 	int nidx = idx;
-	nidx = nqiv_cmd_scan_not_whitespace(text, nidx, end_idx, NULL);
+	nidx = nqiv_cmd_scan_not_whitespace(text, nidx, end_idx);
 	if(nidx == -1) {
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to get non-whitespace for integer value\n");
 		return nidx;
@@ -480,7 +480,7 @@ bool nqiv_pruner_append(nqiv_pruner* pruner, const nqiv_pruner_desc* desc)
 
 bool nqiv_pruner_check_token(const char* text, const int idx, const int end, const char* subs)
 {
-	int token_end = nqiv_cmd_scan_whitespace(text, idx, end, NULL);
+	int token_end = nqiv_cmd_scan_whitespace(text, idx, end);
 	if(token_end == -1) {
 		token_end = end;
 	}
@@ -509,7 +509,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 		return false;
 	}
 	while(idx < end) {
-		idx = nqiv_cmd_scan_not_whitespace(text, idx, end, NULL);
+		idx = nqiv_cmd_scan_not_whitespace(text, idx, end);
 		if(idx == -1) {
 			break;
 		}

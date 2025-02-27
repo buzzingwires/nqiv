@@ -76,10 +76,15 @@ int nqiv_worker_string_to_int(
 	return -1;
 }
 
-int nqiv_cmd_scan_comma_list_sep(const char* data, const int start, const int end, int* length)
+int nqiv_cmd_scan_comma_list_sep(const char* data, const int start, const int end)
 {
-	const char* sep[] = {" ", "\t", ",", NULL};
-	return nqiv_cmd_scan_subs(data, start, end, false, sep, length);
+	int bidx;
+	for(bidx = start; bidx < end; ++bidx) {
+		if(data[bidx] == ' ' || data[bidx] == '\t' || data[bidx] == ',') {
+			return bidx;
+		}
+	}
+	return -1;
 }
 
 int nqiv_worker_string_to_bin_list(const char* string,
@@ -91,7 +96,7 @@ int nqiv_worker_string_to_bin_list(const char* string,
 	int cidx = idx;
 	while(true) {
 		assert(oidx != 0);
-		int nidx = nqiv_cmd_scan_not_whitespace(string, cidx, end_idx, NULL);
+		int nidx = nqiv_cmd_scan_not_whitespace(string, cidx, end_idx);
 		if(nidx == -1) {
 			return cidx; /* Nothing more to parse. Caller's responsibility. */
 		}
@@ -101,12 +106,12 @@ int nqiv_worker_string_to_bin_list(const char* string,
 			}
 			nidx += 1;
 		}
-		nidx = nqiv_cmd_scan_not_whitespace(string, nidx, end_idx, NULL);
+		nidx = nqiv_cmd_scan_not_whitespace(string, nidx, end_idx);
 		if(nidx == -1) {
 			return -1; /* Trailing comma. Not allowed. */
 		}
 
-		int seg_end_idx = nqiv_cmd_scan_comma_list_sep(string, nidx, end_idx, NULL);
+		int seg_end_idx = nqiv_cmd_scan_comma_list_sep(string, nidx, end_idx);
 		if(seg_end_idx == -1) {
 			seg_end_idx = end_idx;
 		}
@@ -144,7 +149,7 @@ bool nqiv_worker_string_to_spec(const char* string, nqiv_worker_spec* spec)
 	idx = 0;
 	while(success) {
 		assert(idx <= end_idx);
-		const int nidx = nqiv_cmd_scan_not_whitespace(string, idx, end_idx, NULL);
+		const int nidx = nqiv_cmd_scan_not_whitespace(string, idx, end_idx);
 		if(nidx == -1) {
 			break;
 		}
@@ -155,7 +160,7 @@ bool nqiv_worker_string_to_spec(const char* string, nqiv_worker_spec* spec)
 		}
 		idx = nidx;
 		if(key[0] == '\0') {
-			int seg_end_idx = nqiv_cmd_scan_whitespace(string, idx, end_idx, NULL);
+			int seg_end_idx = nqiv_cmd_scan_whitespace(string, idx, end_idx);
 			if(seg_end_idx == -1) {
 				seg_end_idx = end_idx;
 			}
