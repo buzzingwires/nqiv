@@ -171,7 +171,19 @@ void nqiv_array_remove(nqiv_array* array, const int idx)
 
 bool nqiv_array_push_count(nqiv_array* array, const void* ptr, const int count)
 {
-	return nqiv_array_insert_count(array, ptr, nqiv_array_get_units_count(array), count);
+	if(count == 0) {
+		return true;
+	}
+	const int add_length = array->unit_length * count;
+	if(!nqiv_array_make_room(array, count)) {
+		return false;
+	}
+	char* data = array->data;
+	memcpy(&data[array->position], ptr, add_length);
+	array->position += add_length;
+	assert(array->position <= array->data_length);
+	assert(array->max_data_length <= 0 || array->data_length <= array->max_data_length);
+	return true;
 }
 
 bool nqiv_array_push(nqiv_array* array, const void* ptr)
