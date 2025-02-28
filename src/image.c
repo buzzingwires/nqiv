@@ -87,15 +87,15 @@ void nqiv_image_destroy(nqiv_image* image)
 {
 	assert(image != NULL);
 	assert(image->parent != NULL);
+	assert(image->image.path != NULL);
 	nqiv_log_write(image->parent->logger, NQIV_LOG_INFO, "Destroying image %s\n",
 	               image->image.path);
 	omp_destroy_lock(&image->lock);
 	nqiv_unload_image_form(&image->image);
 	nqiv_unload_image_form(&image->thumbnail);
-	if(image->image.path != NULL) {
-		free(image->image.path);
-	}
+	memset(image->image.path, 0, strlen(image->image.path));
 	if(image->thumbnail.path != NULL) {
+		memset(image->thumbnail.path, 0, strlen(image->thumbnail.path));
 		free(image->thumbnail.path);
 	}
 	memset(image, 0, sizeof(nqiv_image));
@@ -118,18 +118,13 @@ nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* raw_path)
 		return NULL;
 	}
 	const size_t path_size = path_len + 1;
-	nqiv_image*  image = (nqiv_image*)calloc(1, sizeof(nqiv_image));
+	nqiv_image*  image = (nqiv_image*)calloc(1, sizeof(nqiv_image) + path_size);
 	if(image == NULL) {
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to allocate memory for image at path %s",
 		               path);
 		return image;
 	}
-	image->image.path = calloc(1, path_size);
-	if(image->image.path == NULL) {
-		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to allocate memory for path data %s", path);
-		nqiv_image_destroy(image);
-		return NULL;
-	}
+	image->image.path = ((char*)image) + sizeof(nqiv_image);
 	omp_init_lock(&image->lock);
 	memcpy(image->image.path, path, path_len);
 	assert(strcmp(image->image.path, path) == 0);
