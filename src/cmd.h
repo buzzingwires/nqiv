@@ -165,7 +165,7 @@ struct nqiv_cmd_node
 	/* Pointer to the data handled by this node. This may or may not be used, depending on whether
 	 * the store/print functions are specialized. */
 	void* data;
-	bool (*store_value)(nqiv_cmd_manager*, nqiv_cmd_arg_token**);
+	bool (*store_value)(nqiv_cmd_manager*, nqiv_cmd_arg_token*);
 	void (*print_value)(nqiv_cmd_manager*);
 	nqiv_cmd_arg_desc** args;
 	/* Child nodes are chosen from a linked list of peers. */
