@@ -28,19 +28,17 @@
 
 typedef struct nqiv_image_form_animation
 {
-	bool   exists;          /* Is animation present for this form? */
-	bool   frame_rendered;  /* Has the frame been rendered yet? */
 	int    frame;           /* Which frame are we currently on? */
 	int    frame_count;     /* How many frames are there? */
 	Uint64 last_frame_time; /* SDL tick (millisecond) timestamp of when last frame was rendered. */
 	Uint32 delay;           /* Delay for the current frame- this can vary. */
+	bool   exists;          /* Is animation present for this form? */
+	bool   frame_rendered;  /* Has the frame been rendered yet? */
 } nqiv_image_form_animation;
 
 typedef struct nqiv_image_form
 {
 	nqiv_image_form_animation animation;
-	/* Was there some kind of error with this form? */
-	bool                      error;
 	char*                     path;
 	VipsImage*                vips;
 	void*                     data;
@@ -66,6 +64,8 @@ typedef struct nqiv_image_form
 	/* Have we tried and failed to load a thumbnail? If the thumbnail is
 	 * successfully created later on, this may be reset. */
 	bool                      thumbnail_load_failed;
+	/* Was there some kind of error with this form? */
+	bool                      error;
 } nqiv_image_form;
 
 typedef struct nqiv_image         nqiv_image;
@@ -74,14 +74,14 @@ typedef struct nqiv_image_manager nqiv_image_manager;
 struct nqiv_image
 {
 	nqiv_image_manager* parent;
+	nqiv_image_form     image;
+	nqiv_image_form     thumbnail;
 	omp_lock_t          lock;
 	/* Have we tried to create a thumbnail, successfully or otherwise? Don't
 	 * retry. */
 	bool                thumbnail_attempted;
 	/* Used to visually mark images and select them for certain operations. */
 	bool                marked;
-	nqiv_image_form     image;
-	nqiv_image_form     thumbnail;
 };
 
 bool nqiv_image_form_first_frame(nqiv_image* image, nqiv_image_form* form);

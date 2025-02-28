@@ -21,9 +21,9 @@
 
 typedef struct nqiv_queue
 {
-	omp_lock_t    lock;
 	nqiv_array*   array;
 	nqiv_log_ctx* logger;
+	omp_lock_t    lock;
 } nqiv_queue;
 
 typedef struct nqiv_priority_queue
