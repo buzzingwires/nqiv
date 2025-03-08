@@ -258,6 +258,7 @@ void nqiv_array_set_max_data_length(nqiv_array* array, const int count)
 void nqiv_array_clear(nqiv_array* array)
 {
 	nqiv_array_remove_count(array, 0, nqiv_array_get_units_count(array));
+	assert(array->position == 0);
 	memset(array->data, 0, array->data_length);
 }
 
