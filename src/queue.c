@@ -3,8 +3,6 @@
 #include <stdbool.h>
 #include <assert.h>
 
-#include <omp.h>
-
 #include "logging.h"
 #include "array.h"
 #include "queue.h"
@@ -17,8 +15,10 @@ void nqiv_queue_destroy(nqiv_queue* queue)
 	int array_length = 0;
 	if(queue->array != NULL) {
 		array_length = queue->array->data_length;
-		omp_destroy_lock(&queue->lock);
 		nqiv_array_destroy(queue->array);
+	}
+	if(queue->lock != NULL) {
+		SDL_DestroyMutex(queue->lock);
 	}
 	if(queue->logger != NULL) {
 		nqiv_log_write(queue->logger, NQIV_LOG_INFO, "Destroyed queue of length %d.\n",
@@ -47,7 +47,14 @@ bool nqiv_queue_init(nqiv_queue*   queue,
 		               unit_count, unit_size);
 		return false;
 	}
-	omp_init_lock(&queue->lock);
+	queue->lock = SDL_CreateMutex();
+	if(queue->lock == NULL) {
+		nqiv_queue_destroy(queue);
+		nqiv_log_write(logger, NQIV_LOG_ERROR,
+		               "Failed to create lock for queue of %d %d-sized units\n.",
+		               unit_count, unit_size);
+		return false;
+	}
 	queue->logger = logger;
 	nqiv_log_write(logger, NQIV_LOG_INFO, "Initialized queue of %d %d-sized units.\n", unit_count,
 	               unit_size);
@@ -60,7 +67,7 @@ bool nqiv_queue_push(nqiv_queue* queue, const void* entry)
 	assert(queue != NULL);
 	assert(queue->array != NULL);
 	bool result = true;
-	omp_set_lock(&queue->lock);
+	SDL_LockMutex(queue->lock);
 	const int old_length = queue->array->data_length;
 	if(!nqiv_array_push(queue->array, entry)) {
 		nqiv_log_write(queue->logger, NQIV_LOG_WARNING, "Failed to push to array of length %d.\n",
@@ -71,7 +78,7 @@ bool nqiv_queue_push(nqiv_queue* queue, const void* entry)
 		nqiv_log_write(queue->logger, NQIV_LOG_DEBUG, "Expanded queue from length %d to %d.\n",
 		               old_length, queue->array->data_length);
 	}
-	omp_unset_lock(&queue->lock);
+	SDL_UnlockMutex(queue->lock);
 	return result;
 }
 
@@ -80,7 +87,7 @@ void nqiv_queue_push_force(nqiv_queue* queue, const void* entry)
 	assert(entry != NULL);
 	assert(queue != NULL);
 	assert(queue->array != NULL);
-	omp_set_lock(&queue->lock);
+	SDL_LockMutex(queue->lock);
 	if(!nqiv_array_push(queue->array, entry)) {
 		nqiv_log_write(
 			queue->logger, NQIV_LOG_WARNING,
@@ -95,7 +102,7 @@ void nqiv_queue_push_force(nqiv_queue* queue, const void* entry)
 		               "Pushed to queue of length %d at position %d.\n", queue->array->data_length,
 		               queue->array->position - 1);
 	}
-	omp_unset_lock(&queue->lock);
+	SDL_UnlockMutex(queue->lock);
 }
 
 bool nqiv_queue_pop(nqiv_queue* queue, void* entry)
@@ -104,11 +111,11 @@ bool nqiv_queue_pop(nqiv_queue* queue, void* entry)
 	assert(queue != NULL);
 	assert(queue->array != NULL);
 	bool result = false;
-	omp_set_lock(&queue->lock);
+	SDL_LockMutex(queue->lock);
 	if(nqiv_array_pop(queue->array, entry)) {
 		result = true;
 	}
-	omp_unset_lock(&queue->lock);
+	SDL_UnlockMutex(queue->lock);
 	return result;
 }
 
@@ -118,13 +125,13 @@ bool nqiv_queue_pop_front(nqiv_queue* queue, void* entry)
 	assert(queue != NULL);
 	assert(queue->array != NULL);
 	bool result = false;
-	omp_set_lock(&queue->lock);
+	SDL_LockMutex(queue->lock);
 	if(nqiv_array_get(queue->array, 0, entry)) {
 		nqiv_array_remove(queue->array, 0);
 		nqiv_log_write(queue->logger, NQIV_LOG_DEBUG, "Popped from queue at position 0.\n");
 		result = true;
 	}
-	omp_unset_lock(&queue->lock);
+	SDL_UnlockMutex(queue->lock);
 	return result;
 }
 
@@ -200,14 +207,14 @@ bool nqiv_queue_set_min_add_count(nqiv_queue* queue, void* count)
 bool nqiv_queue_lock(nqiv_queue* queue, void* value)
 {
 	(void)value;
-	omp_set_lock(&queue->lock);
+	SDL_LockMutex(queue->lock);
 	return true;
 }
 
 bool nqiv_queue_unlock(nqiv_queue* queue, void* value)
 {
 	(void)value;
-	omp_unset_lock(&queue->lock);
+	SDL_UnlockMutex(queue->lock);
 	return true;
 }
 

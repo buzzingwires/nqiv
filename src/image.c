@@ -8,7 +8,6 @@
 
 #include <SDL2/SDL.h>
 #include <vips/vips.h>
-#include <omp.h>
 
 #include "event.h"
 #include "array.h"
@@ -90,7 +89,7 @@ void nqiv_image_destroy(nqiv_image* image)
 	assert(image->image.path != NULL);
 	nqiv_log_write(image->parent->logger, NQIV_LOG_INFO, "Destroying image %s\n",
 	               image->image.path);
-	omp_destroy_lock(&image->lock);
+	SDL_DestroyMutex(image->lock);
 	nqiv_unload_image_form(&image->image);
 	nqiv_unload_image_form(&image->thumbnail);
 	memset(image->image.path, 0, strlen(image->image.path));
@@ -124,8 +123,14 @@ nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* raw_path)
 		               path);
 		return image;
 	}
+	image->lock = SDL_CreateMutex();
+	if(image->lock == NULL) {
+		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to create mutex for image %s (%s)",
+		               path, SDL_GetError());
+		free(image);
+		return NULL;
+	}
 	image->image.path = ((char*)image) + sizeof(nqiv_image);
-	omp_init_lock(&image->lock);
 	memcpy(image->image.path, path, path_len);
 	assert(strcmp(image->image.path, path) == 0);
 	nqiv_log_write(logger, NQIV_LOG_DEBUG, "Created image %s\n", image->image.path);
@@ -144,20 +149,20 @@ void nqiv_log_vips_exception(nqiv_log_ctx*          logger,
 
 void nqiv_image_unlock(nqiv_image* image)
 {
-	omp_unset_lock(&image->lock);
+	SDL_UnlockMutex(image->lock);
 }
 
 void nqiv_image_lock(nqiv_image* image)
 {
-	omp_set_lock(&image->lock);
+	SDL_LockMutex(image->lock);
 }
 
 bool nqiv_image_test_lock(nqiv_image* image)
 {
-	if(!omp_test_lock(&image->lock)) {
+	if(SDL_TryLockMutex(image->lock) != 0) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
-		               "Failed to lock image %s, from thread %d.\n", image->image.path,
-		               omp_get_thread_num());
+		               "Failed to lock image %s, from thread %lu.\n", image->image.path,
+		               SDL_ThreadID());
 		return false;
 	}
 	return true;

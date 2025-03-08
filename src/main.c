@@ -8,7 +8,6 @@
 
 #include <vips/vips.h>
 #include <SDL2/SDL.h>
-#include <omp.h>
 
 #include "typedefs.h"
 #include "logging.h"
@@ -112,12 +111,13 @@ void nqiv_state_clear(nqiv_state* state)
 	if(state->SDL_inited) {
 		SDL_Quit();
 	}
-	if(nqiv_shared_var_get_int(&state->thread_event_transaction_group) > 0) {
-		nqiv_shared_var_destroy(&state->thread_event_transaction_group);
-		nqiv_shared_var_destroy(&state->running);
-	}
+	nqiv_shared_var_destroy(&state->thread_event_transaction_group);
+	nqiv_shared_var_destroy(&state->running);
 	if(state->thread_specs != NULL) {
 		nqiv_array_destroy(state->thread_specs);
+	}
+	if(state->thread_pointers != NULL) {
+		nqiv_array_destroy(state->thread_pointers);
 	}
 	memset(state, 0, sizeof(nqiv_state));
 	vips_shutdown();
@@ -226,13 +226,26 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 		fputs("Failed to initialize worker thread spec list.\n", stderr);
 		return false;
 	}
+	state->thread_pointers = nqiv_array_create(sizeof(SDL_Thread*), STARTING_QUEUE_LENGTH);
+	if(state->thread_pointers == NULL) {
+		fputs("Failed to initialize worker thread pointer list.\n", stderr);
+		return false;
+	}
+	nqiv_array_unlimit_data(state->thread_pointers);
+	state->thread_pointers->min_add_count = STARTING_QUEUE_LENGTH;
 	if(state->pending_thread_count == 0) {
 		state->pending_thread_count = 1;
 	}
-	nqiv_shared_var_init(&state->thread_event_transaction_group);
+	if( !nqiv_shared_var_init(&state->thread_event_transaction_group) ) {
+		fprintf(stderr, "Failed to initialize shared transaction group variable. SDL Error: %s\n", SDL_GetError());
+		return false;
+	}
 	assert(nqiv_shared_var_get_int(&state->thread_event_transaction_group) == 0);
 	nqiv_shared_var_set_int(&state->thread_event_transaction_group, 1);
-	nqiv_shared_var_init(&state->running);
+	if( !nqiv_shared_var_init(&state->running) ) {
+		fprintf(stderr, "Failed to initialize shared running status variable. SDL Error: %s\n", SDL_GetError());
+		return false;
+	}
 	return true;
 }
 
@@ -372,10 +385,10 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 	state->texture_scale_mode = SDL_ScaleModeBest;
 	state->no_resample_oversized = true;
 	state->show_loading_indicator = true;
-	state->pending_thread_count = omp_get_num_procs() / 3;
+	state->pending_thread_count = SDL_GetCPUCount() / 3;
 	state->pending_thread_count = state->pending_thread_count > 0 ? state->pending_thread_count : 1;
 	state->restart_threads = true;
-	state->vips_threads = omp_get_num_procs() / 2;
+	state->vips_threads = SDL_GetCPUCount() / 2;
 	state->vips_threads = state->vips_threads > 0 ? state->vips_threads : 1;
 	state->thread_event_interval = 100 / state->pending_thread_count;
 	state->thread_event_interval =
@@ -1897,9 +1910,27 @@ nqiv_op_result nqiv_master_thread(nqiv_state* state)
 	return nqiv_shared_var_get_op_result(&state->running);
 }
 
+void nqiv_wait_on_threads(nqiv_state* state)
+{
+	assert(state->thread_pointers != NULL);
+	const int thread_count = nqiv_array_get_units_count(state->thread_pointers);
+	SDL_Thread** ptrs = state->thread_pointers->data;
+	int    idx;
+	for(idx = 0; idx < thread_count; ++idx) {
+		SDL_WaitThread(ptrs[idx], NULL);
+	}
+}
+
 nqiv_op_result nqiv_run(nqiv_state* state)
 {
-	nqiv_shared_var_init(&state->active_thread_count);
+	assert(state->active_thread_count.lock == NULL);
+	if( !nqiv_shared_var_init(&state->active_thread_count) ) {
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to initialize shared active thread count variable. SDL Error: %s\n", SDL_GetError());
+		nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+		state->restart_threads = false;
+		return NQIV_FAIL;
+	}
+	nqiv_array_clear(state->thread_pointers);
 	nqiv_shared_var* active_thread_count_ptr = &state->active_thread_count;
 	nqiv_shared_var_set_op_result(&state->running, NQIV_SUCCESS);
 	nqiv_shared_var* running_ptr = &state->running;
@@ -1920,70 +1951,76 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 	}
 	standard_event_bins[THREAD_QUEUE_BIN_COUNT] = -1;
 	const int thread_specs_len = nqiv_array_get_units_count(state->thread_specs);
-	/* clang-format insists on unindenting pragmas. */
-	/* clang-format off */
-	#pragma omp parallel                             \
-		default(none)                                \
-		firstprivate(state,                          \
-					 logger,                         \
-					 thread_count,                   \
-					 thread_specs_len,               \
-					 extra_wakeup_delay,             \
-					 thread_event_interval,          \
-					 thread_queue,                   \
-					 event_code,                     \
-					 result_ptr,                     \
-					 thread_event_transaction_group, \
-					 standard_event_bins,            \
-					 active_thread_count_ptr,        \
-					 running_ptr) \
-		num_threads(thread_count + thread_specs_len + 1)
-	{
-		#pragma omp master
-		{
-			int t;
-			for(t = 0; t < thread_count; ++t) {
-				#pragma omp task                                 \
-					default(none)                                \
-					firstprivate(logger,                         \
-								 thread_queue,                   \
-								 extra_wakeup_delay,             \
-								 thread_event_interval,          \
-								 event_code,                     \
-								 thread_event_transaction_group, \
-								 standard_event_bins,            \
-								 active_thread_count_ptr,        \
-								 running_ptr)
-				nqiv_worker_main(logger, thread_queue, extra_wakeup_delay, thread_event_interval, standard_event_bins,
-				                 event_code, thread_event_transaction_group,
-								 active_thread_count_ptr, running_ptr);
-			}
-			nqiv_worker_spec* thread_specs = state->thread_specs->data;
-			for(t = 0; t < thread_specs_len; ++t) {
-				nqiv_worker_spec* spec = &thread_specs[t];
-				const int this_extra_wakeup_delay = spec->delay_base == -1 ? extra_wakeup_delay : spec->delay_base;
-				const int this_event_interval = spec->event_interval == -1 ? thread_event_interval : spec->event_interval;
-				const int* this_event_bins = spec->queue_bins[0] == -1 ? standard_event_bins : spec->queue_bins;
-				#pragma omp task                                 \
-					default(none)                                \
-					firstprivate(logger,                         \
-								 thread_queue,                   \
-								 this_extra_wakeup_delay,        \
-								 this_event_interval,            \
-								 event_code,                     \
-								 thread_event_transaction_group, \
-								 this_event_bins,                \
-								 active_thread_count_ptr,        \
-								 running_ptr)
-				nqiv_worker_main(logger, thread_queue, this_extra_wakeup_delay, this_event_interval, this_event_bins,
-				                 event_code, thread_event_transaction_group,
-								 active_thread_count_ptr, running_ptr);
-			}
+	int t;
+	for(t = 0; t < thread_count; ++t) {
+		nqiv_worker_main_args args = {
+			.logger = logger,
+			.queue = thread_queue,
+			.delay = extra_wakeup_delay + t,
+			.event_interval = thread_event_interval,
+			.queue_bins = standard_event_bins,
+			.event_code = event_code,
+			.transaction_group = thread_event_transaction_group,
+			.active_count = active_thread_count_ptr,
+			.running = running_ptr
+		};
+		SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Worker", &args);
+		if(this_thread == NULL) {
+			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to create SDL thread %d.", t);
+			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+			nqiv_wait_on_threads(state);
 			state->restart_threads = false;
-			*result_ptr = nqiv_master_thread(state);
+			nqiv_shared_var_destroy(active_thread_count_ptr);
+			return NQIV_FAIL;
 		}
-		#pragma omp taskwait
+		if( !nqiv_array_push(state->thread_pointers, this_thread) ) {
+			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to append SDL thread %d.", t);
+			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+			nqiv_wait_on_threads(state);
+			state->restart_threads = false;
+			nqiv_shared_var_destroy(active_thread_count_ptr);
+			return NQIV_FAIL;
+		}
 	}
+	nqiv_worker_spec* thread_specs = state->thread_specs->data;
+	for(t = 0; t < thread_specs_len; ++t) {
+		nqiv_worker_spec* spec = &thread_specs[t];
+		const int this_extra_wakeup_delay = spec->delay_base == -1 ? extra_wakeup_delay : spec->delay_base;
+		const int this_event_interval = spec->event_interval == -1 ? thread_event_interval : spec->event_interval;
+		const int* this_event_bins = spec->queue_bins[0] == -1 ? standard_event_bins : spec->queue_bins;
+		nqiv_worker_main_args args = {
+			.logger = logger,
+			.queue = thread_queue,
+			.delay = this_extra_wakeup_delay + t,
+			.event_interval = this_event_interval,
+			.queue_bins = this_event_bins,
+			.event_code = event_code,
+			.transaction_group = thread_event_transaction_group,
+			.active_count = active_thread_count_ptr,
+			.running = running_ptr
+		};
+		SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Specified Worker", &args);
+		if(this_thread == NULL) {
+			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to create SDL specified thread %d.", t);
+			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+			nqiv_wait_on_threads(state);
+			state->restart_threads = false;
+			nqiv_shared_var_destroy(active_thread_count_ptr);
+			return NQIV_FAIL;
+		}
+		if( !nqiv_array_push(state->thread_pointers, this_thread) ) {
+			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to append SDL specified thread %d.", t);
+			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+			nqiv_wait_on_threads(state);
+			state->restart_threads = false;
+			nqiv_shared_var_destroy(active_thread_count_ptr);
+			return NQIV_FAIL;
+		}
+	}
+	state->restart_threads = false;
+	*result_ptr = nqiv_master_thread(state);
+	assert(nqiv_shared_var_get_op_result(&state->running) != NQIV_SUCCESS);
+	nqiv_wait_on_threads(state);
 	nqiv_shared_var_destroy(active_thread_count_ptr);
 	return result;
 }

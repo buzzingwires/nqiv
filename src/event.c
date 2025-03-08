@@ -3,8 +3,6 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include <omp.h>
-
 #include "event.h"
 
 const char* const nqiv_event_priority_names[] = {
@@ -53,26 +51,29 @@ nqiv_event_priority nqiv_text_to_event_priority(const char* text, const int leng
 	return NQIV_EVENT_PRIORITY_UNKNOWN;
 }
 
-void nqiv_shared_var_init(nqiv_shared_var* var)
+bool nqiv_shared_var_init(nqiv_shared_var* var)
 {
 	memset(var, 0, sizeof(nqiv_shared_var));
-	omp_init_lock(&var->lock);
+	var->lock = SDL_CreateMutex();
+	return var->lock != NULL;
 }
 
 void nqiv_shared_var_destroy(nqiv_shared_var* var)
 {
-	omp_destroy_lock(&var->lock);
+	if(var->lock != NULL) {
+		SDL_DestroyMutex(var->lock);
+	}
 	memset(var, 0, sizeof(nqiv_shared_var));
 }
 
 void nqiv_shared_var_lock(nqiv_shared_var* var)
 {
-	omp_set_lock(&var->lock);
+	SDL_LockMutex(var->lock);
 }
 
 void nqiv_shared_var_unlock(nqiv_shared_var* var)
 {
-	omp_unset_lock(&var->lock);
+	SDL_UnlockMutex(var->lock);
 }
 
 void nqiv_shared_var_set_op_result(nqiv_shared_var* var, const nqiv_op_result value)

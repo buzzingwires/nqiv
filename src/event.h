@@ -6,8 +6,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <omp.h>
-
 #include "image.h"
 
 typedef enum nqiv_event_priority
@@ -113,11 +111,11 @@ typedef union nqiv_shared_var_types
 
 typedef struct nqiv_shared_var
 {
-	omp_lock_t            lock;
+	SDL_mutex*            lock;
 	nqiv_shared_var_types data;
 } nqiv_shared_var;
 
-void           nqiv_shared_var_init(nqiv_shared_var* var);
+bool           nqiv_shared_var_init(nqiv_shared_var* var);
 void           nqiv_shared_var_destroy(nqiv_shared_var* var);
 void           nqiv_shared_var_lock(nqiv_shared_var* var);
 void           nqiv_shared_var_unlock(nqiv_shared_var* var);

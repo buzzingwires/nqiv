@@ -10,7 +10,6 @@
 #include <assert.h>
 
 #include <SDL2/SDL.h>
-#include <omp.h>
 
 #include "logging.h"
 #include "array.h"
@@ -27,8 +26,8 @@ bool nqiv_cmd_alert_main(nqiv_cmd_manager* manager)
 	e.user.code = (Sint32)manager->state->cfg_event_number;
 	if(SDL_PushEvent(&e) < 0) {
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
-		               "Failed to send SDL event from thread %d. SDL Error: %s\n",
-		               omp_get_thread_num(), SDL_GetError());
+		               "Failed to send SDL event from thread %lu. SDL Error: %s\n",
+		               SDL_ThreadID(), SDL_GetError());
 		return false;
 	}
 	return true;
@@ -136,21 +135,21 @@ bool nqiv_cmd_parser_set_thumbnail_path(nqiv_cmd_manager* manager, nqiv_cmd_arg_
 
 bool nqiv_cmd_parser_set_log_level(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
-	omp_set_lock(&manager->state->logger.lock);
+	SDL_LockMutex(manager->state->logger.lock);
 	const char data_end = nqiv_cmd_tmpterm(tokens[0].raw, tokens[0].length);
 	manager->state->logger.level = tokens[0].value.as_log_level;
 	nqiv_cmd_tmpret(tokens[0].raw, tokens[0].length, data_end);
-	omp_unset_lock(&manager->state->logger.lock);
+	SDL_UnlockMutex(manager->state->logger.lock);
 	return true;
 }
 
 bool nqiv_cmd_parser_set_log_prefix(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
-	omp_set_lock(&manager->state->logger.lock);
+	SDL_LockMutex(manager->state->logger.lock);
 	const char data_end = nqiv_cmd_tmpterm(tokens[0].raw, tokens[0].length);
 	nqiv_log_set_prefix_format(&manager->state->logger, tokens[0].raw);
 	nqiv_cmd_tmpret(tokens[0].raw, tokens[0].length, data_end);
-	omp_unset_lock(&manager->state->logger.lock);
+	SDL_UnlockMutex(manager->state->logger.lock);
 	return true;
 }
 
@@ -271,11 +270,11 @@ bool nqiv_cmd_parser_append_thread(nqiv_cmd_manager* manager, nqiv_cmd_arg_token
 
 bool nqiv_cmd_parser_append_log_stream(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
-	omp_set_lock(&manager->state->logger.lock);
+	SDL_LockMutex(manager->state->logger.lock);
 	const char data_end = nqiv_cmd_tmpterm(tokens[0].raw, tokens[0].length);
 	const bool output = nqiv_add_logger_path(manager->state, tokens[0].raw);
 	nqiv_cmd_tmpret(tokens[0].raw, tokens[0].length, data_end);
-	omp_unset_lock(&manager->state->logger.lock);
+	SDL_UnlockMutex(manager->state->logger.lock);
 	return output;
 }
 
@@ -317,13 +316,13 @@ void nqiv_cmd_parser_print_none(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_log_error_message(nqiv_cmd_manager* manager)
 {
-	omp_set_lock(&manager->state->logger.lock);
+	SDL_LockMutex(manager->state->logger.lock);
 	if(strlen(manager->state->logger.error_message) != 0) {
 		fprintf(stdout, "%s", manager->state->logger.error_message);
 	} else {
 		fprintf(stdout, "EMPTY");
 	}
-	omp_unset_lock(&manager->state->logger.lock);
+	SDL_UnlockMutex(manager->state->logger.lock);
 }
 
 bool nqiv_cmd_parser_set_data_double(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
@@ -652,20 +651,20 @@ void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_log_level(nqiv_cmd_manager* manager)
 {
-	omp_set_lock(&manager->state->logger.lock);
+	SDL_LockMutex(manager->state->logger.lock);
 	fprintf(stdout, "%s", nqiv_log_level_names[manager->state->logger.level / 10]);
-	omp_unset_lock(&manager->state->logger.lock);
+	SDL_UnlockMutex(manager->state->logger.lock);
 }
 
 void nqiv_cmd_parser_print_log_prefix(nqiv_cmd_manager* manager)
 {
-	omp_set_lock(&manager->state->logger.lock);
+	SDL_LockMutex(manager->state->logger.lock);
 	if(strlen(manager->state->logger.prefix_format) == 0 && !manager->print_settings.dumpcfg) {
 		fprintf(stdout, "UNSET");
 	} else {
 		fprintf(stdout, "%s", manager->state->logger.prefix_format);
 	}
-	omp_unset_lock(&manager->state->logger.lock);
+	SDL_UnlockMutex(manager->state->logger.lock);
 }
 
 void nqiv_cmd_parser_print_alpha_background_color_one(nqiv_cmd_manager* manager)
@@ -763,9 +762,9 @@ void nqiv_cmd_print_str_list(const nqiv_cmd_manager* manager, const nqiv_array* 
 
 void nqiv_cmd_parser_print_log_stream(nqiv_cmd_manager* manager)
 {
-	omp_set_lock(&manager->state->logger.lock);
+	SDL_LockMutex(manager->state->logger.lock);
 	nqiv_cmd_print_str_list(manager, manager->state->logger_stream_names);
-	omp_unset_lock(&manager->state->logger.lock);
+	SDL_UnlockMutex(manager->state->logger.lock);
 }
 
 void nqiv_cmd_parser_print_pruner(nqiv_cmd_manager* manager)

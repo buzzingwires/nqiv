@@ -5,7 +5,8 @@
 #include <assert.h>
 #include <time.h>
 
-#include <omp.h>
+#include <SDL2/SDL.h>
+
 // NOLINTBEGIN
 #include <glib.h>
 // NOLINTEND
@@ -62,8 +63,10 @@ void nqiv_log_destroy(nqiv_log_ctx* ctx)
 	}
 	nqiv_log_clear_error(ctx);
 	nqiv_log_set_prefix_format(ctx, NULL);
+	if(ctx->lock != NULL) {
+		SDL_DestroyMutex(ctx->lock);
+	}
 	if(ctx->streams != NULL) {
-		omp_destroy_lock(&ctx->lock);
 		nqiv_array_destroy(ctx->streams);
 	}
 	memset(ctx, 0, sizeof(nqiv_log_ctx));
@@ -81,7 +84,13 @@ void nqiv_log_init(nqiv_log_ctx* ctx)
 		         "Failed to allocate starting streams memory.\n");
 		return;
 	}
-	omp_init_lock(&ctx->lock);
+	ctx->lock = SDL_CreateMutex();
+	if(ctx->lock == NULL) {
+		nqiv_log_destroy(ctx);
+		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN,
+		         "Failed to create lock. SDL Error %s\n", SDL_GetError());
+		return;
+	}
 }
 
 void nqiv_log_add_stream(nqiv_log_ctx* ctx, const FILE* stream)
@@ -234,14 +243,14 @@ void nqiv_log_write(nqiv_log_ctx* ctx, const nqiv_log_level level, const char* f
 	if(ctx->streams == NULL) {
 		return;
 	}
-	omp_set_lock(&ctx->lock);
+	SDL_LockMutex(ctx->lock);
 	if(format == NULL) {
 		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN, "No format message to write.\n");
-		omp_unset_lock(&ctx->lock);
+		SDL_UnlockMutex(ctx->lock);
 		return;
 	}
 	if(level < ctx->level) {
-		omp_unset_lock(&ctx->lock);
+		SDL_UnlockMutex(ctx->lock);
 		return;
 	}
 	const int num_streams = nqiv_array_get_units_count(ctx->streams);
@@ -255,5 +264,5 @@ void nqiv_log_write(nqiv_log_ctx* ctx, const nqiv_log_level level, const char* f
 		vfprintf(stream, format, args);
 		va_end(args);
 	}
-	omp_unset_lock(&ctx->lock);
+	SDL_UnlockMutex(ctx->lock);
 }

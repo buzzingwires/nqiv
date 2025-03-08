@@ -5,7 +5,6 @@
 #include <assert.h>
 
 #include <SDL2/SDL.h>
-#include <omp.h>
 
 #include "queue.h"
 #include "event.h"
@@ -271,7 +270,7 @@ void nqiv_worker_handle_image_load_form_clear_error(
 
 void nqiv_worker_main(nqiv_log_ctx*        logger,
                       nqiv_priority_queue* queue,
-                      const int            delay_base,
+                      const Uint32         delay,
                       const int            event_interval,
                       const int*           queue_bins,
                       const Uint32         event_code,
@@ -280,7 +279,6 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
                       nqiv_shared_var*     running)
 {
 	/* Stagger events by their thread num to prevent stampeding herd problems. */
-	int wait_time = delay_base + omp_get_thread_num();
 	int events_processed = 0;
 	while(nqiv_shared_var_get_op_result(running) == NQIV_SUCCESS) {
 		nqiv_event event = {0};
@@ -302,8 +300,8 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 			events_processed += 1;
 			switch(event.type) {
 			case NQIV_EVENT_WORKER_STOP:
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Received stop event on thread %d.\n",
-				               omp_get_thread_num());
+				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Received stop event on thread %lu.\n",
+				               SDL_ThreadID());
 				break;
 			case NQIV_EVENT_IMAGE_LOAD:
 				{
@@ -311,8 +309,8 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 					nqiv_event_image_load_options* image_load = &event.options.image_load;
 					nqiv_image*                    image = image_load->image;
 					nqiv_log_write(logger, NQIV_LOG_DEBUG,
-					               "Received image load event on thread %d.\n",
-					               omp_get_thread_num());
+					               "Received image load event on thread %lu.\n",
+					               SDL_ThreadID());
 					nqiv_image_lock(image);
 					nqiv_worker_handle_image_load_form_clear_error(&image_load->thumbnail_options,
 					                                               &image->thumbnail);
@@ -375,21 +373,42 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 			 * polling interval. */
 			if(events_processed > 0) {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG,
-				               "Thread %d waking master after processing %d events\n",
-				               omp_get_thread_num(), events_processed);
+				               "Thread %lu waking master after processing %d events\n",
+				               SDL_ThreadID(), events_processed);
 				events_processed = 0;
 				SDL_Event tell_finished = {0};
 				tell_finished.type = SDL_USEREVENT;
 				tell_finished.user.code = (Sint32)event_code;
 				if(SDL_PushEvent(&tell_finished) < 0) {
 					nqiv_log_write(logger, NQIV_LOG_ERROR,
-					               "Failed to send SDL event from thread %d. SDL Error: %s\n",
-					               omp_get_thread_num(), SDL_GetError());
+					               "Failed to send SDL event from thread %lu. SDL Error: %s\n",
+					               SDL_ThreadID(), SDL_GetError());
 					nqiv_shared_var_set_op_result(running, NQIV_FAIL);
 				}
 			} else {
-				SDL_Delay(wait_time);
+				SDL_Delay(delay);
 			}
 		}
 	}
+}
+
+
+int nqiv_worker_main_sdl(void* args_ptr)
+{
+	assert(args_ptr != NULL);
+
+	nqiv_worker_main_args* args = args_ptr;
+
+	/* The args struct should not be relied on, though its members can be. */
+	nqiv_worker_main(args->logger,
+	                 args->queue,
+	                 args->delay,
+	                 args->event_interval,
+	                 args->queue_bins,
+	                 args->event_code,
+	                 args->transaction_group,
+	                 args->active_count,
+	                 args->running);
+
+	return 0;
 }

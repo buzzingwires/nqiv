@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 #include <SDL2/SDL.h>
-#include <omp.h>
 
 #include "queue.h"
 #include "image.h"
@@ -37,14 +36,30 @@ typedef struct nqiv_worker_spec
 bool nqiv_worker_spec_to_string(const nqiv_worker_spec* spec, char* string);
 bool nqiv_worker_string_to_spec(const char* string, nqiv_worker_spec* spec);
 
+typedef struct nqiv_worker_main_args
+{
+	nqiv_log_ctx*        logger;
+	nqiv_priority_queue* queue;
+	const Uint32         delay;
+	const int            event_interval;
+	const int*           queue_bins;
+	const Uint32         event_code;
+	nqiv_shared_var*     transaction_group;
+	nqiv_shared_var*     active_count;
+	nqiv_shared_var*     running;
+} nqiv_worker_main_args;
+
 void nqiv_worker_main(nqiv_log_ctx*        logger,
                       nqiv_priority_queue* queue,
-                      const int            delay_base,
+                      const Uint32         delay,
                       const int            event_interval,
                       const int*           queue_bins,
                       const Uint32         event_code,
                       nqiv_shared_var*     transaction_group,
                       nqiv_shared_var*     active_count,
                       nqiv_shared_var*     running);
+
+/* SDL interface for nqiv_worker_main. */
+int nqiv_worker_main_sdl(void* args_ptr);
 
 #endif /* NQIV_WORKER_H */

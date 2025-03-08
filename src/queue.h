@@ -3,8 +3,6 @@
 
 #include <stdbool.h>
 
-#include <omp.h>
-
 #include "logging.h"
 
 /*
@@ -23,7 +21,7 @@ typedef struct nqiv_queue
 {
 	nqiv_array*   array;
 	nqiv_log_ctx* logger;
-	omp_lock_t    lock;
+	SDL_mutex*     lock;
 } nqiv_queue;
 
 typedef struct nqiv_priority_queue

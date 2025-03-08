@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include <omp.h>
+#include <SDL2/SDL.h>
 
 #include "array.h"
 
@@ -51,7 +51,7 @@ extern const char* const nqiv_log_level_names[];
 
 typedef struct nqiv_log_ctx
 {
-	omp_lock_t     lock;
+	SDL_mutex*     lock;
 	char           prefix_format[NQIV_LOG_PREFIX_FORMAT_LEN];
 	char           error_message[NQIV_LOG_ERROR_MESSAGE_LEN];
 	nqiv_log_level level; /* Allow this priority and higher. */

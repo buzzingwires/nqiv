@@ -20,7 +20,6 @@
 #include "pruner.h"
 
 #include <SDL2/SDL.h>
-#include <omp.h>
 
 /* Common, sufficient queue length in respective units. */
 #define STARTING_QUEUE_LENGTH 512
@@ -93,6 +92,8 @@ struct nqiv_state
 	/* Array of thread specs- custom configured in addition to the standard worker threads
 	 * controlled by thread_count. */
 	nqiv_array*          thread_specs;
+	/* Array of created SDL thread pointers */
+	nqiv_array*          thread_pointers;
 	/* Should threads be started or restarted? */
 	bool                 restart_threads;
 	/* Threads will update the master after processing this many events. 0 to process all. */

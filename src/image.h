@@ -76,7 +76,7 @@ struct nqiv_image
 	nqiv_image_manager* parent;
 	nqiv_image_form     image;
 	nqiv_image_form     thumbnail;
-	omp_lock_t          lock;
+	SDL_mutex*          lock;
 	/* Have we tried to create a thumbnail, successfully or otherwise? Don't
 	 * retry. */
 	bool                thumbnail_attempted;
