@@ -410,6 +410,22 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		used_vips = new_vips;
 	}
 
+	if(vips_icc_present() != 0) {
+		if(vips_icc_transform(used_vips, &new_vips, "srgb", "intent", VIPS_INTENT_PERCEPTUAL, "embedded", TRUE, NULL) == 0) {
+			if(used_vips != form->vips) {
+				g_object_unref(used_vips);
+			}
+			used_vips = new_vips;
+			nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
+			               "Transformed ICC profile for %s of %s\n",
+			               form == &image->image ? "image" : "thumbnail", image->image.path);
+		} else {
+			nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
+			               "Did not transform ICC profile for %s of %s\n",
+			               form == &image->image ? "image" : "thumbnail", image->image.path);
+		}
+	}
+
 	if(!vips_image_hasalpha(used_vips)) {
 		if(vips_addalpha(used_vips, &new_vips, NULL) == -1) {
 			if(used_vips != form->vips) {
