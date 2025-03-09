@@ -276,7 +276,7 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 
 	if(!nqiv_thumbnail_create_dirs(image->parent, false)) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_ERROR,
-		               "Failed create thumbnail dirs under %s\n", image->parent->thumbnail.root);
+		               "Failed to create thumbnail dirs under %s\n", image->parent->thumbnail.root);
 		return false;
 	}
 	char         tmppath[PATH_MAX + 1] = {0};
