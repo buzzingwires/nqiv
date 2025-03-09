@@ -1934,11 +1934,14 @@ void nqiv_wait_on_threads(nqiv_state* state)
 	}
 }
 
-void nqiv_run_fail(nqiv_state* state, const char* msg, const int thread_number)
+void nqiv_run_fail(nqiv_state* state, const char* msg, const int thread_number, SDL_Thread* loose_thread)
 {
 	nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "%s thread %d.", msg, thread_number);
 	nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
 	nqiv_cond_wake_all(&state->thread_wakeup_signaler);
+	if(loose_thread != NULL) {
+		SDL_WaitThread(loose_thread, NULL);
+	}
 	nqiv_wait_on_threads(state);
 	state->restart_threads = false;
 	nqiv_shared_var_destroy(&state->active_thread_count);
@@ -1984,13 +1987,13 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 			.active_count = &state->active_thread_count,
 			.running = &state->running
 		};
-		const SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Worker", &args);
+		SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Worker", &args);
 		if(this_thread == NULL) {
-			nqiv_run_fail(state, "Failed to create SDL", t);
+			nqiv_run_fail(state, "Failed to create SDL", t, NULL);
 			return NQIV_FAIL;
 		}
-		if( !nqiv_array_push(state->thread_pointers, this_thread) ) {
-			nqiv_run_fail(state, "Failed to append SDL", t);
+		if( !nqiv_array_push(state->thread_pointers, &this_thread) ) {
+			nqiv_run_fail(state, "Failed to append SDL", t, this_thread);
 			return NQIV_FAIL;
 		}
 	}
@@ -2012,13 +2015,13 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 			.active_count = &state->active_thread_count,
 			.running = &state->running
 		};
-		const SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Specified Worker", &args);
+		SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Specified Worker", &args);
 		if(this_thread == NULL) {
-			nqiv_run_fail(state, "Failed to create SDL specified", t);
+			nqiv_run_fail(state, "Failed to create SDL specified", t, NULL);
 			return NQIV_FAIL;
 		}
-		if( !nqiv_array_push(state->thread_pointers, this_thread) ) {
-			nqiv_run_fail(state, "Failed to append SDL specified", t);
+		if( !nqiv_array_push(state->thread_pointers, &this_thread) ) {
+			nqiv_run_fail(state, "Failed to append SDL specified", t, this_thread);
 			return NQIV_FAIL;
 		}
 	}
