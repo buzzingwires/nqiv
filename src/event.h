@@ -128,4 +128,17 @@ void           nqiv_shared_var_set_int(nqiv_shared_var* var, const int64_t value
 
 nqiv_event_priority nqiv_text_to_event_priority(const char* text, const int length);
 
+/* Convenience wrapper for SDL_cond and its requirements. */
+struct nqiv_cond
+{
+	SDL_cond*             cond;
+	SDL_mutex*            lock;
+};
+
+void nqiv_cond_destroy(nqiv_cond* cond);
+bool nqiv_cond_init(nqiv_cond* cond);
+void nqiv_cond_wait(nqiv_cond* cond);
+void nqiv_cond_wake_one(nqiv_cond* cond);
+void nqiv_cond_wake_all(nqiv_cond* cond);
+
 #endif /* NQIV_EVENT_H */

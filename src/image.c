@@ -1172,6 +1172,7 @@ bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const 
 					nqiv_image_unlock(images[idx]);
 					return false;
 				}
+				nqiv_cond_wake_one(manager->thread_wakeup_signaler);
 			}
 		}
 		nqiv_image_unlock(images[idx]);

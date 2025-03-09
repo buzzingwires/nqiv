@@ -119,6 +119,9 @@ void nqiv_state_clear(nqiv_state* state)
 	if(state->thread_pointers != NULL) {
 		nqiv_array_destroy(state->thread_pointers);
 	}
+	if(state->thread_wakeup_signaler.cond != NULL) {
+		nqiv_cond_destroy(&state->thread_wakeup_signaler);
+	}
 	memset(state, 0, sizeof(nqiv_state));
 	vips_shutdown();
 }
@@ -244,6 +247,10 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	nqiv_shared_var_set_int(&state->thread_event_transaction_group, 1);
 	if( !nqiv_shared_var_init(&state->running) ) {
 		fprintf(stderr, "Failed to initialize shared running status variable. SDL Error: %s\n", SDL_GetError());
+		return false;
+	}
+	if( !nqiv_cond_init(&state->thread_wakeup_signaler) ) {
+		fprintf(stderr, "Failed to initialize thread wakeup condition variable. SDL Error: %s\n", SDL_GetError());
 		return false;
 	}
 	return true;
@@ -428,6 +435,7 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 		return NQIV_FAIL;
 	}
 	state->images.thread_queue = &state->thread_queue;
+	state->images.thread_wakeup_signaler = &state->thread_wakeup_signaler;
 	if(!nqiv_queue_init(&state->key_actions, &state->logger, sizeof(nqiv_keybind_pair*),
 	                    STARTING_QUEUE_LENGTH)) {
 		fputs("Failed to initialize key action queue.\n", stderr);
@@ -572,6 +580,7 @@ bool nqiv_send_thread_event_base(nqiv_state*       state,
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to send event.\n");
 		return false;
 	}
+	nqiv_cond_wake_one(&state->thread_wakeup_signaler);
 	return true;
 }
 
@@ -1258,6 +1267,10 @@ void nqiv_check_pruning(nqiv_state* state)
 		if(prune_count == -1) {
 			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
 		}
+		int c;
+		for(c = 0; c < prune_count; ++c) {
+			nqiv_cond_wake_one(&state->thread_wakeup_signaler);
+		}
 	}
 }
 
@@ -1921,22 +1934,28 @@ void nqiv_wait_on_threads(nqiv_state* state)
 	}
 }
 
+void nqiv_run_fail(nqiv_state* state, const char* msg, const int thread_number)
+{
+	nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "%s thread %d.", msg, thread_number);
+	nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+	nqiv_cond_wake_all(&state->thread_wakeup_signaler);
+	nqiv_wait_on_threads(state);
+	state->restart_threads = false;
+	nqiv_shared_var_destroy(&state->active_thread_count);
+}
+
 nqiv_op_result nqiv_run(nqiv_state* state)
 {
 	assert(state->active_thread_count.lock == NULL);
 	if( !nqiv_shared_var_init(&state->active_thread_count) ) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to initialize shared active thread count variable. SDL Error: %s\n", SDL_GetError());
-		nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
 		state->restart_threads = false;
 		return NQIV_FAIL;
 	}
-	nqiv_array_clear(state->thread_pointers);
-	nqiv_shared_var* active_thread_count_ptr = &state->active_thread_count;
 	nqiv_shared_var_set_op_result(&state->running, NQIV_SUCCESS);
-	nqiv_shared_var* running_ptr = &state->running;
+	nqiv_array_clear(state->thread_pointers);
 	state->thread_count = state->pending_thread_count;
 	nqiv_op_result       result;
-	nqiv_op_result*      result_ptr = &result;
 	const int            thread_count = state->thread_count;
 	const int            thread_event_interval = state->thread_event_interval;
 	const int            extra_wakeup_delay = state->extra_wakeup_delay;
@@ -1957,28 +1976,21 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 			.logger = logger,
 			.queue = thread_queue,
 			.delay = extra_wakeup_delay + t,
+			.wakeup = &state->thread_wakeup_signaler,
 			.event_interval = thread_event_interval,
 			.queue_bins = standard_event_bins,
 			.event_code = event_code,
 			.transaction_group = thread_event_transaction_group,
-			.active_count = active_thread_count_ptr,
-			.running = running_ptr
+			.active_count = &state->active_thread_count,
+			.running = &state->running
 		};
-		SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Worker", &args);
+		const SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Worker", &args);
 		if(this_thread == NULL) {
-			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to create SDL thread %d.", t);
-			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
-			nqiv_wait_on_threads(state);
-			state->restart_threads = false;
-			nqiv_shared_var_destroy(active_thread_count_ptr);
+			nqiv_run_fail(state, "Failed to create SDL", t);
 			return NQIV_FAIL;
 		}
 		if( !nqiv_array_push(state->thread_pointers, this_thread) ) {
-			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to append SDL thread %d.", t);
-			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
-			nqiv_wait_on_threads(state);
-			state->restart_threads = false;
-			nqiv_shared_var_destroy(active_thread_count_ptr);
+			nqiv_run_fail(state, "Failed to append SDL", t);
 			return NQIV_FAIL;
 		}
 	}
@@ -1992,36 +2004,30 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 			.logger = logger,
 			.queue = thread_queue,
 			.delay = this_extra_wakeup_delay + t,
+			.wakeup = &state->thread_wakeup_signaler,
 			.event_interval = this_event_interval,
 			.queue_bins = this_event_bins,
 			.event_code = event_code,
 			.transaction_group = thread_event_transaction_group,
-			.active_count = active_thread_count_ptr,
-			.running = running_ptr
+			.active_count = &state->active_thread_count,
+			.running = &state->running
 		};
-		SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Specified Worker", &args);
+		const SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Specified Worker", &args);
 		if(this_thread == NULL) {
-			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to create SDL specified thread %d.", t);
-			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
-			nqiv_wait_on_threads(state);
-			state->restart_threads = false;
-			nqiv_shared_var_destroy(active_thread_count_ptr);
+			nqiv_run_fail(state, "Failed to create SDL specified", t);
 			return NQIV_FAIL;
 		}
 		if( !nqiv_array_push(state->thread_pointers, this_thread) ) {
-			nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to append SDL specified thread %d.", t);
-			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
-			nqiv_wait_on_threads(state);
-			state->restart_threads = false;
-			nqiv_shared_var_destroy(active_thread_count_ptr);
+			nqiv_run_fail(state, "Failed to append SDL specified", t);
 			return NQIV_FAIL;
 		}
 	}
 	state->restart_threads = false;
-	*result_ptr = nqiv_master_thread(state);
+	result = nqiv_master_thread(state);
 	assert(nqiv_shared_var_get_op_result(&state->running) != NQIV_SUCCESS);
+	nqiv_cond_wake_all(&state->thread_wakeup_signaler);
 	nqiv_wait_on_threads(state);
-	nqiv_shared_var_destroy(active_thread_count_ptr);
+	nqiv_shared_var_destroy(&state->active_thread_count);
 	return result;
 }
 /* clang-format on */

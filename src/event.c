@@ -2,6 +2,7 @@
 
 #include <inttypes.h>
 #include <string.h>
+#include <assert.h>
 
 #include "event.h"
 
@@ -118,4 +119,53 @@ void nqiv_shared_var_set_int(nqiv_shared_var* var, const int64_t value)
 	nqiv_shared_var_lock(var);
 	var->data.as_int = value;
 	nqiv_shared_var_unlock(var);
+}
+
+void nqiv_cond_destroy(nqiv_cond* cond)
+{
+	assert(cond->cond != NULL);
+	assert(cond->lock != NULL);
+	SDL_DestroyCond(cond->cond);
+	SDL_DestroyMutex(cond->lock);
+	memset(cond, 0, sizeof(nqiv_cond));
+}
+
+bool nqiv_cond_init(nqiv_cond* cond)
+{
+	assert(cond->cond == NULL);
+	assert(cond->lock == NULL);
+	cond->cond = SDL_CreateCond();
+	if(cond->cond == NULL) {
+		return false;
+	}
+	cond->lock = SDL_CreateMutex();
+	if(cond->lock == NULL) {
+		SDL_DestroyCond(cond->cond);
+		memset(cond, 0, sizeof(nqiv_cond));
+		return false;
+	}
+	return true;
+}
+
+void nqiv_cond_wait(nqiv_cond* cond)
+{
+	assert(cond->cond != NULL);
+	assert(cond->lock != NULL);
+	SDL_LockMutex(cond->lock);
+	SDL_CondWait(cond->cond, cond->lock);
+	SDL_UnlockMutex(cond->lock);
+}
+
+void nqiv_cond_wake_one(nqiv_cond* cond)
+{
+	assert(cond->cond != NULL);
+	assert(cond->lock != NULL);
+	SDL_CondSignal(cond->cond);
+}
+
+void nqiv_cond_wake_all(nqiv_cond* cond)
+{
+	assert(cond->cond != NULL);
+	assert(cond->lock != NULL);
+	SDL_CondBroadcast(cond->cond);
 }

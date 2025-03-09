@@ -1,6 +1,8 @@
 #ifndef NQIV_IMAGE_H
 #define NQIV_IMAGE_H
 
+#include "typedefs.h"
+
 #include <stdbool.h>
 
 #include <SDL2/SDL.h>
@@ -167,6 +169,7 @@ struct nqiv_image_manager
 	int                                   max_texture_width;
 	nqiv_array*                           images;
 	nqiv_priority_queue*                  thread_queue;
+	nqiv_cond*                            thread_wakeup_signaler;
 };
 
 void nqiv_log_vips_exception(nqiv_log_ctx*          logger,

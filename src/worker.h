@@ -40,7 +40,8 @@ typedef struct nqiv_worker_main_args
 {
 	nqiv_log_ctx*        logger;
 	nqiv_priority_queue* queue;
-	const Uint32         delay;
+	const Uint32 delay;
+	nqiv_cond*           wakeup;
 	const int            event_interval;
 	const int*           queue_bins;
 	const Uint32         event_code;
@@ -51,7 +52,8 @@ typedef struct nqiv_worker_main_args
 
 void nqiv_worker_main(nqiv_log_ctx*        logger,
                       nqiv_priority_queue* queue,
-                      const Uint32         delay,
+					  const Uint32 delay,
+                      nqiv_cond*           wakeup,
                       const int            event_interval,
                       const int*           queue_bins,
                       const Uint32         event_code,

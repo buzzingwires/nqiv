@@ -104,6 +104,8 @@ struct nqiv_state
 	 * with a transaction group of -1 is never out of date. This feature primarily exists to solve
 	 * the problem of events still being queued for images that are no longer visible. */
 	nqiv_shared_var      thread_event_transaction_group;
+	/* Worker threads wait on this object for signals to begin processing events. */
+	nqiv_cond            thread_wakeup_signaler;
 	/* In SDL ticks (milliseconds) Check if prune_delay has passed for each render_and_update */
 	Uint64               time_of_last_prune;
 	Uint64               prune_delay;

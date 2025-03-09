@@ -270,7 +270,8 @@ void nqiv_worker_handle_image_load_form_clear_error(
 
 void nqiv_worker_main(nqiv_log_ctx*        logger,
                       nqiv_priority_queue* queue,
-                      const Uint32         delay,
+					  const Uint32 delay,
+                      nqiv_cond*           wakeup,
                       const int            event_interval,
                       const int*           queue_bins,
                       const Uint32         event_code,
@@ -386,6 +387,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 					nqiv_shared_var_set_op_result(running, NQIV_FAIL);
 				}
 			} else {
+				nqiv_cond_wait(wakeup);
 				SDL_Delay(delay);
 			}
 		}
@@ -402,7 +404,8 @@ int nqiv_worker_main_sdl(void* args_ptr)
 	/* The args struct should not be relied on, though its members can be. */
 	nqiv_worker_main(args->logger,
 	                 args->queue,
-	                 args->delay,
+					 args->delay,
+	                 args->wakeup,
 	                 args->event_interval,
 	                 args->queue_bins,
 	                 args->event_code,
