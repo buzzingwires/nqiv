@@ -1233,7 +1233,7 @@ void nqiv_image_manager_decrement_thumbnail_size_more(nqiv_image_manager* manage
 void nqiv_image_form_delay_frame(nqiv_image_form* form)
 {
 	const Uint64 frame_diff = SDL_GetTicks64() - form->animation.last_frame_time;
-	if(frame_diff <= form->animation.delay) {
+	if(frame_diff < form->animation.delay) {
 		SDL_Delay((Uint32)(form->animation.delay - frame_diff));
 	}
 	form->animation.last_frame_time = SDL_GetTicks64();

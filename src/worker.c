@@ -388,7 +388,9 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 				}
 			} else {
 				nqiv_cond_wait(wakeup);
-				SDL_Delay(delay);
+				if(delay > 0) {
+					SDL_Delay(delay);
+				}
 			}
 		}
 	}
