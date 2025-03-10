@@ -244,8 +244,6 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 		fprintf(stderr, "Failed to initialize shared transaction group variable. SDL Error: %s\n", SDL_GetError());
 		return false;
 	}
-	assert(nqiv_shared_var_get_int(&state->thread_event_transaction_group) == 0);
-	nqiv_shared_var_set_int(&state->thread_event_transaction_group, 1);
 	if( !nqiv_shared_var_init(&state->running) ) {
 		fprintf(stderr, "Failed to initialize shared running status variable. SDL Error: %s\n", SDL_GetError());
 		return false;
@@ -1955,6 +1953,7 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 {
 	assert(state->active_thread_count.lock != NULL);
 	nqiv_shared_var_clear(&state->active_thread_count);
+	nqiv_shared_var_set_int(&state->thread_event_transaction_group, 1);
 	nqiv_shared_var_set_op_result(&state->running, NQIV_SUCCESS);
 	nqiv_array_clear(state->thread_pointers);
 	state->thread_count = state->pending_thread_count;
