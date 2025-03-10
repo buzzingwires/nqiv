@@ -117,6 +117,7 @@ typedef struct nqiv_shared_var
 
 bool           nqiv_shared_var_init(nqiv_shared_var* var);
 void           nqiv_shared_var_destroy(nqiv_shared_var* var);
+void nqiv_shared_var_clear(nqiv_shared_var* var);
 void           nqiv_shared_var_lock(nqiv_shared_var* var);
 void           nqiv_shared_var_unlock(nqiv_shared_var* var);
 void           nqiv_shared_var_set_op_result(nqiv_shared_var* var, const nqiv_op_result value);

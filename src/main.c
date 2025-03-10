@@ -113,6 +113,7 @@ void nqiv_state_clear(nqiv_state* state)
 	}
 	nqiv_shared_var_destroy(&state->thread_event_transaction_group);
 	nqiv_shared_var_destroy(&state->running);
+	nqiv_shared_var_destroy(&state->active_thread_count);
 	if(state->thread_specs != NULL) {
 		nqiv_array_destroy(state->thread_specs);
 	}
@@ -247,6 +248,10 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	nqiv_shared_var_set_int(&state->thread_event_transaction_group, 1);
 	if( !nqiv_shared_var_init(&state->running) ) {
 		fprintf(stderr, "Failed to initialize shared running status variable. SDL Error: %s\n", SDL_GetError());
+		return false;
+	}
+	if( !nqiv_shared_var_init(&state->active_thread_count) ) {
+		fprintf(stderr, "Failed to initialize shared active thread count variable. SDL Error: %s\n", SDL_GetError());
 		return false;
 	}
 	if( !nqiv_cond_init(&state->thread_wakeup_signaler) ) {
@@ -1944,17 +1949,12 @@ void nqiv_run_fail(nqiv_state* state, const char* msg, const int thread_number, 
 	}
 	nqiv_wait_on_threads(state);
 	state->restart_threads = false;
-	nqiv_shared_var_destroy(&state->active_thread_count);
 }
 
 nqiv_op_result nqiv_run(nqiv_state* state)
 {
-	assert(state->active_thread_count.lock == NULL);
-	if( !nqiv_shared_var_init(&state->active_thread_count) ) {
-		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to initialize shared active thread count variable. SDL Error: %s\n", SDL_GetError());
-		state->restart_threads = false;
-		return NQIV_FAIL;
-	}
+	assert(state->active_thread_count.lock != NULL);
+	nqiv_shared_var_clear(&state->active_thread_count);
 	nqiv_shared_var_set_op_result(&state->running, NQIV_SUCCESS);
 	nqiv_array_clear(state->thread_pointers);
 	state->thread_count = state->pending_thread_count;
@@ -2030,7 +2030,6 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 	assert(nqiv_shared_var_get_op_result(&state->running) != NQIV_SUCCESS);
 	nqiv_cond_wake_all(&state->thread_wakeup_signaler);
 	nqiv_wait_on_threads(state);
-	nqiv_shared_var_destroy(&state->active_thread_count);
 	return result;
 }
 /* clang-format on */

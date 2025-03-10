@@ -52,6 +52,13 @@ nqiv_event_priority nqiv_text_to_event_priority(const char* text, const int leng
 	return NQIV_EVENT_PRIORITY_UNKNOWN;
 }
 
+void nqiv_shared_var_clear(nqiv_shared_var* var)
+{
+	nqiv_shared_var_lock(var);
+	memset(&var->data, 0, sizeof(nqiv_shared_var_types));
+	nqiv_shared_var_unlock(var);
+}
+
 bool nqiv_shared_var_init(nqiv_shared_var* var)
 {
 	memset(var, 0, sizeof(nqiv_shared_var));
