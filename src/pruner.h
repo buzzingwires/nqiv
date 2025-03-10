@@ -116,7 +116,7 @@ typedef struct nqiv_pruner
 	nqiv_log_ctx*     logger;
 	nqiv_array*       pruners;
 	nqiv_pruner_state state;
-	int64_t           thread_event_transaction_group;
+	int           thread_event_transaction_group;
 } nqiv_pruner;
 
 void nqiv_pruner_destroy(nqiv_pruner* pruner);

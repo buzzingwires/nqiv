@@ -359,6 +359,11 @@ void nqiv_cmd_parser_print_data_int(nqiv_cmd_manager* manager)
 	fprintf(stdout, "%d", *((int*)manager->print_settings.current_node->data));
 }
 
+void nqiv_cmd_parser_print_data_atomic_int(nqiv_cmd_manager* manager)
+{
+	fprintf(stdout, "%d", SDL_AtomicGet((SDL_atomic_t*)manager->print_settings.current_node->data));
+}
+
 void nqiv_cmd_parser_print_value_bool(const char* name, const bool value)
 {
 	fprintf(stdout, "%s: %s ", name, value ? "TRUE" : "FALSE");
@@ -439,11 +444,6 @@ void nqiv_cmd_parser_print_data_images(nqiv_cmd_manager* manager)
 	manager->print_settings.indent -= 1;
 }
 
-void nqiv_cmd_parser_print_data_int64(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%" PRIi64, *((Sint64*)manager->print_settings.current_node->data));
-}
-
 void nqiv_cmd_parser_print_data_bool(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%s", *((bool*)manager->print_settings.current_node->data) ? "true" : "false");
@@ -472,12 +472,6 @@ void nqiv_cmd_parser_print_data_atomic_shared_op_result(nqiv_cmd_manager* manage
 	} else {
 		assert(false);
 	}
-}
-
-void nqiv_cmd_parser_print_data_shared_int64(nqiv_cmd_manager* manager)
-{
-	fprintf(stdout, "%" PRIi64,
-	        nqiv_shared_var_get_int((nqiv_shared_var*)manager->print_settings.current_node->data));
 }
 
 void nqiv_cmd_parser_print_data_key_action_queue(nqiv_cmd_manager* manager)
@@ -545,7 +539,7 @@ void nqiv_cmd_parser_print_data_event_queue(nqiv_cmd_manager* manager)
 				fprintf(stdout, "WORKER_STOP\n");
 				manager->print_settings.indent += 1;
 				nqiv_cmd_print_indent(manager);
-				fprintf(stdout, "transaction_group: %" PRIi64, e->transaction_group);
+				fprintf(stdout, "transaction_group: %d", e->transaction_group);
 				manager->print_settings.indent -= 1;
 				break;
 			case NQIV_EVENT_IMAGE_LOAD:
@@ -553,7 +547,7 @@ void nqiv_cmd_parser_print_data_event_queue(nqiv_cmd_manager* manager)
 				fprintf(stdout, "IMAGE_LOAD\n");
 				manager->print_settings.indent += 1;
 				nqiv_cmd_print_indent(manager);
-				fprintf(stdout, "transaction_group: %" PRIi64 "\n", e->transaction_group);
+				fprintf(stdout, "transaction_group: %d\n", e->transaction_group);
 				nqiv_cmd_print_indent(manager);
 				fprintf(stdout,
 				        "set_thumbnail_path: %s create_thubmnail: %s "
@@ -2610,7 +2604,7 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			   "If the pruner needs to communicate to other threads (such as to request a prune), "
 			   "it does so with this transaction group.",
 			   &(manager->state->pruner.thread_event_transaction_group),
-			   nqiv_cmd_parser_print_data_int64);
+			   nqiv_cmd_parser_print_data_int);
 		}
 		POP;
 		/* Keybinds? Or do regular test cases cover these. */
@@ -2691,7 +2685,7 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		   "Current transaction group used by threads. Incremented to filter out events for things "
 		   "that are no longer present on the screen.",
 		   &(manager->state->thread_event_transaction_group),
-		   nqiv_cmd_parser_print_data_shared_int64);
+		   nqiv_cmd_parser_print_data_atomic_int);
 		LI("time_of_last_prune", "Milliseconds since program start when last prune was performed.",
 		   &(manager->state->time_of_last_prune), nqiv_cmd_parser_print_data_uint64);
 		/* Active thread count should definitely be zero */

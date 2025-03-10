@@ -44,7 +44,7 @@ typedef struct nqiv_worker_main_args
 	const int            event_interval;
 	const int*           queue_bins;
 	const Uint32         event_code;
-	nqiv_shared_var*     transaction_group;
+	SDL_atomic_t*     transaction_group;
 	nqiv_shared_var*     active_count;
 	SDL_atomic_t*     running;
 } nqiv_worker_main_args;
@@ -56,7 +56,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
                       const int            event_interval,
                       const int*           queue_bins,
                       const Uint32         event_code,
-                      nqiv_shared_var*     transaction_group,
+                      SDL_atomic_t*     transaction_group,
                       nqiv_shared_var*     active_count,
                       SDL_atomic_t*     running);
 

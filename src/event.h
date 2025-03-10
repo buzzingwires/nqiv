@@ -98,7 +98,7 @@ typedef struct nqiv_event
 	 * event is less than the current number, it is considered out of date and discarded. An event
 	 * with a transaction group of -1 is never out of date. This feature primarily exists to solve
 	 * the problem of events still being queued for images that are no longer visible. */
-	int64_t            transaction_group;
+	int            transaction_group;
 	nqiv_event_options options;
 	nqiv_event_type    type;
 } nqiv_event;

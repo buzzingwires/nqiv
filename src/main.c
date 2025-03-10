@@ -111,7 +111,6 @@ void nqiv_state_clear(nqiv_state* state)
 	if(state->SDL_inited) {
 		SDL_Quit();
 	}
-	nqiv_shared_var_destroy(&state->thread_event_transaction_group);
 	nqiv_shared_var_destroy(&state->active_thread_count);
 	if(state->thread_specs != NULL) {
 		nqiv_array_destroy(state->thread_specs);
@@ -238,10 +237,6 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	state->thread_pointers->min_add_count = STARTING_QUEUE_LENGTH;
 	if(state->pending_thread_count == 0) {
 		state->pending_thread_count = 1;
-	}
-	if( !nqiv_shared_var_init(&state->thread_event_transaction_group) ) {
-		fprintf(stderr, "Failed to initialize shared transaction group variable. SDL Error: %s\n", SDL_GetError());
-		return false;
 	}
 	if( !nqiv_shared_var_init(&state->active_thread_count) ) {
 		fprintf(stderr, "Failed to initialize shared active thread count variable. SDL Error: %s\n", SDL_GetError());
@@ -615,7 +610,7 @@ bool nqiv_send_thread_event(nqiv_state* state,
                             nqiv_event* event,
                             const bool  is_preload)
 {
-	event->transaction_group = nqiv_shared_var_get_int(&state->thread_event_transaction_group);
+	event->transaction_group = SDL_AtomicGet(&state->thread_event_transaction_group);
 	return nqiv_send_thread_event_base(state, nqiv_promote_event(level, is_preload), event, false);
 }
 
@@ -1282,15 +1277,20 @@ void render_and_update(nqiv_state* state, const bool first_render, const bool ha
 
 	/* Update transaction group. */
 	if(state->montage.range_changed) {
-		nqiv_shared_var_lock(&state->thread_event_transaction_group);
-		state->thread_event_transaction_group.data.as_int += 1;
-		state->pruner.thread_event_transaction_group =
-			state->thread_event_transaction_group.data.as_int;
-		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
-		               "Increased transaction group value to %" PRIi64 " at position %d.\n",
-		               state->thread_event_transaction_group.data.as_int,
-		               state->montage.positions.selection);
-		nqiv_shared_var_unlock(&state->thread_event_transaction_group);
+		/* This should be reliable, since we only set the atomic from master. */
+		if( !SDL_AtomicCAS(&state->thread_event_transaction_group, INT_MAX, 1) ) {
+			const int new_value = SDL_AtomicAdd(&state->thread_event_transaction_group, 1);
+			state->pruner.thread_event_transaction_group = new_value + 1;
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
+			               "Increased transaction group value to %d at position %d.\n",
+			               new_value,
+			               state->montage.positions.selection);
+		} else {
+			state->pruner.thread_event_transaction_group = 1;
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
+			               "Wrapped overflowed transaction group value to 1 at position %d.\n",
+			               state->montage.positions.selection);
+		}
 		state->montage.range_changed = false;
 	}
 	if(state->in_montage) {
@@ -1948,18 +1948,11 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 {
 	assert(state->active_thread_count.lock != NULL);
 	nqiv_shared_var_clear(&state->active_thread_count);
-	nqiv_shared_var_set_int(&state->thread_event_transaction_group, 1);
+	SDL_AtomicSet(&state->thread_event_transaction_group, 1);
 	SDL_AtomicSet(&state->running, NQIV_SUCCESS);
 	nqiv_array_clear(state->thread_pointers);
 	state->thread_count = state->pending_thread_count;
 	nqiv_op_result       result;
-	const int            thread_count = state->thread_count;
-	const int            thread_event_interval = state->thread_event_interval;
-	const int            extra_wakeup_delay = state->extra_wakeup_delay;
-	nqiv_log_ctx*        logger = &state->logger;
-	nqiv_priority_queue* thread_queue = &state->thread_queue;
-	nqiv_shared_var*     thread_event_transaction_group = &state->thread_event_transaction_group;
-	const Uint32         event_code = state->thread_event_number;
 	int                  standard_event_bins[THREAD_QUEUE_BIN_COUNT + 1];
 	int                  c;
 	for(c = 0; c < THREAD_QUEUE_BIN_COUNT; ++c) {
@@ -1968,16 +1961,16 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 	standard_event_bins[THREAD_QUEUE_BIN_COUNT] = -1;
 	const int thread_specs_len = nqiv_array_get_units_count(state->thread_specs);
 	int t;
-	for(t = 0; t < thread_count; ++t) {
+	for(t = 0; t < state->thread_count; ++t) {
 		nqiv_worker_main_args args = {
-			.logger = logger,
-			.queue = thread_queue,
-			.delay = extra_wakeup_delay + t,
+			.logger = &state->logger,
+			.queue = &state->thread_queue,
+			.delay = state->extra_wakeup_delay + t,
 			.wakeup = &state->thread_wakeup_signaler,
-			.event_interval = thread_event_interval,
+			.event_interval = state->thread_event_interval,
 			.queue_bins = standard_event_bins,
-			.event_code = event_code,
-			.transaction_group = thread_event_transaction_group,
+			.event_code = state->thread_event_number,
+			.transaction_group = &state->thread_event_transaction_group,
 			.active_count = &state->active_thread_count,
 			.running = &state->running
 		};
@@ -1994,18 +1987,18 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 	nqiv_worker_spec* thread_specs = state->thread_specs->data;
 	for(t = 0; t < thread_specs_len; ++t) {
 		nqiv_worker_spec* spec = &thread_specs[t];
-		const int this_extra_wakeup_delay = spec->delay_base == -1 ? extra_wakeup_delay : spec->delay_base;
-		const int this_event_interval = spec->event_interval == -1 ? thread_event_interval : spec->event_interval;
+		const int this_extra_wakeup_delay = spec->delay_base == -1 ? state->extra_wakeup_delay : spec->delay_base;
+		const int this_event_interval = spec->event_interval == -1 ? state->thread_event_interval : spec->event_interval;
 		const int* this_event_bins = spec->queue_bins[0] == -1 ? standard_event_bins : spec->queue_bins;
 		nqiv_worker_main_args args = {
-			.logger = logger,
-			.queue = thread_queue,
+			.logger = &state->logger,
+			.queue = &state->thread_queue,
 			.delay = this_extra_wakeup_delay + t,
 			.wakeup = &state->thread_wakeup_signaler,
 			.event_interval = this_event_interval,
 			.queue_bins = this_event_bins,
-			.event_code = event_code,
-			.transaction_group = thread_event_transaction_group,
+			.event_code = state->thread_event_number,
+			.transaction_group = &state->thread_event_transaction_group,
 			.active_count = &state->active_thread_count,
 			.running = &state->running
 		};

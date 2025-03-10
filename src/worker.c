@@ -275,7 +275,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
                       const int            event_interval,
                       const int*           queue_bins,
                       const Uint32         event_code,
-                      nqiv_shared_var*     transaction_group,
+                      SDL_atomic_t*     transaction_group,
                       nqiv_shared_var*     active_count,
                       SDL_atomic_t*     running)
 {
@@ -291,7 +291,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 				if(!event_found || event.transaction_group == -1) {
 					break;
 				}
-				if(event.transaction_group >= nqiv_shared_var_get_int(transaction_group)) {
+				if(event.transaction_group >= SDL_AtomicGet(transaction_group)) {
 					break;
 					/* NOOP */
 				}
