@@ -1174,6 +1174,11 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 		               "Failed to copy texture background for montage.\n");
 		return false;
 	}
+	if(!preload_only && !nqiv_state_update_montage_texture_dimensions(state)) {
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
+		               "Failed to update montage texture dimensions.\n");
+		return false;
+	}
 	state->render_cleared = !preload_only;
 	const int    images_len = nqiv_array_get_units_count(state->images.images);
 	const int    biggest_preload_behind = state->image_preload.behind > state->montage.preload.behind ? state->image_preload.behind : state->montage.preload.behind;

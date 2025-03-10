@@ -353,6 +353,18 @@ bool nqiv_state_recreate_all_alpha_background_textures(nqiv_state* state)
 	return true;
 }
 
+bool nqiv_state_update_montage_texture_dimensions(nqiv_state* state)
+{
+	if(state->images.thumbnail.size == state->montage_texture_size) {
+		return true;
+	}
+	if(!nqiv_state_recreate_thumbnail_selection_texture(state) || !nqiv_state_recreate_mark_texture(state)) {
+		return false;
+	}
+	state->montage_texture_size = state->images.thumbnail.size;
+	return true;
+}
+
 bool nqiv_state_update_alpha_background_dimensions(nqiv_state* state,
                                                    const int   alpha_background_width,
                                                    const int   alpha_background_height)

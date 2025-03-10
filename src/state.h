@@ -76,9 +76,10 @@ struct nqiv_state
 	/* Background shown behind transparent image- may be checkered. */
 	SDL_Texture*         texture_alpha_background;
 	SDL_ScaleMode        texture_scale_mode;
-	/* Track dimensions of alpha background, since they may need to be updated. */
+	/* Track dimensions of textures, since they may need to be updated. */
 	int                  alpha_background_width;
 	int                  alpha_background_height;
+	int                  montage_texture_size; /* Equivalent to thumbnail size. */
 	/* SDL events returned to master from workers. */
 	Uint32               thread_event_number;
 	/* SDL events returned to master from configuration. */
@@ -167,6 +168,7 @@ bool              nqiv_state_create_mark_texture(nqiv_state* state);
 bool              nqiv_state_recreate_mark_texture(nqiv_state* state);
 bool              nqiv_state_create_alpha_background_texture(nqiv_state* state);
 bool              nqiv_state_recreate_all_alpha_background_textures(nqiv_state* state);
+bool nqiv_state_update_montage_texture_dimensions(nqiv_state* state);
 bool              nqiv_state_update_alpha_background_dimensions(nqiv_state* state,
                                                                 const int   alpha_background_width,
                                                                 const int   alpha_background_height);
