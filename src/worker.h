@@ -10,15 +10,14 @@
 #include "event.h"
 
 /*
- * Worker threads function by polling their queue by a certain wait time. They
- * will grab events until they find one with an event interval greater than the
+ * When worker threads are woken up, they will wait a short time before polling the queue (to reduce resource contention and give the queue more time to fill)
+ * They will poll for events until they find one with an transaction group greater than or equal to the
  * current, or -1. Others will be discarded. Then they will dispatch the
  * appropriate code to handle that event. (See event.h for an overview of
  * events)
  *
- * When the event interval is met or there are no more events, they will send an
- * SDL event for the master to update its display, then sleep to repeat the
- * polling process.
+ * The number of events is tracked and compared against the event interval. When the event interval is met or there are no more events, they will send an
+ * SDL event for the master to update its display, then wait to be woken up again.
  */
 
 #define NQIV_WORKER_SPEC_STRLEN 512
