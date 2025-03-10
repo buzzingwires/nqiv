@@ -10,7 +10,7 @@
 #include "event.h"
 
 /*
- * When worker threads are woken up, they will wait a short time before polling the queue (to reduce resource contention and give the queue more time to fill)
+ * When worker threads are woken up, they will optionally wait a specified time before polling the queue (to reduce resource contention and give the queue more time to fill).
  * They will poll for events until they find one with an transaction group greater than or equal to the
  * current, or -1. Others will be discarded. Then they will dispatch the
  * appropriate code to handle that event. (See event.h for an overview of

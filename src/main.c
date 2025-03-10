@@ -1965,7 +1965,7 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 		nqiv_worker_main_args args = {
 			.logger = &state->logger,
 			.queue = &state->thread_queue,
-			.delay = state->extra_wakeup_delay + t,
+			.delay = state->extra_wakeup_delay,
 			.wakeup = &state->thread_wakeup_signaler,
 			.event_interval = state->thread_event_interval,
 			.queue_bins = standard_event_bins,
@@ -1993,7 +1993,7 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 		nqiv_worker_main_args args = {
 			.logger = &state->logger,
 			.queue = &state->thread_queue,
-			.delay = this_extra_wakeup_delay + t,
+			.delay = this_extra_wakeup_delay,
 			.wakeup = &state->thread_wakeup_signaler,
 			.event_interval = this_event_interval,
 			.queue_bins = this_event_bins,
