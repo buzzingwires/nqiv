@@ -52,13 +52,6 @@ nqiv_event_priority nqiv_text_to_event_priority(const char* text, const int leng
 	return NQIV_EVENT_PRIORITY_UNKNOWN;
 }
 
-void nqiv_shared_var_clear(nqiv_shared_var* var)
-{
-	nqiv_shared_var_lock(var);
-	memset(&var->data, 0, sizeof(nqiv_shared_var_types));
-	nqiv_shared_var_unlock(var);
-}
-
 bool nqiv_shared_var_init(nqiv_shared_var* var)
 {
 	memset(var, 0, sizeof(nqiv_shared_var));
@@ -72,6 +65,13 @@ void nqiv_shared_var_destroy(nqiv_shared_var* var)
 		SDL_DestroyMutex(var->lock);
 	}
 	memset(var, 0, sizeof(nqiv_shared_var));
+}
+
+void nqiv_shared_var_clear(nqiv_shared_var* var)
+{
+	nqiv_shared_var_lock(var);
+	memset(&var->data, 0, sizeof(nqiv_shared_var_types));
+	nqiv_shared_var_unlock(var);
 }
 
 void nqiv_shared_var_lock(nqiv_shared_var* var)
@@ -95,21 +95,6 @@ void nqiv_shared_var_dec_int(nqiv_shared_var* var)
 {
 	nqiv_shared_var_lock(var);
 	var->data.as_int -= 1;
-	nqiv_shared_var_unlock(var);
-}
-
-int64_t nqiv_shared_var_get_int(nqiv_shared_var* var)
-{
-	nqiv_shared_var_lock(var);
-	const int64_t result = var->data.as_int;
-	nqiv_shared_var_unlock(var);
-	return result;
-}
-
-void nqiv_shared_var_set_int(nqiv_shared_var* var, const int64_t value)
-{
-	nqiv_shared_var_lock(var);
-	var->data.as_int = value;
 	nqiv_shared_var_unlock(var);
 }
 

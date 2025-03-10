@@ -121,8 +121,6 @@ void           nqiv_shared_var_lock(nqiv_shared_var* var);
 void           nqiv_shared_var_unlock(nqiv_shared_var* var);
 void           nqiv_shared_var_inc_int(nqiv_shared_var* var);
 void           nqiv_shared_var_dec_int(nqiv_shared_var* var);
-int64_t        nqiv_shared_var_get_int(nqiv_shared_var* var);
-void           nqiv_shared_var_set_int(nqiv_shared_var* var, const int64_t value);
 
 nqiv_event_priority nqiv_text_to_event_priority(const char* text, const int length);
 
