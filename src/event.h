@@ -134,7 +134,6 @@ struct nqiv_cond
 void nqiv_cond_destroy(nqiv_cond* cond);
 bool nqiv_cond_init(nqiv_cond* cond);
 void nqiv_cond_wait(nqiv_cond* cond);
-void nqiv_cond_wake_one(nqiv_cond* cond);
 void nqiv_cond_wake_all(nqiv_cond* cond);
 
 #endif /* NQIV_EVENT_H */

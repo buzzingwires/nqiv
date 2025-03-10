@@ -573,7 +573,7 @@ bool nqiv_send_thread_event_base(nqiv_state*       state,
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to send event.\n");
 		return false;
 	}
-	nqiv_cond_wake_one(&state->thread_wakeup_signaler);
+	nqiv_cond_wake_all(&state->thread_wakeup_signaler);
 	return true;
 }
 
@@ -1260,10 +1260,7 @@ void nqiv_check_pruning(nqiv_state* state)
 		if(prune_count == -1) {
 			SDL_AtomicSet(&state->running, NQIV_FAIL);
 		}
-		int c;
-		for(c = 0; c < prune_count; ++c) {
-			nqiv_cond_wake_one(&state->thread_wakeup_signaler);
-		}
+		nqiv_cond_wake_all(&state->thread_wakeup_signaler);
 	}
 }
 

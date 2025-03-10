@@ -133,13 +133,6 @@ void nqiv_cond_wait(nqiv_cond* cond)
 	SDL_UnlockMutex(cond->lock);
 }
 
-void nqiv_cond_wake_one(nqiv_cond* cond)
-{
-	assert(cond->cond != NULL);
-	assert(cond->lock != NULL);
-	SDL_CondSignal(cond->cond);
-}
-
 void nqiv_cond_wake_all(nqiv_cond* cond)
 {
 	assert(cond->cond != NULL);

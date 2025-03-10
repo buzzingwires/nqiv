@@ -1161,6 +1161,7 @@ bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const 
 	}
 	const int    num_images = nqiv_array_get_units_count(manager->images);
 	nqiv_image** images = manager->images->data;
+	bool wake = false;
 	int          idx;
 	for(idx = 0; idx < num_images; ++idx) {
 		nqiv_image_lock(images[idx]);
@@ -1189,10 +1190,13 @@ bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const 
 					nqiv_image_unlock(images[idx]);
 					return false;
 				}
-				nqiv_cond_wake_one(manager->thread_wakeup_signaler);
+				wake = true;
 			}
 		}
 		nqiv_image_unlock(images[idx]);
+	}
+	if(wake) {
+		nqiv_cond_wake_all(manager->thread_wakeup_signaler);
 	}
 	return true;
 }
@@ -1206,7 +1210,7 @@ void nqiv_image_manager_decrement_thumbnail_size_base(nqiv_image_manager* manage
 {
 	manager->thumbnail.size -= adjust;
 	if(manager->thumbnail.size <= 0) {
-		manager->thumbnail.size = adjust;
+	    manager->thumbnail.size = adjust;
 	}
 }
 
