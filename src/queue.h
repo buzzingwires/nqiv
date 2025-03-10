@@ -46,6 +46,7 @@ bool nqiv_priority_queue_init(nqiv_priority_queue* queue,
                               const int            unit_size,
                               const int            unit_count,
                               const int            bin_count);
+bool nqiv_priority_queue_clear(nqiv_priority_queue* queue);
 bool nqiv_priority_queue_push(nqiv_priority_queue* queue, const int level, const void* entry);
 void nqiv_priority_queue_push_force(nqiv_priority_queue* queue, const int level, const void* entry);
 /* Iterate the bin indices and return with the first successfully popped value. bins is terminated

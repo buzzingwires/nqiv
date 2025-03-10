@@ -1279,16 +1279,17 @@ void render_and_update(nqiv_state* state, const bool first_render, const bool ha
 	if(state->montage.range_changed) {
 		/* This should be reliable, since we only set the atomic from master. */
 		if( !SDL_AtomicCAS(&state->thread_event_transaction_group, INT_MAX, 1) ) {
-			const int new_value = SDL_AtomicAdd(&state->thread_event_transaction_group, 1);
-			state->pruner.thread_event_transaction_group = new_value + 1;
+			const int new_value = SDL_AtomicAdd(&state->thread_event_transaction_group, 1) + 1;
+			state->pruner.thread_event_transaction_group = new_value;
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 			               "Increased transaction group value to %d at position %d.\n",
 			               new_value,
 			               state->montage.positions.selection);
 		} else {
+			nqiv_priority_queue_clear(&state->thread_queue);
 			state->pruner.thread_event_transaction_group = 1;
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
-			               "Wrapped overflowed transaction group value to 1 at position %d.\n",
+			               "Wrapped overflowed transaction group value to 1 and cleared old events at position %d.\n",
 			               state->montage.positions.selection);
 		}
 		state->montage.range_changed = false;

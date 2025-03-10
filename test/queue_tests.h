@@ -4,5 +4,6 @@
 void queue_test_default(void);
 void queue_test_priority_default(void);
 void queue_test_priority_pop_bins(void);
+void queue_test_priority_clear(void);
 
 #endif /* NQIV_QUEUE_TEST */

@@ -218,6 +218,7 @@ test_set* create_tests(void)
 	T("queue_test_default", queue_test_default);
 	T("queue_test_priority_default", queue_test_priority_default);
 	T("queue_test_priority_pop_bins", queue_test_priority_pop_bins);
+	T("queue_test_priority_clear", queue_test_priority_clear);
 
 	S("logging");
 	T("logging_general", logging_test_general);

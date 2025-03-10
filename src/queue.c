@@ -204,6 +204,15 @@ bool nqiv_queue_set_min_add_count(nqiv_queue* queue, void* count)
 	return true;
 }
 
+bool nqiv_queue_clear(nqiv_queue* queue, void* value)
+{
+	(void)value;
+	SDL_LockMutex(queue->lock);
+	nqiv_array_clear(queue->array);
+	SDL_UnlockMutex(queue->lock);
+	return true;
+}
+
 bool nqiv_queue_lock(nqiv_queue* queue, void* value)
 {
 	(void)value;
@@ -267,6 +276,11 @@ bool nqiv_priority_queue_set_min_add_count(nqiv_priority_queue* queue, const int
 {
 	int tmp_count = count;
 	return nqiv_priority_queue_apply(queue, &tmp_count, nqiv_queue_set_min_add_count, false);
+}
+
+bool nqiv_priority_queue_clear(nqiv_priority_queue* queue)
+{
+	return nqiv_priority_queue_apply(queue, NULL, nqiv_queue_clear, false);
 }
 
 void nqiv_priority_queue_lock(nqiv_priority_queue* queue)
