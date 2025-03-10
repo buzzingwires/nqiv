@@ -112,7 +112,6 @@ void nqiv_state_clear(nqiv_state* state)
 		SDL_Quit();
 	}
 	nqiv_shared_var_destroy(&state->thread_event_transaction_group);
-	nqiv_shared_var_destroy(&state->running);
 	nqiv_shared_var_destroy(&state->active_thread_count);
 	if(state->thread_specs != NULL) {
 		nqiv_array_destroy(state->thread_specs);
@@ -242,10 +241,6 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	}
 	if( !nqiv_shared_var_init(&state->thread_event_transaction_group) ) {
 		fprintf(stderr, "Failed to initialize shared transaction group variable. SDL Error: %s\n", SDL_GetError());
-		return false;
-	}
-	if( !nqiv_shared_var_init(&state->running) ) {
-		fprintf(stderr, "Failed to initialize shared running status variable. SDL Error: %s\n", SDL_GetError());
 		return false;
 	}
 	if( !nqiv_shared_var_init(&state->active_thread_count) ) {
@@ -1268,7 +1263,7 @@ void nqiv_check_pruning(nqiv_state* state)
 		const int prune_count =
 			nqiv_pruner_run(&state->pruner, &state->montage, &state->images, &state->thread_queue);
 		if(prune_count == -1) {
-			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+			SDL_AtomicSet(&state->running, NQIV_FAIL);
 		}
 		int c;
 		for(c = 0; c < prune_count; ++c) {
@@ -1300,14 +1295,14 @@ void render_and_update(nqiv_state* state, const bool first_render, const bool ha
 	}
 	if(state->in_montage) {
 		if(!render_montage(state, hard, false)) {
-			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+			SDL_AtomicSet(&state->running, NQIV_FAIL);
 		}
 	} else {
 		if(!render_image(state, first_render, hard)) {
-			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+			SDL_AtomicSet(&state->running, NQIV_FAIL);
 		}
 	}
-	if(nqiv_shared_var_get_op_result(&state->running) == NQIV_SUCCESS && state->render_cleared) {
+	if(SDL_AtomicGet(&state->running) == NQIV_SUCCESS && state->render_cleared) {
 		SDL_RenderPresent(state->renderer);
 		state->render_cleared = false;
 	}
@@ -1318,7 +1313,7 @@ void nqiv_handle_thumbnail_resize_action(nqiv_state* state, void (*op)(nqiv_imag
 	const int old_size = state->images.thumbnail.size;
 	op(&state->images);
 	if(!nqiv_image_manager_reattempt_thumbnails(&state->images, old_size)) {
-		nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+		SDL_AtomicSet(&state->running, NQIV_FAIL);
 	}
 	render_and_update(state, false, false);
 }
@@ -1348,7 +1343,7 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
                             const nqiv_keyrate_release_option released)
 {
 	nqiv_keybind_pair* pair;
-	while(nqiv_shared_var_get_op_result(&state->running) == NQIV_SUCCESS
+	while(SDL_AtomicGet(&state->running) == NQIV_SUCCESS
 	      && nqiv_queue_pop_front(&state->key_actions, &pair)) {
 		const int images_count = nqiv_array_get_units_count(state->images.images);
 		assert(state->montage.positions.selection < images_count);
@@ -1360,7 +1355,7 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 			/* NOOP */
 		} else if(pair->action == NQIV_KEY_ACTION_QUIT) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Received nqiv action quit.\n");
-			nqiv_shared_var_set_op_result(&state->running, NQIV_PASS);
+			SDL_AtomicSet(&state->running, NQIV_PASS);
 		} else if(pair->action == NQIV_KEY_ACTION_IMAGE_PREVIOUS) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 			               "Received nqiv action image previous.\n");
@@ -1735,7 +1730,7 @@ void nqiv_set_match_keymods(nqiv_key_match* match)
 
 bool check_cmds(nqiv_state* state)
 {
-	assert(nqiv_shared_var_get_op_result(&state->running) == NQIV_SUCCESS);
+	assert(SDL_AtomicGet(&state->running) == NQIV_SUCCESS);
 	if(state->restart_threads) {
 		return false;
 	}
@@ -1755,14 +1750,14 @@ bool check_cmds(nqiv_state* state)
 		}
 		const nqiv_op_result op_result = nqiv_cmd_add_stream_line(&state->cmds, stdin, true);
 		if(op_result == NQIV_FAIL) {
-			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+			SDL_AtomicSet(&state->running, NQIV_FAIL);
 			break;
 		}
 		if(op_result == NQIV_PASS) {
 			break;
 		}
 		if(!nqiv_cmd_parse(&state->cmds)) {
-			nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+			SDL_AtomicSet(&state->running, NQIV_FAIL);
 			break;
 		}
 	}
@@ -1770,7 +1765,7 @@ bool check_cmds(nqiv_state* state)
 		nqiv_shared_var_unlock(&state->active_thread_count);
 		nqiv_priority_queue_unlock(&(state->thread_queue));
 	}
-	return nqiv_shared_var_get_op_result(&state->running) != NQIV_FAIL;
+	return SDL_AtomicGet(&state->running) != NQIV_FAIL;
 }
 
 nqiv_op_result nqiv_master_thread(nqiv_state* state)
@@ -1778,7 +1773,7 @@ nqiv_op_result nqiv_master_thread(nqiv_state* state)
 	if(state->cmd_acknowledge && state->cmd_read_stdin) {
 		fprintf(stdout, "Ready for commands from stdin.\n");
 	}
-	while(nqiv_shared_var_get_op_result(&state->running) == NQIV_SUCCESS && check_cmds(state)) {
+	while(SDL_AtomicGet(&state->running) == NQIV_SUCCESS && check_cmds(state)) {
 		SDL_PumpEvents();
 		SDL_Event    input_event = {0};
 		const Uint64 wait_start = SDL_GetTicks64();
@@ -1791,7 +1786,7 @@ nqiv_op_result nqiv_master_thread(nqiv_state* state)
 				               "Failed to wait on an SDL event (with limitless waiting period). "
 				               "SDL Error: %s\n",
 				               SDL_GetError());
-				nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+				SDL_AtomicSet(&state->running, NQIV_FAIL);
 			} else {
 				const Uint64 wait_diff = SDL_GetTicks64() - wait_start;
 				/* TODO: It seems SDL_WaitEventTimeout does not guarantee that it will
@@ -1830,7 +1825,7 @@ nqiv_op_result nqiv_master_thread(nqiv_state* state)
 			}
 			break;
 		case SDL_QUIT:
-			nqiv_shared_var_set_op_result(&state->running, NQIV_PASS);
+			SDL_AtomicSet(&state->running, NQIV_PASS);
 			break;
 		case SDL_KEYDOWN:
 		case SDL_KEYUP:
@@ -1847,7 +1842,7 @@ nqiv_op_result nqiv_master_thread(nqiv_state* state)
 				const nqiv_op_result lookup_summary =
 					nqiv_keybind_lookup(&state->keybinds, &match, &state->key_actions);
 				if(lookup_summary == NQIV_FAIL) {
-					nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+					SDL_AtomicSet(&state->running, NQIV_FAIL);
 				} else if(lookup_summary == NQIV_SUCCESS) {
 					nqiv_handle_keyactions(state, false,
 					                       input_event.type == SDL_KEYUP ? NQIV_KEYRATE_ON_UP
@@ -1868,7 +1863,7 @@ nqiv_op_result nqiv_master_thread(nqiv_state* state)
 				const nqiv_op_result lookup_summary =
 					nqiv_keybind_lookup(&state->keybinds, &match, &state->key_actions);
 				if(lookup_summary == NQIV_FAIL) {
-					nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+					SDL_AtomicSet(&state->running, NQIV_FAIL);
 				} else if(lookup_summary == NQIV_SUCCESS) {
 					nqiv_handle_keyactions(state, false,
 					                       input_event.type == SDL_MOUSEBUTTONUP
@@ -1898,7 +1893,7 @@ nqiv_op_result nqiv_master_thread(nqiv_state* state)
 				const nqiv_op_result lookup_summary =
 					nqiv_keybind_lookup(&state->keybinds, &match, &state->key_actions);
 				if(lookup_summary == NQIV_FAIL) {
-					nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+					SDL_AtomicSet(&state->running, NQIV_FAIL);
 				} else if(lookup_summary == NQIV_SUCCESS) {
 					nqiv_handle_keyactions(state, false, NQIV_KEYRATE_ON_DOWN | NQIV_KEYRATE_ON_UP);
 					render_and_update(state, false, false);
@@ -1923,7 +1918,7 @@ nqiv_op_result nqiv_master_thread(nqiv_state* state)
 		fprintf(stdout, "No longer checking commands from stdin.\n");
 	}
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Finished waiting on events.\n");
-	return nqiv_shared_var_get_op_result(&state->running);
+	return SDL_AtomicGet(&state->running);
 }
 
 void nqiv_wait_on_threads(nqiv_state* state)
@@ -1940,7 +1935,7 @@ void nqiv_wait_on_threads(nqiv_state* state)
 void nqiv_run_fail(nqiv_state* state, const char* msg, const int thread_number, SDL_Thread* loose_thread)
 {
 	nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "%s thread %d.", msg, thread_number);
-	nqiv_shared_var_set_op_result(&state->running, NQIV_FAIL);
+	SDL_AtomicSet(&state->running, NQIV_FAIL);
 	nqiv_cond_wake_all(&state->thread_wakeup_signaler);
 	if(loose_thread != NULL) {
 		SDL_WaitThread(loose_thread, NULL);
@@ -1954,7 +1949,7 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 	assert(state->active_thread_count.lock != NULL);
 	nqiv_shared_var_clear(&state->active_thread_count);
 	nqiv_shared_var_set_int(&state->thread_event_transaction_group, 1);
-	nqiv_shared_var_set_op_result(&state->running, NQIV_SUCCESS);
+	SDL_AtomicSet(&state->running, NQIV_SUCCESS);
 	nqiv_array_clear(state->thread_pointers);
 	state->thread_count = state->pending_thread_count;
 	nqiv_op_result       result;
@@ -2026,7 +2021,7 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 	}
 	state->restart_threads = false;
 	result = nqiv_master_thread(state);
-	assert(nqiv_shared_var_get_op_result(&state->running) != NQIV_SUCCESS);
+	assert(SDL_AtomicGet(&state->running) != NQIV_SUCCESS);
 	nqiv_cond_wake_all(&state->thread_wakeup_signaler);
 	nqiv_wait_on_threads(state);
 	return result;

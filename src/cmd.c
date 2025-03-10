@@ -35,7 +35,7 @@ bool nqiv_cmd_alert_main(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_force_quit_main(nqiv_cmd_manager* manager)
 {
-	nqiv_shared_var_set_op_result(&manager->state->running, NQIV_FAIL);
+	SDL_AtomicSet(&manager->state->running, NQIV_FAIL);
 }
 
 char nqiv_cmd_tmpterm(char* data, const int pos)
@@ -459,10 +459,10 @@ void nqiv_cmd_parser_print_data_uint32(nqiv_cmd_manager* manager)
 	fprintf(stdout, "%" PRIu32, *((Uint32*)manager->print_settings.current_node->data));
 }
 
-void nqiv_cmd_parser_print_data_shared_op_result(nqiv_cmd_manager* manager)
+void nqiv_cmd_parser_print_data_atomic_shared_op_result(nqiv_cmd_manager* manager)
 {
 	const nqiv_op_result op_result =
-		nqiv_shared_var_get_op_result((nqiv_shared_var*)manager->print_settings.current_node->data);
+		SDL_AtomicGet((SDL_atomic_t*)manager->print_settings.current_node->data);
 	if(op_result == NQIV_SUCCESS) {
 		fprintf(stdout, "SUCCESS");
 	} else if(op_result == NQIV_PASS) {
@@ -2682,7 +2682,7 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		LI("running",
 		   "Running status. SUCCESS means nqiv is running. PASS means it has stopped, but there is "
 		   "no error. FAIL means it has stopped due to an error.",
-		   &(manager->state->running), nqiv_cmd_parser_print_data_shared_op_result);
+		   &(manager->state->running), nqiv_cmd_parser_print_data_atomic_shared_op_result);
 		LI("thread_count", "Current number of running threads.", &(manager->state->thread_count),
 		   nqiv_cmd_parser_print_data_int);
 		LI("restart_threads", "Should threads be restarted should they quit?",

@@ -84,7 +84,7 @@ struct nqiv_state
 	/* SDL events returned to master from configuration. */
 	Uint32               cfg_event_number;
 	/* Shared state variable to tell if nqiv is running. */
-	nqiv_shared_var      running;
+	SDL_atomic_t         running;
 	/* Number of worker threads to start next. */
 	int                  pending_thread_count;
 	/* Current number of worker threads. */

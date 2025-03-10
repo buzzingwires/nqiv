@@ -277,11 +277,11 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
                       const Uint32         event_code,
                       nqiv_shared_var*     transaction_group,
                       nqiv_shared_var*     active_count,
-                      nqiv_shared_var*     running)
+                      SDL_atomic_t*     running)
 {
 	/* Stagger events by their thread num to prevent stampeding herd problems. */
 	int events_processed = 0;
-	while(nqiv_shared_var_get_op_result(running) == NQIV_SUCCESS) {
+	while(SDL_AtomicGet(running) == NQIV_SUCCESS) {
 		nqiv_event event = {0};
 		bool       event_found = false;
 		/* Find valid events */
@@ -384,7 +384,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 					nqiv_log_write(logger, NQIV_LOG_ERROR,
 					               "Failed to send SDL event from thread %lu. SDL Error: %s\n",
 					               SDL_ThreadID(), SDL_GetError());
-					nqiv_shared_var_set_op_result(running, NQIV_FAIL);
+					SDL_AtomicSet(running, NQIV_FAIL);
 				}
 			} else {
 				nqiv_cond_wait(wakeup);

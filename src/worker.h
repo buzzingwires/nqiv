@@ -47,7 +47,7 @@ typedef struct nqiv_worker_main_args
 	const Uint32         event_code;
 	nqiv_shared_var*     transaction_group;
 	nqiv_shared_var*     active_count;
-	nqiv_shared_var*     running;
+	SDL_atomic_t*     running;
 } nqiv_worker_main_args;
 
 void nqiv_worker_main(nqiv_log_ctx*        logger,
@@ -59,7 +59,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
                       const Uint32         event_code,
                       nqiv_shared_var*     transaction_group,
                       nqiv_shared_var*     active_count,
-                      nqiv_shared_var*     running);
+                      SDL_atomic_t*     running);
 
 /* SDL interface for nqiv_worker_main. */
 int nqiv_worker_main_sdl(void* args_ptr);

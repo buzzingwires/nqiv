@@ -84,21 +84,6 @@ void nqiv_shared_var_unlock(nqiv_shared_var* var)
 	SDL_UnlockMutex(var->lock);
 }
 
-void nqiv_shared_var_set_op_result(nqiv_shared_var* var, const nqiv_op_result value)
-{
-	nqiv_shared_var_lock(var);
-	var->data.as_op_result = value;
-	nqiv_shared_var_unlock(var);
-}
-
-nqiv_op_result nqiv_shared_var_get_op_result(nqiv_shared_var* var)
-{
-	nqiv_shared_var_lock(var);
-	const nqiv_op_result result = var->data.as_op_result;
-	nqiv_shared_var_unlock(var);
-	return result;
-}
-
 void nqiv_shared_var_inc_int(nqiv_shared_var* var)
 {
 	nqiv_shared_var_lock(var);
