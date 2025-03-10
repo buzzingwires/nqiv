@@ -1208,10 +1208,8 @@ void nqiv_image_manager_increment_thumbnail_size_base(nqiv_image_manager* manage
 
 void nqiv_image_manager_decrement_thumbnail_size_base(nqiv_image_manager* manager, const int adjust)
 {
-	manager->thumbnail.size -= adjust;
-	if(manager->thumbnail.size <= 0) {
-	    manager->thumbnail.size = adjust;
-	}
+	const int new_size = manager->thumbnail.size - adjust;
+	manager->thumbnail.size = new_size >= adjust ? new_size : adjust;
 }
 
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager)
