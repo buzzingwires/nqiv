@@ -103,25 +103,6 @@ typedef struct nqiv_event
 	nqiv_event_type    type;
 } nqiv_event;
 
-typedef union nqiv_shared_var_types
-{
-	int64_t        as_int;
-} nqiv_shared_var_types;
-
-typedef struct nqiv_shared_var
-{
-	SDL_mutex*            lock;
-	nqiv_shared_var_types data;
-} nqiv_shared_var;
-
-bool           nqiv_shared_var_init(nqiv_shared_var* var);
-void           nqiv_shared_var_destroy(nqiv_shared_var* var);
-void nqiv_shared_var_clear(nqiv_shared_var* var);
-void           nqiv_shared_var_lock(nqiv_shared_var* var);
-void           nqiv_shared_var_unlock(nqiv_shared_var* var);
-void           nqiv_shared_var_inc_int(nqiv_shared_var* var);
-void           nqiv_shared_var_dec_int(nqiv_shared_var* var);
-
 nqiv_event_priority nqiv_text_to_event_priority(const char* text, const int length);
 
 /* Convenience wrapper for SDL_cond and its requirements. */

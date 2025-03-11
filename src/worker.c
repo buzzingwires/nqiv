@@ -276,7 +276,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
                       const int*           queue_bins,
                       const Uint32         event_code,
                       SDL_atomic_t*     transaction_group,
-                      nqiv_shared_var*     active_count,
+                      SDL_atomic_t*     dormant_count,
                       SDL_atomic_t*     running)
 {
 	/* Stagger events by their thread num to prevent stampeding herd problems. */
@@ -306,7 +306,6 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 				break;
 			case NQIV_EVENT_IMAGE_LOAD:
 				{
-					nqiv_shared_var_inc_int(active_count);
 					nqiv_event_image_load_options* image_load = &event.options.image_load;
 					nqiv_image*                    image = image_load->image;
 					nqiv_log_write(logger, NQIV_LOG_DEBUG,
@@ -365,7 +364,6 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 						nqiv_image_borrow_thumbnail_dimensions(image);
 					}
 					nqiv_image_unlock(image);
-					nqiv_shared_var_dec_int(active_count);
 					break;
 				}
 			}
@@ -387,7 +385,11 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 					SDL_AtomicSet(running, NQIV_FAIL);
 				}
 			} else {
+				SDL_AtomicAdd(dormant_count, 1);
 				nqiv_cond_wait(wakeup);
+				const int old_value = SDL_AtomicAdd(dormant_count, -1);
+				assert(old_value > 0);
+				(void) old_value;
 				if(delay > 0) {
 					SDL_Delay(delay);
 				}
@@ -412,7 +414,7 @@ int nqiv_worker_main_sdl(void* args_ptr)
 	                 args->queue_bins,
 	                 args->event_code,
 	                 args->transaction_group,
-	                 args->active_count,
+	                 args->dormant_count,
 	                 args->running);
 
 	return 0;

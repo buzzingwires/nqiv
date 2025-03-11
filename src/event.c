@@ -52,52 +52,6 @@ nqiv_event_priority nqiv_text_to_event_priority(const char* text, const int leng
 	return NQIV_EVENT_PRIORITY_UNKNOWN;
 }
 
-bool nqiv_shared_var_init(nqiv_shared_var* var)
-{
-	memset(var, 0, sizeof(nqiv_shared_var));
-	var->lock = SDL_CreateMutex();
-	return var->lock != NULL;
-}
-
-void nqiv_shared_var_destroy(nqiv_shared_var* var)
-{
-	if(var->lock != NULL) {
-		SDL_DestroyMutex(var->lock);
-	}
-	memset(var, 0, sizeof(nqiv_shared_var));
-}
-
-void nqiv_shared_var_clear(nqiv_shared_var* var)
-{
-	nqiv_shared_var_lock(var);
-	memset(&var->data, 0, sizeof(nqiv_shared_var_types));
-	nqiv_shared_var_unlock(var);
-}
-
-void nqiv_shared_var_lock(nqiv_shared_var* var)
-{
-	SDL_LockMutex(var->lock);
-}
-
-void nqiv_shared_var_unlock(nqiv_shared_var* var)
-{
-	SDL_UnlockMutex(var->lock);
-}
-
-void nqiv_shared_var_inc_int(nqiv_shared_var* var)
-{
-	nqiv_shared_var_lock(var);
-	var->data.as_int += 1;
-	nqiv_shared_var_unlock(var);
-}
-
-void nqiv_shared_var_dec_int(nqiv_shared_var* var)
-{
-	nqiv_shared_var_lock(var);
-	var->data.as_int -= 1;
-	nqiv_shared_var_unlock(var);
-}
-
 void nqiv_cond_destroy(nqiv_cond* cond)
 {
 	assert(cond->cond != NULL);

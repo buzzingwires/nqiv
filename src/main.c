@@ -111,7 +111,6 @@ void nqiv_state_clear(nqiv_state* state)
 	if(state->SDL_inited) {
 		SDL_Quit();
 	}
-	nqiv_shared_var_destroy(&state->active_thread_count);
 	if(state->thread_specs != NULL) {
 		nqiv_array_destroy(state->thread_specs);
 	}
@@ -237,10 +236,6 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	state->thread_pointers->min_add_count = STARTING_QUEUE_LENGTH;
 	if(state->pending_thread_count == 0) {
 		state->pending_thread_count = 1;
-	}
-	if( !nqiv_shared_var_init(&state->active_thread_count) ) {
-		fprintf(stderr, "Failed to initialize shared active thread count variable. SDL Error: %s\n", SDL_GetError());
-		return false;
 	}
 	if( !nqiv_cond_init(&state->thread_wakeup_signaler) ) {
 		fprintf(stderr, "Failed to initialize thread wakeup condition variable. SDL Error: %s\n", SDL_GetError());
@@ -1743,12 +1738,19 @@ bool check_cmds(nqiv_state* state)
 	bool locked = false;
 	while(true) {
 		if(!locked) {
-			nqiv_priority_queue_lock(&(state->thread_queue));
-			nqiv_shared_var_lock(&state->active_thread_count);
-			locked = true;
-			assert(state->active_thread_count.data.as_int >= 0);
-			if(state->active_thread_count.data.as_int > 0) {
-				break;
+			/* If we see that the dormant thread count is equal to the total number of threads, there's a good chance all the threads are in the waiting state or immediately before that. This is not a guarantee, since a thread could have just woken up and not altered the count yet. If we can lock the thread queue and find that the count still matches the number of threads, we can guarantee the thread is either waiting on its condition variable or will shortly be waiting on the queue which we just locked, since the dormant count will always be decremented before accessing the thread queue. */
+			const int thread_count = nqiv_array_get_units_count(state->thread_pointers);
+			const int starting_dormant_threads = SDL_AtomicGet(&state->dormant_thread_count);
+			assert(starting_dormant_threads <= thread_count);
+			assert(starting_dormant_threads >= 0);
+			if(starting_dormant_threads == thread_count) {
+				nqiv_priority_queue_lock(&(state->thread_queue));
+				if(starting_dormant_threads == SDL_AtomicGet(&state->dormant_thread_count)){
+					locked = true;
+				} else {
+					nqiv_priority_queue_unlock(&(state->thread_queue));
+					break;
+				}
 			}
 		}
 		const nqiv_op_result op_result = nqiv_cmd_add_stream_line(&state->cmds, stdin, true);
@@ -1765,7 +1767,6 @@ bool check_cmds(nqiv_state* state)
 		}
 	}
 	if(locked) {
-		nqiv_shared_var_unlock(&state->active_thread_count);
 		nqiv_priority_queue_unlock(&(state->thread_queue));
 	}
 	return SDL_AtomicGet(&state->running) != NQIV_FAIL;
@@ -1949,8 +1950,7 @@ void nqiv_run_fail(nqiv_state* state, const char* msg, const int thread_number, 
 
 nqiv_op_result nqiv_run(nqiv_state* state)
 {
-	assert(state->active_thread_count.lock != NULL);
-	nqiv_shared_var_clear(&state->active_thread_count);
+	SDL_AtomicSet(&state->dormant_thread_count, 0);
 	SDL_AtomicSet(&state->thread_event_transaction_group, 1);
 	SDL_AtomicSet(&state->running, NQIV_SUCCESS);
 	nqiv_array_clear(state->thread_pointers);
@@ -1974,7 +1974,7 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 			.queue_bins = standard_event_bins,
 			.event_code = state->thread_event_number,
 			.transaction_group = &state->thread_event_transaction_group,
-			.active_count = &state->active_thread_count,
+			.dormant_count = &state->dormant_thread_count,
 			.running = &state->running
 		};
 		SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Worker", &args);
@@ -2002,7 +2002,7 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 			.queue_bins = this_event_bins,
 			.event_code = state->thread_event_number,
 			.transaction_group = &state->thread_event_transaction_group,
-			.active_count = &state->active_thread_count,
+			.dormant_count = &state->dormant_thread_count,
 			.running = &state->running
 		};
 		SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Specified Worker", &args);

@@ -115,7 +115,7 @@ struct nqiv_state
 	int                  event_timeout;
 	/* Base amount worker threads sleep between updates. */
 	int                  extra_wakeup_delay;
-	nqiv_shared_var      active_thread_count;
+	SDL_atomic_t      dormant_thread_count;
 	/* Used to tell when the display needs to be redrawn. */
 	bool                 render_cleared;
 	/* Is montage mode? Otherwise image mode. */
