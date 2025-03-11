@@ -102,10 +102,11 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state, const int widt
 	memcpy(&original, state, sizeof(nqiv_montage_state));
 	state->dimensions.window_width = width;
 	state->dimensions.window_height = height;
+	const int thumbnail_size = SDL_AtomicGet(&state->images->thumbnail.size);
 	const double raw_width_ratio =
-		(double)(state->images->thumbnail.size) / (double)(state->dimensions.window_width);
+		(double)(thumbnail_size) / (double)(state->dimensions.window_width);
 	const double raw_height_ratio =
-		(double)(state->images->thumbnail.size) / (double)(state->dimensions.window_height);
+		(double)(thumbnail_size) / (double)(state->dimensions.window_height);
 	const double width_ratio = raw_width_ratio >= 1.0 ? 1.0 : raw_width_ratio;
 	const double height_ratio = raw_height_ratio >= 1.0 ? 1.0 : raw_height_ratio;
 	int          count_per_column;
@@ -226,11 +227,12 @@ void nqiv_montage_get_image_rect(nqiv_montage_state* state, const int idx, SDL_R
 	const int native_position = idx - state->positions.start;
 	const int row = native_position / state->dimensions.count_per_row;
 	const int column = native_position % state->dimensions.count_per_row;
+	const int thumbnail_size = SDL_AtomicGet(&state->images->thumbnail.size);
 	rect->x =
-		horizontal_margin_pixels + (column_space_pixels + state->images->thumbnail.size) * column;
-	rect->y = vertical_margin_pixels + (row_space_pixels + state->images->thumbnail.size) * row;
-	rect->w = state->images->thumbnail.size;
-	rect->h = state->images->thumbnail.size;
+		horizontal_margin_pixels + (column_space_pixels + thumbnail_size) * column;
+	rect->y = vertical_margin_pixels + (row_space_pixels + thumbnail_size) * row;
+	rect->w = thumbnail_size;
+	rect->h = thumbnail_size;
 }
 
 int nqiv_montage_find_index_at_point(nqiv_montage_state* state, const int x, const int y)

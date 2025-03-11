@@ -1,6 +1,8 @@
 #include <string.h>
 #include <assert.h>
 
+#include <SDL2/SDL.h>
+
 #include "../src/event.h"
 #include "../src/queue.h"
 #include "../src/state.h"
@@ -377,7 +379,7 @@ void pruner_test_check_instance(const char*          pruner_string,
 	                                THREAD_QUEUE_BIN_COUNT));
 
 	assert(nqiv_image_manager_init(&images, &logger, STARTING_QUEUE_LENGTH));
-	assert(images.thumbnail.size == 256);
+	assert( SDL_AtomicGet(&images.thumbnail.size) == 256 );
 	for(c = image_count; c > 0; --c) {
 		nqiv_image* img;
 		assert(nqiv_image_manager_append(&images, "DEADBEEF"));

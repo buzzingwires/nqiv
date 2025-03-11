@@ -1308,7 +1308,7 @@ void render_and_update(nqiv_state* state, const bool first_render, const bool ha
 
 void nqiv_handle_thumbnail_resize_action(nqiv_state* state, void (*op)(nqiv_image_manager*))
 {
-	const int old_size = state->images.thumbnail.size;
+	const int old_size = SDL_AtomicGet(&state->images.thumbnail.size);
 	op(&state->images);
 	if(!nqiv_image_manager_reattempt_thumbnails(&state->images, old_size)) {
 		SDL_AtomicSet(&state->running, NQIV_FAIL);

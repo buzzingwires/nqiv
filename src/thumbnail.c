@@ -84,17 +84,18 @@ bool nqiv_thumbnail_digest_to_builder(nqiv_array* builder, const nqiv_image* ima
 	return result;
 }
 
-bool nqiv_thumbnail_get_type(const nqiv_image_manager* images,
+bool nqiv_thumbnail_get_type(nqiv_image_manager* images,
                              const bool                failed,
                              nqiv_array*               builder)
 {
+	const int thumbnail_size = SDL_AtomicGet(&images->thumbnail.size);
 	if(failed) {
 		return nqiv_array_push_str(builder, "fail/");
-	} else if(images->thumbnail.size <= 128) {
+	} else if(thumbnail_size <= 128) {
 		return nqiv_array_push_str(builder, "normal/");
-	} else if(images->thumbnail.size <= 256) {
+	} else if(thumbnail_size <= 256) {
 		return nqiv_array_push_str(builder, "large/");
-	} else if(images->thumbnail.size <= 512) {
+	} else if(thumbnail_size <= 512) {
 		return nqiv_array_push_str(builder, "x-large/");
 	} else {
 		return nqiv_array_push_str(builder, "xx-large/");
@@ -104,7 +105,7 @@ bool nqiv_thumbnail_get_type(const nqiv_image_manager* images,
 bool nqiv_thumbnail_create_dirs(nqiv_image_manager* images, const bool failed)
 {
 	assert(images != NULL);
-	assert(images->thumbnail.size > 0);
+	assert( SDL_AtomicGet(&images->thumbnail.size) > 0 );
 	assert(images->thumbnail.root != NULL);
 
 	nqiv_array builder;
@@ -128,7 +129,7 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 {
 	assert(image != NULL);
 	assert(image->parent != NULL);
-	assert(image->parent->thumbnail.size > 0);
+	assert( SDL_AtomicGet(&image->parent->thumbnail.size) > 0 );
 	assert(image->parent->thumbnail.root != NULL);
 
 	char raw_root[PATH_MAX + 1] = {0};
@@ -195,7 +196,8 @@ bool nqiv_thumbnail_create_vips(nqiv_image* image)
 	assert(image->image.path != NULL);
 	assert(image->image.vips != NULL);
 	assert(image->thumbnail.vips == NULL);
-	assert(image->parent->thumbnail.size > 0);
+	const int thumbnail_size = SDL_AtomicGet(&image->parent->thumbnail.size);
+	assert( thumbnail_size > 0 );
 
 	VipsImage* old_vips;
 	VipsImage* thumbnail_vips;
@@ -215,7 +217,7 @@ bool nqiv_thumbnail_create_vips(nqiv_image* image)
 	image->thumbnail.animation.frame = 0;
 	old_vips = thumbnail_vips;
 	if(vips_thumbnail_image(old_vips, &thumbnail_vips,
-	                        nqiv_thumbnail_get_closest_size(image->parent->thumbnail.size), NULL)
+	                        nqiv_thumbnail_get_closest_size(thumbnail_size), NULL)
 	   == -1) {
 		g_object_unref(old_vips);
 		nqiv_log_vips_exception(image->parent->logger, image, &image->image);

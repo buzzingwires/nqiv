@@ -693,7 +693,7 @@ bool nqiv_image_manager_init(nqiv_image_manager* manager,
 	manager->zoom.zoom_out_amount_more = 0.2;
 	manager->zoom.thumbnail_adjust_more = 50;
 
-	manager->thumbnail.size = 256;
+	SDL_AtomicSet(&manager->thumbnail.size, 256);
 
 	manager->default_frame_time = 100;
 
@@ -1155,7 +1155,7 @@ int nqiv_image_manager_get_zoom_percent(nqiv_image_manager* manager)
 
 bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size)
 {
-	if(nqiv_thumbnail_get_closest_size(manager->thumbnail.size)
+	if(nqiv_thumbnail_get_closest_size( SDL_AtomicGet(&manager->thumbnail.size) )
 	   <= nqiv_thumbnail_get_closest_size(old_size)) {
 		return true;
 	}
@@ -1203,13 +1203,14 @@ bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const 
 
 void nqiv_image_manager_increment_thumbnail_size_base(nqiv_image_manager* manager, const int adjust)
 {
-	manager->thumbnail.size += adjust;
+	SDL_AtomicAdd(&manager->thumbnail.size, adjust);
 }
 
 void nqiv_image_manager_decrement_thumbnail_size_base(nqiv_image_manager* manager, const int adjust)
 {
-	const int new_size = manager->thumbnail.size - adjust;
-	manager->thumbnail.size = new_size >= adjust ? new_size : adjust;
+	/* This should not be done by a thread. Only master can modify to guarantee value. */
+	const int new_size = SDL_AtomicGet(&manager->thumbnail.size) - adjust;
+	SDL_AtomicSet(&manager->thumbnail.size, new_size >= adjust ? new_size : adjust);
 }
 
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager)

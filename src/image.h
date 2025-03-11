@@ -118,7 +118,7 @@ typedef struct nqiv_image_manager_thumbnail_settings
 	bool  load;
 	bool  save;
 	/* Dimension of either side. */
-	int   size;
+	SDL_atomic_t size;
 } nqiv_image_manager_thumbnail_settings;
 
 typedef struct nqiv_image_manager_zoom_settings

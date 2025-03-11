@@ -119,8 +119,8 @@ bool nqiv_cmd_parser_set_zoom_scale_mode(nqiv_cmd_manager* manager, nqiv_cmd_arg
 
 bool nqiv_cmd_parser_set_thumbnail_size(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
-	const int old_size = manager->state->images.thumbnail.size;
-	manager->state->images.thumbnail.size = tokens[0].value.as_int;
+	const int old_size = SDL_AtomicGet(&manager->state->images.thumbnail.size);
+	SDL_AtomicSet(&manager->state->images.thumbnail.size, tokens[0].value.as_int);
 	return nqiv_image_manager_reattempt_thumbnails(&manager->state->images, old_size);
 }
 
