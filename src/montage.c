@@ -45,7 +45,7 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 
 	if(state->positions.start != state->positions.end && new_idx >= state->positions.start
 	   && new_idx < state->positions.end
-	   && (state->positions.end == images_len
+	   && ( (state->positions.end == images_len && state->positions.end - state->positions.start <= state->dimensions.count)
 	       || state->positions.end - state->positions.start == state->dimensions.count)) {
 		state->positions.selection = new_idx;
 		return;
