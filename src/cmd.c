@@ -137,7 +137,7 @@ bool nqiv_cmd_parser_set_log_level(nqiv_cmd_manager* manager, nqiv_cmd_arg_token
 {
 	SDL_LockMutex(manager->state->logger.lock);
 	const char data_end = nqiv_cmd_tmpterm(tokens[0].raw, tokens[0].length);
-	manager->state->logger.level = tokens[0].value.as_log_level;
+	SDL_AtomicSet(&manager->state->logger.level, tokens[0].value.as_log_level);
 	nqiv_cmd_tmpret(tokens[0].raw, tokens[0].length, data_end);
 	SDL_UnlockMutex(manager->state->logger.lock);
 	return true;
@@ -646,7 +646,7 @@ void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 void nqiv_cmd_parser_print_log_level(nqiv_cmd_manager* manager)
 {
 	SDL_LockMutex(manager->state->logger.lock);
-	fprintf(stdout, "%s", nqiv_log_level_names[manager->state->logger.level / 10]);
+	fprintf(stdout, "%s", nqiv_log_level_names[SDL_AtomicGet(&manager->state->logger.level) / 10]);
 	SDL_UnlockMutex(manager->state->logger.lock);
 }
 

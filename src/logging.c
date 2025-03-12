@@ -243,13 +243,19 @@ void nqiv_log_write(nqiv_log_ctx* ctx, const nqiv_log_level level, const char* f
 	if(ctx->streams == NULL) {
 		return;
 	}
+	assert(level >= NQIV_LOG_ANY);
+	assert(level <= NQIV_LOG_UNKNOWN);
+	/* Early check so we can leave without locking, which would happen most of the time. There's a second to make sure the level is still valid after locking. */
+	if((int)level < SDL_AtomicGet(&ctx->level)) {
+		return;
+	}
 	SDL_LockMutex(ctx->lock);
 	if(format == NULL) {
 		snprintf(ctx->error_message, NQIV_LOG_ERROR_MESSAGE_LEN, "No format message to write.\n");
 		SDL_UnlockMutex(ctx->lock);
 		return;
 	}
-	if(level < ctx->level) {
+	if((int)level < SDL_AtomicGet(&ctx->level)) {
 		SDL_UnlockMutex(ctx->lock);
 		return;
 	}

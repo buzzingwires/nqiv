@@ -24,12 +24,12 @@ void logging_test_general(void)
 	/* Update set prefix and level use info level */
 	nqiv_log_init(&ctx);
 	int streams_len = ctx.streams->position / (int)sizeof(FILE*);
-	ctx.level = NQIV_LOG_INFO;
+	SDL_AtomicSet(&ctx.level, NQIV_LOG_INFO);
 	assert(ctx.streams != NULL);
 	assert(streams_len == 0);
 	assert(ctx.error_message[0] == '\0');
 	assert(ctx.prefix_format[0] == '\0');
-	assert(ctx.level == NQIV_LOG_INFO);
+	assert(SDL_AtomicGet(&ctx.level) == NQIV_LOG_INFO);
 	nqiv_log_set_prefix_format(&ctx, "LOG###level# #time:%Y-%m-%d %T%z# ");
 	assert(strcmp(ctx.prefix_format, "LOG###level# #time:%Y-%m-%d %T%z# ") == 0);
 
@@ -76,7 +76,7 @@ void logging_test_general(void)
 	nqiv_log_destroy(&ctx);
 	assert(ctx.prefix_format[0] == '\0');
 	assert(ctx.error_message[0] == '\0');
-	assert(ctx.level == NQIV_LOG_ANY);
+	assert(SDL_AtomicGet(&ctx.level) == NQIV_LOG_ANY);
 	assert(ctx.streams == NULL);
 }
 

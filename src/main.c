@@ -398,7 +398,7 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 		return NQIV_FAIL;
 	}
 	nqiv_log_init(&state->logger);
-	state->logger.level = NQIV_LOG_WARNING;
+	SDL_AtomicSet(&state->logger.level, NQIV_LOG_WARNING);
 	if(!nqiv_check_and_print_logger_error(&state->logger)) {
 		return NQIV_FAIL;
 	}

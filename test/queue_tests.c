@@ -18,7 +18,7 @@ void queue_test_default(void)
 	nqiv_log_init(&logger);
 	nqiv_log_set_prefix_format(&logger, "#level# #time:%Y-%m-%d %T%z# ");
 	nqiv_log_add_stream(&logger, stderr);
-	logger.level = NQIV_LOG_ERROR;
+	SDL_AtomicSet(&logger.level, NQIV_LOG_ERROR);
 	assert(!nqiv_log_has_error(&logger));
 
 	assert(nqiv_queue_init(&queue, &logger, sizeof(int), QUEUE_TEST_STANDARD_SIZE));
@@ -50,7 +50,7 @@ void queue_test_priority_default(void)
 	nqiv_log_init(&logger);
 	nqiv_log_set_prefix_format(&logger, "#level# #time:%Y-%m-%d %T%z# ");
 	nqiv_log_add_stream(&logger, stderr);
-	logger.level = NQIV_LOG_ERROR;
+	SDL_AtomicSet(&logger.level, NQIV_LOG_ERROR);
 	assert(!nqiv_log_has_error(&logger));
 
 	assert(nqiv_priority_queue_init(&queue, &logger, sizeof(int), QUEUE_TEST_STANDARD_SIZE - 2,
@@ -111,7 +111,7 @@ void queue_test_priority_pop_bins(void)
 	nqiv_log_init(&logger);
 	nqiv_log_set_prefix_format(&logger, "#level# #time:%Y-%m-%d %T%z# ");
 	nqiv_log_add_stream(&logger, stderr);
-	logger.level = NQIV_LOG_ERROR;
+	SDL_AtomicSet(&logger.level, NQIV_LOG_ERROR);
 	assert(!nqiv_log_has_error(&logger));
 
 	assert(nqiv_priority_queue_init(&queue, &logger, sizeof(int), QUEUE_TEST_STANDARD_SIZE,
@@ -174,7 +174,7 @@ void queue_test_priority_clear(void)
 	nqiv_log_init(&logger);
 	nqiv_log_set_prefix_format(&logger, "#level# #time:%Y-%m-%d %T%z# ");
 	nqiv_log_add_stream(&logger, stderr);
-	logger.level = NQIV_LOG_ERROR;
+	SDL_AtomicSet(&logger.level, NQIV_LOG_ERROR);
 	assert(!nqiv_log_has_error(&logger));
 
 	assert(nqiv_priority_queue_init(&queue, &logger, sizeof(int), QUEUE_TEST_STANDARD_SIZE,

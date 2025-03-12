@@ -54,7 +54,7 @@ typedef struct nqiv_log_ctx
 	SDL_mutex*     lock;
 	char           prefix_format[NQIV_LOG_PREFIX_FORMAT_LEN];
 	char           error_message[NQIV_LOG_ERROR_MESSAGE_LEN];
-	nqiv_log_level level; /* Allow this priority and higher. */
+	SDL_atomic_t   level; /* Allow this priority and higher. */
 	nqiv_array*    streams;
 } nqiv_log_ctx;
 
