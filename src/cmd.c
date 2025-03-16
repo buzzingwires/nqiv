@@ -1621,6 +1621,16 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 	return output;
 }
 
+nqiv_log_level nqiv_cmd_parse_error_status(const nqiv_cmd_manager* manager)
+{
+	return manager->state->cmd_parse_error_quit ? NQIV_LOG_ERROR : NQIV_LOG_WARNING;
+}
+
+nqiv_log_level nqiv_cmd_store_error_status(const nqiv_cmd_manager* manager)
+{
+	return manager->state->cmd_apply_error_quit ? NQIV_LOG_ERROR : NQIV_LOG_WARNING;
+}
+
 bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
                          const nqiv_cmd_node* current_node,
                          const int            start_idx,
@@ -1651,7 +1661,7 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
 	}
 	if(error || nqiv_cmd_scan_not_whitespace(data, idx, eolpos) != -1) {
 		const char eole = nqiv_cmd_tmpterm(data, eolpos);
-		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
+		nqiv_log_write(&manager->state->logger, nqiv_cmd_parse_error_status(manager),
 		               "Cmd error parsing arg token %d for node '%s' with command '%s'.\n", tidx, current_node->name,
 		               data);
 		nqiv_cmd_tmpret(data, eolpos, eole);
@@ -1680,7 +1690,7 @@ bool nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
 	if(!current_node->store_value(manager, tokens)) {
 		char* data = manager->buffer->data;
 		const char eole = nqiv_cmd_tmpterm(data, eolpos);
-		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
+		nqiv_log_write(&manager->state->logger, nqiv_cmd_store_error_status(manager),
 		               "Cmd error storing value for node '%s' with command '%s'.\n", current_node->name,
 					   data);
 		nqiv_cmd_tmpret(data, eolpos, eole);
@@ -1807,7 +1817,7 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 		error = nqiv_cmd_execute_node(manager, current_node, idx, eolpos);
 	} else {
 		const char eole = nqiv_cmd_tmpterm(data, eolpos);
-		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
+		nqiv_log_write(&manager->state->logger, nqiv_cmd_parse_error_status(manager),
 		               "Cmd error finding child for node '%s' with command '%s'.\n", current_node->name,
 		               data);
 		nqiv_cmd_tmpret(data, eolpos, eole);
