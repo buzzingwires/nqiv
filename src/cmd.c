@@ -121,7 +121,12 @@ bool nqiv_cmd_parser_set_thumbnail_size(nqiv_cmd_manager* manager, nqiv_cmd_arg_
 {
 	const int old_size = SDL_AtomicGet(&manager->state->images.thumbnail.size);
 	SDL_AtomicSet(&manager->state->images.thumbnail.size, tokens[0].value.as_int);
-	return nqiv_image_manager_reattempt_thumbnails(&manager->state->images, old_size);
+	if(!nqiv_image_manager_reattempt_thumbnails(&manager->state->images, old_size)) {
+		assert(SDL_AtomicGet(&manager->state->images.thumbnail.size) == tokens[0].value.as_int); /* Nothing else should change this. */
+		SDL_AtomicSet(&manager->state->images.thumbnail.size, old_size);
+		return false;
+	}
+	return true;
 }
 
 bool nqiv_cmd_parser_set_thumbnail_path(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
@@ -297,7 +302,8 @@ bool nqiv_cmd_parser_sendkey(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* toke
 {
 	const nqiv_keybind_pair* pair =
 		&(manager->state->keybinds.simulated_lookup[tokens[0].value.as_key_action]);
-	return nqiv_queue_push(&manager->state->key_actions, &pair) && nqiv_cmd_alert_main(manager);
+	/* This is called from main anyway, so alerting it won't do anything until we're finished here. */
+	return nqiv_cmd_alert_main(manager) && nqiv_queue_push(&manager->state->key_actions, &pair);
 }
 
 void nqiv_cmd_print_indent(const nqiv_cmd_manager* manager)
