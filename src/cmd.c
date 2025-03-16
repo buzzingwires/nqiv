@@ -1630,7 +1630,7 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
 	bool        error = false;
 	int         idx = start_idx;
 	int         tidx = 0;
-	const char* data = manager->buffer->data;
+	char* data = manager->buffer->data;
 
 	while(current_node->args[tidx] != NULL) {
 		assert(tidx < NQIV_CMD_MAX_ARGS);
@@ -1650,7 +1650,11 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
 		++tidx;
 	}
 	if(error || nqiv_cmd_scan_not_whitespace(data, idx, eolpos) != -1) {
-		nqiv_cmd_print_help(manager, current_node, 0);
+		const char eole = nqiv_cmd_tmpterm(data, eolpos);
+		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
+		               "Cmd error parsing arg token %d for node '%s' with command '%s'.\n", tidx, current_node->name,
+		               data);
+		nqiv_cmd_tmpret(data, eolpos, eole);
 		if(manager->state->cmd_parse_error_quit) {
 			nqiv_cmd_force_quit_main(manager);
 			error = true;
@@ -1674,9 +1678,12 @@ bool nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
 	               current_node->name, current_node->description);
 	assert(current_node->store_value != NULL);
 	if(!current_node->store_value(manager, tokens)) {
+		char* data = manager->buffer->data;
+		const char eole = nqiv_cmd_tmpterm(data, eolpos);
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
-		               "Cmd error storing value for %s (%s).\n", current_node->name,
-		               current_node->description);
+		               "Cmd error storing value for node '%s' with command '%s'.\n", current_node->name,
+					   data);
+		nqiv_cmd_tmpret(data, eolpos, eole);
 		if(manager->state->cmd_apply_error_quit) {
 			nqiv_cmd_force_quit_main(manager);
 			return true;
@@ -1799,7 +1806,11 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 	} else if(!error && current_node->store_value != NULL) {
 		error = nqiv_cmd_execute_node(manager, current_node, idx, eolpos);
 	} else {
-		nqiv_cmd_print_help(manager, current_node, 0);
+		const char eole = nqiv_cmd_tmpterm(data, eolpos);
+		nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
+		               "Cmd error finding child for node '%s' with command '%s'.\n", current_node->name,
+		               data);
+		nqiv_cmd_tmpret(data, eolpos, eole);
 		if(error && manager->state->cmd_parse_error_quit) {
 			nqiv_cmd_force_quit_main(manager);
 		} else {
