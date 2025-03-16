@@ -1671,24 +1671,22 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
 		               "Cmd error parsing arg token %d for node '%s' with command '%s'.\n", tidx, current_node->name,
 		               data);
 		nqiv_cmd_tmpret(data, eolpos, eole);
-		if(manager->state->cmd_parse_error_quit) {
-			nqiv_cmd_force_quit_main(manager);
-			error = true;
-		} else {
-			error = false;
-		}
 	}
 	return !error;
 }
 
-bool nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
+nqiv_op_result nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
                            const nqiv_cmd_node* current_node,
                            const int            idx,
                            const int            eolpos)
 {
 	nqiv_cmd_arg_token  tokens[NQIV_CMD_MAX_ARGS] = {0};
 	if(!nqiv_cmd_parse_args(manager, current_node, idx, eolpos, tokens)) {
-		return manager->state->cmd_parse_error_quit;
+		if(manager->state->cmd_parse_error_quit) {
+			nqiv_cmd_force_quit_main(manager);
+			return NQIV_FAIL;
+		}
+		return NQIV_PASS;
 	}
 	nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd storing value for %s (%s).\n",
 	               current_node->name, current_node->description);
@@ -1702,16 +1700,25 @@ bool nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
 		nqiv_cmd_tmpret(data, eolpos, eole);
 		if(manager->state->cmd_apply_error_quit) {
 			nqiv_cmd_force_quit_main(manager);
-			return true;
+			return NQIV_FAIL;
 		}
+		return NQIV_PASS;
 	}
-	return false;
+	return NQIV_SUCCESS;
 }
 
-void nqiv_cmd_acknowledge(const nqiv_cmd_manager* manager, const char* cmd, const Uint64 time)
+void nqiv_cmd_acknowledge(const nqiv_cmd_manager* manager, const char* cmd, const Uint64 time, const nqiv_op_result status)
 {
 	if(manager->state->cmd_acknowledge) {
-		fprintf(stdout, "Executed command '%s' in %" PRIu64 "ms\n", cmd, time);
+		char* status_message = "Successful";
+		if(status == NQIV_PASS) {
+			status_message = "Nonfatal failed";
+		} else if(status == NQIV_FAIL) {
+			status_message = "Fatal failed";
+		} else {
+			assert(status == NQIV_SUCCESS);
+		}
+		fprintf(stdout, "%s command '%s' in %" PRIu64 "ms\n", status_message, cmd, time);
 	}
 }
 
@@ -1723,7 +1730,7 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 	nqiv_array current_cmd_builder;
 	nqiv_array_inherit(&current_cmd_builder, current_cmd, sizeof(char),
 	                   NQIV_CMD_DUMPCFG_BUFFER_LENGTH);
-	bool  error = false;
+	nqiv_op_result status = NQIV_SUCCESS;
 	bool  help = false;
 	int   help_levels = 0;
 	bool  dumpcfg = false;
@@ -1809,36 +1816,38 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 		}
 		if(!found_node) {
 			/* We haven't found the child node and there are no arguments, either. */
-			error = current_node->args == NULL;
+			assert(status == NQIV_SUCCESS);
+			if(current_node->args == NULL || help || dumpcfg) {
+				status = manager->state->cmd_parse_error_quit ? NQIV_FAIL : NQIV_PASS;
+			}
 			break;
 		}
 	}
 	assert(current_node->store_value == NULL || current_node->args != NULL);
 	manager->print_settings.current_node = current_node;
-	if(dumpcfg && !error) {
+	if(dumpcfg && status == NQIV_SUCCESS) {
 		nqiv_cmd_dumpcfg(manager, current_node, true, current_cmd);
-	} else if(help) {
+	} else if(help && status == NQIV_SUCCESS) {
 		nqiv_cmd_print_help(manager, current_node, help_levels);
-	} else if(!error && current_node->store_value != NULL) {
-		error = nqiv_cmd_execute_node(manager, current_node, idx, eolpos);
+	} else if(status == NQIV_SUCCESS && current_node->store_value != NULL) {
+		status = nqiv_cmd_execute_node(manager, current_node, idx, eolpos);
 	} else {
 		const char eole = nqiv_cmd_tmpterm(data, eolpos);
 		nqiv_log_write(&manager->state->logger, nqiv_cmd_parse_error_status(manager),
 		               "Cmd error finding child for node '%s' with command '%s'.\n", current_node->name,
 		               data);
 		nqiv_cmd_tmpret(data, eolpos, eole);
-		if(error && manager->state->cmd_parse_error_quit) {
+		assert(status != NQIV_SUCCESS);
+		if(status == NQIV_FAIL) {
 			nqiv_cmd_force_quit_main(manager);
-		} else {
-			error = false;
 		}
 	}
 	const char eola = nqiv_cmd_tmpterm(data, eolpos);
-	nqiv_cmd_acknowledge(manager, data, SDL_GetTicks64() - cmd_start_ticks);
+	nqiv_cmd_acknowledge(manager, data, SDL_GetTicks64() - cmd_start_ticks, status);
 	nqiv_cmd_tmpret(data, eolpos, eola);
 	nqiv_array_remove_count(manager->buffer, 0, eolpos + 1);
 	assert(current_cmd_success);
-	return !error;
+	return status != NQIV_FAIL;
 }
 
 bool nqiv_cmd_parse(nqiv_cmd_manager* manager)
@@ -1933,7 +1942,7 @@ bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream)
 			break;
 		}
 	}
-	nqiv_cmd_acknowledge(manager, "STREAM", SDL_GetTicks64() - stream_time);
+	nqiv_cmd_acknowledge(manager, "STREAM", SDL_GetTicks64() - stream_time, result);
 	return result == NQIV_FAIL ? false : true;
 }
 
