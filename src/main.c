@@ -335,7 +335,7 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* de
 	};
 	int idx;
 	for(idx = 0; cmds[idx] != NULL; ++idx) {
-		if(!nqiv_cmd_add_line_and_parse(&state->cmds, cmds[idx])) {
+		if(!nqiv_cmd_add_cmd_and_parse(&state->cmds, cmds[idx])) {
 			return false;
 		}
 	}
@@ -512,7 +512,7 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 			state->cmd_read_stdin = true;
 			break;
 		case 'c':
-			success = success && nqiv_cmd_add_line_and_parse(&state->cmds, options.optarg);
+			success = success && nqiv_cmd_add_cmd_and_parse(&state->cmds, options.optarg);
 			break;
 		case 'B':
 			success = success && nqiv_load_builtin_config(state, argv[0], NULL);
@@ -1753,7 +1753,7 @@ bool check_cmds(nqiv_state* state)
 				}
 			}
 		}
-		const nqiv_op_result op_result = nqiv_cmd_add_stream_line(&state->cmds, stdin, true);
+		const nqiv_op_result op_result = nqiv_cmd_add_stream_cmd(&state->cmds, stdin, true);
 		if(op_result == NQIV_FAIL) {
 			SDL_AtomicSet(&state->running, NQIV_FAIL);
 			break;

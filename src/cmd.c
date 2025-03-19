@@ -993,16 +993,13 @@ int nqiv_cmd_scan_not_whitespace(const char* data, const int start, const int en
 	return -1;
 }
 
-int nqiv_cmd_scan_eol(const char* data, const int start, const int end)
+int nqiv_cmd_scan_whitespace_and_eol(const char* data,
+                                         const int   start,
+                                         const int   end)
 {
 	int bidx;
 	for(bidx = start; bidx < end; ++bidx) {
-		if(bidx < end - 1) {
-			if((data[bidx] == '\r' && data[bidx + 1] == '\n') || (data[bidx] == '\n' && data[bidx + 1] == '\r')) {
-				return bidx;
-			}
-		}
-		if(data[bidx] == '\r' || data[bidx] == '\n') {
+		if(data[bidx] == ' ' || data[bidx] == '\t' || data[bidx] == '\r' || data[bidx] == '\n') {
 			return bidx;
 		}
 	}
@@ -1360,7 +1357,6 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
                              nqiv_cmd_arg_token*  token)
 {
 	char*                    mutdata = manager->buffer->data;
-	const char               data_end = nqiv_cmd_tmpterm(mutdata, eolpos);
 	int                      output = -1;
 	char*                    mutdata_start = mutdata + start_idx;
 	const char*              data = mutdata_start;
@@ -1601,7 +1597,7 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd checking spaceless arg at %d for token %s for input %s\n", tidx,
 			               current_node->name, data);
-			const int length = nqiv_cmd_scan_whitespace(data, 0, eolpos - start_idx);
+			const int length = nqiv_cmd_scan_whitespace_and_eol(data, 0, eolpos - start_idx);
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd spaceless string at %d for token %s for input %s\n", tidx,
 			               current_node->name, data);
@@ -1623,7 +1619,6 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 		token->raw = mutdata_start;
 		token->length = output;
 	}
-	nqiv_cmd_tmpret(mutdata, eolpos, data_end);
 	return output;
 }
 
@@ -1666,11 +1661,9 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
 		++tidx;
 	}
 	if(error || nqiv_cmd_scan_not_whitespace(data, idx, eolpos) != -1) {
-		const char eole = nqiv_cmd_tmpterm(data, eolpos);
 		nqiv_log_write(&manager->state->logger, nqiv_cmd_parse_error_status(manager),
 		               "Cmd error parsing arg token %d for node '%s' with command '%s'.\n", tidx, current_node->name,
 		               data);
-		nqiv_cmd_tmpret(data, eolpos, eole);
 	}
 	return !error;
 }
@@ -1693,11 +1686,9 @@ nqiv_op_result nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
 	assert(current_node->store_value != NULL);
 	if(!current_node->store_value(manager, tokens)) {
 		char* data = manager->buffer->data;
-		const char eole = nqiv_cmd_tmpterm(data, eolpos);
 		nqiv_log_write(&manager->state->logger, nqiv_cmd_store_error_status(manager),
 		               "Cmd error storing value for node '%s' with command '%s'.\n", current_node->name,
 					   data);
-		nqiv_cmd_tmpret(data, eolpos, eole);
 		if(manager->state->cmd_apply_error_quit) {
 			nqiv_cmd_force_quit_main(manager);
 			return NQIV_FAIL;
@@ -1710,7 +1701,7 @@ nqiv_op_result nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
 void nqiv_cmd_acknowledge(const nqiv_cmd_manager* manager, const char* cmd, const Uint64 time, const nqiv_op_result status)
 {
 	if(manager->state->cmd_acknowledge) {
-		char* status_message = "Successful";
+		const char* status_message = "Successful";
 		if(status == NQIV_PASS) {
 			status_message = "Nonfatal failed";
 		} else if(status == NQIV_FAIL) {
@@ -1722,8 +1713,9 @@ void nqiv_cmd_acknowledge(const nqiv_cmd_manager* manager, const char* cmd, cons
 	}
 }
 
-bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
+bool nqiv_cmd_parse(nqiv_cmd_manager* manager)
 {
+	assert(!manager->print_settings.in_escape);
 	memset(&manager->print_settings, 0, sizeof(nqiv_cmd_manager_print_settings));
 	char       current_cmd[NQIV_CMD_DUMPCFG_BUFFER_LENGTH + 1] = {0};
 	bool       current_cmd_success = true;
@@ -1735,27 +1727,23 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 	int   help_levels = 0;
 	bool  dumpcfg = false;
 	char* data = manager->buffer->data;
-	int   idx = nqiv_cmd_scan_not_whitespace_and_eol(data, 0, manager->buffer->position);
+	/* Assume we always have a valid line when this is called. We parse up to the NUL */
+	const int eolpos = nqiv_array_get_units_count(manager->buffer) - 1;
+	assert(manager->buffer->position == eolpos + 1);
+	assert(data[eolpos] == '\0');
+	int   idx = nqiv_cmd_scan_not_whitespace_and_eol(data, 0, eolpos);
 	if(idx == -1) {
 		nqiv_array_clear(manager->buffer);
 		return true; /* The entire string must be whitespace- nothing to do. */
 	}
-	const int eolpos = nqiv_cmd_scan_eol(data, idx, manager->buffer->position);
-	if(eolpos == -1) {
-		return true; /* We don't have an EOL yet. Nothing to do. */
-	}
 	if(data[idx] == '#') {
-		const char eolc = nqiv_cmd_tmpterm(data, eolpos);
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd skipping input %s\n",
 		               data + idx);
-		nqiv_cmd_tmpret(data, eolpos, eolc);
-		nqiv_array_remove_count(manager->buffer, 0, eolpos);
+		nqiv_array_remove_count(manager->buffer, 0, eolpos + 1);
 		return true; /* This line is a comment- ignore it. */
 	}
 	const Uint64 cmd_start_ticks = SDL_GetTicks64();
-	const char   eolc = nqiv_cmd_tmpterm(data, eolpos);
 	nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd parsing input %s\n", data + idx);
-	nqiv_cmd_tmpret(data, eolpos, eolc);
 
 	if(strncmp(&data[idx], "helptree", strlen("helptree")) == 0) {
 	    idx += strlen("helptree");
@@ -1784,11 +1772,9 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 		bool           found_node = false;
 		nqiv_cmd_node* child = current_node->child;
 		while(child != NULL) {
-			const char tmp = nqiv_cmd_tmpterm(data, eolpos);
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd checking token %s child %s for input %s\n", current_node->name,
 			               child->name, data + idx);
-			nqiv_cmd_tmpret(data, eolpos, tmp);
 			int data_end = nqiv_cmd_scan_whitespace(data, idx, eolpos);
 			if(data_end == -1 || data_end > eolpos) {
 				data_end = eolpos;
@@ -1804,11 +1790,9 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 				current_cmd_success =
 					current_cmd_success && nqiv_array_push_str(&current_cmd_builder, " ");
 				if(current_node->deprecated) {
-					const char eolcd = nqiv_cmd_tmpterm(data, eolpos);
 					nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
 					               "Node '%s' deprecated for input %s\n", current_node->name,
 					               data + idx);
-					nqiv_cmd_tmpret(data, eolpos, eolcd);
 				}
 				break;
 			}
@@ -1832,48 +1816,74 @@ bool nqiv_cmd_parse_line(nqiv_cmd_manager* manager)
 	} else if(status == NQIV_SUCCESS && current_node->store_value != NULL) {
 		status = nqiv_cmd_execute_node(manager, current_node, idx, eolpos);
 	} else {
-		const char eole = nqiv_cmd_tmpterm(data, eolpos);
 		nqiv_log_write(&manager->state->logger, nqiv_cmd_parse_error_status(manager),
 		               "Cmd error finding child for node '%s' with command '%s'.\n", current_node->name,
 		               data);
-		nqiv_cmd_tmpret(data, eolpos, eole);
 		assert(status != NQIV_SUCCESS);
 		if(status == NQIV_FAIL) {
 			nqiv_cmd_force_quit_main(manager);
 		}
 	}
-	const char eola = nqiv_cmd_tmpterm(data, eolpos);
 	nqiv_cmd_acknowledge(manager, data, SDL_GetTicks64() - cmd_start_ticks, status);
-	nqiv_cmd_tmpret(data, eolpos, eola);
 	nqiv_array_remove_count(manager->buffer, 0, eolpos + 1);
+	assert(nqiv_array_get_units_count(manager->buffer) == 0);
 	assert(current_cmd_success);
 	return status != NQIV_FAIL;
 }
 
-bool nqiv_cmd_parse(nqiv_cmd_manager* manager)
-{
-	while(nqiv_cmd_scan_eol(manager->buffer->data, 0, manager->buffer->position) != -1) {
-		if(!nqiv_cmd_parse_line(manager)) {
-			return false;
-		}
-	}
-	return true;
-}
-
 bool nqiv_cmd_add_byte(nqiv_cmd_manager* manager, const char byte)
 {
-	if(!nqiv_array_push(manager->buffer, &byte)) {
+	assert(byte != '\0');
+	char to_add = byte;
+	if(manager->print_settings.in_escape) {
+		if(to_add == 'n') {
+			to_add = '\n';
+		} else if(to_add == 'r') {
+			to_add = '\r';
+		} else if(to_add != '\\') {
+			nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
+			               "Cannot append invalid escaped character \\%c to nqiv command parser of length %d/%d.\n", to_add,
+			               manager->buffer->position, manager->buffer->data_length);
+			return false;
+		}
+		manager->print_settings.in_escape = false;
+	} else if(to_add == '\\') {
+		manager->print_settings.in_escape = true;
+	}
+	if(!manager->print_settings.in_escape && !nqiv_array_push(manager->buffer, &to_add)) {
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
-		               "Failed to append byte %c to nqiv command parser of length %d.\n", byte,
-		               manager->buffer->data_length);
+		               "Failed to append byte %c to nqiv command parser of length %d/%d.\n", to_add,
+		               manager->buffer->position, manager->buffer->data_length);
 		nqiv_cmd_force_quit_main(manager);
 		return false;
 	}
 	return true;
 }
 
-bool nqiv_cmd_add_string(nqiv_cmd_manager* manager, const char* str)
+bool nqiv_cmd_finish_cmd(nqiv_cmd_manager* manager)
 {
+	if(manager->print_settings.in_escape) {
+		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
+		               "Finished adding command but with unfinished escape for nqiv command parser of length %d/%d.\n",
+		               manager->buffer->position, manager->buffer->data_length);
+		nqiv_array_clear(manager->buffer);
+		return !manager->state->cmd_parse_error_quit;
+	}
+	const char end_nul = '\0';
+	if(!nqiv_array_push(manager->buffer, &end_nul)) {
+		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
+		               "Failed to append terminator byte to nqiv command parser of length %d/%d.\n",
+		               manager->buffer->position, manager->buffer->data_length);
+		nqiv_cmd_force_quit_main(manager);
+		return false;
+	}
+	return true;
+}
+
+bool nqiv_cmd_add_cmd(nqiv_cmd_manager* manager, const char* str)
+{
+	assert(nqiv_array_get_units_count(manager->buffer) == 0);
+	assert(!manager->print_settings.in_escape);
 	int idx = 0;
 	while(str[idx] != '\0') {
 		if(!nqiv_cmd_add_byte(manager, str[idx])) {
@@ -1881,21 +1891,16 @@ bool nqiv_cmd_add_string(nqiv_cmd_manager* manager, const char* str)
 		}
 		++idx;
 	}
-	return true;
+	return nqiv_cmd_finish_cmd(manager);
 }
 
-bool nqiv_cmd_add_line(nqiv_cmd_manager* manager, const char* str)
+bool nqiv_cmd_add_cmd_and_parse(nqiv_cmd_manager* manager, const char* str)
 {
-	return nqiv_cmd_add_string(manager, str) && nqiv_cmd_add_byte(manager, '\n');
-}
-
-bool nqiv_cmd_add_line_and_parse(nqiv_cmd_manager* manager, const char* str)
-{
-	return nqiv_cmd_add_line(manager, str) && nqiv_cmd_parse(manager);
+	return nqiv_cmd_add_cmd(manager, str) && nqiv_cmd_parse(manager);
 }
 
 nqiv_op_result
-nqiv_cmd_add_stream_line(nqiv_cmd_manager* manager, FILE* stream, const bool nonblocking)
+nqiv_cmd_add_stream_cmd(nqiv_cmd_manager* manager, FILE* stream, const bool nonblocking)
 {
 	while(true) {
 		int c = -1;
@@ -1920,27 +1925,38 @@ nqiv_cmd_add_stream_line(nqiv_cmd_manager* manager, FILE* stream, const bool non
 			}
 		}
 		assert(c != -1);
+		if(c == '\r' || c == '\n') {
+			return nqiv_cmd_finish_cmd(manager) ? NQIV_SUCCESS : NQIV_FAIL;
+		}
 		if(!nqiv_cmd_add_byte(manager, (char)c)) {
 			return NQIV_FAIL;
-		}
-		if(c == '\r' || c == '\n') {
-			return NQIV_SUCCESS;
 		}
 	}
 }
 
 bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream)
 {
+	assert(nqiv_array_get_units_count(manager->buffer) == 0);
+	assert(!manager->print_settings.in_escape);
 	const Uint64   stream_time = SDL_GetTicks64();
 	nqiv_op_result result = NQIV_SUCCESS;
 	while(result == NQIV_SUCCESS) {
-		result = nqiv_cmd_add_stream_line(manager, stream, false);
+		result = nqiv_cmd_add_stream_cmd(manager, stream, false);
 		if(result == NQIV_PASS || result == NQIV_FAIL) {
 			break;
 		} else if(!nqiv_cmd_parse(manager)) {
 			result = NQIV_FAIL;
 			break;
 		}
+	}
+	if(result != NQIV_FAIL && nqiv_array_get_units_count(manager->buffer) != 0) {
+		nqiv_log_write(&manager->state->logger, nqiv_cmd_parse_error_status(manager),
+		               "Unparsed data at end of stream with nqiv command parser of length  %d/%d.\n",
+		               manager->buffer->position, manager->buffer->data_length);
+		if(manager->state->cmd_parse_error_quit) {
+			result = NQIV_FAIL;
+		}
+		nqiv_array_clear(manager->buffer);
 	}
 	nqiv_cmd_acknowledge(manager, "STREAM", SDL_GetTicks64() - stream_time, result);
 	return result == NQIV_FAIL ? false : true;

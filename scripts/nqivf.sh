@@ -60,17 +60,20 @@ check_file()
 
 populate_file()
 {
-	L_TARGETS="$1"
-	L_DEPTH="$2"
-	L_EXTENSIONS="$3"
-	L_FILTER="$4"
-	L_SORT="$5"
-	L_FILELIST_PATH="$6"
+	local L_TARGETS="$1"
+	local L_DEPTH="$2"
+	local L_EXTENSIONS="$3"
+	local L_FILTER="$4"
+	local L_SORT="$5"
+	local L_POST_SORT="$6"
+	local L_FILELIST_PATH="$7"
 
-	eval find $L_TARGETS "$L_DEPTH" "$L_EXTENSIONS" "$L_FILTER" -type f -printf "%T@\\\t%f\\\t%p\\\n" \
+	eval find $L_TARGETS "$L_DEPTH" "$L_EXTENSIONS" "$L_FILTER" -type f -printf "%T@//%f//%p\\\0" \
 	| eval "$L_SORT" \
-	| sed --quiet --posix --sandbox -E -e 's/^.+\t.+\t(.+)$/append image \1/' -e 'p' \
-	> "$l_filelist_path"
+	| sed --null-data --quiet --posix --sandbox -E -e 's/\\/\\\\/g' -e 's/\n/\\n/g' -e 's/\r/\\r/g' -e 's/^[0-9]+\.[0-9]+\/\/[^/]+\/\/(\/.+)$/append image \1/' -e 'p' \
+	| eval "$L_POST_SORT" \
+	| tr '\0' '\n' \
+	> "$L_FILELIST_PATH"
 }
 
 run_nqiv()
@@ -79,11 +82,12 @@ run_nqiv()
 	local L_TARGETS="$1"
 	local L_DEPTH="$2"
 	local L_SORT="$3"
-	local L_EXTENSIONS="$4"
-	local L_FILTER="$5"
-	local L_PASSTHROUGH_ARGS="$6"
-	local L_COMMAND_LIST="$7"
-	local L_QUIT="$8"
+	local L_POST_SORT="$4"
+	local L_EXTENSIONS="$5"
+	local L_FILTER="$6"
+	local L_PASSTHROUGH_ARGS="$7"
+	local L_COMMAND_LIST="$8"
+	local L_QUIT="$9"
 
 	# Create file list
 	local l_filelist_create="mkfifo"
@@ -124,9 +128,9 @@ run_nqiv()
 	# Populate file list
 	if [ -n "$l_async" ]
 	then
-		populate_file "$L_TARGETS" "$L_DEPTH" "$L_EXTENSIONS" "$L_FILTER" "$L_SORT" "$l_filelist_path" &
+		populate_file "$L_TARGETS" "$L_DEPTH" "$L_EXTENSIONS" "$L_FILTER" "$L_SORT" "$L_POST_SORT" "$l_filelist_path" &
 	else
-		populate_file "$L_TARGETS" "$L_DEPTH" "$L_EXTENSIONS" "$L_FILTER" "$L_SORT" "$l_filelist_path"
+		populate_file "$L_TARGETS" "$L_DEPTH" "$L_EXTENSIONS" "$L_FILTER" "$L_SORT" "$L_POST_SORT" "$l_filelist_path"
 	fi
 
 	# Actually run nqiv
@@ -171,14 +175,14 @@ prepare_args()
 {
 	for a in "$@"
 	do
-		echo -n "$a" | sed --quiet --posix --sandbox -E                \
-													 -e 's/\\/\\\\\\/' \
-													 -e 's/"/\"/'      \
-													 -e 's/\$/\\$/'      \
-													 -e 's/`/\`/'      \
-													 -e 's/^/\"/'      \
-													 -e 's/$/\" /'     \
-													 -e 'p'
+		realpath --zero "$a" | sed --null-data --quiet --posix --sandbox -E                \
+																		 -e 's/\\/\\\\/' \
+																		 -e 's/"/\\"/'      \
+																		 -e 's/\$/\\$/'      \
+																		 -e 's/`/\\`/'      \
+																		 -e 's/^/\"/'      \
+																		 -e 's/$/\" /'     \
+																		 -e 'p'
 	done
 }
 
@@ -193,8 +197,8 @@ main()
 	local a_reverse_sort=""
 	local a_reverse_reversed_sort="-r"
 	local a_reverse_natural=""
-	local a_sort_base="| sort --version-sort --stable --field-separator '	' --key"
-	local a_name_sort_key="2"
+	local a_sort_base="| sort --zero-terminated --version-sort --stable --field-separator '/' --key 3"
+	local a_post_sort="cat"
 	local a_passthrough_args=""
 	local a_command_list=""
 	local a_quit=""
@@ -222,7 +226,7 @@ main()
 			a_filter="$(append_filter "$a_filter" "$OPTARG")"
 			;;
 		't')
-			a_time_sort="| sort --general-numeric-sort --stable --key 1 --field-separator '	'"
+			a_time_sort="| sort --zero-terminated --general-numeric-sort --stable --key 1 --field-separator '/'"
 			;;
 		'S')
 			a_ignore_sort_case=""
@@ -230,10 +234,10 @@ main()
 		'R')
 			a_reverse_sort="-r"
 			a_reverse_reversed_sort=""
-			a_reverse_natural="| sed --quiet --posix --sandbox -e '1!G;h;\$!d' -e 'p'"
+			a_reverse_natural="| sed --null-data --quiet --posix --sandbox -e '1!G;h;\$!d' -e 'p'"
 			;;
 		'p')
-			a_name_sort_key="3"
+			a_post_sort="| sort --zero-terminated --version-sort --stable"
 			;;
 		'n')
 			a_sort_base=""
@@ -268,7 +272,6 @@ main()
 	if [ -n "$a_sort_base" ]
 	then
 		l_sort="$(append_with_space "$l_sort" "$a_sort_base")"
-		l_sort="$(append_with_space "$l_sort" "$a_name_sort_key")"
 		l_sort="$(append_with_space "$l_sort" "$a_ignore_sort_case")"
 		l_sort="$(append_with_space "$l_sort" "$a_reverse_sort")"
 	else
@@ -281,16 +284,25 @@ main()
 		l_sort="$(append_with_space "$l_sort" "$a_reverse_reversed_sort")"
 	fi
 
+	l_post_sort="cat"
+	if [ -n "$a_post_sort" ]
+	then
+		l_sort="$(append_with_space "$l_post_sort" "$a_post_sort")"
+		l_sort="$(append_with_space "$l_post_sort" "$a_ignore_sort_case")"
+		l_sort="$(append_with_space "$l_post_sort" "$a_reverse_sort")"
+	fi
+
 	a_extensions="$(append_with_space "$a_extensions" "\\)")"
 
-	local l_targets="."
+	local l_targets=
+	l_targets="$(realpath --zero '.')"
 	if [ $# -gt 0 ]
 	then
 		l_targets="$(prepare_args "$@")"
 	fi
 
 	#echo "$l_sort"
-	run_nqiv "$l_targets" "$a_depth" "$l_sort" "$a_extensions" "$a_filter" "$a_passthrough_args" "$a_command_list" "$a_quit"
+	run_nqiv "$l_targets" "$a_depth" "$l_sort" "$a_post_sort" "$a_extensions" "$a_filter" "$a_passthrough_args" "$a_command_list" "$a_quit"
 
 	return 0
 }
