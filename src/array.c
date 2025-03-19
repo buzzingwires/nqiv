@@ -191,6 +191,20 @@ bool nqiv_array_push(nqiv_array* array, const void* ptr)
 	return nqiv_array_push_count(array, ptr, 1);
 }
 
+bool nqiv_array_push_byte(nqiv_array* array, const char byte)
+{
+	assert(array->unit_length == sizeof(char));
+	if(!nqiv_array_make_room(array, 1)) {
+		return false;
+	}
+	char* data = array->data;
+	data[array->position] = byte;
+	array->position += array->unit_length;
+	assert(array->position <= array->data_length);
+	assert(array->max_data_length <= 0 || array->data_length <= array->max_data_length);
+	return true;
+}
+
 bool nqiv_array_push_str_count(nqiv_array* array, const char* ptr, const int count)
 {
 	assert((size_t)array->unit_length == sizeof(char));

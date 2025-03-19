@@ -213,6 +213,7 @@ test_set* create_tests(void)
 	T("array_test_default", array_test_default);
 	T("array_test_inherit", array_test_inherit);
 	T("array_test_strbuild", array_test_strbuild);
+	T("array_test_push_byte", array_test_push_byte);
 
 	S("queue");
 	T("queue_test_default", queue_test_default);

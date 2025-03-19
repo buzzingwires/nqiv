@@ -57,6 +57,7 @@ void nqiv_array_remove_count(nqiv_array* array, const int idx, const int count);
 void nqiv_array_remove(nqiv_array* array, const int idx);
 bool nqiv_array_push_count(nqiv_array* array, const void* ptr, const int count);
 bool nqiv_array_push(nqiv_array* array, const void* ptr);
+bool nqiv_array_push_byte(nqiv_array* array, const char byte);
 
 /* Push a specific number of characters. Unit length must be of a char. */
 bool nqiv_array_push_str_count(nqiv_array* array, const char* ptr, const int count);

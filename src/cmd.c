@@ -1850,7 +1850,7 @@ bool nqiv_cmd_add_byte(nqiv_cmd_manager* manager, const char byte)
 	} else if(to_add == '\\') {
 		manager->print_settings.in_escape = true;
 	}
-	if(!manager->print_settings.in_escape && !nqiv_array_push(manager->buffer, &to_add)) {
+	if(!manager->print_settings.in_escape && !nqiv_array_push_byte(manager->buffer, to_add)) {
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
 		               "Failed to append byte %c to nqiv command parser of length %d/%d.\n", to_add,
 		               manager->buffer->position, manager->buffer->data_length);
