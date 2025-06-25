@@ -395,36 +395,34 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 			g_object_unref(used_vips);
 		}
 		used_vips = new_vips;
-	} else {
-		if(band_format != VIPS_FORMAT_UCHAR) {
-			if(vips_cast(used_vips, &new_vips, VIPS_FORMAT_UCHAR, "shift", TRUE, NULL) == -1) {
-				if(used_vips != form->vips) {
-					g_object_unref(used_vips);
-				}
-				nqiv_log_vips_exception(image->parent->logger, image, form);
-				form->error = true;
-				return false;
-			}
+	} else if(interpretation != VIPS_INTERPRETATION_sRGB) {
+		if(vips_colourspace(used_vips, &new_vips, VIPS_INTERPRETATION_sRGB, NULL) == -1) {
 			if(used_vips != form->vips) {
 				g_object_unref(used_vips);
 			}
-			used_vips = new_vips;
+			nqiv_log_vips_exception(image->parent->logger, image, form);
+			form->error = true;
+			return false;
 		}
+		if(used_vips != form->vips) {
+			g_object_unref(used_vips);
+		}
+		used_vips = new_vips;
+	}
 
-		if(interpretation != VIPS_INTERPRETATION_RGB && interpretation != VIPS_INTERPRETATION_sRGB) {
-			if(vips_colourspace(used_vips, &new_vips, VIPS_INTERPRETATION_sRGB, NULL) == -1) {
-				if(used_vips != form->vips) {
-					g_object_unref(used_vips);
-				}
-				nqiv_log_vips_exception(image->parent->logger, image, form);
-				form->error = true;
-				return false;
-			}
+	if(band_format != VIPS_FORMAT_UCHAR) {
+		if(vips_cast(used_vips, &new_vips, VIPS_FORMAT_UCHAR, "shift", TRUE, NULL) == -1) {
 			if(used_vips != form->vips) {
 				g_object_unref(used_vips);
 			}
-			used_vips = new_vips;
+			nqiv_log_vips_exception(image->parent->logger, image, form);
+			form->error = true;
+			return false;
 		}
+		if(used_vips != form->vips) {
+			g_object_unref(used_vips);
+		}
+		used_vips = new_vips;
 	}
 
 	if(!vips_image_hasalpha(used_vips)) {
