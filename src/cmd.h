@@ -43,8 +43,8 @@
 /* Used to build the full name of a command from nodes. */
 #define NQIV_CMD_DUMPCFG_BUFFER_LENGTH 1024
 /* Buffer length for unprocessed commands. */
-#define NQIV_CMD_READ_BUFFER_LENGTH     131072
-#define NQIV_CMD_READ_BUFFER_LENGTH_MAX 1048576
+#define NQIV_CMD_READ_BUFFER_LENGTH     10240
+#define NQIV_CMD_READ_BUFFER_LENGTH_MAX 10240
 /* Sane floating point values. */
 #define NQIV_CMD_ARG_FLOAT_MIN 0.001
 #define NQIV_CMD_ARG_FLOAT_MAX 100.0
