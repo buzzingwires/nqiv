@@ -1319,7 +1319,7 @@ void nqiv_handle_thumbnail_resize_action(nqiv_state* state, void (*op)(nqiv_imag
 void nqiv_mark_op(nqiv_state* state, nqiv_image* image, const bool value)
 {
 	image->marked = value;
-	nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", image->marked ? "Unm" : "M",
+	nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", image->marked ? "M" : "Unm",
 	               image->image.path);
 	render_and_update(state, false, false);
 }
@@ -1620,7 +1620,11 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 			               "Received nqiv action image clear marked.\n");
 			int iidx;
 			for(iidx = 0; iidx < images_count; ++iidx) {
-				nqiv_mark_op(state, images[iidx], false);
+				if(images[iidx]->marked) {
+					images[iidx]->marked = false;
+					nqiv_log_write(&state->logger, NQIV_LOG_INFO, "Unmarked %s\n",
+					               images[iidx]->image.path);
+				}
 			}
 			render_and_update(state, false, false);
 		} else if(pair->action == NQIV_KEY_ACTION_MARKED_PREVIOUS) {
