@@ -34,9 +34,13 @@
  *
  * Command example:
  *
- * set      color  background 0             0            0            255 BRANCH
- * BRANCH LEAF       UINT8(0-255)  UINT8(0-255) UINT8(0-255) UINT8(0-255)
  */
+/* clang-format off */
+/*
+ * set      color  background 0             0            0            255
+ * BRANCH   BRANCH LEAF       UINT8(0-255)  UINT8(0-255) UINT8(0-255) UINT8(0-255)
+ */
+/* clang-format on */
 
 /* Max number of args for a cmd */
 #define NQIV_CMD_MAX_ARGS 8

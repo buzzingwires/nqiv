@@ -279,7 +279,6 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
                       SDL_atomic_t*     dormant_count,
                       SDL_atomic_t*     running)
 {
-	/* Stagger events by their thread num to prevent stampeding herd problems. */
 	int events_processed = 0;
 	while(SDL_AtomicGet(running) == NQIV_SUCCESS) {
 		nqiv_event event = {0};
@@ -341,9 +340,9 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 									!nqiv_thumbnail_create(image)
 									&& image->thumbnail.thumbnail_load_failed;
 							}
+						} else {
 							/* Otherwise, load the image vips and create the thumbnail from scratch.
 							 */
-						} else {
 							if(image->image.vips == NULL) {
 								if(nqiv_image_load_vips(image, &image->image)) {
 									image->thumbnail.thumbnail_load_failed =

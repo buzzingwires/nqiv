@@ -156,14 +156,14 @@ void nqiv_pruner_run_set(nqiv_pruner*              pruner,
 
 void nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqiv_image* image)
 {
-	/* CHeck loaded self, pruner, datapoint, void ptr */
-	/* CHeck loaded ahead, pruner, datapoint ( param 1 (point to start counting), param 2 (max
+	/* Check loaded self, pruner, datapoint, void ptr */
+	/* Check loaded ahead, pruner, datapoint ( param 1 (point to start counting), param 2 (max
 	 * count) ), void ptr */
-	/* CHeck loaded ahead, pruner, datapoint ( param 1 (point to start counting), param 2 (max
+	/* Check loaded ahead, pruner, datapoint ( param 1 (point to start counting), param 2 (max
 	 * count) ), void ptr */
-	/* CHeck bytes ahead, pruner, form (param), datapoint ( param 1 (point to start counting), param
+	/* Check bytes ahead, pruner, form (param), datapoint ( param 1 (point to start counting), param
 	 * 2 (max count) ), void ptr */
-	/* CHeck bytes behind, pruner, form (param), datapoint ( param 1 (point to start counting),
+	/* Check bytes behind, pruner, form (param), datapoint ( param 1 (point to start counting),
 	 * param 2 (max count) ), void ptr */
 	nqiv_pruner_run_set(pruner, &(desc->vips_set), &image->image, image->image.vips,
 	                    image->image.effective_width * image->image.effective_height * 4);
@@ -572,8 +572,8 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling image\n");
 				inside_image = true;
 			}
-			/* Determine which data we are working on. */
 		} else if(nqiv_pruner_check_token(text, idx, end, "vips")) {
+			/* Determine which data we are working on. */
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'vips' at %s\n", &text[idx]);
 			idx += strlen("vips");
 			assert(!inside_unload || set == NULL);
@@ -722,8 +722,8 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 			               "Unload still enabled while parsing checks and comparisons at %s\n",
 			               &text[idx]);
 			return false;
-			/* Determine which checks to run. */
 		} else if(nqiv_pruner_check_token(text, idx, end, "sum")) {
+			/* Determine which checks to run. */
 			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'sum' at %s\n", &text[idx]);
 			idx += strlen("sum");
 			if(inside_no) {
@@ -772,8 +772,8 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 									  : &desc->thumbnail_vips_set.not_animated,
 				nqiv_pruner_set_true);
 			inside_no = false;
-			/* After this point, we need a data to run checks. */
 		} else if(set == NULL) {
+			/* After this point, we need a data to run checks. */
 			nqiv_log_write(logger, NQIV_LOG_ERROR,
 			               "Failed to continue with unknown set target from %s\n", &text[idx]);
 			return false;

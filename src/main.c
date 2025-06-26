@@ -739,11 +739,11 @@ bool render_from_form(nqiv_state*     state,
 				                   &tmp_dstrect)) {
 					return false;
 				}
-				/* Don't clear display if we're just drawing the loading indicator. */
 			} else if(state->show_loading_indicator
 			          && !render_texture(&clearedtmp, dstrect, state,
 			                             state->texture_montage_unloaded_background, NULL,
 			                             tmp_dstrect_ptr)) {
+				/* Don't clear display if we're just drawing the loading indicator. */
 				return false;
 			}
 			if(selected && is_montage) {
@@ -819,21 +819,21 @@ bool render_from_form(nqiv_state*     state,
 			}
 			/* Make sure to use entirety of this. */
 			srcrect_ptr = NULL;
-			/* No need to reload? Just prepare to resize entire image to manipulate. */
 		} else {
-			/* If dimension changed or unavailable, unload texture and prepare to resize whole
-			 * thing. */
+			/* No need to reload? Just prepare to resize entire image to manipulate. */
 			if((form->srcrect.x != 0 || form->srcrect.y != 0 || form->srcrect.w != form->width
 			    || form->srcrect.h != form->height)
 			   || form->effective_height == 0 || form->effective_width == 0) {
+				/* If dimension changed or unavailable, unload texture and prepare to resize whole
+				 * thing. */
 				resample_zoom = true;
 				nqiv_unload_image_form_texture(form);
 				form->srcrect.x = 0;
 				form->srcrect.y = 0;
 				form->srcrect.w = form->width;
 				form->srcrect.h = form->height;
-				/* Otherwise, use what we have. */
 			} else {
+				/* Otherwise, use what we have. */
 				srcrect.x = 0;
 				srcrect.y = 0;
 				srcrect.w = form->effective_width;
@@ -897,8 +897,8 @@ bool render_from_form(nqiv_state*     state,
 					nqiv_image_unlock(image);
 					return false;
 				}
-				/* An 'ephemeral' thumbnail is generated from the image file, but not saved. */
 			} else {
+				/* An 'ephemeral' thumbnail is generated from the image file, but not saved. */
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 				               "Generating ephemeral thumbnail for image.\n");
 				nqiv_event event = {0};
@@ -916,8 +916,8 @@ bool render_from_form(nqiv_state*     state,
 					return false;
 				}
 			}
-			/* If we can't recover, just show the error background. */
 		} else {
+			/* If we can't recover, just show the error background. */
 			if(dstrect != NULL) {
 				state->is_loading = false;
 			}
@@ -927,16 +927,15 @@ bool render_from_form(nqiv_state*     state,
 				return false;
 			}
 		}
-		/* No error */
 	} else {
+		/* No error */
 		assert(!resample_zoom || form->texture == NULL);
-		/* If we have a texture and don't need to render the next frame, do nothing. */
 		if(form->texture != NULL && ((first_frame || state->first_frame_pending) || !form->animation.frame_rendered)) {
-			/* NOOP */
-			/* Use the surface we have to make a texture, no need to resample or grab the next
-			 * frame. */
+			/* If we have a texture and don't need to render the next frame, do nothing. */
 		} else if(form->surface != NULL && !resample_zoom
 		          && (is_montage || !(first_frame) || !form->animation.exists || dstrect == NULL)) {
+			/* Use the surface we have to make a texture, no need to resample or grab the next
+			 * frame. */
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading texture for image %s\n",
 			               image->image.path);
 			form->texture = SDL_CreateTextureFromSurface(state->renderer, form->surface);
@@ -949,8 +948,8 @@ bool render_from_form(nqiv_state*     state,
 				nqiv_image_unlock(image);
 				return false;
 			}
-			/* Otherwise, we set the loading indicator where relevant and start sending events. */
 		} else {
+			/* Otherwise, we set the loading indicator where relevant and start sending events. */
 			if(first_frame || state->first_frame_pending || hard || resample_zoom) {
 				if(dstrect != NULL) {
 					state->is_loading = true;
