@@ -101,6 +101,7 @@ int32_t nqiv_stdin_agetc(void)
 	#include <errno.h>
 	#include <sys/types.h>
 	#include <sys/stat.h>
+	#include <unistd.h>
 	#include <poll.h>
 char* nqiv_realpath(const char* path, char* resolved_path)
 {

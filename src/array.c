@@ -132,7 +132,7 @@ bool nqiv_array_insert_count(nqiv_array* array, const void* ptr, const int idx, 
 	const int next_offset = offset + add_length;
 	assert(array->position >= offset);
 	char* data = array->data;
-	memcpy(&data[next_offset], &data[offset], array->position - offset);
+	memmove(&data[next_offset], &data[offset], array->position - offset);
 	memcpy(&data[offset], ptr, add_length);
 	array->position += add_length;
 	assert(array->position <= array->data_length);
@@ -157,7 +157,7 @@ void nqiv_array_remove_count(nqiv_array* array, const int idx, const int count)
 	const int next_offset = offset + remove_length;
 	char*     data = array->data;
 	if(next_offset < array->position) {
-		memcpy(&data[offset], &data[next_offset], array->position - next_offset);
+		memmove(&data[offset], &data[next_offset], array->position - next_offset);
 	}
 	array->position -= remove_length;
 	memset(&data[array->position], 0, remove_length);

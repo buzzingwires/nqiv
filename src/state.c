@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "state.h"
 #include "drawing.h"
 
@@ -85,7 +87,8 @@ bool nqiv_add_logger_path(nqiv_state* state, const char* path)
 		fclose(stream);
 		return false;
 	}
-	strcpy(persistent_path, path);
+	strncpy(persistent_path, path, strlen(path));
+	assert(strcmp(persistent_path, path) == 0);
 	if(!nqiv_array_push(state->logger_stream_names, &persistent_path)) {
 		free(persistent_path);
 		fclose(stream);

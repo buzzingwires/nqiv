@@ -2040,30 +2040,34 @@ nqiv_cmd_node* nqiv_cmd_make_base_node(bool*                     status,
                                        const nqiv_cmd_arg_desc** args)
 {
 	const size_t node_size = sizeof(nqiv_cmd_node);
+	const size_t node_pad = 8 - (node_size % 8);
 	const size_t name_size = (strlen(name) + 1) * sizeof(char);
 	const size_t name_pad = 8 - (name_size % 8);
 	const size_t description_size = (strlen(description) + 1) * sizeof(char);
+	const size_t description_pad = 8 - (description_size % 8);
 	assert(name_size >= 2 * sizeof(char));
 	assert(description_size >= 2 * sizeof(char));
 	const size_t args_size =
 		args != NULL ? nqiv_cmd_get_args_list_length(args) * sizeof(nqiv_cmd_arg_desc*) : 0;
 	nqiv_cmd_node* node =
-		(nqiv_cmd_node*)calloc(1, node_size + name_size + name_pad + description_size + args_size);
+		(nqiv_cmd_node*)calloc(1, node_size + node_pad + name_size + name_pad + description_size + description_pad + args_size);
 	if(node == NULL) {
 		*status = *status && false;
 		return NULL;
 	}
-	node->name = ((char*)node) + node_size;
+	node->name = ((char*)node) + node_size + node_pad;
+	assert((ptrdiff_t)(node->name - (char*)node) % 8 == 0);
 	node->description = node->name + name_size + name_pad;
-	assert((name_size + name_pad) % 8 == 0);
+	assert((ptrdiff_t)(node->description - (char*)node) % 8 == 0);
 	if(args_size > 0) {
-		node->args = (nqiv_cmd_arg_desc**)(node->description + description_size);
+		node->args = (nqiv_cmd_arg_desc**)(node->description + description_size + description_pad);
+		assert((ptrdiff_t)((char*)(node->args) - (char*)node) % 8 == 0);
 		memcpy(node->args, args, args_size);
 	}
-	strcpy(node->name, name);
+	strncpy(node->name, name, strlen(name));
 	assert(node->name[strlen(name)] == '\0');
 	assert(strcmp(node->name, name) == 0);
-	strcpy(node->description, description);
+	strncpy(node->description, description, strlen(description));
 	assert(node->description[strlen(description)] == '\0');
 	assert(strcmp(node->description, description) == 0);
 	assert(node->args == NULL || node->args[nqiv_cmd_get_args_list_length(args) - 1] == NULL);

@@ -5,7 +5,7 @@ Developing nqiv
   - [Dependencies](#dependencies)
   - [Make Targets](#make-targets)
   - [Platform Notes](#platform-notes)
-    + [FreeBSD](#freebsd)
+    + [FreeBSD/OpenBSD](#freebsd)
     + [Windows (Cross Compiling)](#windows-cross-compiling)
     + [Linux (AppImage)](#linux-appimage)
 * [Contributing](#contributing)
@@ -46,9 +46,9 @@ It is recommended to also check `./configure --help`. Note that `CFLAGS` set fro
 
 ### Platform Notes ###
 
-#### FreeBSD ####
+#### FreeBSD/OpenBSD ####
 
-FreeBSD will require `./configure --enable-no-jemalloc` because it already uses jemalloc as its default allocator.
+FreeBSD and OpenBSD will require `./configure --enable-no-jemalloc` because the former already uses jemalloc as its default allocator, and the latter doesn't support the allocator.
 
 #### Windows (Cross-Compiling) ####
 
