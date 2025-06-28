@@ -32,18 +32,15 @@ bool nqiv_chmod(const char* filename, uint16_t mode)
 }
 int32_t nqiv_stdin_agetc(void)
 {
-	fprintf(stderr, "Reading stdin\n");
     HANDLE stdin_handle = GetStdHandle(STD_INPUT_HANDLE);
 	const DWORD stdin_type = GetFileType(stdin_handle);
 	if(stdin_type == FILE_TYPE_CHAR) {
-		fprintf(stderr, "Reading console\n");
 		/* Keep reading records until we run out or find one. */
 		while(true) {
 			const DWORD wait_result = WaitForSingleObject(stdin_handle, 0);
 			if(wait_result == WAIT_TIMEOUT) {
 				return 0;
 			} else if(wait_result == WAIT_OBJECT_0) {
-				fprintf(stderr, "Found object\n");
 				INPUT_RECORD records[1];
 				DWORD records_read;
 				if(!ReadConsoleInput(stdin_handle, records, 1, &records_read)) {
@@ -51,17 +48,14 @@ int32_t nqiv_stdin_agetc(void)
 				} else if(records_read == 0) {
 					return 0;
 				} else {
-					fprintf(stderr, "Found records\n");
 					DWORD i;
 					for (i = 0; i < records_read; ++i) {
 						if(records[i].EventType == KEY_EVENT && !records[i].Event.KeyEvent.bKeyDown) {
-							fprintf(stderr, "Found key event\n");
 							char output_bytes[4] = {0};
 							uint32_t output = 0;
 							if(!WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS | WC_ERR_INVALID_CHARS, &(records[i].Event.KeyEvent.uChar.UnicodeChar), 1, output_bytes, 4, NULL, NULL)) {
 								return -1;
 							} else {
-								fprintf(stderr, "Parsed wchar 1 %x 2 %x 3 %x 4 %x 1234 %x\n", output_bytes[0], output_bytes[1], output_bytes[2], output_bytes[3], output);
 								output |= output_bytes[0];
 								output |= (((uint8_t)(output_bytes[1])) << 8);
 								output |= (((uint8_t)(output_bytes[2])) << 16);
@@ -76,19 +70,16 @@ int32_t nqiv_stdin_agetc(void)
 			}
 		}
 	} else if(stdin_type == FILE_TYPE_PIPE || stdin_type == FILE_TYPE_DISK) {
-		fprintf(stderr, "Reading pipe or file\n");
 		char output_char;
 		DWORD output_read;
 		const DWORD wait_result = WaitForSingleObject(stdin_handle, 0);
 		if(wait_result == WAIT_TIMEOUT) {
 			return 0;
 		} else if(wait_result == WAIT_OBJECT_0) {
-			fprintf(stderr, "Found chars\n");
 			if(ReadFile(stdin_handle, &output_char, 1, &output_read, NULL)) {
 				if(output_read > 0) {
 					uint32_t output = 0;
 					output |= (uint8_t)output_char;
-					fprintf(stderr, "Parsed chars 1234 %x\n", output);
 					return (int32_t)output;
 				} else {
 					return 0;
