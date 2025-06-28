@@ -257,7 +257,7 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* de
 		"set log prefix #level# #time:%Y-%m-%d %T%z# ",
 		thumbnail_cmd,
 		"append log stream stderr",
-		"append keybind Q=quit",
+		"append keybind shift+Q=quit",
 		"append keybind Home=allow_on_down+deny_on_up+montage_start",
 		"append keybind End=allow_on_down+deny_on_up+montage_end",
 		"append keybind PageUp=allow_on_down+deny_on_up+page_up",

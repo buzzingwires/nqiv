@@ -4,6 +4,8 @@ nqiv Changelog
 Unreleased
 ----------
 
+* The default keybind to quit nqiv is now `shift+Q` instead of just `Q` to reduce the likelihood of it accidentally being pressed.
+
 * nqivf.sh -p is now handled before -t, so time sorting still takes priority.
 
 * nqivf.sh now follows symlinks
