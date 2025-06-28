@@ -669,49 +669,49 @@ void nqiv_cmd_parser_print_log_prefix(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_alpha_background_color_one(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%hhu %hhu %hhu %hhu", manager->state->alpha_checker_color_one.r,
+	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->alpha_checker_color_one.r,
 	        manager->state->alpha_checker_color_one.g, manager->state->alpha_checker_color_one.b,
 	        manager->state->alpha_checker_color_one.a);
 }
 
 void nqiv_cmd_parser_print_alpha_background_color_two(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%hhu %hhu %hhu %hhu", manager->state->alpha_checker_color_two.r,
+	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->alpha_checker_color_two.r,
 	        manager->state->alpha_checker_color_two.g, manager->state->alpha_checker_color_two.b,
 	        manager->state->alpha_checker_color_two.a);
 }
 
 void nqiv_cmd_parser_print_background_color(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%hhu %hhu %hhu %hhu", manager->state->background_color.r,
+	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->background_color.r,
 	        manager->state->background_color.g, manager->state->background_color.b,
 	        manager->state->background_color.a);
 }
 
 void nqiv_cmd_parser_print_error_color(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%hhu %hhu %hhu %hhu", manager->state->error_color.r,
+	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->error_color.r,
 	        manager->state->error_color.g, manager->state->error_color.b,
 	        manager->state->error_color.a);
 }
 
 void nqiv_cmd_parser_print_loading_color(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%hhu %hhu %hhu %hhu", manager->state->loading_color.r,
+	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->loading_color.r,
 	        manager->state->loading_color.g, manager->state->loading_color.b,
 	        manager->state->loading_color.a);
 }
 
 void nqiv_cmd_parser_print_selection_color(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%hhu %hhu %hhu %hhu", manager->state->selection_color.r,
+	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->selection_color.r,
 	        manager->state->selection_color.g, manager->state->selection_color.b,
 	        manager->state->selection_color.a);
 }
 
 void nqiv_cmd_parser_print_mark_color(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%hhu %hhu %hhu %hhu", manager->state->mark_color.r,
+	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->mark_color.r,
 	        manager->state->mark_color.g, manager->state->mark_color.b,
 	        manager->state->mark_color.a);
 }
@@ -1900,12 +1900,12 @@ bool nqiv_cmd_add_cmd_and_parse(nqiv_cmd_manager* manager, const char* str)
 }
 
 nqiv_op_result
-nqiv_cmd_add_stream_cmd(nqiv_cmd_manager* manager, FILE* stream, const bool nonblocking)
+nqiv_cmd_add_stream_cmd(nqiv_cmd_manager* manager, FILE* stream)
 {
 	while(true) {
-		int c = -1;
-		if(nonblocking) {
-			c = nqiv_agetc(stream);
+		int32_t c = -1;
+		if(stream == stdin) {
+			c = nqiv_stdin_agetc();
 			if(c == -1) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
 				               "Error reading config stream.\n");
@@ -1928,8 +1928,12 @@ nqiv_cmd_add_stream_cmd(nqiv_cmd_manager* manager, FILE* stream, const bool nonb
 		if(c == '\r' || c == '\n') {
 			return nqiv_cmd_finish_cmd(manager) ? NQIV_SUCCESS : NQIV_FAIL;
 		}
-		if(!nqiv_cmd_add_byte(manager, (char)c)) {
-			return NQIV_FAIL;
+		uint32_t cbytes = (uint32_t)c;
+		while(cbytes != 0) {
+			if(!nqiv_cmd_add_byte(manager, (char)(cbytes & 0xff))) {
+				return NQIV_FAIL;
+			}
+			cbytes >>= 8;
 		}
 	}
 }
@@ -1941,7 +1945,7 @@ bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream)
 	const Uint64   stream_time = SDL_GetTicks64();
 	nqiv_op_result result = NQIV_SUCCESS;
 	while(result == NQIV_SUCCESS) {
-		result = nqiv_cmd_add_stream_cmd(manager, stream, false);
+		result = nqiv_cmd_add_stream_cmd(manager, stream);
 		if(result == NQIV_PASS || result == NQIV_FAIL) {
 			break;
 		} else if(!nqiv_cmd_parse(manager)) {

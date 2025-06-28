@@ -1756,7 +1756,7 @@ bool check_cmds(nqiv_state* state)
 				}
 			}
 		}
-		const nqiv_op_result op_result = nqiv_cmd_add_stream_cmd(&state->cmds, stdin, true);
+		const nqiv_op_result op_result = nqiv_cmd_add_stream_cmd(&state->cmds, stdin);
 		if(op_result == NQIV_FAIL) {
 			SDL_AtomicSet(&state->running, NQIV_FAIL);
 			break;

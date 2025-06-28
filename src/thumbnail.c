@@ -263,7 +263,9 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	char mtime_string[NQIV_MTIME_STRLEN + 1] = {0};
 	snprintf(mtime_string, NQIV_MTIME_STRLEN, "%" PRIuMAX, (uintmax_t)stat_data.mtime);
 	char size_string[NQIV_SIZE_STRLEN + 1] = {0};
-	snprintf(size_string, NQIV_SIZE_STRLEN, "%zu", stat_data.size);
+	/* TODO We cast to uintmax_t to workaround MinGW not handling %zu. Hopefully some day we can avoid this. */
+	/*snprintf(size_string, NQIV_SIZE_STRLEN, "%zu", stat_data.size);*/
+	snprintf(size_string, NQIV_SIZE_STRLEN, "%" PRIuMAX, (uintmax_t)stat_data.size);
 	char width_string[NQIV_DIMENSION_STRLEN + 1] = {0};
 	snprintf(width_string, NQIV_DIMENSION_STRLEN, "%d", image->image.width);
 	char height_string[NQIV_DIMENSION_STRLEN + 1] = {0};

@@ -187,7 +187,7 @@ bool nqiv_cmd_alert_main(nqiv_cmd_manager* manager);
 
 bool nqiv_cmd_add_cmd_and_parse(nqiv_cmd_manager* manager, const char* str);
 nqiv_op_result
-	 nqiv_cmd_add_stream_cmd(nqiv_cmd_manager* manager, FILE* stream, const bool nonblocking);
+	 nqiv_cmd_add_stream_cmd(nqiv_cmd_manager* manager, FILE* stream);
 bool nqiv_cmd_parse(nqiv_cmd_manager* manager);
 bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream);
 bool nqiv_cmd_consume_stream_from_path(nqiv_cmd_manager* manager, const char* path);
