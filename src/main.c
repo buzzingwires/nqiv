@@ -60,9 +60,13 @@ void nqiv_close_log_streams(nqiv_state* state)
 	char** nameptrs = state->logger_stream_names->data;
 	int    idx;
 	for(idx = 0; idx < streams_len; ++idx) {
-		fclose(fileptrs[idx]);
+		if(fileptrs[idx] != stdout && fileptrs[idx] != stderr) {
+			fclose(fileptrs[idx]);
+		}
 		free(nameptrs[idx]);
 	}
+	nqiv_array_clear(state->logger.streams);
+	nqiv_array_clear(state->logger_stream_names);
 }
 
 void nqiv_state_clear(nqiv_state* state)

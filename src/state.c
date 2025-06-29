@@ -84,20 +84,26 @@ bool nqiv_add_logger_path(nqiv_state* state, const char* path)
 	}
 	char* persistent_path = (char*)calloc(1, strlen(path) + 1);
 	if(persistent_path == NULL) {
-		fclose(stream);
+		if(stream != stdout && stream != stderr) {
+			fclose(stream);
+		}
 		return false;
 	}
 	strncpy(persistent_path, path, strlen(path));
 	assert(strcmp(persistent_path, path) == 0);
 	if(!nqiv_array_push(state->logger_stream_names, &persistent_path)) {
 		free(persistent_path);
-		fclose(stream);
+		if(stream != stdout && stream != stderr) {
+			fclose(stream);
+		}
 		return false;
 	}
 	nqiv_log_add_stream(&state->logger, stream);
 	if(!nqiv_check_and_print_logger_error(&state->logger)) {
 		nqiv_array_pop(state->logger_stream_names, NULL);
-		fclose(stream);
+		if(stream != stdout && stream != stderr) {
+			fclose(stream);
+		}
 		free(persistent_path);
 		return false;
 	}
