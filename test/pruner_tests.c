@@ -379,7 +379,7 @@ void pruner_test_check_instance(const char*          pruner_string,
 	                                THREAD_QUEUE_BIN_COUNT));
 
 	assert(nqiv_image_manager_init(&images, &logger, STARTING_QUEUE_LENGTH));
-	assert( SDL_AtomicGet(&images.thumbnail.size) == 256 );
+	assert(SDL_AtomicGet(&images.thumbnail.size) == 256);
 	for(c = image_count; c > 0; --c) {
 		nqiv_image* img;
 		assert(nqiv_image_manager_append(&images, "DEADBEEF"));
@@ -635,8 +635,8 @@ void pruner_test_toggle(void)
 	pruner_test_string_simplification(
 		&logger,
 		"texture self_opened surface self_opened vips self_opened raw self_opened texture no "
-	    "self_opened surface no self_opened texture no self_opened vips no self_opened raw no "
-	    "self_opened",
+		"self_opened surface no self_opened texture no self_opened vips no self_opened raw no "
+		"self_opened",
 		"");
 	pruner_test_string_simplification(&logger,
 	                                  "image thumbnail unload vips raw surface texture hard",

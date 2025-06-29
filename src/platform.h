@@ -56,25 +56,25 @@ typedef struct nqiv_stat_data
 	time_t mtime;
 } nqiv_stat_data;
 
-char* nqiv_realpath(const char* path, char* resolved_path);
-bool  nqiv_stat(const char* path, nqiv_stat_data* data);
-bool  nqiv_mkdir(char* path);
-bool  nqiv_chmod(const char* filename, uint16_t mode);
-bool  nqiv_get_default_cfg(char* output, const int length);
-bool  nqiv_get_default_cfg_thumbnail_dir(char* output, const int length);
-void  nqiv_suggest_cfg_setup(const char* exe);
+char*   nqiv_realpath(const char* path, char* resolved_path);
+bool    nqiv_stat(const char* path, nqiv_stat_data* data);
+bool    nqiv_mkdir(char* path);
+bool    nqiv_chmod(const char* filename, uint16_t mode);
+bool    nqiv_get_default_cfg(char* output, const int length);
+bool    nqiv_get_default_cfg_thumbnail_dir(char* output, const int length);
+void    nqiv_suggest_cfg_setup(const char* exe);
 /* Output asserted to 0 to INT_MAX */
-int   nqiv_strlen(const char* str);
+int     nqiv_strlen(const char* str);
 /* Works like strtol but with a regular int. */
-int   nqiv_strtoi(const char* str, char** endptr, int base);
+int     nqiv_strtoi(const char* str, char** endptr, int base);
 /* Simple pointer arithmetic with result asserted to be within an 0 to INT_MAX */
-int   nqiv_ptrdiff(const void* a, const void* b);
+int     nqiv_ptrdiff(const void* a, const void* b);
 /* Get realpath and expand starting tilde to user directory. */
-bool  nqiv_expand_path(char* output, const int length, const char* input);
+bool    nqiv_expand_path(char* output, const int length, const char* input);
 /* Expand a path, open it, and return its file object. */
-FILE* nqiv_fopen(const char* filename, const char* mode);
+FILE*   nqiv_fopen(const char* filename, const char* mode);
 /* Grab a character from stdin without blocking. If there are none, return 0, return -1
  * on error. */
-int32_t   nqiv_stdin_agetc(void);
+int32_t nqiv_stdin_agetc(void);
 
 #endif /* NQIV_PLATFORM_H */

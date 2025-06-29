@@ -146,7 +146,7 @@ typedef struct nqiv_cmd_manager_print_settings
 	bool           dumpcfg;
 	char*          prefix;
 	nqiv_cmd_node* current_node;
-	bool in_escape; /* Are we currently waiting for an escape sequence? */
+	bool           in_escape; /* Are we currently waiting for an escape sequence? */
 } nqiv_cmd_manager_print_settings;
 
 struct nqiv_cmd_manager
@@ -185,14 +185,13 @@ struct nqiv_cmd_node
 /* Send an SDL event to main to update based on config parsing. */
 bool nqiv_cmd_alert_main(nqiv_cmd_manager* manager);
 
-bool nqiv_cmd_add_cmd_and_parse(nqiv_cmd_manager* manager, const char* str);
-nqiv_op_result
-	 nqiv_cmd_add_stream_cmd(nqiv_cmd_manager* manager, FILE* stream);
-bool nqiv_cmd_parse(nqiv_cmd_manager* manager);
-bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream);
-bool nqiv_cmd_consume_stream_from_path(nqiv_cmd_manager* manager, const char* path);
-void nqiv_cmd_manager_destroy(nqiv_cmd_manager* manager);
-bool nqiv_cmd_manager_init(nqiv_cmd_manager* manager, nqiv_state* state);
+bool           nqiv_cmd_add_cmd_and_parse(nqiv_cmd_manager* manager, const char* str);
+nqiv_op_result nqiv_cmd_add_stream_cmd(nqiv_cmd_manager* manager, FILE* stream);
+bool           nqiv_cmd_parse(nqiv_cmd_manager* manager);
+bool           nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream);
+bool           nqiv_cmd_consume_stream_from_path(nqiv_cmd_manager* manager, const char* path);
+void           nqiv_cmd_manager_destroy(nqiv_cmd_manager* manager);
+bool           nqiv_cmd_manager_init(nqiv_cmd_manager* manager, nqiv_state* state);
 
 /* Just helper functions that see use elsewhere. */
 int nqiv_cmd_scan_not_whitespace(const char* data, const int start, const int end);

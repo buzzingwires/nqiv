@@ -245,7 +245,8 @@ void nqiv_log_write(nqiv_log_ctx* ctx, const nqiv_log_level level, const char* f
 	}
 	assert(level >= NQIV_LOG_ANY);
 	assert(level <= NQIV_LOG_UNKNOWN);
-	/* Early check so we can leave without locking, which would happen most of the time. There's a second to make sure the level is still valid after locking. */
+	/* Early check so we can leave without locking, which would happen most of the time. There's a
+	 * second to make sure the level is still valid after locking. */
 	if((int)level < SDL_AtomicGet(&ctx->level)) {
 		return;
 	}

@@ -26,8 +26,8 @@ bool nqiv_cmd_alert_main(nqiv_cmd_manager* manager)
 	e.user.code = (Sint32)manager->state->cfg_event_number;
 	if(SDL_PushEvent(&e) < 0) {
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
-		               "Failed to send SDL event from thread %lu. SDL Error: %s\n",
-		               SDL_ThreadID(), SDL_GetError());
+		               "Failed to send SDL event from thread %lu. SDL Error: %s\n", SDL_ThreadID(),
+		               SDL_GetError());
 		return false;
 	}
 	return true;
@@ -70,7 +70,7 @@ bool nqiv_cmd_parser_set_thread_count(nqiv_cmd_manager* manager, nqiv_cmd_arg_to
 	return true;
 }
 
-bool nqiv_cmd_parser_set_thread_event_interval(nqiv_cmd_manager*    manager,
+bool nqiv_cmd_parser_set_thread_event_interval(nqiv_cmd_manager*   manager,
                                                nqiv_cmd_arg_token* tokens)
 {
 	nqiv_cmd_set_and_flag_new_int(&(manager->state->thread_event_interval), tokens[0].value.as_int,
@@ -122,7 +122,8 @@ bool nqiv_cmd_parser_set_thumbnail_size(nqiv_cmd_manager* manager, nqiv_cmd_arg_
 	const int old_size = SDL_AtomicGet(&manager->state->images.thumbnail.size);
 	SDL_AtomicSet(&manager->state->images.thumbnail.size, tokens[0].value.as_int);
 	if(!nqiv_image_manager_reattempt_thumbnails(&manager->state->images, old_size)) {
-		assert(SDL_AtomicGet(&manager->state->images.thumbnail.size) == tokens[0].value.as_int); /* Nothing else should change this. */
+		assert(SDL_AtomicGet(&manager->state->images.thumbnail.size)
+		       == tokens[0].value.as_int); /* Nothing else should change this. */
 		SDL_AtomicSet(&manager->state->images.thumbnail.size, old_size);
 		return false;
 	}
@@ -158,11 +159,11 @@ bool nqiv_cmd_parser_set_log_prefix(nqiv_cmd_manager* manager, nqiv_cmd_arg_toke
 	return true;
 }
 
-bool nqiv_cmd_parser_apply_color(nqiv_cmd_manager*    manager,
+bool nqiv_cmd_parser_apply_color(nqiv_cmd_manager*   manager,
                                  nqiv_cmd_arg_token* tokens,
-                                 SDL_Color*           color,
-                                 const char*          error_message,
-                                 bool                 apply(nqiv_state* state))
+                                 SDL_Color*          color,
+                                 const char*         error_message,
+                                 bool                apply(nqiv_state* state))
 {
 	SDL_Color tmp;
 	memcpy(&tmp, color, sizeof(SDL_Color));
@@ -179,7 +180,7 @@ bool nqiv_cmd_parser_apply_color(nqiv_cmd_manager*    manager,
 	return true;
 }
 
-bool nqiv_cmd_parser_set_alpha_background_color_one(nqiv_cmd_manager*    manager,
+bool nqiv_cmd_parser_set_alpha_background_color_one(nqiv_cmd_manager*   manager,
                                                     nqiv_cmd_arg_token* tokens)
 {
 	return nqiv_cmd_parser_apply_color(manager, tokens, &manager->state->alpha_checker_color_one,
@@ -187,7 +188,7 @@ bool nqiv_cmd_parser_set_alpha_background_color_one(nqiv_cmd_manager*    manager
 	                                   nqiv_state_recreate_all_alpha_background_textures);
 }
 
-bool nqiv_cmd_parser_set_alpha_background_color_two(nqiv_cmd_manager*    manager,
+bool nqiv_cmd_parser_set_alpha_background_color_two(nqiv_cmd_manager*   manager,
                                                     nqiv_cmd_arg_token* tokens)
 {
 	return nqiv_cmd_parser_apply_color(manager, tokens, &manager->state->alpha_checker_color_two,
@@ -302,7 +303,8 @@ bool nqiv_cmd_parser_sendkey(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* toke
 {
 	const nqiv_keybind_pair* pair =
 		&(manager->state->keybinds.simulated_lookup[tokens[0].value.as_key_action]);
-	/* This is called from main anyway, so alerting it won't do anything until we're finished here. */
+	/* This is called from main anyway, so alerting it won't do anything until we're finished here.
+	 */
 	return nqiv_cmd_alert_main(manager) && nqiv_queue_push(&manager->state->key_actions, &pair);
 }
 
@@ -669,16 +671,16 @@ void nqiv_cmd_parser_print_log_prefix(nqiv_cmd_manager* manager)
 
 void nqiv_cmd_parser_print_alpha_background_color_one(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->alpha_checker_color_one.r,
-	        manager->state->alpha_checker_color_one.g, manager->state->alpha_checker_color_one.b,
-	        manager->state->alpha_checker_color_one.a);
+	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8,
+	        manager->state->alpha_checker_color_one.r, manager->state->alpha_checker_color_one.g,
+	        manager->state->alpha_checker_color_one.b, manager->state->alpha_checker_color_one.a);
 }
 
 void nqiv_cmd_parser_print_alpha_background_color_two(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->alpha_checker_color_two.r,
-	        manager->state->alpha_checker_color_two.g, manager->state->alpha_checker_color_two.b,
-	        manager->state->alpha_checker_color_two.a);
+	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8,
+	        manager->state->alpha_checker_color_two.r, manager->state->alpha_checker_color_two.g,
+	        manager->state->alpha_checker_color_two.b, manager->state->alpha_checker_color_two.a);
 }
 
 void nqiv_cmd_parser_print_background_color(nqiv_cmd_manager* manager)
@@ -993,9 +995,7 @@ int nqiv_cmd_scan_not_whitespace(const char* data, const int start, const int en
 	return -1;
 }
 
-int nqiv_cmd_scan_whitespace_and_eol(const char* data,
-                                         const int   start,
-                                         const int   end)
+int nqiv_cmd_scan_whitespace_and_eol(const char* data, const int start, const int end)
 {
 	int bidx;
 	for(bidx = start; bidx < end; ++bidx) {
@@ -1006,9 +1006,7 @@ int nqiv_cmd_scan_whitespace_and_eol(const char* data,
 	return -1;
 }
 
-int nqiv_cmd_scan_not_whitespace_and_eol(const char* data,
-                                         const int   start,
-                                         const int   end)
+int nqiv_cmd_scan_not_whitespace_and_eol(const char* data, const int start, const int end)
 {
 	int bidx;
 	for(bidx = start; bidx < end; ++bidx) {
@@ -1238,7 +1236,7 @@ void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 			stdout,
 			"'priorities <priority_name>,...' - The thread will process events of the priorities "
 			"specified in this comma-separated list, in the order that they are specified. The "
-		    "'natural' order of the "
+			"'natural' order of the "
 			"priorities is how workers handle events by default.\n");
 		print_prefix(manager);
 		fprintf(stdout, "Priorities:\n");
@@ -1636,11 +1634,11 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
                          const nqiv_cmd_node* current_node,
                          const int            start_idx,
                          const int            eolpos,
-                         nqiv_cmd_arg_token* tokens)
+                         nqiv_cmd_arg_token*  tokens)
 {
-	bool        error = false;
-	int         idx = start_idx;
-	int         tidx = 0;
+	bool  error = false;
+	int   idx = start_idx;
+	int   tidx = 0;
 	char* data = manager->buffer->data;
 
 	while(current_node->args[tidx] != NULL) {
@@ -1662,18 +1660,18 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
 	}
 	if(error || nqiv_cmd_scan_not_whitespace(data, idx, eolpos) != -1) {
 		nqiv_log_write(&manager->state->logger, nqiv_cmd_parse_error_status(manager),
-		               "Cmd error parsing arg token %d for node '%s' with command '%s'.\n", tidx, current_node->name,
-		               data);
+		               "Cmd error parsing arg token %d for node '%s' with command '%s'.\n", tidx,
+		               current_node->name, data);
 	}
 	return !error;
 }
 
 nqiv_op_result nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
-                           const nqiv_cmd_node* current_node,
-                           const int            idx,
-                           const int            eolpos)
+                                     const nqiv_cmd_node* current_node,
+                                     const int            idx,
+                                     const int            eolpos)
 {
-	nqiv_cmd_arg_token  tokens[NQIV_CMD_MAX_ARGS] = {0};
+	nqiv_cmd_arg_token tokens[NQIV_CMD_MAX_ARGS] = {0};
 	if(!nqiv_cmd_parse_args(manager, current_node, idx, eolpos, tokens)) {
 		if(manager->state->cmd_parse_error_quit) {
 			nqiv_cmd_force_quit_main(manager);
@@ -1687,8 +1685,8 @@ nqiv_op_result nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
 	if(!current_node->store_value(manager, tokens)) {
 		char* data = manager->buffer->data;
 		nqiv_log_write(&manager->state->logger, nqiv_cmd_store_error_status(manager),
-		               "Cmd error storing value for node '%s' with command '%s'.\n", current_node->name,
-					   data);
+		               "Cmd error storing value for node '%s' with command '%s'.\n",
+		               current_node->name, data);
 		if(manager->state->cmd_apply_error_quit) {
 			nqiv_cmd_force_quit_main(manager);
 			return NQIV_FAIL;
@@ -1698,7 +1696,10 @@ nqiv_op_result nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
 	return NQIV_SUCCESS;
 }
 
-void nqiv_cmd_acknowledge(const nqiv_cmd_manager* manager, const char* cmd, const Uint64 time, const nqiv_op_result status)
+void nqiv_cmd_acknowledge(const nqiv_cmd_manager* manager,
+                          const char*             cmd,
+                          const Uint64            time,
+                          const nqiv_op_result    status)
 {
 	if(manager->state->cmd_acknowledge) {
 		const char* status_message = "Successful";
@@ -1723,15 +1724,15 @@ bool nqiv_cmd_parse(nqiv_cmd_manager* manager)
 	nqiv_array_inherit(&current_cmd_builder, current_cmd, sizeof(char),
 	                   NQIV_CMD_DUMPCFG_BUFFER_LENGTH);
 	nqiv_op_result status = NQIV_SUCCESS;
-	bool  help = false;
-	int   help_levels = 0;
-	bool  dumpcfg = false;
-	char* data = manager->buffer->data;
+	bool           help = false;
+	int            help_levels = 0;
+	bool           dumpcfg = false;
+	char*          data = manager->buffer->data;
 	/* Assume we always have a valid line when this is called. We parse up to the NUL */
-	const int eolpos = nqiv_array_get_units_count(manager->buffer) - 1;
+	const int      eolpos = nqiv_array_get_units_count(manager->buffer) - 1;
 	assert(manager->buffer->position == eolpos + 1);
 	assert(data[eolpos] == '\0');
-	int   idx = nqiv_cmd_scan_not_whitespace_and_eol(data, 0, eolpos);
+	int idx = nqiv_cmd_scan_not_whitespace_and_eol(data, 0, eolpos);
 	if(idx == -1) {
 		nqiv_array_clear(manager->buffer);
 		return true; /* The entire string must be whitespace- nothing to do. */
@@ -1746,18 +1747,18 @@ bool nqiv_cmd_parse(nqiv_cmd_manager* manager)
 	nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd parsing input %s\n", data + idx);
 
 	if(strncmp(&data[idx], "helptree", strlen("helptree")) == 0) {
-	    idx += strlen("helptree");
+		idx += strlen("helptree");
 		help = true;
 		help_levels = -1;
 	} else if(strncmp(&data[idx], "helpchildren", strlen("helpchildren")) == 0) {
-	    idx += strlen("helpchildren");
+		idx += strlen("helpchildren");
 		help = true;
 		help_levels = 1;
 	} else if(strncmp(&data[idx], "help", strlen("help")) == 0) {
-	    idx += strlen("help");
+		idx += strlen("help");
 		help = true;
 	} else if(strncmp(&data[idx], "dumpcfg", strlen("dumpcfg")) == 0) {
-	    idx += strlen("dumpcfg");
+		idx += strlen("dumpcfg");
 		dumpcfg = true;
 	}
 	nqiv_cmd_node* current_node = manager->root_node;
@@ -1817,8 +1818,8 @@ bool nqiv_cmd_parse(nqiv_cmd_manager* manager)
 		status = nqiv_cmd_execute_node(manager, current_node, idx, eolpos);
 	} else {
 		nqiv_log_write(&manager->state->logger, nqiv_cmd_parse_error_status(manager),
-		               "Cmd error finding child for node '%s' with command '%s'.\n", current_node->name,
-		               data);
+		               "Cmd error finding child for node '%s' with command '%s'.\n",
+		               current_node->name, data);
 		assert(status != NQIV_SUCCESS);
 		if(status == NQIV_FAIL) {
 			nqiv_cmd_force_quit_main(manager);
@@ -1842,8 +1843,9 @@ bool nqiv_cmd_add_byte(nqiv_cmd_manager* manager, const char byte)
 			to_add = '\r';
 		} else if(to_add != '\\') {
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
-			               "Cannot append invalid escaped character \\%c to nqiv command parser of length %d/%d.\n", to_add,
-			               manager->buffer->position, manager->buffer->data_length);
+			               "Cannot append invalid escaped character \\%c to nqiv command parser of "
+			               "length %d/%d.\n",
+			               to_add, manager->buffer->position, manager->buffer->data_length);
 			return false;
 		}
 		manager->print_settings.in_escape = false;
@@ -1864,7 +1866,8 @@ bool nqiv_cmd_finish_cmd(nqiv_cmd_manager* manager)
 {
 	if(manager->print_settings.in_escape) {
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
-		               "Finished adding command but with unfinished escape for nqiv command parser of length %d/%d.\n",
+		               "Finished adding command but with unfinished escape for nqiv command parser "
+		               "of length %d/%d.\n",
 		               manager->buffer->position, manager->buffer->data_length);
 		nqiv_array_clear(manager->buffer);
 		return !manager->state->cmd_parse_error_quit;
@@ -1899,8 +1902,7 @@ bool nqiv_cmd_add_cmd_and_parse(nqiv_cmd_manager* manager, const char* str)
 	return nqiv_cmd_add_cmd(manager, str) && nqiv_cmd_parse(manager);
 }
 
-nqiv_op_result
-nqiv_cmd_add_stream_cmd(nqiv_cmd_manager* manager, FILE* stream)
+nqiv_op_result nqiv_cmd_add_stream_cmd(nqiv_cmd_manager* manager, FILE* stream)
 {
 	while(true) {
 		int32_t c = -1;
@@ -1954,9 +1956,10 @@ bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream)
 		}
 	}
 	if(result != NQIV_FAIL && nqiv_array_get_units_count(manager->buffer) != 0) {
-		nqiv_log_write(&manager->state->logger, nqiv_cmd_parse_error_status(manager),
-		               "Unparsed data at end of stream with nqiv command parser of length  %d/%d.\n",
-		               manager->buffer->position, manager->buffer->data_length);
+		nqiv_log_write(
+			&manager->state->logger, nqiv_cmd_parse_error_status(manager),
+			"Unparsed data at end of stream with nqiv command parser of length  %d/%d.\n",
+			manager->buffer->position, manager->buffer->data_length);
 		if(manager->state->cmd_parse_error_quit) {
 			result = NQIV_FAIL;
 		}
@@ -2050,7 +2053,8 @@ nqiv_cmd_node* nqiv_cmd_make_base_node(bool*                     status,
 	const size_t args_size =
 		args != NULL ? nqiv_cmd_get_args_list_length(args) * sizeof(nqiv_cmd_arg_desc*) : 0;
 	nqiv_cmd_node* node =
-		(nqiv_cmd_node*)calloc(1, node_size + node_pad + name_size + name_pad + description_size + description_pad + args_size);
+		(nqiv_cmd_node*)calloc(1, node_size + node_pad + name_size + name_pad + description_size
+	                                  + description_pad + args_size);
 	if(node == NULL) {
 		*status = *status && false;
 		return NULL;
@@ -2545,7 +2549,8 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 		POP;
 		B("preload", "Set options related to preloading images not yet in view.");
 		{
-			B("image", "Set preloading options for images (not thumbnails) ahead of the currently-viewed one (if one is being viewed).")
+			B("image", "Set preloading options for images (not thumbnails) ahead of the "
+			           "currently-viewed one (if one is being viewed).")
 			{
 				LC("ahead", "This number of images ahead of the current image are loaded.",
 				   &(manager->state->image_preload.ahead), nqiv_cmd_parser_set_data_int,
@@ -2602,7 +2607,8 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			LC("apply_error_quit", "Quit if there are errors applying correctly-parsed commands.",
 			   &(manager->state->cmd_apply_error_quit), nqiv_cmd_parser_set_data_bool,
 			   nqiv_cmd_parser_print_data_bool, bool_args);
-			LC("from_stdin", "Read commands from stdin. Replacement for the old `-s` command line flag.",
+			LC("from_stdin",
+			   "Read commands from stdin. Replacement for the old `-s` command line flag.",
 			   &(manager->state->cmd_read_stdin), nqiv_cmd_parser_set_data_bool,
 			   nqiv_cmd_parser_print_data_bool, bool_args);
 			LC("acknowledge",

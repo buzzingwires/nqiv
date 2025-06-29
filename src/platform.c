@@ -32,7 +32,7 @@ bool nqiv_chmod(const char* filename, uint16_t mode)
 }
 int32_t nqiv_stdin_agetc(void)
 {
-    HANDLE stdin_handle = GetStdHandle(STD_INPUT_HANDLE);
+	HANDLE      stdin_handle = GetStdHandle(STD_INPUT_HANDLE);
 	const DWORD stdin_type = GetFileType(stdin_handle);
 	if(stdin_type == FILE_TYPE_CHAR) {
 		/* Keep reading records until we run out or find one. */
@@ -42,18 +42,22 @@ int32_t nqiv_stdin_agetc(void)
 				return 0;
 			} else if(wait_result == WAIT_OBJECT_0) {
 				INPUT_RECORD records[1];
-				DWORD records_read;
+				DWORD        records_read;
 				if(!ReadConsoleInput(stdin_handle, records, 1, &records_read)) {
 					return -1;
 				} else if(records_read == 0) {
 					return 0;
 				} else {
 					DWORD i;
-					for (i = 0; i < records_read; ++i) {
-						if(records[i].EventType == KEY_EVENT && !records[i].Event.KeyEvent.bKeyDown) {
-							char output_bytes[4] = {0};
+					for(i = 0; i < records_read; ++i) {
+						if(records[i].EventType == KEY_EVENT
+						   && !records[i].Event.KeyEvent.bKeyDown) {
+							char     output_bytes[4] = {0};
 							uint32_t output = 0;
-							if(!WideCharToMultiByte(CP_UTF8, WC_NO_BEST_FIT_CHARS | WC_ERR_INVALID_CHARS, &(records[i].Event.KeyEvent.uChar.UnicodeChar), 1, output_bytes, 4, NULL, NULL)) {
+							if(!WideCharToMultiByte(CP_UTF8,
+							                        WC_NO_BEST_FIT_CHARS | WC_ERR_INVALID_CHARS,
+							                        &(records[i].Event.KeyEvent.uChar.UnicodeChar),
+							                        1, output_bytes, 4, NULL, NULL)) {
 								return -1;
 							} else {
 								output |= output_bytes[0];
@@ -70,8 +74,8 @@ int32_t nqiv_stdin_agetc(void)
 			}
 		}
 	} else if(stdin_type == FILE_TYPE_PIPE || stdin_type == FILE_TYPE_DISK) {
-		char output_char;
-		DWORD output_read;
+		char        output_char;
+		DWORD       output_read;
 		const DWORD wait_result = WaitForSingleObject(stdin_handle, 0);
 		if(wait_result == WAIT_TIMEOUT) {
 			return 0;

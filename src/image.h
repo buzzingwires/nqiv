@@ -113,10 +113,10 @@ bool nqiv_image_has_loaded_form(nqiv_image* image);
 typedef struct nqiv_image_manager_thumbnail_settings
 {
 	/* Where thumbnails are stored. */
-	char* root;
+	char*        root;
 	/* Do we load and/or save? */
-	bool  load;
-	bool  save;
+	bool         load;
+	bool         save;
 	/* Dimension of either side. */
 	SDL_atomic_t size;
 } nqiv_image_manager_thumbnail_settings;

@@ -5,7 +5,7 @@
  * files, as well as some other circularly-shared things. This file should not include any other
  * nqiv file and should be included before the circularly referenced elements are needed. */
 
-typedef struct nqiv_cond nqiv_cond;
+typedef struct nqiv_cond        nqiv_cond;
 typedef struct nqiv_cmd_manager nqiv_cmd_manager;
 typedef struct nqiv_state       nqiv_state;
 

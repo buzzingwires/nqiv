@@ -84,9 +84,7 @@ bool nqiv_thumbnail_digest_to_builder(nqiv_array* builder, const nqiv_image* ima
 	return result;
 }
 
-bool nqiv_thumbnail_get_type(nqiv_image_manager* images,
-                             const bool                failed,
-                             nqiv_array*               builder)
+bool nqiv_thumbnail_get_type(nqiv_image_manager* images, const bool failed, nqiv_array* builder)
 {
 	const int thumbnail_size = SDL_AtomicGet(&images->thumbnail.size);
 	if(failed) {
@@ -105,7 +103,7 @@ bool nqiv_thumbnail_get_type(nqiv_image_manager* images,
 bool nqiv_thumbnail_create_dirs(nqiv_image_manager* images, const bool failed)
 {
 	assert(images != NULL);
-	assert( SDL_AtomicGet(&images->thumbnail.size) > 0 );
+	assert(SDL_AtomicGet(&images->thumbnail.size) > 0);
 	assert(images->thumbnail.root != NULL);
 
 	nqiv_array builder;
@@ -129,7 +127,7 @@ bool nqiv_thumbnail_calculate_path(const nqiv_image* image, char** pathptr_store
 {
 	assert(image != NULL);
 	assert(image->parent != NULL);
-	assert( SDL_AtomicGet(&image->parent->thumbnail.size) > 0 );
+	assert(SDL_AtomicGet(&image->parent->thumbnail.size) > 0);
 	assert(image->parent->thumbnail.root != NULL);
 
 	char raw_root[PATH_MAX + 1] = {0};
@@ -197,7 +195,7 @@ bool nqiv_thumbnail_create_vips(nqiv_image* image)
 	assert(image->image.vips != NULL);
 	assert(image->thumbnail.vips == NULL);
 	const int thumbnail_size = SDL_AtomicGet(&image->parent->thumbnail.size);
-	assert( thumbnail_size > 0 );
+	assert(thumbnail_size > 0);
 
 	VipsImage* old_vips;
 	VipsImage* thumbnail_vips;
@@ -263,7 +261,8 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	char mtime_string[NQIV_MTIME_STRLEN + 1] = {0};
 	snprintf(mtime_string, NQIV_MTIME_STRLEN, "%" PRIuMAX, (uintmax_t)stat_data.mtime);
 	char size_string[NQIV_SIZE_STRLEN + 1] = {0};
-	/* TODO We cast to uintmax_t to workaround MinGW not handling %zu. Hopefully some day we can avoid this. */
+	/* TODO We cast to uintmax_t to workaround MinGW not handling %zu. Hopefully some day we can
+	 * avoid this. */
 	/*snprintf(size_string, NQIV_SIZE_STRLEN, "%zu", stat_data.size);*/
 	snprintf(size_string, NQIV_SIZE_STRLEN, "%" PRIuMAX, (uintmax_t)stat_data.size);
 	char width_string[NQIV_DIMENSION_STRLEN + 1] = {0};

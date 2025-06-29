@@ -51,11 +51,11 @@ extern const char* const nqiv_log_level_names[];
 
 typedef struct nqiv_log_ctx
 {
-	SDL_mutex*     lock;
-	char           prefix_format[NQIV_LOG_PREFIX_FORMAT_LEN];
-	char           error_message[NQIV_LOG_ERROR_MESSAGE_LEN];
-	SDL_atomic_t   level; /* Allow this priority and higher. */
-	nqiv_array*    streams;
+	SDL_mutex*   lock;
+	char         prefix_format[NQIV_LOG_PREFIX_FORMAT_LEN];
+	char         error_message[NQIV_LOG_ERROR_MESSAGE_LEN];
+	SDL_atomic_t level; /* Allow this priority and higher. */
+	nqiv_array*  streams;
 } nqiv_log_ctx;
 
 nqiv_log_level nqiv_log_level_from_string(const char* text);

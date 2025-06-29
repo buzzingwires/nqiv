@@ -114,7 +114,7 @@ void array_test_strbuild(void)
 
 void array_test_push_byte(void)
 {
-	char tmp = '\0';
+	char       tmp = '\0';
 	char       str[4 * sizeof(char)] = {0};
 	nqiv_array array;
 	nqiv_array_inherit(&array, str, sizeof(char), 4);
@@ -126,17 +126,18 @@ void array_test_push_byte(void)
 	assert(strcmp(array.data, "Hi!") == 0);
 	assert(nqiv_array_pop(&array, &tmp));
 	assert(tmp == '\0');
-	/* NUL is still present in data, just not explicitly tracked. Try not to actually rely on this, since the last byte can be easily overwritten, resulting in an unterminated string. */
-	assert(strcmp(array.data, "Hi!") == 0); 
+	/* NUL is still present in data, just not explicitly tracked. Try not to actually rely on this,
+	 * since the last byte can be easily overwritten, resulting in an unterminated string. */
+	assert(strcmp(array.data, "Hi!") == 0);
 	assert(nqiv_array_pop(&array, &tmp));
 	assert(tmp == '!');
-	assert(strcmp(array.data, "Hi") == 0); 
+	assert(strcmp(array.data, "Hi") == 0);
 	assert(nqiv_array_push_byte(&array, '?'));
-	assert(strcmp(array.data, "Hi?") == 0); 
+	assert(strcmp(array.data, "Hi?") == 0);
 	assert(nqiv_array_push_byte(&array, '\0'));
-	assert(strcmp(array.data, "Hi?") == 0); 
+	assert(strcmp(array.data, "Hi?") == 0);
 	assert(!nqiv_array_push_byte(&array, 'a'));
-	assert(strcmp(array.data, "Hi?") == 0); 
+	assert(strcmp(array.data, "Hi?") == 0);
 	assert(str == array.data);
 	assert(strcmp(str, array.data) == 0);
 }

@@ -21,7 +21,7 @@ typedef struct nqiv_queue
 {
 	nqiv_array*   array;
 	nqiv_log_ctx* logger;
-	SDL_mutex*     lock;
+	SDL_mutex*    lock;
 } nqiv_queue;
 
 typedef struct nqiv_priority_queue

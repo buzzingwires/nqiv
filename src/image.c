@@ -125,8 +125,8 @@ nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* raw_path)
 	}
 	image->lock = SDL_CreateMutex();
 	if(image->lock == NULL) {
-		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to create mutex for image %s (%s)",
-		               path, SDL_GetError());
+		nqiv_log_write(logger, NQIV_LOG_ERROR, "Failed to create mutex for image %s (%s)", path,
+		               SDL_GetError());
 		free(image);
 		return NULL;
 	}
@@ -383,7 +383,9 @@ bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	}
 
 	if(vips_icc_present() != 0) {
-		if(vips_icc_transform(used_vips, &new_vips, "srgb", "intent", VIPS_INTENT_PERCEPTUAL, "embedded", TRUE, NULL) == -1) {
+		if(vips_icc_transform(used_vips, &new_vips, "srgb", "intent", VIPS_INTENT_PERCEPTUAL,
+		                      "embedded", TRUE, NULL)
+		   == -1) {
 			if(used_vips != form->vips) {
 				g_object_unref(used_vips);
 			}
@@ -856,21 +858,23 @@ void nqiv_image_manager_pan_coordinates(nqiv_image_manager* manager, const SDL_R
 void nqiv_image_manager_zoom_in(nqiv_image_manager* manager)
 {
 	const double zoom_in_amount = fabs(manager->zoom.zoom_in_amount);
-	const double smallest = zoom_in_amount <  manager->zoom.actual_size_level ? zoom_in_amount : manager->zoom.actual_size_level;
+	const double smallest = zoom_in_amount < manager->zoom.actual_size_level
+	                            ? zoom_in_amount
+	                            : manager->zoom.actual_size_level;
 	nqiv_image_calculate_zoom_dimension(
-		smallest, true, manager->zoom.actual_size_level,
-		manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio,
-		manager->zoom.zoom_in_amount);
+		smallest, true, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max,
+		true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount);
 }
 
 void nqiv_image_manager_zoom_out(nqiv_image_manager* manager)
 {
 	const double zoom_in_amount = fabs(manager->zoom.zoom_in_amount);
-	const double smallest = zoom_in_amount <  manager->zoom.actual_size_level ? zoom_in_amount : manager->zoom.actual_size_level;
+	const double smallest = zoom_in_amount < manager->zoom.actual_size_level
+	                            ? zoom_in_amount
+	                            : manager->zoom.actual_size_level;
 	nqiv_image_calculate_zoom_dimension(
-		smallest, true, manager->zoom.actual_size_level,
-		manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio,
-		manager->zoom.zoom_out_amount);
+		smallest, true, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max,
+		true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount);
 }
 
 void nqiv_image_manager_pan_center(nqiv_image_manager* manager)
@@ -910,21 +914,23 @@ void nqiv_image_manager_pan_down_more(nqiv_image_manager* manager)
 void nqiv_image_manager_zoom_in_more(nqiv_image_manager* manager)
 {
 	const double zoom_in_amount = fabs(manager->zoom.zoom_in_amount);
-	const double smallest = zoom_in_amount <  manager->zoom.actual_size_level ? zoom_in_amount : manager->zoom.actual_size_level;
+	const double smallest = zoom_in_amount < manager->zoom.actual_size_level
+	                            ? zoom_in_amount
+	                            : manager->zoom.actual_size_level;
 	nqiv_image_calculate_zoom_dimension(
-		smallest, true, manager->zoom.actual_size_level,
-		manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio,
-		manager->zoom.zoom_in_amount_more);
+		smallest, true, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max,
+		true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount_more);
 }
 
 void nqiv_image_manager_zoom_out_more(nqiv_image_manager* manager)
 {
 	const double zoom_in_amount = fabs(manager->zoom.zoom_in_amount);
-	const double smallest = zoom_in_amount <  manager->zoom.actual_size_level ? zoom_in_amount : manager->zoom.actual_size_level;
+	const double smallest = zoom_in_amount < manager->zoom.actual_size_level
+	                            ? zoom_in_amount
+	                            : manager->zoom.actual_size_level;
 	nqiv_image_calculate_zoom_dimension(
-		smallest, true, manager->zoom.actual_size_level,
-		manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio,
-		manager->zoom.zoom_out_amount_more);
+		smallest, true, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max,
+		true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount_more);
 }
 
 /*
@@ -1153,13 +1159,13 @@ int nqiv_image_manager_get_zoom_percent(nqiv_image_manager* manager)
 
 bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size)
 {
-	if(nqiv_thumbnail_get_closest_size( SDL_AtomicGet(&manager->thumbnail.size) )
+	if(nqiv_thumbnail_get_closest_size(SDL_AtomicGet(&manager->thumbnail.size))
 	   <= nqiv_thumbnail_get_closest_size(old_size)) {
 		return true;
 	}
 	const int    num_images = nqiv_array_get_units_count(manager->images);
 	nqiv_image** images = manager->images->data;
-	bool wake = false;
+	bool         wake = false;
 	int          idx;
 	for(idx = 0; idx < num_images; ++idx) {
 		nqiv_image_lock(images[idx]);

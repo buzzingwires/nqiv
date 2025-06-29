@@ -223,7 +223,7 @@ bool nqiv_create_alpha_background_texture(nqiv_state*     state,
 bool nqiv_state_create_thumbnail_selection_texture(nqiv_state* state)
 {
 	const int thumbnail_size = SDL_AtomicGet(&state->images.thumbnail.size);
-	SDL_Rect thumbnail_rect;
+	SDL_Rect  thumbnail_rect;
 	thumbnail_rect.x = 0;
 	thumbnail_rect.y = 0;
 	thumbnail_rect.w = thumbnail_size;
@@ -250,7 +250,7 @@ bool nqiv_state_recreate_thumbnail_selection_texture(nqiv_state* state)
 bool nqiv_state_create_mark_texture(nqiv_state* state)
 {
 	const int thumbnail_size = SDL_AtomicGet(&state->images.thumbnail.size);
-	SDL_Rect thumbnail_rect;
+	SDL_Rect  thumbnail_rect;
 	thumbnail_rect.x = 0;
 	thumbnail_rect.y = 0;
 	thumbnail_rect.w = thumbnail_size;
@@ -259,8 +259,8 @@ bool nqiv_state_create_mark_texture(nqiv_state* state)
 	memcpy(&dash_color, &state->mark_color, sizeof(SDL_Color));
 	dash_color.a = 0;
 	if(!nqiv_create_border_rect_texture(&state->logger, state->renderer, &thumbnail_rect,
-	                                    thumbnail_size / 16, &state->mark_color,
-	                                    &dash_color, &state->texture_montage_mark)) {
+	                                    thumbnail_size / 16, &state->mark_color, &dash_color,
+	                                    &state->texture_montage_mark)) {
 		return false;
 	}
 	return true;
@@ -364,7 +364,8 @@ bool nqiv_state_update_montage_texture_dimensions(nqiv_state* state)
 	if(thumbnail_size == state->montage_texture_size) {
 		return true;
 	}
-	if(!nqiv_state_recreate_thumbnail_selection_texture(state) || !nqiv_state_recreate_mark_texture(state)) {
+	if(!nqiv_state_recreate_thumbnail_selection_texture(state)
+	   || !nqiv_state_recreate_mark_texture(state)) {
 		return false;
 	}
 	state->montage_texture_size = thumbnail_size;

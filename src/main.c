@@ -237,8 +237,9 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	if(state->pending_thread_count == 0) {
 		state->pending_thread_count = 1;
 	}
-	if( !nqiv_cond_init(&state->thread_wakeup_signaler) ) {
-		fprintf(stderr, "Failed to initialize thread wakeup condition variable. SDL Error: %s\n", SDL_GetError());
+	if(!nqiv_cond_init(&state->thread_wakeup_signaler)) {
+		fprintf(stderr, "Failed to initialize thread wakeup condition variable. SDL Error: %s\n",
+		        SDL_GetError());
 		return false;
 	}
 	return true;
@@ -403,7 +404,7 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 		return NQIV_FAIL;
 	}
 	if(!nqiv_add_logger_path(state, "stderr")) {
-		fputs("Failed to add stderr for preliminary logging.\n");
+		fputs("Failed to add stderr for preliminary logging.\n", stderr);
 		return NQIV_FAIL;
 	}
 	if(!nqiv_image_manager_init(&state->images, &state->logger, STARTING_QUEUE_LENGTH)) {
@@ -438,13 +439,13 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 		return NQIV_FAIL;
 	}
 	const struct optparse_long longopts[] = {
-        {"built-in-config", 'B', OPTPARSE_NONE},
+		{"built-in-config", 'B', OPTPARSE_NONE},
 		{"no-default-cfg", 'N', OPTPARSE_NONE},
-        {"cmd", 'c', OPTPARSE_REQUIRED},
+		{"cmd", 'c', OPTPARSE_REQUIRED},
 		{"cfg", 'C', OPTPARSE_REQUIRED},
-        {"version", 'v', OPTPARSE_NONE},
+		{"version", 'v', OPTPARSE_NONE},
 		{"help", 'h', OPTPARSE_NONE},
-        {0},
+		{0},
 	};
 	bool            load_default = true;
 	struct optparse options;
@@ -691,9 +692,11 @@ bool render_from_form(nqiv_state*     state,
 	if(!is_montage && selected) {
 		state->first_frame_pending = state->first_frame_pending || first_frame;
 	}
-	bool             cleared = is_montage;
+	bool cleared = is_montage;
 	/* Unload the texture so we can return to the first frame. */
-	if( (form->texture != NULL || form->fallback_texture != NULL) && !is_montage && (first_frame || state->first_frame_pending) && form->master_animation_exists && dstrect != NULL) {
+	if((form->texture != NULL || form->fallback_texture != NULL) && !is_montage
+	   && (first_frame || state->first_frame_pending) && form->master_animation_exists
+	   && dstrect != NULL) {
 		nqiv_unload_image_form_all_textures(form);
 	}
 	/* We try to lock the image. Don't wait on it and block the whole program, if not. Just use
@@ -925,7 +928,8 @@ bool render_from_form(nqiv_state*     state,
 	} else {
 		/* No error */
 		assert(!resample_zoom || form->texture == NULL);
-		if(form->texture != NULL && ((first_frame || state->first_frame_pending) || !form->animation.frame_rendered)) {
+		if(form->texture != NULL
+		   && ((first_frame || state->first_frame_pending) || !form->animation.frame_rendered)) {
 			/* If we have a texture and don't need to render the next frame, do nothing. */
 		} else if(form->surface != NULL && !resample_zoom
 		          && (is_montage || !(first_frame) || !form->animation.exists || dstrect == NULL)) {
@@ -983,7 +987,8 @@ bool render_from_form(nqiv_state*     state,
 				} else {
 					event.options.image_load.thumbnail_options.surface_soft = true;
 				}
-				event.options.image_load.thumbnail_options.first_frame = (first_frame || state->first_frame_pending);
+				event.options.image_load.thumbnail_options.first_frame =
+					(first_frame || state->first_frame_pending);
 				event.options.image_load.thumbnail_options.next_frame =
 					!(first_frame || state->first_frame_pending) && form->animation.frame_rendered;
 				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD, &event,
@@ -1006,12 +1011,14 @@ bool render_from_form(nqiv_state*     state,
 				 * surface. */
 				if(image->image.vips != NULL
 				   && (hard || !(first_frame || state->first_frame_pending) || resample_zoom
-				       || ((first_frame || state->first_frame_pending) && image->image.animation.frame != 0))) {
+				       || ((first_frame || state->first_frame_pending)
+				           && image->image.animation.frame != 0))) {
 					event.options.image_load.image_options.surface = true;
 				} else {
 					event.options.image_load.image_options.surface_soft = true;
 				}
-				event.options.image_load.image_options.first_frame = (first_frame || state->first_frame_pending);
+				event.options.image_load.image_options.first_frame =
+					(first_frame || state->first_frame_pending);
 				event.options.image_load.image_options.next_frame =
 					!(first_frame || state->first_frame_pending) && form->animation.frame_rendered;
 				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_IMAGE_LOAD, &event,
@@ -1169,19 +1176,30 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 		return false;
 	}
 	state->render_cleared = !preload_only;
-	const int    images_len = nqiv_array_get_units_count(state->images.images);
-	const int    biggest_preload_behind = state->image_preload.behind > state->montage.preload.behind ? state->image_preload.behind : state->montage.preload.behind;
-	const int    biggest_preload_ahead = state->image_preload.ahead > state->montage.preload.ahead ? state->image_preload.ahead : state->montage.preload.ahead;
-	const int    raw_start_idx = state->montage.positions.start - biggest_preload_behind;
-	const int    raw_end = state->montage.positions.end + biggest_preload_ahead;
-	const int    raw_montage_preload_start_idx = state->montage.positions.start - state->montage.preload.behind;
-	const int    raw_image_preload_start_idx = state->montage.positions.selection - state->image_preload.behind;
-	const int    raw_montage_preload_end = state->montage.positions.end + state->montage.preload.ahead;
-	const int    raw_image_preload_end = state->montage.positions.selection + state->image_preload.ahead;
-	const int    montage_preload_start_idx = raw_montage_preload_start_idx >= 0 ? raw_montage_preload_start_idx : 0;
-	const int    montage_preload_end = raw_montage_preload_end <= images_len ? raw_montage_preload_end : images_len;
-	const int    image_preload_start_idx = raw_image_preload_start_idx >= 0 ? raw_image_preload_start_idx : 0;
-	const int    image_preload_end = raw_image_preload_end <= images_len ? raw_image_preload_end : images_len;
+	const int images_len = nqiv_array_get_units_count(state->images.images);
+	const int biggest_preload_behind = state->image_preload.behind > state->montage.preload.behind
+	                                       ? state->image_preload.behind
+	                                       : state->montage.preload.behind;
+	const int biggest_preload_ahead = state->image_preload.ahead > state->montage.preload.ahead
+	                                      ? state->image_preload.ahead
+	                                      : state->montage.preload.ahead;
+	const int raw_start_idx = state->montage.positions.start - biggest_preload_behind;
+	const int raw_end = state->montage.positions.end + biggest_preload_ahead;
+	const int raw_montage_preload_start_idx =
+		state->montage.positions.start - state->montage.preload.behind;
+	const int raw_image_preload_start_idx =
+		state->montage.positions.selection - state->image_preload.behind;
+	const int raw_montage_preload_end = state->montage.positions.end + state->montage.preload.ahead;
+	const int raw_image_preload_end =
+		state->montage.positions.selection + state->image_preload.ahead;
+	const int montage_preload_start_idx =
+		raw_montage_preload_start_idx >= 0 ? raw_montage_preload_start_idx : 0;
+	const int montage_preload_end =
+		raw_montage_preload_end <= images_len ? raw_montage_preload_end : images_len;
+	const int image_preload_start_idx =
+		raw_image_preload_start_idx >= 0 ? raw_image_preload_start_idx : 0;
+	const int image_preload_end =
+		raw_image_preload_end <= images_len ? raw_image_preload_end : images_len;
 	const int    start_idx = raw_start_idx >= 0 ? raw_start_idx : 0;
 	const int    end = raw_end <= images_len ? raw_end : images_len;
 	nqiv_image** images = state->images.images->data;
@@ -1205,12 +1223,15 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 				return false;
 			}
 		} else {
-			if(idx >= montage_preload_start_idx && idx < montage_preload_end && !render_from_form(state, image, true, NULL, true,
-			                            state->montage.positions.selection == idx, hard)) {
+			if(idx >= montage_preload_start_idx && idx < montage_preload_end
+			   && !render_from_form(state, image, true, NULL, true,
+			                        state->montage.positions.selection == idx, hard)) {
 				return false;
 			}
-			if(!state->in_montage && state->montage.positions.selection != idx && idx >= image_preload_start_idx && idx < image_preload_end && !render_from_form(state, image, false, NULL, true,
-			                            state->montage.positions.selection == idx, hard)) {
+			if(!state->in_montage && state->montage.positions.selection != idx
+			   && idx >= image_preload_start_idx && idx < image_preload_end
+			   && !render_from_form(state, image, false, NULL, true,
+			                        state->montage.positions.selection == idx, hard)) {
 				return false;
 			}
 		}
@@ -1269,18 +1290,18 @@ void render_and_update(nqiv_state* state, const bool first_render, const bool ha
 	/* Update transaction group. */
 	if(state->montage.range_changed) {
 		/* This should be reliable, since we only set the atomic from master. */
-		if( !SDL_AtomicCAS(&state->thread_event_transaction_group, INT_MAX, 1) ) {
+		if(!SDL_AtomicCAS(&state->thread_event_transaction_group, INT_MAX, 1)) {
 			const int new_value = SDL_AtomicAdd(&state->thread_event_transaction_group, 1) + 1;
 			state->pruner.thread_event_transaction_group = new_value;
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
-			               "Increased transaction group value to %d at position %d.\n",
-			               new_value,
+			               "Increased transaction group value to %d at position %d.\n", new_value,
 			               state->montage.positions.selection);
 		} else {
 			nqiv_priority_queue_clear(&state->thread_queue);
 			state->pruner.thread_event_transaction_group = 1;
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
-			               "Wrapped overflowed transaction group value to 1 and cleared old events at position %d.\n",
+			               "Wrapped overflowed transaction group value to 1 and cleared old events "
+			               "at position %d.\n",
 			               state->montage.positions.selection);
 		}
 		state->montage.range_changed = false;
@@ -1736,14 +1757,21 @@ bool check_cmds(nqiv_state* state)
 	bool locked = false;
 	while(true) {
 		if(!locked) {
-			/* If we see that the dormant thread count is equal to the total number of threads, there's a good chance all the threads are in the waiting state or immediately before that. This is not a guarantee, since a thread could have just woken up and not altered the count yet. If we can lock the thread queue and find that the count still matches the number of threads, we can guarantee the thread is either waiting on its condition variable or will shortly be waiting on the queue which we just locked, since the dormant count will always be decremented before accessing the thread queue. */
+			/* If we see that the dormant thread count is equal to the total number of threads,
+			 * there's a good chance all the threads are in the waiting state or immediately before
+			 * that. This is not a guarantee, since a thread could have just woken up and not
+			 * altered the count yet. If we can lock the thread queue and find that the count still
+			 * matches the number of threads, we can guarantee the thread is either waiting on its
+			 * condition variable or will shortly be waiting on the queue which we just locked,
+			 * since the dormant count will always be decremented before accessing the thread queue.
+			 */
 			const int thread_count = nqiv_array_get_units_count(state->thread_pointers);
 			const int starting_dormant_threads = SDL_AtomicGet(&state->dormant_thread_count);
 			assert(starting_dormant_threads <= thread_count);
 			assert(starting_dormant_threads >= 0);
 			if(starting_dormant_threads == thread_count) {
 				nqiv_priority_queue_lock(&(state->thread_queue));
-				if(starting_dormant_threads == SDL_AtomicGet(&state->dormant_thread_count)){
+				if(starting_dormant_threads == SDL_AtomicGet(&state->dormant_thread_count)) {
 					locked = true;
 				} else {
 					nqiv_priority_queue_unlock(&(state->thread_queue));
@@ -1926,15 +1954,18 @@ nqiv_op_result nqiv_master_thread(nqiv_state* state)
 void nqiv_wait_on_threads(nqiv_state* state)
 {
 	assert(state->thread_pointers != NULL);
-	const int thread_count = nqiv_array_get_units_count(state->thread_pointers);
+	const int    thread_count = nqiv_array_get_units_count(state->thread_pointers);
 	SDL_Thread** ptrs = state->thread_pointers->data;
-	int    idx;
+	int          idx;
 	for(idx = 0; idx < thread_count; ++idx) {
 		SDL_WaitThread(ptrs[idx], NULL);
 	}
 }
 
-void nqiv_run_fail(nqiv_state* state, const char* msg, const int thread_number, SDL_Thread* loose_thread)
+void nqiv_run_fail(nqiv_state* state,
+                   const char* msg,
+                   const int   thread_number,
+                   SDL_Thread* loose_thread)
 {
 	nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "%s thread %d.", msg, thread_number);
 	SDL_AtomicSet(&state->running, NQIV_FAIL);
@@ -1953,34 +1984,32 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 	SDL_AtomicSet(&state->running, NQIV_SUCCESS);
 	nqiv_array_clear(state->thread_pointers);
 	state->thread_count = state->pending_thread_count;
-	nqiv_op_result       result;
-	int                  standard_event_bins[THREAD_QUEUE_BIN_COUNT + 1];
-	int                  c;
+	nqiv_op_result result;
+	int            standard_event_bins[THREAD_QUEUE_BIN_COUNT + 1];
+	int            c;
 	for(c = 0; c < THREAD_QUEUE_BIN_COUNT; ++c) {
 		standard_event_bins[c] = c;
 	}
 	standard_event_bins[THREAD_QUEUE_BIN_COUNT] = -1;
 	const int thread_specs_len = nqiv_array_get_units_count(state->thread_specs);
-	int t;
+	int       t;
 	for(t = 0; t < state->thread_count; ++t) {
-		nqiv_worker_main_args args = {
-			.logger = &state->logger,
-			.queue = &state->thread_queue,
-			.delay = state->extra_wakeup_delay,
-			.wakeup = &state->thread_wakeup_signaler,
-			.event_interval = state->thread_event_interval,
-			.queue_bins = standard_event_bins,
-			.event_code = state->thread_event_number,
-			.transaction_group = &state->thread_event_transaction_group,
-			.dormant_count = &state->dormant_thread_count,
-			.running = &state->running
-		};
+		nqiv_worker_main_args args = {.logger = &state->logger,
+		                              .queue = &state->thread_queue,
+		                              .delay = state->extra_wakeup_delay,
+		                              .wakeup = &state->thread_wakeup_signaler,
+		                              .event_interval = state->thread_event_interval,
+		                              .queue_bins = standard_event_bins,
+		                              .event_code = state->thread_event_number,
+		                              .transaction_group = &state->thread_event_transaction_group,
+		                              .dormant_count = &state->dormant_thread_count,
+		                              .running = &state->running};
 		SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Worker", &args);
 		if(this_thread == NULL) {
 			nqiv_run_fail(state, "Failed to create SDL", t, NULL);
 			return NQIV_FAIL;
 		}
-		if( !nqiv_array_push(state->thread_pointers, &this_thread) ) {
+		if(!nqiv_array_push(state->thread_pointers, &this_thread)) {
 			nqiv_run_fail(state, "Failed to append SDL", t, this_thread);
 			return NQIV_FAIL;
 		}
@@ -1988,27 +2017,29 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 	nqiv_worker_spec* thread_specs = state->thread_specs->data;
 	for(t = 0; t < thread_specs_len; ++t) {
 		nqiv_worker_spec* spec = &thread_specs[t];
-		const int this_extra_wakeup_delay = spec->delay_base == -1 ? state->extra_wakeup_delay : spec->delay_base;
-		const int this_event_interval = spec->event_interval == -1 ? state->thread_event_interval : spec->event_interval;
-		const int* this_event_bins = spec->queue_bins[0] == -1 ? standard_event_bins : spec->queue_bins;
-		nqiv_worker_main_args args = {
-			.logger = &state->logger,
-			.queue = &state->thread_queue,
-			.delay = this_extra_wakeup_delay,
-			.wakeup = &state->thread_wakeup_signaler,
-			.event_interval = this_event_interval,
-			.queue_bins = this_event_bins,
-			.event_code = state->thread_event_number,
-			.transaction_group = &state->thread_event_transaction_group,
-			.dormant_count = &state->dormant_thread_count,
-			.running = &state->running
-		};
-		SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Specified Worker", &args);
+		const int         this_extra_wakeup_delay =
+            spec->delay_base == -1 ? state->extra_wakeup_delay : spec->delay_base;
+		const int this_event_interval =
+			spec->event_interval == -1 ? state->thread_event_interval : spec->event_interval;
+		const int* this_event_bins =
+			spec->queue_bins[0] == -1 ? standard_event_bins : spec->queue_bins;
+		nqiv_worker_main_args args = {.logger = &state->logger,
+		                              .queue = &state->thread_queue,
+		                              .delay = this_extra_wakeup_delay,
+		                              .wakeup = &state->thread_wakeup_signaler,
+		                              .event_interval = this_event_interval,
+		                              .queue_bins = this_event_bins,
+		                              .event_code = state->thread_event_number,
+		                              .transaction_group = &state->thread_event_transaction_group,
+		                              .dormant_count = &state->dormant_thread_count,
+		                              .running = &state->running};
+		SDL_Thread*           this_thread =
+			SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Specified Worker", &args);
 		if(this_thread == NULL) {
 			nqiv_run_fail(state, "Failed to create SDL specified", t, NULL);
 			return NQIV_FAIL;
 		}
-		if( !nqiv_array_push(state->thread_pointers, &this_thread) ) {
+		if(!nqiv_array_push(state->thread_pointers, &this_thread)) {
 			nqiv_run_fail(state, "Failed to append SDL specified", t, this_thread);
 			return NQIV_FAIL;
 		}

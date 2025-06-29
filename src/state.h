@@ -104,7 +104,7 @@ struct nqiv_state
 	 * event is less than the current number, it is considered out of date and discarded. An event
 	 * with a transaction group of -1 is never out of date. This feature primarily exists to solve
 	 * the problem of events still being queued for images that are no longer visible. */
-	SDL_atomic_t      thread_event_transaction_group;
+	SDL_atomic_t         thread_event_transaction_group;
 	/* Worker threads wait on this object for signals to begin processing events. */
 	nqiv_cond            thread_wakeup_signaler;
 	/* In SDL ticks (milliseconds) Check if prune_delay has passed for each render_and_update */
@@ -115,7 +115,7 @@ struct nqiv_state
 	int                  event_timeout;
 	/* Base amount worker threads sleep between updates. */
 	int                  extra_wakeup_delay;
-	SDL_atomic_t      dormant_thread_count;
+	SDL_atomic_t         dormant_thread_count;
 	/* Used to tell when the display needs to be redrawn. */
 	bool                 render_cleared;
 	/* Is montage mode? Otherwise image mode. */
@@ -168,7 +168,7 @@ bool              nqiv_state_create_mark_texture(nqiv_state* state);
 bool              nqiv_state_recreate_mark_texture(nqiv_state* state);
 bool              nqiv_state_create_alpha_background_texture(nqiv_state* state);
 bool              nqiv_state_recreate_all_alpha_background_textures(nqiv_state* state);
-bool nqiv_state_update_montage_texture_dimensions(nqiv_state* state);
+bool              nqiv_state_update_montage_texture_dimensions(nqiv_state* state);
 bool              nqiv_state_update_alpha_background_dimensions(nqiv_state* state,
                                                                 const int   alpha_background_width,
                                                                 const int   alpha_background_height);

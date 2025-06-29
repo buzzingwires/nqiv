@@ -270,14 +270,14 @@ void nqiv_worker_handle_image_load_form_clear_error(
 
 void nqiv_worker_main(nqiv_log_ctx*        logger,
                       nqiv_priority_queue* queue,
-					  const Uint32 delay,
+                      const Uint32         delay,
                       nqiv_cond*           wakeup,
                       const int            event_interval,
                       const int*           queue_bins,
                       const Uint32         event_code,
-                      SDL_atomic_t*     transaction_group,
-                      SDL_atomic_t*     dormant_count,
-                      SDL_atomic_t*     running)
+                      SDL_atomic_t*        transaction_group,
+                      SDL_atomic_t*        dormant_count,
+                      SDL_atomic_t*        running)
 {
 	int events_processed = 0;
 	while(SDL_AtomicGet(running) == NQIV_SUCCESS) {
@@ -308,8 +308,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 					nqiv_event_image_load_options* image_load = &event.options.image_load;
 					nqiv_image*                    image = image_load->image;
 					nqiv_log_write(logger, NQIV_LOG_DEBUG,
-					               "Received image load event on thread %lu.\n",
-					               SDL_ThreadID());
+					               "Received image load event on thread %lu.\n", SDL_ThreadID());
 					nqiv_image_lock(image);
 					nqiv_worker_handle_image_load_form_clear_error(&image_load->thumbnail_options,
 					                                               &image->thumbnail);
@@ -388,7 +387,7 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 				nqiv_cond_wait(wakeup);
 				const int old_value = SDL_AtomicAdd(dormant_count, -1);
 				assert(old_value > 0);
-				(void) old_value;
+				(void)old_value;
 				if(delay > 0) {
 					SDL_Delay(delay);
 				}
@@ -397,7 +396,6 @@ void nqiv_worker_main(nqiv_log_ctx*        logger,
 	}
 }
 
-
 int nqiv_worker_main_sdl(void* args_ptr)
 {
 	assert(args_ptr != NULL);
@@ -405,16 +403,9 @@ int nqiv_worker_main_sdl(void* args_ptr)
 	nqiv_worker_main_args* args = args_ptr;
 
 	/* The args struct should not be relied on, though its members can be. */
-	nqiv_worker_main(args->logger,
-	                 args->queue,
-					 args->delay,
-	                 args->wakeup,
-	                 args->event_interval,
-	                 args->queue_bins,
-	                 args->event_code,
-	                 args->transaction_group,
-	                 args->dormant_count,
-	                 args->running);
+	nqiv_worker_main(args->logger, args->queue, args->delay, args->wakeup, args->event_interval,
+	                 args->queue_bins, args->event_code, args->transaction_group,
+	                 args->dormant_count, args->running);
 
 	return 0;
 }

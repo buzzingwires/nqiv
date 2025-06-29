@@ -51,8 +51,8 @@ bool nqiv_queue_init(nqiv_queue*   queue,
 	if(queue->lock == NULL) {
 		nqiv_queue_destroy(queue);
 		nqiv_log_write(logger, NQIV_LOG_ERROR,
-		               "Failed to create lock for queue of %d %d-sized units\n.",
-		               unit_count, unit_size);
+		               "Failed to create lock for queue of %d %d-sized units\n.", unit_count,
+		               unit_size);
 		return false;
 	}
 	queue->logger = logger;
