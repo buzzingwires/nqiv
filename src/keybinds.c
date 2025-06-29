@@ -16,7 +16,7 @@
 #include "keyrate.h"
 #include "keybinds.h"
 
-int nqiv_findchar(const char* text, const char query, const int start, const int stop)
+static int nqiv_findchar(const char* text, const char query, const int start, const int stop)
 {
 	assert(text != NULL);
 	assert(stop >= -1);
@@ -108,7 +108,7 @@ nqiv_key_action nqiv_text_to_key_action(const char* text, const int length)
 	return NQIV_KEY_ACTION_NONE;
 }
 
-bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
+static bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 {
 	bool success = true;
 	if(strncmp(text, "lshift", length) == 0) {
@@ -233,10 +233,8 @@ bool nqiv_text_to_key_match(char* text, const int length, nqiv_key_match* match)
 	return success;
 }
 
-bool nqiv_text_to_keystate_numerical(char*       text,
-                                     const int   length,
-                                     const char* prefix,
-                                     Sint64*     output)
+static bool
+nqiv_text_to_keystate_numerical(char* text, const int length, const char* prefix, Sint64* output)
 {
 	bool success = false;
 	if(*output < 0 && (size_t)length > strlen(prefix)
@@ -252,7 +250,7 @@ bool nqiv_text_to_keystate_numerical(char*       text,
 	return success;
 }
 
-bool nqiv_text_to_keystate(char* text, const int length, nqiv_keyrate_keystate* state)
+static bool nqiv_text_to_keystate(char* text, const int length, nqiv_keyrate_keystate* state)
 {
 	bool success = true;
 	if(strncmp(text, "allow_on_up", length) == 0 && state->send_on_up == NQIV_KEYRATE_ON_MANAGER) {
@@ -279,7 +277,7 @@ bool nqiv_text_to_keystate(char* text, const int length, nqiv_keyrate_keystate* 
 	return success;
 }
 
-void nqiv_keybind_init_pair(nqiv_keybind_pair* pair)
+static void nqiv_keybind_init_pair(nqiv_keybind_pair* pair)
 {
 	memset(pair, 0, sizeof(nqiv_keybind_pair));
 	pair->keyrate.settings.start_delay = -1;
@@ -396,12 +394,12 @@ bool nqiv_keybind_add(nqiv_keybind_manager* manager, const nqiv_keybind_pair* pa
 	return nqiv_array_push(manager->lookup, &tmp);
 }
 
-bool nqiv_key_match_element_to_string(nqiv_array* builder, const char* suffix)
+static bool nqiv_key_match_element_to_string(nqiv_array* builder, const char* suffix)
 {
 	return nqiv_array_push_str(builder, suffix) && nqiv_array_push_str(builder, "+");
 }
 
-bool nqiv_keymod_to_string(const nqiv_keybind_pair* pair, nqiv_array* builder)
+static bool nqiv_keymod_to_string(const nqiv_keybind_pair* pair, nqiv_array* builder)
 {
 	const Uint16 mods[] = {
 		KMOD_LSHIFT, KMOD_RSHIFT, KMOD_LCTRL, KMOD_RCTRL, KMOD_LALT, KMOD_RALT,
@@ -425,7 +423,7 @@ bool nqiv_keymod_to_string(const nqiv_keybind_pair* pair, nqiv_array* builder)
 	return success;
 }
 
-bool nqiv_keyrate_to_string(nqiv_array* builder, const nqiv_keyrate_keystate* state)
+static bool nqiv_keyrate_to_string(nqiv_array* builder, const nqiv_keyrate_keystate* state)
 {
 	bool success = true;
 	if(state->send_on_down == NQIV_KEYRATE_ALLOW) {
@@ -502,7 +500,7 @@ bool nqiv_keybind_to_string(const nqiv_keybind_pair* pair, char* buf)
 	return success;
 }
 
-bool nqiv_compare_mod(const Uint16 a, const Uint16 b)
+static bool nqiv_compare_mod(const Uint16 a, const Uint16 b)
 {
 	const Uint16 ac = a & ~KMOD_GUI & ~KMOD_SCROLL & ~KMOD_NUM;
 	const Uint16 bc = b & ~KMOD_GUI & ~KMOD_SCROLL & ~KMOD_NUM;
@@ -513,7 +511,7 @@ bool nqiv_compare_mod(const Uint16 a, const Uint16 b)
 	       && ((bool)(ac & KMOD_MODE) == (bool)(bc & KMOD_MODE));
 }
 
-bool nqiv_keybind_compare_match(const nqiv_key_match* a, const nqiv_key_match* b)
+static bool nqiv_keybind_compare_match(const nqiv_key_match* a, const nqiv_key_match* b)
 {
 	return (a->mode == b->mode)
 	       && ((a->mode & NQIV_KEY_MATCH_MODE_KEY_MOD) == 0

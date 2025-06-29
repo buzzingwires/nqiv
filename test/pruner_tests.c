@@ -357,10 +357,10 @@ typedef struct prune_effects
 	int  prune_count;
 } prune_effects;
 
-void pruner_test_check_instance(const char*          pruner_string,
-                                const int            image_count,
-                                const int            montage_position,
-                                const prune_effects* effects)
+static void pruner_test_check_instance(const char*          pruner_string,
+                                       const int            image_count,
+                                       const int            montage_position,
+                                       const prune_effects* effects)
 {
 	nqiv_log_ctx        logger = {0};
 	nqiv_priority_queue queue = {0};
@@ -458,12 +458,13 @@ void pruner_test_check_instance(const char*          pruner_string,
 	nqiv_log_destroy(&logger);
 }
 
-void reset_prune_effects(prune_effects* effects)
+static void reset_prune_effects(prune_effects* effects)
 {
 	memset(effects, 0, sizeof(prune_effects));
 }
 
-void pruner_test_send_event(prune_effects* effects, const char* pruner, bool* load, bool* unload)
+static void
+pruner_test_send_event(prune_effects* effects, const char* pruner, bool* load, bool* unload)
 {
 	reset_prune_effects(effects);
 	*unload = true;
@@ -473,7 +474,7 @@ void pruner_test_send_event(prune_effects* effects, const char* pruner, bool* lo
 	pruner_test_check_instance(pruner, 1, 0, effects);
 }
 
-void pruner_test_send_all_events(prune_effects* effects)
+static void pruner_test_send_all_events(prune_effects* effects)
 {
 	pruner_test_send_event(effects, "or vips self_opened unload vips surface",
 	                       &effects->load_image_vips, &effects->unload_image_vips);
@@ -495,15 +496,15 @@ void pruner_test_send_all_events(prune_effects* effects)
 		&effects->load_thumbnail_surface, &effects->hard_unload_thumbnail_surface);
 }
 
-void pruner_test_thumbnail_and_image(const prune_effects* effects,
-                                     const char*          image_pruner,
-                                     const char*          thumbnail_pruner,
-                                     bool*                image_load,
-                                     bool*                image_unload,
-                                     bool*                thumbnail_load,
-                                     bool*                thumbnail_unload,
-                                     const int            position,
-                                     const int            count)
+static void pruner_test_thumbnail_and_image(const prune_effects* effects,
+                                            const char*          image_pruner,
+                                            const char*          thumbnail_pruner,
+                                            bool*                image_load,
+                                            bool*                image_unload,
+                                            bool*                thumbnail_load,
+                                            bool*                thumbnail_unload,
+                                            const int            position,
+                                            const int            count)
 {
 	assert(!*image_load);
 	assert(!*image_unload);
@@ -606,7 +607,8 @@ void pruner_test_error(void)
 	nqiv_log_destroy(&logger);
 }
 
-void pruner_test_string_simplification(nqiv_log_ctx* logger, const char* start, const char* result)
+static void
+pruner_test_string_simplification(nqiv_log_ctx* logger, const char* start, const char* result)
 {
 	char             desc_str[NQIV_PRUNER_DESC_STRLEN + 1] = {0};
 	nqiv_pruner_desc desc = {0};

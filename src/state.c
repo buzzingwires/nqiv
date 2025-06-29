@@ -142,10 +142,10 @@ void nqiv_state_set_default_colors(nqiv_state* state)
 	state->alpha_checker_color_two.a = 255;
 }
 
-bool nqiv_create_sdl_drawing_surface(nqiv_log_ctx* logger,
-                                     const int     width,
-                                     const int     height,
-                                     SDL_Surface** surface)
+static bool nqiv_create_sdl_drawing_surface(nqiv_log_ctx* logger,
+                                            const int     width,
+                                            const int     height,
+                                            SDL_Surface** surface)
 {
 	*surface = SDL_CreateRGBSurfaceWithFormat(0, width, height, 4 * 8, SDL_PIXELFORMAT_ABGR8888);
 	if(*surface == NULL) {
@@ -156,10 +156,10 @@ bool nqiv_create_sdl_drawing_surface(nqiv_log_ctx* logger,
 	return true;
 }
 
-bool nqiv_sdl_surface_to_texture(nqiv_log_ctx* logger,
-                                 SDL_Renderer* renderer,
-                                 SDL_Surface*  surface,
-                                 SDL_Texture** texture)
+static bool nqiv_sdl_surface_to_texture(nqiv_log_ctx* logger,
+                                        SDL_Renderer* renderer,
+                                        SDL_Surface*  surface,
+                                        SDL_Texture** texture)
 {
 	*texture = SDL_CreateTextureFromSurface(renderer, surface);
 	if(*texture == NULL) {
@@ -171,11 +171,11 @@ bool nqiv_sdl_surface_to_texture(nqiv_log_ctx* logger,
 	return true;
 }
 
-bool nqiv_create_solid_rect_texture(nqiv_log_ctx*    logger,
-                                    SDL_Renderer*    renderer,
-                                    const SDL_Rect*  rect,
-                                    const SDL_Color* color,
-                                    SDL_Texture**    texture)
+static bool nqiv_create_solid_rect_texture(nqiv_log_ctx*    logger,
+                                           SDL_Renderer*    renderer,
+                                           const SDL_Rect*  rect,
+                                           const SDL_Color* color,
+                                           SDL_Texture**    texture)
 {
 	SDL_Surface* surface;
 	if(!nqiv_create_sdl_drawing_surface(logger, rect->w, rect->h, &surface)) {
@@ -188,13 +188,13 @@ bool nqiv_create_solid_rect_texture(nqiv_log_ctx*    logger,
 	return true;
 }
 
-bool nqiv_create_border_rect_texture(nqiv_log_ctx*    logger,
-                                     SDL_Renderer*    renderer,
-                                     const SDL_Rect*  rect,
-                                     const int        dash_size,
-                                     const SDL_Color* color,
-                                     const SDL_Color* dash_color,
-                                     SDL_Texture**    texture)
+static bool nqiv_create_border_rect_texture(nqiv_log_ctx*    logger,
+                                            SDL_Renderer*    renderer,
+                                            const SDL_Rect*  rect,
+                                            const int        dash_size,
+                                            const SDL_Color* color,
+                                            const SDL_Color* dash_color,
+                                            SDL_Texture**    texture)
 {
 	SDL_Surface* surface;
 	if(!nqiv_create_sdl_drawing_surface(logger, rect->w, rect->h, &surface)) {
@@ -209,10 +209,10 @@ bool nqiv_create_border_rect_texture(nqiv_log_ctx*    logger,
 	return true;
 }
 
-bool nqiv_create_alpha_background_texture(nqiv_state*     state,
-                                          const SDL_Rect* rect,
-                                          const int       thickness,
-                                          SDL_Texture**   texture)
+static bool nqiv_create_alpha_background_texture(nqiv_state*     state,
+                                                 const SDL_Rect* rect,
+                                                 const int       thickness,
+                                                 SDL_Texture**   texture)
 {
 	SDL_Surface* surface;
 	if(!nqiv_create_sdl_drawing_surface(&state->logger, rect->w, rect->h, &surface)) {
@@ -283,7 +283,7 @@ bool nqiv_state_recreate_mark_texture(nqiv_state* state)
 	return true;
 }
 
-bool nqiv_state_create_alpha_background_texture(nqiv_state* state)
+static bool nqiv_state_create_alpha_background_texture(nqiv_state* state)
 {
 	SDL_Rect window_rect;
 	window_rect.x = 0;
@@ -315,9 +315,9 @@ bool nqiv_state_create_single_color_texture(nqiv_state*      state,
 	return true;
 }
 
-bool nqiv_state_recreate_single_color_texture(nqiv_state*      state,
-                                              const SDL_Color* color,
-                                              SDL_Texture**    texture)
+static bool nqiv_state_recreate_single_color_texture(nqiv_state*      state,
+                                                     const SDL_Color* color,
+                                                     SDL_Texture**    texture)
 {
 	SDL_Texture* old_texture = *texture;
 	if(!nqiv_state_create_single_color_texture(state, color, texture)) {

@@ -113,10 +113,10 @@ void nqiv_log_add_stream(nqiv_log_ctx* ctx, const FILE* stream)
 	}
 }
 
-void write_prefix_timeinfo(FILE*         stream,
-                           nqiv_log_ctx* ctx,
-                           const int     formatter_start,
-                           const int     formatter_len)
+static void write_prefix_timeinfo(FILE*         stream,
+                                  nqiv_log_ctx* ctx,
+                                  const int     formatter_start,
+                                  const int     formatter_len)
 {
 	char fmtbuf[NQIV_LOG_PREFIX_FORMAT_LEN] = {0};
 	assert(formatter_len - (int)strlen("TIME:") >= 0);
@@ -143,7 +143,7 @@ void write_prefix_timeinfo(FILE*         stream,
 	g_free(timebuf);
 }
 
-void write_prefix_level(FILE* stream, const nqiv_log_level level)
+static void write_prefix_level(FILE* stream, const nqiv_log_level level)
 {
 	switch(level) {
 	case NQIV_LOG_ANY:
@@ -167,13 +167,13 @@ void write_prefix_level(FILE* stream, const nqiv_log_level level)
 	}
 }
 
-void write_prefix_clean_slice(char* slice, int* slice_idx)
+static void write_prefix_clean_slice(char* slice, int* slice_idx)
 {
 	memset(slice, 0, NQIV_LOG_PREFIX_FORMAT_LEN);
 	*slice_idx = 0;
 }
 
-void write_prefix_flush_slice(FILE* stream, char* slice, int* slice_idx)
+static void write_prefix_flush_slice(FILE* stream, char* slice, int* slice_idx)
 {
 	if(*slice_idx != 0) {
 		fprintf(stream, "%s", slice);
@@ -181,13 +181,13 @@ void write_prefix_flush_slice(FILE* stream, char* slice, int* slice_idx)
 	write_prefix_clean_slice(slice, slice_idx);
 }
 
-void write_prefix_increment_slice(char* slice, int* slice_idx, const char c)
+static void write_prefix_increment_slice(char* slice, int* slice_idx, const char c)
 {
 	slice[*slice_idx] = c;
 	++*slice_idx;
 }
 
-void write_prefix(nqiv_log_ctx* ctx, const nqiv_log_level level, FILE* stream)
+static void write_prefix(nqiv_log_ctx* ctx, const nqiv_log_level level, FILE* stream)
 {
 	assert(stream != NULL);
 	char slice[NQIV_LOG_PREFIX_FORMAT_LEN];

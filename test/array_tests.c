@@ -8,12 +8,12 @@
 
 #define ARRAY_TEST_STANDARD_SIZE 10
 
-void array_test_standard(nqiv_array* array,
-                         const int   start_length,
-                         const int   end_length,
-                         const int   max_length,
-                         const int   push_count,
-                         const bool  unlimit)
+static void array_test_standard(nqiv_array* array,
+                                const int   start_length,
+                                const int   end_length,
+                                const int   max_length,
+                                const int   push_count,
+                                const bool  unlimit)
 {
 	assert(unlimit || max_length >= 10);
 	int idx = -1;

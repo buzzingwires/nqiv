@@ -28,7 +28,7 @@ int nqiv_thumbnail_get_closest_size(const int size)
 }
 
 #define NQIV_URI_LEN (PATH_MAX + 7)
-bool nqiv_thumbnail_render_uri(const nqiv_image* image, char* uri)
+static bool nqiv_thumbnail_render_uri(const nqiv_image* image, char* uri)
 {
 	char abspath[PATH_MAX + 1] = {0};
 	if(nqiv_realpath(image->image.path, abspath) == NULL) {
@@ -66,7 +66,7 @@ bool nqiv_thumbnail_render_uri(const nqiv_image* image, char* uri)
 	return true;
 }
 
-bool nqiv_thumbnail_digest_to_builder(nqiv_array* builder, const nqiv_image* image)
+static bool nqiv_thumbnail_digest_to_builder(nqiv_array* builder, const nqiv_image* image)
 {
 	char actualpath[NQIV_URI_LEN + 1];
 	if(!nqiv_thumbnail_render_uri(image, actualpath)) {
@@ -84,7 +84,8 @@ bool nqiv_thumbnail_digest_to_builder(nqiv_array* builder, const nqiv_image* ima
 	return result;
 }
 
-bool nqiv_thumbnail_get_type(nqiv_image_manager* images, const bool failed, nqiv_array* builder)
+static bool
+nqiv_thumbnail_get_type(nqiv_image_manager* images, const bool failed, nqiv_array* builder)
 {
 	const int thumbnail_size = SDL_AtomicGet(&images->thumbnail.size);
 	if(failed) {
@@ -100,7 +101,7 @@ bool nqiv_thumbnail_get_type(nqiv_image_manager* images, const bool failed, nqiv
 	}
 }
 
-bool nqiv_thumbnail_create_dirs(nqiv_image_manager* images, const bool failed)
+static bool nqiv_thumbnail_create_dirs(nqiv_image_manager* images, const bool failed)
 {
 	assert(images != NULL);
 	assert(SDL_AtomicGet(&images->thumbnail.size) > 0);
@@ -329,10 +330,10 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 #undef NQIV_SIZE_STRLEN
 #undef NQIV_DIMENSIONS_STRLEN
 
-uintmax_t nqiv_thumbnail_get_field(bool*             output,
-                                   const nqiv_image* image,
-                                   gchar**           header_field_names,
-                                   const char*       field)
+static uintmax_t nqiv_thumbnail_get_field(bool*             output,
+                                          const nqiv_image* image,
+                                          gchar**           header_field_names,
+                                          const char*       field)
 {
 	const int string_idx = nqiv_lookup_vips_png_comment(header_field_names, field);
 	if(string_idx == -1) {

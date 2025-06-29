@@ -44,13 +44,13 @@ struct test_set
 	void (*test_ptr)(void);
 };
 
-void print_test_set_designation(const test_set* tests)
+static void print_test_set_designation(const test_set* tests)
 {
 	assert(tests->number >= 0);
 	fprintf(stderr, "%d %s", tests->number, tests->name);
 }
 
-void destroy_test_set(test_set* tests)
+static void destroy_test_set(test_set* tests)
 {
 	assert(tests != NULL);
 	memset(tests->name, 0, TEST_NAME_LEN);
@@ -69,7 +69,7 @@ void destroy_test_set(test_set* tests)
 	free(tests);
 }
 
-test_set* new_test_set(const char* name, const int number)
+static test_set* new_test_set(const char* name, const int number)
 {
 	assert(name != NULL);
 	assert(number >= 0);
@@ -83,12 +83,12 @@ test_set* new_test_set(const char* name, const int number)
 	return tests;
 }
 
-test_set* new_test_root(void)
+static test_set* new_test_root(void)
 {
 	return new_test_set("all", 0);
 }
 
-test_set* add_test_subset(test_set* tests, int* test_counter, const char* name)
+static test_set* add_test_subset(test_set* tests, int* test_counter, const char* name)
 {
 	assert(tests != NULL);
 	assert(test_counter != NULL);
@@ -128,7 +128,8 @@ test_set* add_test_subset(test_set* tests, int* test_counter, const char* name)
 	return new_tests;
 }
 
-test_set* add_test(test_set* tests, int* test_counter, const char* name, void (*test_ptr)(void))
+static test_set*
+add_test(test_set* tests, int* test_counter, const char* name, void (*test_ptr)(void))
 {
 	assert(test_ptr != NULL);
 	test_set* test = add_test_subset(tests, test_counter, name);
@@ -138,7 +139,7 @@ test_set* add_test(test_set* tests, int* test_counter, const char* name, void (*
 	return test;
 }
 
-bool check_name(char** array, const int count, const char* string)
+static bool check_name(char** array, const int count, const char* string)
 {
 	assert(array != NULL);
 	assert(string != NULL);
@@ -155,10 +156,10 @@ bool check_name(char** array, const int count, const char* string)
 	return false;
 }
 
-void run_tests_step(const test_set* tests,
-                    const bool      parent_allowed,
-                    char**          names_to_run,
-                    const int       names_to_run_len)
+static void run_tests_step(const test_set* tests,
+                           const bool      parent_allowed,
+                           char**          names_to_run,
+                           const int       names_to_run_len)
 {
 	assert(tests != NULL);
 	const bool allowed = parent_allowed || check_name(names_to_run, names_to_run_len, tests->name);
@@ -178,7 +179,7 @@ void run_tests_step(const test_set* tests,
 	}
 }
 
-void run_tests(const test_set* tests, char** names_to_run, const int names_to_run_count)
+static void run_tests(const test_set* tests, char** names_to_run, const int names_to_run_count)
 {
 	run_tests_step(tests, false, names_to_run, names_to_run_count);
 }
@@ -199,7 +200,7 @@ void run_tests(const test_set* tests, char** names_to_run, const int names_to_ru
 	if(add_test(current_set, &test_counter, (name), (func)) == NULL) { \
 		FAIL;                                                          \
 	}
-test_set* create_tests(void)
+static test_set* create_tests(void)
 {
 	test_set* current_set;
 	int       test_counter = 1;

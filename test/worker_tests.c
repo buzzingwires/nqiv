@@ -3,7 +3,7 @@
 
 #include "../src/worker.h"
 
-bool worker_test_compare_specs(const nqiv_worker_spec* a, const nqiv_worker_spec* b)
+static bool worker_test_compare_specs(const nqiv_worker_spec* a, const nqiv_worker_spec* b)
 {
 	if(a->delay_base != b->delay_base) {
 		return false;
@@ -20,9 +20,9 @@ bool worker_test_compare_specs(const nqiv_worker_spec* a, const nqiv_worker_spec
 	return true;
 }
 
-void worker_test_spec_parse_print_instance_stringdiff(const nqiv_worker_spec* spec,
-                                                      const char*             in_string,
-                                                      const char*             out_string)
+static void worker_test_spec_parse_print_instance_stringdiff(const nqiv_worker_spec* spec,
+                                                             const char*             in_string,
+                                                             const char*             out_string)
 {
 	nqiv_worker_spec new_spec;
 	assert(nqiv_worker_string_to_spec(in_string, &new_spec));
@@ -32,12 +32,12 @@ void worker_test_spec_parse_print_instance_stringdiff(const nqiv_worker_spec* sp
 	assert(strcmp(out_string, new_string) == 0);
 }
 
-void worker_test_spec_parse_print_instance(const nqiv_worker_spec* spec, const char* string)
+static void worker_test_spec_parse_print_instance(const nqiv_worker_spec* spec, const char* string)
 {
 	worker_test_spec_parse_print_instance_stringdiff(spec, string, string);
 }
 
-void worker_test_spec_clear_bins(nqiv_worker_spec* spec)
+static void worker_test_spec_clear_bins(nqiv_worker_spec* spec)
 {
 	int idx;
 	for(idx = 0; idx < THREAD_QUEUE_BIN_COUNT + 1; ++idx) {

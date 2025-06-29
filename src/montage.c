@@ -8,7 +8,7 @@
 
 /* TODO LOGGING AND CHECKS */
 
-double nqiv_montage_calculate_axis(int* counter, const double ratio)
+static double nqiv_montage_calculate_axis(int* counter, const double ratio)
 {
 	*counter = 0;
 	double fill = 0;
@@ -26,7 +26,8 @@ double nqiv_montage_calculate_axis(int* counter, const double ratio)
 	return 1.0 - fill;
 }
 
-bool nqiv_montage_compare_range(const nqiv_montage_state* first, const nqiv_montage_state* second)
+static bool nqiv_montage_compare_range(const nqiv_montage_state* first,
+                                       const nqiv_montage_state* second)
 {
 	return first->positions.start == second->positions.start
 	       && first->positions.end == second->positions.end;
@@ -124,7 +125,7 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state, const int widt
 	state->range_changed = state->range_changed || !nqiv_montage_compare_range(&original, state);
 }
 
-void nqiv_montage_jump_selection(nqiv_montage_state* state, const int offset)
+static void nqiv_montage_jump_selection(nqiv_montage_state* state, const int offset)
 {
 	nqiv_montage_set_selection(state, state->positions.selection + offset);
 }
@@ -139,13 +140,13 @@ void nqiv_montage_previous_selection(nqiv_montage_state* state)
 	nqiv_montage_jump_selection(state, -1);
 }
 
-void nqiv_montage_set_selection_row(nqiv_montage_state* state, const int idx)
+static void nqiv_montage_set_selection_row(nqiv_montage_state* state, const int idx)
 {
 	nqiv_montage_set_selection(state, state->positions.selection % state->dimensions.count_per_row
 	                                      + idx * state->dimensions.count_per_row);
 }
 
-void nqiv_montage_jump_selection_row(nqiv_montage_state* state, const int offset)
+static void nqiv_montage_jump_selection_row(nqiv_montage_state* state, const int offset)
 {
 	nqiv_montage_set_selection_row(
 		state, state->positions.selection / state->dimensions.count_per_row + offset);
@@ -181,7 +182,7 @@ void nqiv_montage_jump_selection_end(nqiv_montage_state* state)
 	nqiv_montage_set_selection(state, nqiv_array_get_last_idx(state->images->images));
 }
 
-int nqiv_montage_scan_marked(nqiv_montage_state* state, const int start, const int increment)
+static int nqiv_montage_scan_marked(nqiv_montage_state* state, const int start, const int increment)
 {
 	nqiv_image** images = state->images->images->data;
 	int          idx;
@@ -194,7 +195,7 @@ int nqiv_montage_scan_marked(nqiv_montage_state* state, const int start, const i
 	return -1;
 }
 
-void nqiv_montage_set_existing_selection(nqiv_montage_state* state, const int idx)
+static void nqiv_montage_set_existing_selection(nqiv_montage_state* state, const int idx)
 {
 	if(idx >= 0) {
 		nqiv_montage_set_selection(state, idx);

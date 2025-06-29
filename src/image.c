@@ -26,7 +26,7 @@ void nqiv_unload_image_form_vips(nqiv_image_form* form)
 	}
 }
 
-void nqiv_unload_texture_ptr(SDL_Texture** texture, const bool destroy)
+static void nqiv_unload_texture_ptr(SDL_Texture** texture, const bool destroy)
 {
 	assert(texture != NULL);
 	if(*texture != NULL) {
@@ -74,7 +74,7 @@ void nqiv_unload_image_form_surface(nqiv_image_form* form)
 	}
 }
 
-void nqiv_unload_image_form(nqiv_image_form* form)
+static void nqiv_unload_image_form(nqiv_image_form* form)
 {
 	assert(form != NULL);
 	nqiv_unload_image_form_vips(form);
@@ -82,7 +82,7 @@ void nqiv_unload_image_form(nqiv_image_form* form)
 	nqiv_unload_image_form_surface(form);
 }
 
-void nqiv_image_destroy(nqiv_image* image)
+static void nqiv_image_destroy(nqiv_image* image)
 {
 	assert(image != NULL);
 	assert(image->parent != NULL);
@@ -101,7 +101,7 @@ void nqiv_image_destroy(nqiv_image* image)
 	free(image);
 }
 
-nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* raw_path)
+static nqiv_image* nqiv_image_create(nqiv_log_ctx* logger, const char* raw_path)
 {
 	assert(logger != NULL);
 
@@ -173,7 +173,7 @@ bool nqiv_image_test_lock(nqiv_image* image)
 /* TODO Add twice */
 /* TODO Detect change */
 
-ptrdiff_t nqiv_find_space_delimited_idx(const char* string, const int wanted_idx)
+static ptrdiff_t nqiv_find_space_delimited_idx(const char* string, const int wanted_idx)
 {
 	const size_t len = strlen(string);
 	if(len > PTRDIFF_MAX) {
@@ -201,7 +201,7 @@ ptrdiff_t nqiv_find_space_delimited_idx(const char* string, const int wanted_idx
 	return found ? c_idx : -1;
 }
 
-bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
+static bool nqiv_image_form_set_frame_delay(nqiv_image* image, nqiv_image_form* form)
 {
 	char* delay_string;
 	if(vips_image_get_as_string(form->vips, "delay", &delay_string) == -1) {
@@ -301,7 +301,7 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 	return true;
 }
 
-bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
+static bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 {
 	assert(image != NULL);
 	assert(form != NULL);
@@ -611,7 +611,7 @@ bool nqiv_image_borrow_thumbnail_dimensions(nqiv_image* image)
 	return true;
 }
 
-bool nqiv_image_is_form_loaded(const nqiv_image_form* form)
+static bool nqiv_image_is_form_loaded(const nqiv_image_form* form)
 {
 	assert((form->data == NULL && form->surface == NULL)
 	       || (form->data != NULL && form->surface != NULL));
@@ -789,13 +789,13 @@ bool nqiv_image_manager_set_thumbnail_root(nqiv_image_manager* manager, const ch
 	return true;
 }
 
-void nqiv_image_calculate_zoom_dimension(const double least,
-                                         const bool   inclusive_least,
-                                         const double catch_point,
-                                         const double most,
-                                         const bool   inclusive_most,
-                                         double*      target,
-                                         const double amount)
+static void nqiv_image_calculate_zoom_dimension(const double least,
+                                                const bool   inclusive_least,
+                                                const double catch_point,
+                                                const double most,
+                                                const bool   inclusive_most,
+                                                double*      target,
+                                                const double amount)
 {
 	double new_target = *target + amount;
 	if((*target < catch_point && new_target > catch_point)
@@ -953,11 +953,11 @@ void nqiv_image_manager_zoom_out_more(nqiv_image_manager* manager)
     To calculate the actual destination rect, divide the height and width of the canvas rect with
  the screen size. Use these to scale the dimensions of the source rect into the screen size.
  */
-void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
-                                           const bool          do_zoom,
-                                           const bool          do_stretch,
-                                           SDL_Rect*           srcrect,
-                                           SDL_Rect*           dstrect)
+static void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
+                                                  const bool          do_zoom,
+                                                  const bool          do_stretch,
+                                                  SDL_Rect*           srcrect,
+                                                  SDL_Rect*           dstrect)
 {
 	assert(manager != NULL);
 	assert(srcrect != NULL);
@@ -1205,12 +1205,14 @@ bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const 
 	return true;
 }
 
-void nqiv_image_manager_increment_thumbnail_size_base(nqiv_image_manager* manager, const int adjust)
+static void nqiv_image_manager_increment_thumbnail_size_base(nqiv_image_manager* manager,
+                                                             const int           adjust)
 {
 	SDL_AtomicAdd(&manager->thumbnail.size, adjust);
 }
 
-void nqiv_image_manager_decrement_thumbnail_size_base(nqiv_image_manager* manager, const int adjust)
+static void nqiv_image_manager_decrement_thumbnail_size_base(nqiv_image_manager* manager,
+                                                             const int           adjust)
 {
 	/* This should not be done by a thread. Only master can modify to guarantee value. */
 	const int new_size = SDL_AtomicGet(&manager->thumbnail.size) - adjust;
@@ -1237,7 +1239,7 @@ void nqiv_image_manager_decrement_thumbnail_size_more(nqiv_image_manager* manage
 	nqiv_image_manager_decrement_thumbnail_size_base(manager, manager->zoom.thumbnail_adjust_more);
 }
 
-void nqiv_image_form_delay_frame(nqiv_image_form* form)
+static void nqiv_image_form_delay_frame(nqiv_image_form* form)
 {
 	const Uint64 frame_diff = SDL_GetTicks64() - form->animation.last_frame_time;
 	if(frame_diff < form->animation.delay) {

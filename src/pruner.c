@@ -34,7 +34,7 @@ bool nqiv_pruner_init(nqiv_pruner* pruner, nqiv_log_ctx* logger, const int queue
 	return true;
 }
 
-void nqiv_pruner_update_state_boolean(nqiv_pruner* pruner, const bool value)
+static void nqiv_pruner_update_state_boolean(nqiv_pruner* pruner, const bool value)
 {
 	if(!pruner->state.and_is_set) {
 		pruner->state.and_result = true;
@@ -47,16 +47,16 @@ void nqiv_pruner_update_state_boolean(nqiv_pruner* pruner, const bool value)
 		pruner->state.or_result ? "true" : "false", pruner->state.and_result ? "true" : "false");
 }
 
-void nqiv_pruner_update_state_integer(nqiv_pruner* pruner, const int value)
+static void nqiv_pruner_update_state_integer(nqiv_pruner* pruner, const int value)
 {
 	pruner->state.total_sum += value;
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "New prune state total_sum is %d\n",
 	               pruner->state.total_sum);
 }
 
-void nqiv_pruner_run_not_animated(nqiv_pruner*                pruner,
-                                  nqiv_pruner_desc_datapoint* datapoint,
-                                  const void*                 object)
+static void nqiv_pruner_run_not_animated(nqiv_pruner*                pruner,
+                                         nqiv_pruner_desc_datapoint* datapoint,
+                                         const void*                 object)
 {
 	if(datapoint->active) {
 		const bool result = !(((nqiv_image_form*)object)->animation.exists);
@@ -67,9 +67,9 @@ void nqiv_pruner_run_not_animated(nqiv_pruner*                pruner,
 	}
 }
 
-void nqiv_pruner_run_loaded_self(nqiv_pruner*                pruner,
-                                 nqiv_pruner_desc_datapoint* datapoint,
-                                 const void*                 object)
+static void nqiv_pruner_run_loaded_self(nqiv_pruner*                pruner,
+                                        nqiv_pruner_desc_datapoint* datapoint,
+                                        const void*                 object)
 {
 	if(datapoint->active) {
 		const bool result = object != NULL;
@@ -80,9 +80,9 @@ void nqiv_pruner_run_loaded_self(nqiv_pruner*                pruner,
 	}
 }
 
-void nqiv_pruner_loaded_count_body(nqiv_pruner*                pruner,
-                                   nqiv_pruner_desc_datapoint* datapoint,
-                                   const int                   increment)
+static void nqiv_pruner_loaded_count_body(nqiv_pruner*                pruner,
+                                          nqiv_pruner_desc_datapoint* datapoint,
+                                          const int                   increment)
 {
 	/* Mutate value by increment amount and check against condition, updating
 	 * result against the pruner-wide nqiv_pruner_count_op */
@@ -96,9 +96,9 @@ void nqiv_pruner_loaded_count_body(nqiv_pruner*                pruner,
 	nqiv_pruner_update_state_integer(pruner, increment);
 }
 
-void nqiv_pruner_run_loaded_ahead(nqiv_pruner*                pruner,
-                                  nqiv_pruner_desc_datapoint* datapoint,
-                                  const void*                 object)
+static void nqiv_pruner_run_loaded_ahead(nqiv_pruner*                pruner,
+                                         nqiv_pruner_desc_datapoint* datapoint,
+                                         const void*                 object)
 {
 	if(datapoint->active && object != NULL
 	   && (pruner->state.idx - pruner->state.montage_end) + 1
@@ -107,9 +107,9 @@ void nqiv_pruner_run_loaded_ahead(nqiv_pruner*                pruner,
 	}
 }
 
-void nqiv_pruner_run_loaded_behind(nqiv_pruner*                pruner,
-                                   nqiv_pruner_desc_datapoint* datapoint,
-                                   const void*                 object)
+static void nqiv_pruner_run_loaded_behind(nqiv_pruner*                pruner,
+                                          nqiv_pruner_desc_datapoint* datapoint,
+                                          const void*                 object)
 {
 	if(datapoint->active && object != NULL
 	   && (pruner->state.montage_start - pruner->state.idx) > datapoint->condition.as_int_pair[0]) {
@@ -117,10 +117,10 @@ void nqiv_pruner_run_loaded_behind(nqiv_pruner*                pruner,
 	}
 }
 
-void nqiv_pruner_run_bytes_ahead(nqiv_pruner*                pruner,
-                                 nqiv_pruner_desc_datapoint* datapoint,
-                                 const void*                 object,
-                                 const int                   size)
+static void nqiv_pruner_run_bytes_ahead(nqiv_pruner*                pruner,
+                                        nqiv_pruner_desc_datapoint* datapoint,
+                                        const void*                 object,
+                                        const int                   size)
 {
 	if(datapoint->active && object != NULL
 	   && (pruner->state.idx - pruner->state.montage_end) + 1
@@ -129,10 +129,10 @@ void nqiv_pruner_run_bytes_ahead(nqiv_pruner*                pruner,
 	}
 }
 
-void nqiv_pruner_run_bytes_behind(nqiv_pruner*                pruner,
-                                  nqiv_pruner_desc_datapoint* datapoint,
-                                  const void*                 object,
-                                  const int                   size)
+static void nqiv_pruner_run_bytes_behind(nqiv_pruner*                pruner,
+                                         nqiv_pruner_desc_datapoint* datapoint,
+                                         const void*                 object,
+                                         const int                   size)
 {
 	if(datapoint->active && object != NULL
 	   && (pruner->state.montage_start - pruner->state.idx) > datapoint->condition.as_int_pair[0]) {
@@ -140,11 +140,11 @@ void nqiv_pruner_run_bytes_behind(nqiv_pruner*                pruner,
 	}
 }
 
-void nqiv_pruner_run_set(nqiv_pruner*              pruner,
-                         nqiv_pruner_desc_dataset* set,
-                         const nqiv_image_form*    form,
-                         const void*               object,
-                         const int                 size)
+static void nqiv_pruner_run_set(nqiv_pruner*              pruner,
+                                nqiv_pruner_desc_dataset* set,
+                                const nqiv_image_form*    form,
+                                const void*               object,
+                                const int                 size)
 {
 	nqiv_pruner_run_not_animated(pruner, &(set->not_animated), form);
 	nqiv_pruner_run_loaded_self(pruner, &(set->loaded_self), object);
@@ -154,7 +154,8 @@ void nqiv_pruner_run_set(nqiv_pruner*              pruner,
 	nqiv_pruner_run_bytes_behind(pruner, &(set->bytes_behind), object, size);
 }
 
-void nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqiv_image* image)
+static void
+nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqiv_image* image)
 {
 	/* Check loaded self, pruner, datapoint, void ptr */
 	/* Check loaded ahead, pruner, datapoint ( param 1 (point to start counting), param 2 (max
@@ -182,11 +183,11 @@ void nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqi
 	                    image->thumbnail.effective_width * image->thumbnail.effective_height * 4);
 }
 
-int nqiv_pruner_run_image(nqiv_pruner*         pruner,
-                          nqiv_montage_state*  montage,
-                          nqiv_priority_queue* thread_queue,
-                          const int            iidx,
-                          nqiv_image*          image)
+static int nqiv_pruner_run_image(nqiv_pruner*         pruner,
+                                 nqiv_montage_state*  montage,
+                                 nqiv_priority_queue* thread_queue,
+                                 const int            iidx,
+                                 nqiv_image*          image)
 {
 	nqiv_event                     event = {0};
 	nqiv_event_image_load_options* event_options = &(event.options.image_load);
@@ -291,7 +292,7 @@ int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 	return prune_count;
 }
 
-void nqiv_pruner_clean_desc_set(nqiv_pruner_desc_dataset* set)
+static void nqiv_pruner_clean_desc_set(nqiv_pruner_desc_dataset* set)
 {
 	memset(&set->not_animated.value, 0, sizeof(nqiv_pruner_desc_datapoint_content));
 	memset(&set->loaded_self.value, 0, sizeof(nqiv_pruner_desc_datapoint_content));
@@ -301,7 +302,7 @@ void nqiv_pruner_clean_desc_set(nqiv_pruner_desc_dataset* set)
 	memset(&set->bytes_behind.value, 0, sizeof(nqiv_pruner_desc_datapoint_content));
 }
 
-void nqiv_pruner_clean_desc(nqiv_pruner_desc* desc)
+static void nqiv_pruner_clean_desc(nqiv_pruner_desc* desc)
 {
 	/* Clean ephemeral state information. */
 	nqiv_pruner_clean_desc_set(&desc->vips_set);
@@ -350,7 +351,7 @@ loaded_ahead INTEGER loaded_behind INTEGER bytes_ahead INTEGER bytes_behind INTE
 UNLOAD
 vips data surface texture
 */
-int nqiv_pruner_parse_int(
+static int nqiv_pruner_parse_int(
 	nqiv_log_ctx* logger, const char* text, const int idx, const int end_idx, int* output)
 {
 	int nidx = idx;
@@ -373,11 +374,11 @@ int nqiv_pruner_parse_int(
 	return nidx;
 }
 
-int nqiv_pruner_parse_int_pair(nqiv_log_ctx*                       logger,
-                               const char*                         text,
-                               const int                           idx,
-                               const int                           end_idx,
-                               nqiv_pruner_desc_datapoint_content* output)
+static int nqiv_pruner_parse_int_pair(nqiv_log_ctx*                       logger,
+                                      const char*                         text,
+                                      const int                           idx,
+                                      const int                           end_idx,
+                                      nqiv_pruner_desc_datapoint_content* output)
 {
 	int nidx = idx;
 	nidx = nqiv_cmd_scan_not_whitespace(text, nidx, end_idx);
@@ -399,11 +400,11 @@ int nqiv_pruner_parse_int_pair(nqiv_log_ctx*                       logger,
 	return nidx;
 }
 
-int nqiv_pruner_set_true(nqiv_log_ctx*                       logger,
-                         const char*                         text,
-                         const int                           idx,
-                         const int                           end_idx,
-                         nqiv_pruner_desc_datapoint_content* output)
+static int nqiv_pruner_set_true(nqiv_log_ctx*                       logger,
+                                const char*                         text,
+                                const int                           idx,
+                                const int                           end_idx,
+                                nqiv_pruner_desc_datapoint_content* output)
 {
 	(void)logger;
 	(void)text;
@@ -412,17 +413,17 @@ int nqiv_pruner_set_true(nqiv_log_ctx*                       logger,
 	return idx;
 }
 
-int nqiv_pruner_parse_set_check(nqiv_log_ctx*               logger,
-                                const char*                 text,
-                                const int                   idx,
-                                const int                   end,
-                                const bool                  inside_no,
-                                nqiv_pruner_desc_datapoint* point,
-                                int (*parse_func)(nqiv_log_ctx*,
-                                                  const char*,
-                                                  const int,
-                                                  const int,
-                                                  nqiv_pruner_desc_datapoint_content*))
+static int nqiv_pruner_parse_set_check(nqiv_log_ctx*               logger,
+                                       const char*                 text,
+                                       const int                   idx,
+                                       const int                   end,
+                                       const bool                  inside_no,
+                                       nqiv_pruner_desc_datapoint* point,
+                                       int (*parse_func)(nqiv_log_ctx*,
+                                                         const char*,
+                                                         const int,
+                                                         const int,
+                                                         nqiv_pruner_desc_datapoint_content*))
 {
 	/* Based on the state of the parser, we parse the given condition of the
 	 * check, disable the check, enable or disable its unload setting, setting
@@ -439,20 +440,20 @@ int nqiv_pruner_parse_set_check(nqiv_log_ctx*               logger,
 	return nidx;
 }
 
-int nqiv_pruner_parse_check(nqiv_log_ctx*               logger,
-                            const char*                 text,
-                            const int                   idx,
-                            const int                   end,
-                            const bool                  inside_no,
-                            const bool                  inside_image,
-                            const bool                  inside_thumbnail,
-                            nqiv_pruner_desc_datapoint* point,
-                            nqiv_pruner_desc_datapoint* thumbnail_point,
-                            int (*parse_func)(nqiv_log_ctx*,
-                                              const char*,
-                                              const int,
-                                              const int,
-                                              nqiv_pruner_desc_datapoint_content*))
+static int nqiv_pruner_parse_check(nqiv_log_ctx*               logger,
+                                   const char*                 text,
+                                   const int                   idx,
+                                   const int                   end,
+                                   const bool                  inside_no,
+                                   const bool                  inside_image,
+                                   const bool                  inside_thumbnail,
+                                   nqiv_pruner_desc_datapoint* point,
+                                   nqiv_pruner_desc_datapoint* thumbnail_point,
+                                   int (*parse_func)(nqiv_log_ctx*,
+                                                     const char*,
+                                                     const int,
+                                                     const int,
+                                                     nqiv_pruner_desc_datapoint_content*))
 {
 	int nidx = idx;
 	int tidx = -1;
@@ -478,7 +479,8 @@ bool nqiv_pruner_append(nqiv_pruner* pruner, const nqiv_pruner_desc* desc)
 	return true;
 }
 
-bool nqiv_pruner_check_token(const char* text, const int idx, const int end, const char* subs)
+static bool
+nqiv_pruner_check_token(const char* text, const int idx, const int end, const char* subs)
 {
 	int token_end = nqiv_cmd_scan_whitespace(text, idx, end);
 	if(token_end == -1) {
@@ -831,9 +833,9 @@ typedef struct nqiv_pruner_render_state
 	char* data_name;
 } nqiv_pruner_render_state;
 
-int nqiv_pruner_update_render_state_form(nqiv_pruner_render_state* state,
-                                         nqiv_array*               builder,
-                                         const nqiv_pruner_render_state* new)
+static int nqiv_pruner_update_render_state_form(nqiv_pruner_render_state* state,
+                                                nqiv_array*               builder,
+                                                const nqiv_pruner_render_state* new)
 {
 	bool success = true;
 	if(new->in_image != state->in_image) {
@@ -857,10 +859,10 @@ int nqiv_pruner_update_render_state_form(nqiv_pruner_render_state* state,
 	return success;
 }
 
-int nqiv_pruner_desc_dataset_to_string(nqiv_pruner_render_state*       state,
-                                       const nqiv_pruner_desc_dataset* set,
-                                       nqiv_array*                     builder,
-                                       const nqiv_pruner_render_state* new_state)
+static int nqiv_pruner_desc_dataset_to_string(nqiv_pruner_render_state*       state,
+                                              const nqiv_pruner_desc_dataset* set,
+                                              nqiv_array*                     builder,
+                                              const nqiv_pruner_render_state* new_state)
 {
 	bool success = true;
 	/* Do we have any kinds of checks? */
@@ -901,8 +903,8 @@ int nqiv_pruner_desc_dataset_to_string(nqiv_pruner_render_state*       state,
 	return success;
 }
 
-bool nqiv_pruner_desc_datapoint_int(const nqiv_pruner_desc_datapoint* first,
-                                    const nqiv_pruner_desc_datapoint* second)
+static bool nqiv_pruner_desc_datapoint_int(const nqiv_pruner_desc_datapoint* first,
+                                           const nqiv_pruner_desc_datapoint* second)
 {
 	return first->active == second->active
 	       && first->condition.as_int_pair[0] == second->condition.as_int_pair[0]
@@ -910,8 +912,8 @@ bool nqiv_pruner_desc_datapoint_int(const nqiv_pruner_desc_datapoint* first,
 	       && first->value.as_int == second->value.as_int;
 }
 
-bool nqiv_pruner_desc_datapoint_bool(const nqiv_pruner_desc_datapoint* first,
-                                     const nqiv_pruner_desc_datapoint* second)
+static bool nqiv_pruner_desc_datapoint_bool(const nqiv_pruner_desc_datapoint* first,
+                                            const nqiv_pruner_desc_datapoint* second)
 {
 	return first->active == second->active && first->value.as_bool == second->value.as_bool;
 }
@@ -959,11 +961,11 @@ bool nqiv_pruner_desc_compare(const nqiv_pruner_desc* first, const nqiv_pruner_d
 	       && first->unload_thumbnail_surface_soft == second->unload_thumbnail_surface_soft;
 }
 
-bool nqiv_pruner_desc_dataset_pair_to_string(nqiv_pruner_render_state*       state,
-                                             char*                           name,
-                                             const nqiv_pruner_desc_dataset* image_set,
-                                             const nqiv_pruner_desc_dataset* thumbnail_set,
-                                             nqiv_array*                     builder)
+static bool nqiv_pruner_desc_dataset_pair_to_string(nqiv_pruner_render_state*       state,
+                                                    char*                           name,
+                                                    const nqiv_pruner_desc_dataset* image_set,
+                                                    const nqiv_pruner_desc_dataset* thumbnail_set,
+                                                    nqiv_array*                     builder)
 {
 	int success = true;
 	/* If the checks exist and are the same for images and thumbnail, only
@@ -998,12 +1000,12 @@ bool nqiv_pruner_desc_dataset_pair_to_string(nqiv_pruner_render_state*       sta
 	return success;
 }
 
-bool nqiv_pruner_unload_pair_to_string(nqiv_pruner_render_state* state,
-                                       char*                     name,
-                                       const bool                image_unload,
-                                       const bool                thumbnail_unload,
-                                       const bool                hard_unload,
-                                       nqiv_array*               builder)
+static bool nqiv_pruner_unload_pair_to_string(nqiv_pruner_render_state* state,
+                                              char*                     name,
+                                              const bool                image_unload,
+                                              const bool                thumbnail_unload,
+                                              const bool                hard_unload,
+                                              nqiv_array*               builder)
 {
 	int success = true;
 	if(image_unload || thumbnail_unload) {

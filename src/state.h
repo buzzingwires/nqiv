@@ -166,7 +166,6 @@ bool              nqiv_state_create_thumbnail_selection_texture(nqiv_state* stat
 bool              nqiv_state_recreate_thumbnail_selection_texture(nqiv_state* state);
 bool              nqiv_state_create_mark_texture(nqiv_state* state);
 bool              nqiv_state_recreate_mark_texture(nqiv_state* state);
-bool              nqiv_state_create_alpha_background_texture(nqiv_state* state);
 bool              nqiv_state_recreate_all_alpha_background_textures(nqiv_state* state);
 bool              nqiv_state_update_montage_texture_dimensions(nqiv_state* state);
 bool              nqiv_state_update_alpha_background_dimensions(nqiv_state* state,
@@ -175,9 +174,6 @@ bool              nqiv_state_update_alpha_background_dimensions(nqiv_state* stat
 bool              nqiv_state_create_single_color_texture(nqiv_state*      state,
                                                          const SDL_Color* color,
                                                          SDL_Texture**    texture);
-bool              nqiv_state_recreate_single_color_texture(nqiv_state*      state,
-                                                           const SDL_Color* color,
-                                                           SDL_Texture**    texture);
 bool              nqiv_state_recreate_background_texture(nqiv_state* state);
 bool              nqiv_state_recreate_error_texture(nqiv_state* state);
 bool              nqiv_state_recreate_loading_texture(nqiv_state* state);

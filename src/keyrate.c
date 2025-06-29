@@ -6,13 +6,14 @@
 
 #include "keyrate.h"
 
-Uint64 nqiv_keyrate_get_numerical_setting(const Sint64* manager, const Sint64* state)
+static Uint64 nqiv_keyrate_get_numerical_setting(const Sint64* manager, const Sint64* state)
 {
 	assert(*manager >= 0);
 	return *state < 0 ? (Uint64)(*manager) : (Uint64)(*state);
 }
 
-bool nqiv_keyrate_get_bool_setting(const bool* manager, const nqiv_keyrate_press_action* state)
+static bool nqiv_keyrate_get_bool_setting(const bool*                      manager,
+                                          const nqiv_keyrate_press_action* state)
 {
 	if(*state == NQIV_KEYRATE_ON_MANAGER) {
 		return *manager;

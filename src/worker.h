@@ -50,17 +50,6 @@ typedef struct nqiv_worker_main_args
 	SDL_atomic_t*        running;
 } nqiv_worker_main_args;
 
-void nqiv_worker_main(nqiv_log_ctx*        logger,
-                      nqiv_priority_queue* queue,
-                      const Uint32         delay,
-                      nqiv_cond*           wakeup,
-                      const int            event_interval,
-                      const int*           queue_bins,
-                      const Uint32         event_code,
-                      SDL_atomic_t*        transaction_group,
-                      SDL_atomic_t*        dormant_count,
-                      SDL_atomic_t*        running);
-
 /* SDL interface for nqiv_worker_main. */
 int nqiv_worker_main_sdl(void* args_ptr);
 

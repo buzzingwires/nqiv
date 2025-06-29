@@ -6,7 +6,7 @@
 
 #include "logging_tests.h"
 
-size_t get_file_contents(FILE* f, char* buf, const int n)
+static size_t get_file_contents(FILE* f, char* buf, const int n)
 {
 	const long orig_pos = ftell(f);
 	fseek(f, 0, SEEK_SET);

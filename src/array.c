@@ -59,7 +59,7 @@ void nqiv_array_unlimit_data(nqiv_array* array)
 	array->max_data_length = 0;
 }
 
-int nqiv_array_calculate_potential_length(const nqiv_array* array, const int units)
+static int nqiv_array_calculate_potential_length(const nqiv_array* array, const int units)
 {
 	const int length = array->unit_length * units;
 	if(length < array->unit_length || length < units || units <= 0) { /* Overflow/sanity check. */
@@ -68,7 +68,8 @@ int nqiv_array_calculate_potential_length(const nqiv_array* array, const int uni
 	return length;
 }
 
-bool nqiv_array_grow(nqiv_array* array, const int new_count, const bool force)
+/* In units! force ignores max data length and sets the new length as max. */
+static bool nqiv_array_grow(nqiv_array* array, const int new_count, const bool force)
 {
 	int length = nqiv_array_calculate_potential_length(array, new_count);
 	if(length < 0) {
@@ -107,7 +108,7 @@ bool nqiv_array_grow(nqiv_array* array, const int new_count, const bool force)
 	return true;
 }
 
-bool nqiv_array_make_room(nqiv_array* array, const int add_count)
+static bool nqiv_array_make_room(nqiv_array* array, const int add_count)
 {
 	assert(add_count > 0);
 	const int minimum_count = nqiv_array_get_units_count(array) + add_count;
@@ -117,7 +118,8 @@ bool nqiv_array_make_room(nqiv_array* array, const int add_count)
 	return true;
 }
 
-bool nqiv_array_insert_count(nqiv_array* array, const void* ptr, const int idx, const int count)
+static bool
+nqiv_array_insert_count(nqiv_array* array, const void* ptr, const int idx, const int count)
 {
 	if(count == 0) {
 		return true;
@@ -245,7 +247,7 @@ bool nqiv_array_get(const nqiv_array* array, const int idx, void* ptr)
 	return nqiv_array_get_count(array, idx, ptr, 1);
 }
 
-bool nqiv_array_pop_count(nqiv_array* array, void* ptr, const int count)
+static bool nqiv_array_pop_count(nqiv_array* array, void* ptr, const int count)
 {
 	bool      output = false;
 	const int last_idx = nqiv_array_get_units_count(array);

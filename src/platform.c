@@ -120,7 +120,7 @@ bool nqiv_chmod(const char* filename, uint16_t mode)
 {
 	return chmod(filename, mode) == 0;
 }
-int32_t nqiv_agetc(FILE* stream)
+static int32_t nqiv_agetc(FILE* stream)
 {
 	const int     sfd = fileno(stream);
 	struct pollfd fds = {.fd = sfd, .events = POLLIN, .revents = 0};
@@ -175,10 +175,8 @@ bool nqiv_stat(const char* path, nqiv_stat_data* data)
 }
 #endif
 
-bool nqiv_write_path_from_env(char*       output,
-                              const int   length,
-                              const char* env_name,
-                              const char* sub_path)
+static bool
+nqiv_write_path_from_env(char* output, const int length, const char* env_name, const char* sub_path)
 {
 	assert(length < INT_MAX);
 	nqiv_array builder;
@@ -260,7 +258,7 @@ int nqiv_ptrdiff(const void* a, const void* b)
 	return (int)diff;
 }
 
-bool nqiv_starts_with_home_tilde(const char* path)
+static bool nqiv_starts_with_home_tilde(const char* path)
 {
 	return strncmp(path, "~/", strlen("~/")) == 0;
 }

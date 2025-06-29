@@ -13,7 +13,7 @@
 #include "state.h"
 #include "worker.h"
 
-bool nqiv_worker_bins_kv_to_string(const char* key, const int* values, nqiv_array* builder)
+static bool nqiv_worker_bins_kv_to_string(const char* key, const int* values, nqiv_array* builder)
 {
 	bool started = false;
 	bool success = true;
@@ -31,7 +31,7 @@ bool nqiv_worker_bins_kv_to_string(const char* key, const int* values, nqiv_arra
 	return success;
 }
 
-bool nqiv_worker_int_kv_to_string(const char* key, const int value, nqiv_array* builder)
+static bool nqiv_worker_int_kv_to_string(const char* key, const int value, nqiv_array* builder)
 {
 	bool success = true;
 	if(value >= 0) {
@@ -61,7 +61,7 @@ bool nqiv_worker_spec_to_string(const nqiv_worker_spec* spec, char* string)
 	return success;
 }
 
-int nqiv_worker_string_to_int(
+static int nqiv_worker_string_to_int(
 	const char* string, const int idx, const int value_min, const int value_max, int* output)
 {
 	const char* start = string + idx;
@@ -75,7 +75,7 @@ int nqiv_worker_string_to_int(
 	return -1;
 }
 
-int nqiv_cmd_scan_comma_list_sep(const char* data, const int start, const int end)
+static int nqiv_cmd_scan_comma_list_sep(const char* data, const int start, const int end)
 {
 	int bidx;
 	for(bidx = start; bidx < end; ++bidx) {
@@ -86,10 +86,8 @@ int nqiv_cmd_scan_comma_list_sep(const char* data, const int start, const int en
 	return -1;
 }
 
-int nqiv_worker_string_to_bin_list(const char* string,
-                                   const int   idx,
-                                   const int   end_idx,
-                                   int*        output)
+static int
+nqiv_worker_string_to_bin_list(const char* string, const int idx, const int end_idx, int* output)
 {
 	int oidx = 1;
 	int cidx = idx;
@@ -191,9 +189,9 @@ bool nqiv_worker_string_to_spec(const char* string, nqiv_worker_spec* spec)
 	return false;
 }
 
-void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_options* options,
-                                        nqiv_image*                               image,
-                                        nqiv_image_form*                          form)
+static void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_options* options,
+                                               nqiv_image*                               image,
+                                               nqiv_image_form*                          form)
 {
 	if(options->unload) {
 		if(options->surface || (options->surface_soft && form->texture != NULL)) {
@@ -260,24 +258,25 @@ void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_options
 	}
 }
 
-void nqiv_worker_handle_image_load_form_clear_error(
-	const nqiv_event_image_load_form_options* options, nqiv_image_form* form)
+static void
+nqiv_worker_handle_image_load_form_clear_error(const nqiv_event_image_load_form_options* options,
+                                               nqiv_image_form*                          form)
 {
 	if(options->clear_error) {
 		form->error = false;
 	}
 }
 
-void nqiv_worker_main(nqiv_log_ctx*        logger,
-                      nqiv_priority_queue* queue,
-                      const Uint32         delay,
-                      nqiv_cond*           wakeup,
-                      const int            event_interval,
-                      const int*           queue_bins,
-                      const Uint32         event_code,
-                      SDL_atomic_t*        transaction_group,
-                      SDL_atomic_t*        dormant_count,
-                      SDL_atomic_t*        running)
+static void nqiv_worker_main(nqiv_log_ctx*        logger,
+                             nqiv_priority_queue* queue,
+                             const Uint32         delay,
+                             nqiv_cond*           wakeup,
+                             const int            event_interval,
+                             const int*           queue_bins,
+                             const Uint32         event_code,
+                             SDL_atomic_t*        transaction_group,
+                             SDL_atomic_t*        dormant_count,
+                             SDL_atomic_t*        running)
 {
 	int events_processed = 0;
 	while(SDL_AtomicGet(running) == NQIV_SUCCESS) {

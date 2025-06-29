@@ -192,19 +192,19 @@ void nqiv_priority_queue_push_force(nqiv_priority_queue* queue, const int level,
 	nqiv_queue_push_force(&(queue->bins[level]), entry);
 }
 
-bool nqiv_queue_set_max_data_length(nqiv_queue* queue, void* count)
+static bool nqiv_queue_set_max_data_length(nqiv_queue* queue, void* count)
 {
 	nqiv_array_set_max_data_length(queue->array, (*(int*)count));
 	return true;
 }
 
-bool nqiv_queue_set_min_add_count(nqiv_queue* queue, void* count)
+static bool nqiv_queue_set_min_add_count(nqiv_queue* queue, void* count)
 {
 	queue->array->min_add_count = *((int*)count);
 	return true;
 }
 
-bool nqiv_queue_clear(nqiv_queue* queue, void* value)
+static bool nqiv_queue_clear(nqiv_queue* queue, void* value)
 {
 	(void)value;
 	SDL_LockMutex(queue->lock);
@@ -213,24 +213,24 @@ bool nqiv_queue_clear(nqiv_queue* queue, void* value)
 	return true;
 }
 
-bool nqiv_queue_lock(nqiv_queue* queue, void* value)
+static bool nqiv_queue_lock(nqiv_queue* queue, void* value)
 {
 	(void)value;
 	SDL_LockMutex(queue->lock);
 	return true;
 }
 
-bool nqiv_queue_unlock(nqiv_queue* queue, void* value)
+static bool nqiv_queue_unlock(nqiv_queue* queue, void* value)
 {
 	(void)value;
 	SDL_UnlockMutex(queue->lock);
 	return true;
 }
 
-bool nqiv_priority_queue_apply(nqiv_priority_queue* queue,
-                               void*                entry,
-                               bool (*op)(nqiv_queue*, void*),
-                               const bool lazy)
+static bool nqiv_priority_queue_apply(nqiv_priority_queue* queue,
+                                      void*                entry,
+                                      bool (*op)(nqiv_queue*, void*),
+                                      const bool lazy)
 {
 	int idx;
 	for(idx = 0; idx < queue->bin_count; ++idx) {

@@ -64,11 +64,8 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx);
 void nqiv_montage_calculate_dimensions(nqiv_montage_state* state,
                                        const int           width,
                                        const int           height);
-void nqiv_montage_jump_selection(nqiv_montage_state* state, const int offset);
 void nqiv_montage_next_selection(nqiv_montage_state* state);
 void nqiv_montage_previous_selection(nqiv_montage_state* state);
-void nqiv_montage_set_selection_row(nqiv_montage_state* state, const int idx);
-void nqiv_montage_jump_selection_row(nqiv_montage_state* state, const int offset);
 void nqiv_montage_next_selection_row(nqiv_montage_state* state);
 void nqiv_montage_previous_selection_row(nqiv_montage_state* state);
 /* Get rect for particular thumbnail to be displayed in. */

@@ -52,7 +52,7 @@
  *     - Repaint the screen as necessary.
  */
 
-void nqiv_close_log_streams(nqiv_state* state)
+static void nqiv_close_log_streams(nqiv_state* state)
 {
 	const int streams_len = nqiv_array_get_units_count(state->logger.streams);
 	assert(streams_len == nqiv_array_get_units_count(state->logger_stream_names));
@@ -69,7 +69,7 @@ void nqiv_close_log_streams(nqiv_state* state)
 	nqiv_array_clear(state->logger_stream_names);
 }
 
-void nqiv_state_clear(nqiv_state* state)
+static void nqiv_state_clear(nqiv_state* state)
 {
 	nqiv_priority_queue_destroy(&state->thread_queue);
 	if(state->key_actions.array != NULL) {
@@ -128,7 +128,7 @@ void nqiv_state_clear(nqiv_state* state)
 	vips_shutdown();
 }
 
-void nqiv_set_keyrate_defaults(nqiv_keyrate_manager* manager)
+static void nqiv_set_keyrate_defaults(nqiv_keyrate_manager* manager)
 {
 	manager->settings.start_delay = 0;
 	manager->settings.consecutive_delay = 35;
@@ -138,7 +138,7 @@ void nqiv_set_keyrate_defaults(nqiv_keyrate_manager* manager)
 	manager->send_on_down = false;
 }
 
-bool nqiv_setup_sdl(nqiv_state* state)
+static bool nqiv_setup_sdl(nqiv_state* state)
 {
 	if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to init SDL. SDL Error: %s\n",
@@ -210,21 +210,21 @@ bool nqiv_setup_sdl(nqiv_state* state)
 	return true;
 }
 
-void nqiv_update_montage_dimensions(nqiv_state* state)
+static void nqiv_update_montage_dimensions(nqiv_state* state)
 {
 	int width, height;
 	SDL_GetWindowSizeInPixels(state->window, &width, &height);
 	nqiv_montage_calculate_dimensions(&state->montage, width, height);
 }
 
-void nqiv_setup_montage(nqiv_state* state)
+static void nqiv_setup_montage(nqiv_state* state)
 {
 	state->montage.logger = &state->logger;
 	state->montage.images = &state->images;
 	nqiv_update_montage_dimensions(state);
 }
 
-bool nqiv_setup_thread_info(nqiv_state* state)
+static bool nqiv_setup_thread_info(nqiv_state* state)
 {
 	state->thread_specs = nqiv_array_create(sizeof(nqiv_worker_spec), STARTING_QUEUE_LENGTH);
 	if(state->thread_specs == NULL) {
@@ -249,7 +249,8 @@ bool nqiv_setup_thread_info(nqiv_state* state)
 	return true;
 }
 
-bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* default_config_path)
+static bool
+nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* default_config_path)
 {
 	char thumbnail_cmd[PATH_MAX + 19 + 1] = "set thumbnail path ";
 	if(!nqiv_get_default_cfg_thumbnail_dir(thumbnail_cmd + 19, PATH_MAX)) {
@@ -352,12 +353,12 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* de
 	return true;
 }
 
-void nqiv_print_version(void)
+static void nqiv_print_version(void)
 {
 	fprintf(stderr, "nqiv version: " VERSION "\n");
 }
 
-void nqiv_print_args(const char* exe)
+static void nqiv_print_args(const char* exe)
 {
 	nqiv_print_version();
 	fprintf(stderr, "\n");
@@ -375,7 +376,7 @@ void nqiv_print_args(const char* exe)
 	nqiv_suggest_cfg_setup(exe);
 }
 
-nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
+static nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 {
 	if(!nqiv_setup_thread_info(state)) {
 		nqiv_state_clear(state);
@@ -552,10 +553,10 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 	return nqiv_cmd_alert_main(&state->cmds) ? NQIV_SUCCESS : NQIV_FAIL;
 } /* parse_args */
 
-bool nqiv_send_thread_event_base(nqiv_state*       state,
-                                 const int         level,
-                                 const nqiv_event* event,
-                                 const bool        force)
+static bool nqiv_send_thread_event_base(nqiv_state*       state,
+                                        const int         level,
+                                        const nqiv_event* event,
+                                        const bool        force)
 {
 	bool event_sent;
 	if(force) {
@@ -572,7 +573,7 @@ bool nqiv_send_thread_event_base(nqiv_state*       state,
 	return true;
 }
 
-int nqiv_promote_event(const int level, const bool is_preload)
+static int nqiv_promote_event(const int level, const bool is_preload)
 {
 	if(!is_preload) {
 		return level;
@@ -600,21 +601,19 @@ int nqiv_promote_event(const int level, const bool is_preload)
 	return new_level;
 }
 
-bool nqiv_send_thread_event(nqiv_state* state,
-                            const int   level,
-                            nqiv_event* event,
-                            const bool  is_preload)
+static bool
+nqiv_send_thread_event(nqiv_state* state, const int level, nqiv_event* event, const bool is_preload)
 {
 	event->transaction_group = SDL_AtomicGet(&state->thread_event_transaction_group);
 	return nqiv_send_thread_event_base(state, nqiv_promote_event(level, is_preload), event, false);
 }
 
-bool render_texture(bool*           cleared,
-                    const SDL_Rect* cleardst,
-                    nqiv_state*     state,
-                    SDL_Texture*    texture,
-                    SDL_Rect*       srcrect,
-                    const SDL_Rect* dstrect)
+static bool render_texture(bool*           cleared,
+                           const SDL_Rect* cleardst,
+                           nqiv_state*     state,
+                           SDL_Texture*    texture,
+                           SDL_Rect*       srcrect,
+                           const SDL_Rect* dstrect)
 {
 	if(dstrect == NULL) {
 		return true;
@@ -648,7 +647,7 @@ bool render_texture(bool*           cleared,
 	return true;
 }
 
-void nqiv_apply_zoom_default(nqiv_state* state, const bool first_frame)
+static void nqiv_apply_zoom_default(nqiv_state* state, const bool first_frame)
 {
 	if(first_frame || state->first_frame_pending) {
 		switch(state->zoom_default) {
@@ -671,7 +670,7 @@ void nqiv_apply_zoom_default(nqiv_state* state, const bool first_frame)
 	}
 }
 
-void nqiv_apply_zoom_modifications(nqiv_state* state, const bool first_frame)
+static void nqiv_apply_zoom_modifications(nqiv_state* state, const bool first_frame)
 {
 	nqiv_apply_zoom_default(state, first_frame);
 	if(state->images.zoom.image_to_viewport_ratio == state->images.zoom.fit_level) {
@@ -681,16 +680,16 @@ void nqiv_apply_zoom_modifications(nqiv_state* state, const bool first_frame)
 
 /* TODO STEP FRAME? */
 /* TODO Reset frame */
-bool render_from_form(nqiv_state*     state,
-                      nqiv_image*     image,
-                      const bool      is_montage,
-                      /* Where to draw to. */
-                      const SDL_Rect* dstrect,
-                      const bool      first_frame,
-                      /* Selected in montage mode? */
-                      const bool      selected,
-                      /* Force reload */
-                      const bool      hard)
+static bool render_from_form(nqiv_state*     state,
+                             nqiv_image*     image,
+                             const bool      is_montage,
+                             /* Where to draw to. */
+                             const SDL_Rect* dstrect,
+                             const bool      first_frame,
+                             /* Selected in montage mode? */
+                             const bool      selected,
+                             /* Force reload */
+                             const bool      hard)
 {
 	nqiv_image_form* form = is_montage ? &image->thumbnail : &image->image;
 	if(!is_montage && selected) {
@@ -1104,7 +1103,7 @@ bool render_from_form(nqiv_state*     state,
 
 /*2305843009213693951*/
 #define INT_MAX_STRLEN 19
-bool set_title(nqiv_state* state, nqiv_image* image)
+static bool set_title(nqiv_state* state, nqiv_image* image)
 {
 	char idx_string[INT_MAX_STRLEN + 1] = {0};
 	char count_string[INT_MAX_STRLEN + 1] = {0};
@@ -1161,7 +1160,7 @@ bool set_title(nqiv_state* state, nqiv_image* image)
 }
 #undef INT_MAX_STRLEN
 
-bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
+static bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 {
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage.\n");
 	if(!preload_only && SDL_RenderClear(state->renderer) != 0) {
@@ -1243,7 +1242,7 @@ bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 	return true;
 }
 
-bool render_image(nqiv_state* state, const bool start, const bool hard)
+static bool render_image(nqiv_state* state, const bool start, const bool hard)
 {
 	assert(state->montage.positions.selection <= nqiv_array_get_units_count(state->images.images));
 	if(state->montage.positions.selection == nqiv_array_get_units_count(state->images.images)) {
@@ -1268,7 +1267,7 @@ bool render_image(nqiv_state* state, const bool start, const bool hard)
 	return true;
 }
 
-void nqiv_check_pruning(nqiv_state* state)
+static void nqiv_check_pruning(nqiv_state* state)
 {
 	/* Do pruning if needed. */
 	const Uint64 new_time = SDL_GetTicks64();
@@ -1283,7 +1282,7 @@ void nqiv_check_pruning(nqiv_state* state)
 	}
 }
 
-void render_and_update(nqiv_state* state, const bool first_render, const bool hard)
+static void render_and_update(nqiv_state* state, const bool first_render, const bool hard)
 {
 	/* Hard forces reload. first_render basically means to show the first frame. */
 	/* Adapt screen dimensions to montage. */
@@ -1325,7 +1324,7 @@ void render_and_update(nqiv_state* state, const bool first_render, const bool ha
 	}
 }
 
-void nqiv_handle_thumbnail_resize_action(nqiv_state* state, void (*op)(nqiv_image_manager*))
+static void nqiv_handle_thumbnail_resize_action(nqiv_state* state, void (*op)(nqiv_image_manager*))
 {
 	const int old_size = SDL_AtomicGet(&state->images.thumbnail.size);
 	op(&state->images);
@@ -1335,7 +1334,7 @@ void nqiv_handle_thumbnail_resize_action(nqiv_state* state, void (*op)(nqiv_imag
 	render_and_update(state, false, false);
 }
 
-void nqiv_mark_op(nqiv_state* state, nqiv_image* image, const bool value)
+static void nqiv_mark_op(nqiv_state* state, nqiv_image* image, const bool value)
 {
 	image->marked = value;
 	nqiv_log_write(&state->logger, NQIV_LOG_INFO, "%sarked %s\n", image->marked ? "M" : "Unm",
@@ -1343,21 +1342,21 @@ void nqiv_mark_op(nqiv_state* state, nqiv_image* image, const bool value)
 	render_and_update(state, false, false);
 }
 
-void nqiv_mark_op_toggle(nqiv_state* state, nqiv_image* image)
+static void nqiv_mark_op_toggle(nqiv_state* state, nqiv_image* image)
 {
 	nqiv_mark_op(state, image, !image->marked);
 }
 
-int nqiv_get_index_at_mouse(nqiv_state* state)
+static int nqiv_get_index_at_mouse(nqiv_state* state)
 {
 	int x, y;
 	SDL_GetMouseState(&x, &y);
 	return nqiv_montage_find_index_at_point(&state->montage, x, y);
 }
 
-void nqiv_handle_keyactions(nqiv_state*                       state,
-                            const bool                        simulated,
-                            const nqiv_keyrate_release_option released)
+static void nqiv_handle_keyactions(nqiv_state*                       state,
+                                   const bool                        simulated,
+                                   const nqiv_keyrate_release_option released)
 {
 	nqiv_keybind_pair* pair;
 	while(SDL_AtomicGet(&state->running) == NQIV_SUCCESS
@@ -1738,7 +1737,7 @@ void nqiv_handle_keyactions(nqiv_state*                       state,
 	}
 }
 
-void nqiv_set_match_keymods(nqiv_key_match* match)
+static void nqiv_set_match_keymods(nqiv_key_match* match)
 {
 	const SDL_Keymod mods = SDL_GetModState();
 	if((mods & ~KMOD_GUI & ~KMOD_SCROLL & ~KMOD_NUM) != 0) {
@@ -1749,7 +1748,7 @@ void nqiv_set_match_keymods(nqiv_key_match* match)
 	}
 }
 
-bool check_cmds(nqiv_state* state)
+static bool check_cmds(nqiv_state* state)
 {
 	assert(SDL_AtomicGet(&state->running) == NQIV_SUCCESS);
 	if(state->restart_threads) {
@@ -1802,7 +1801,7 @@ bool check_cmds(nqiv_state* state)
 	return SDL_AtomicGet(&state->running) != NQIV_FAIL;
 }
 
-nqiv_op_result nqiv_master_thread(nqiv_state* state)
+static nqiv_op_result nqiv_master_thread(nqiv_state* state)
 {
 	if(state->cmd_acknowledge && state->cmd_read_stdin) {
 		fprintf(stdout, "Ready for commands from stdin.\n");
@@ -1955,7 +1954,7 @@ nqiv_op_result nqiv_master_thread(nqiv_state* state)
 	return SDL_AtomicGet(&state->running);
 }
 
-void nqiv_wait_on_threads(nqiv_state* state)
+static void nqiv_wait_on_threads(nqiv_state* state)
 {
 	assert(state->thread_pointers != NULL);
 	const int    thread_count = nqiv_array_get_units_count(state->thread_pointers);
@@ -1966,10 +1965,8 @@ void nqiv_wait_on_threads(nqiv_state* state)
 	}
 }
 
-void nqiv_run_fail(nqiv_state* state,
-                   const char* msg,
-                   const int   thread_number,
-                   SDL_Thread* loose_thread)
+static void
+nqiv_run_fail(nqiv_state* state, const char* msg, const int thread_number, SDL_Thread* loose_thread)
 {
 	nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "%s thread %d.", msg, thread_number);
 	SDL_AtomicSet(&state->running, NQIV_FAIL);
@@ -1981,7 +1978,7 @@ void nqiv_run_fail(nqiv_state* state,
 	state->restart_threads = false;
 }
 
-nqiv_op_result nqiv_run(nqiv_state* state)
+static nqiv_op_result nqiv_run(nqiv_state* state)
 {
 	SDL_AtomicSet(&state->dormant_thread_count, 0);
 	SDL_AtomicSet(&state->thread_event_transaction_group, 1);

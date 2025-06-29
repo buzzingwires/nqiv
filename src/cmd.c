@@ -33,66 +33,67 @@ bool nqiv_cmd_alert_main(nqiv_cmd_manager* manager)
 	return true;
 }
 
-void nqiv_cmd_force_quit_main(nqiv_cmd_manager* manager)
+static void nqiv_cmd_force_quit_main(nqiv_cmd_manager* manager)
 {
 	SDL_AtomicSet(&manager->state->running, NQIV_FAIL);
 }
 
-char nqiv_cmd_tmpterm(char* data, const int pos)
+static char nqiv_cmd_tmpterm(char* data, const int pos)
 {
 	const char value = data[pos];
 	data[pos] = '\0';
 	return value;
 }
 
-void nqiv_cmd_tmpret(char* data, const int pos, const char value)
+static void nqiv_cmd_tmpret(char* data, const int pos, const char value)
 {
 	data[pos] = value;
 }
 
-void nqiv_cmd_set_and_flag_new_int(int* storage, const int value, bool* flag)
+static void nqiv_cmd_set_and_flag_new_int(int* storage, const int value, bool* flag)
 {
 	*flag = *flag || *storage != value;
 	*storage = value;
 }
 
-bool nqiv_cmd_parser_set_none(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_none(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	(void)manager;
 	(void)tokens;
 	return true;
 }
 
-bool nqiv_cmd_parser_set_thread_count(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_thread_count(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	nqiv_cmd_set_and_flag_new_int(&(manager->state->pending_thread_count), tokens[0].value.as_int,
 	                              &(manager->state->restart_threads));
 	return true;
 }
 
-bool nqiv_cmd_parser_set_thread_event_interval(nqiv_cmd_manager*   manager,
-                                               nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_thread_event_interval(nqiv_cmd_manager*   manager,
+                                                      nqiv_cmd_arg_token* tokens)
 {
 	nqiv_cmd_set_and_flag_new_int(&(manager->state->thread_event_interval), tokens[0].value.as_int,
 	                              &(manager->state->restart_threads));
 	return true;
 }
 
-bool nqiv_cmd_parser_set_vips_threads(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_vips_threads(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	manager->state->vips_threads = tokens[0].value.as_int;
 	vips_concurrency_set(tokens[0].value.as_int);
 	return true;
 }
 
-bool nqiv_cmd_parser_set_extra_wakeup_delay(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_extra_wakeup_delay(nqiv_cmd_manager*   manager,
+                                                   nqiv_cmd_arg_token* tokens)
 {
 	nqiv_cmd_set_and_flag_new_int(&(manager->state->extra_wakeup_delay), tokens[0].value.as_int,
 	                              &(manager->state->restart_threads));
 	return true;
 }
 
-bool nqiv_cmd_parser_set_zoom_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_zoom_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	const char              data_end = nqiv_cmd_tmpterm(tokens[0].raw, tokens[0].length);
 	const nqiv_zoom_default zd = nqiv_text_to_zoom_default(tokens[0].raw);
@@ -104,7 +105,8 @@ bool nqiv_cmd_parser_set_zoom_default(nqiv_cmd_manager* manager, nqiv_cmd_arg_to
 	return true;
 }
 
-bool nqiv_cmd_parser_set_zoom_scale_mode(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_zoom_scale_mode(nqiv_cmd_manager*   manager,
+                                                nqiv_cmd_arg_token* tokens)
 {
 	const char    data_end = nqiv_cmd_tmpterm(tokens[0].raw, tokens[0].length);
 	SDL_ScaleMode sm;
@@ -117,7 +119,8 @@ bool nqiv_cmd_parser_set_zoom_scale_mode(nqiv_cmd_manager* manager, nqiv_cmd_arg
 	return true;
 }
 
-bool nqiv_cmd_parser_set_thumbnail_size(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_thumbnail_size(nqiv_cmd_manager*   manager,
+                                               nqiv_cmd_arg_token* tokens)
 {
 	const int old_size = SDL_AtomicGet(&manager->state->images.thumbnail.size);
 	SDL_AtomicSet(&manager->state->images.thumbnail.size, tokens[0].value.as_int);
@@ -130,7 +133,8 @@ bool nqiv_cmd_parser_set_thumbnail_size(nqiv_cmd_manager* manager, nqiv_cmd_arg_
 	return true;
 }
 
-bool nqiv_cmd_parser_set_thumbnail_path(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_thumbnail_path(nqiv_cmd_manager*   manager,
+                                               nqiv_cmd_arg_token* tokens)
 {
 	const char data_end = nqiv_cmd_tmpterm(tokens[0].raw, tokens[0].length);
 	const bool output =
@@ -139,7 +143,7 @@ bool nqiv_cmd_parser_set_thumbnail_path(nqiv_cmd_manager* manager, nqiv_cmd_arg_
 	return output;
 }
 
-bool nqiv_cmd_parser_set_log_level(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_log_level(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	SDL_LockMutex(manager->state->logger.lock);
 	const char data_end = nqiv_cmd_tmpterm(tokens[0].raw, tokens[0].length);
@@ -149,7 +153,7 @@ bool nqiv_cmd_parser_set_log_level(nqiv_cmd_manager* manager, nqiv_cmd_arg_token
 	return true;
 }
 
-bool nqiv_cmd_parser_set_log_prefix(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_log_prefix(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	SDL_LockMutex(manager->state->logger.lock);
 	const char data_end = nqiv_cmd_tmpterm(tokens[0].raw, tokens[0].length);
@@ -159,11 +163,11 @@ bool nqiv_cmd_parser_set_log_prefix(nqiv_cmd_manager* manager, nqiv_cmd_arg_toke
 	return true;
 }
 
-bool nqiv_cmd_parser_apply_color(nqiv_cmd_manager*   manager,
-                                 nqiv_cmd_arg_token* tokens,
-                                 SDL_Color*          color,
-                                 const char*         error_message,
-                                 bool                apply(nqiv_state* state))
+static bool nqiv_cmd_parser_apply_color(nqiv_cmd_manager*   manager,
+                                        nqiv_cmd_arg_token* tokens,
+                                        SDL_Color*          color,
+                                        const char*         error_message,
+                                        bool                apply(nqiv_state* state))
 {
 	SDL_Color tmp;
 	memcpy(&tmp, color, sizeof(SDL_Color));
@@ -180,55 +184,57 @@ bool nqiv_cmd_parser_apply_color(nqiv_cmd_manager*   manager,
 	return true;
 }
 
-bool nqiv_cmd_parser_set_alpha_background_color_one(nqiv_cmd_manager*   manager,
-                                                    nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_alpha_background_color_one(nqiv_cmd_manager*   manager,
+                                                           nqiv_cmd_arg_token* tokens)
 {
 	return nqiv_cmd_parser_apply_color(manager, tokens, &manager->state->alpha_checker_color_one,
 	                                   "alpha background color one",
 	                                   nqiv_state_recreate_all_alpha_background_textures);
 }
 
-bool nqiv_cmd_parser_set_alpha_background_color_two(nqiv_cmd_manager*   manager,
-                                                    nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_alpha_background_color_two(nqiv_cmd_manager*   manager,
+                                                           nqiv_cmd_arg_token* tokens)
 {
 	return nqiv_cmd_parser_apply_color(manager, tokens, &manager->state->alpha_checker_color_two,
 	                                   "alpha background color two",
 	                                   nqiv_state_recreate_all_alpha_background_textures);
 }
 
-bool nqiv_cmd_parser_set_background_color(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_background_color(nqiv_cmd_manager*   manager,
+                                                 nqiv_cmd_arg_token* tokens)
 {
 	return nqiv_cmd_parser_apply_color(manager, tokens, &manager->state->background_color,
 	                                   "background color", nqiv_state_recreate_background_texture);
 }
 
-bool nqiv_cmd_parser_set_error_color(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_error_color(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	return nqiv_cmd_parser_apply_color(manager, tokens, &manager->state->error_color, "error color",
 	                                   nqiv_state_recreate_error_texture);
 }
 
-bool nqiv_cmd_parser_set_loading_color(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_loading_color(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	return nqiv_cmd_parser_apply_color(manager, tokens, &manager->state->loading_color,
 	                                   "loading background color",
 	                                   nqiv_state_recreate_loading_texture);
 }
 
-bool nqiv_cmd_parser_set_selection_color(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_selection_color(nqiv_cmd_manager*   manager,
+                                                nqiv_cmd_arg_token* tokens)
 {
 	return nqiv_cmd_parser_apply_color(manager, tokens, &manager->state->selection_color,
 	                                   "selection outline color",
 	                                   nqiv_state_recreate_thumbnail_selection_texture);
 }
 
-bool nqiv_cmd_parser_set_mark_color(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_mark_color(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	return nqiv_cmd_parser_apply_color(manager, tokens, &manager->state->mark_color,
 	                                   "mark outline color", nqiv_state_recreate_mark_texture);
 }
 
-bool nqiv_cmd_parser_set_window_height(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_window_height(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	int w;
 	int h;
@@ -237,7 +243,7 @@ bool nqiv_cmd_parser_set_window_height(nqiv_cmd_manager* manager, nqiv_cmd_arg_t
 	return true;
 }
 
-bool nqiv_cmd_parser_set_window_width(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_window_width(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	int w;
 	int h;
@@ -246,12 +252,12 @@ bool nqiv_cmd_parser_set_window_width(nqiv_cmd_manager* manager, nqiv_cmd_arg_to
 	return true;
 }
 
-bool nqiv_cmd_parser_append_pruner(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_append_pruner(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	return nqiv_pruner_append(&manager->state->pruner, &tokens[0].value.as_pruner);
 }
 
-bool nqiv_cmd_parser_append_image(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_append_image(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	const char data_end = nqiv_cmd_tmpterm(tokens[0].raw, tokens[0].length);
 	bool       output = true;
@@ -260,12 +266,12 @@ bool nqiv_cmd_parser_append_image(nqiv_cmd_manager* manager, nqiv_cmd_arg_token*
 	return output;
 }
 
-bool nqiv_cmd_parser_append_keybind(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_append_keybind(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	return nqiv_keybind_add(&manager->state->keybinds, &tokens[0].value.as_keybind);
 }
 
-bool nqiv_cmd_parser_append_thread(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_append_thread(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	if(!nqiv_array_push(manager->state->thread_specs, &tokens[0].value.as_worker_spec)) {
 		return false;
@@ -274,7 +280,7 @@ bool nqiv_cmd_parser_append_thread(nqiv_cmd_manager* manager, nqiv_cmd_arg_token
 	return true;
 }
 
-bool nqiv_cmd_parser_append_log_stream(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_append_log_stream(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	SDL_LockMutex(manager->state->logger.lock);
 	const char data_end = nqiv_cmd_tmpterm(tokens[0].raw, tokens[0].length);
@@ -284,7 +290,7 @@ bool nqiv_cmd_parser_append_log_stream(nqiv_cmd_manager* manager, nqiv_cmd_arg_t
 	return output;
 }
 
-bool nqiv_cmd_parser_insert_image(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_insert_image(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	const char data_end = nqiv_cmd_tmpterm(tokens[1].raw, tokens[1].length);
 	bool       output = true;
@@ -294,12 +300,13 @@ bool nqiv_cmd_parser_insert_image(nqiv_cmd_manager* manager, nqiv_cmd_arg_token*
 	return output;
 }
 
-bool nqiv_cmd_parser_remove_image_index(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_remove_image_index(nqiv_cmd_manager*   manager,
+                                               nqiv_cmd_arg_token* tokens)
 {
 	return nqiv_image_manager_remove(&manager->state->images, tokens[0].value.as_int);
 }
 
-bool nqiv_cmd_parser_sendkey(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_sendkey(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	const nqiv_keybind_pair* pair =
 		&(manager->state->keybinds.simulated_lookup[tokens[0].value.as_key_action]);
@@ -308,7 +315,7 @@ bool nqiv_cmd_parser_sendkey(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* toke
 	return nqiv_cmd_alert_main(manager) && nqiv_queue_push(&manager->state->key_actions, &pair);
 }
 
-void nqiv_cmd_print_indent(const nqiv_cmd_manager* manager)
+static void nqiv_cmd_print_indent(const nqiv_cmd_manager* manager)
 {
 	int indent_count;
 	for(indent_count = manager->print_settings.indent; indent_count > 0; --indent_count) {
@@ -316,13 +323,13 @@ void nqiv_cmd_print_indent(const nqiv_cmd_manager* manager)
 	}
 }
 
-void nqiv_cmd_parser_print_none(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_none(nqiv_cmd_manager* manager)
 {
 	(void)manager;
 	fprintf(stdout, "NONE");
 }
 
-void nqiv_cmd_parser_print_log_error_message(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_log_error_message(nqiv_cmd_manager* manager)
 {
 	SDL_LockMutex(manager->state->logger.lock);
 	if(strlen(manager->state->logger.error_message) != 0) {
@@ -333,61 +340,62 @@ void nqiv_cmd_parser_print_log_error_message(nqiv_cmd_manager* manager)
 	SDL_UnlockMutex(manager->state->logger.lock);
 }
 
-bool nqiv_cmd_parser_set_data_double(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_data_double(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	*((double*)manager->print_settings.current_node->data) = tokens[0].value.as_double;
 	return true;
 }
 
-bool nqiv_cmd_parser_set_data_int(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_data_int(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	*((int*)manager->print_settings.current_node->data) = tokens[0].value.as_int;
 	return true;
 }
 
-bool nqiv_cmd_parser_set_data_uint64(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_data_uint64(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	*((Uint64*)manager->print_settings.current_node->data) = tokens[0].value.as_Uint64;
 	return true;
 }
 
-bool nqiv_cmd_parser_set_data_bool(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
+static bool nqiv_cmd_parser_set_data_bool(nqiv_cmd_manager* manager, nqiv_cmd_arg_token* tokens)
 {
 	*((bool*)manager->print_settings.current_node->data) = tokens[0].value.as_bool;
 	return true;
 }
 
-void nqiv_cmd_parser_print_data_double(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_data_double(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%f", *((double*)manager->print_settings.current_node->data));
 }
 
-void nqiv_cmd_parser_print_data_int(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_data_int(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%d", *((int*)manager->print_settings.current_node->data));
 }
 
-void nqiv_cmd_parser_print_data_atomic_int(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_data_atomic_int(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%d", SDL_AtomicGet((SDL_atomic_t*)manager->print_settings.current_node->data));
 }
 
-void nqiv_cmd_parser_print_value_bool(const char* name, const bool value)
+static void nqiv_cmd_parser_print_value_bool(const char* name, const bool value)
 {
 	fprintf(stdout, "%s: %s ", name, value ? "TRUE" : "FALSE");
 }
 
-void nqiv_cmd_parser_print_value_is_null(const char* name, const void* value)
+static void nqiv_cmd_parser_print_value_is_null(const char* name, const void* value)
 {
 	fprintf(stdout, "%s: %s ", name, value != NULL ? "SET" : "UNSET");
 }
 
-void nqiv_cmd_parser_print_value_sdlrect(const char* name, const SDL_Rect* value)
+static void nqiv_cmd_parser_print_value_sdlrect(const char* name, const SDL_Rect* value)
 {
 	fprintf(stdout, "%s: %dx%d+%d+%d ", name, value->w, value->h, value->x, value->y);
 }
 
-void nqiv_cmd_parser_print_value_image_form(nqiv_cmd_manager* manager, const nqiv_image_form* form)
+static void nqiv_cmd_parser_print_value_image_form(nqiv_cmd_manager*      manager,
+                                                   const nqiv_image_form* form)
 {
 	fprintf(stdout, "path: %s\n", form->path != NULL ? form->path : "UNSET");
 	manager->print_settings.indent += 1;
@@ -423,7 +431,7 @@ void nqiv_cmd_parser_print_value_image_form(nqiv_cmd_manager* manager, const nqi
 	manager->print_settings.indent -= 1;
 }
 
-void nqiv_cmd_parser_print_value_image(nqiv_cmd_manager* manager, const nqiv_image* image)
+static void nqiv_cmd_parser_print_value_image(nqiv_cmd_manager* manager, const nqiv_image* image)
 {
 	nqiv_cmd_parser_print_value_bool("marked", image->thumbnail_attempted);
 	nqiv_cmd_parser_print_value_bool("thumbnail_attempted", image->thumbnail_attempted);
@@ -436,7 +444,7 @@ void nqiv_cmd_parser_print_value_image(nqiv_cmd_manager* manager, const nqiv_ima
 	nqiv_cmd_parser_print_value_image_form(manager, &image->thumbnail);
 }
 
-void nqiv_cmd_parser_print_data_images(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_data_images(nqiv_cmd_manager* manager)
 {
 	assert(!manager->print_settings.dumpcfg);
 	nqiv_array*  images_array = (nqiv_array*)(manager->print_settings.current_node->data);
@@ -452,22 +460,22 @@ void nqiv_cmd_parser_print_data_images(nqiv_cmd_manager* manager)
 	manager->print_settings.indent -= 1;
 }
 
-void nqiv_cmd_parser_print_data_bool(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_data_bool(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%s", *((bool*)manager->print_settings.current_node->data) ? "true" : "false");
 }
 
-void nqiv_cmd_parser_print_data_uint64(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_data_uint64(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%" PRIu64, *((Uint64*)manager->print_settings.current_node->data));
 }
 
-void nqiv_cmd_parser_print_data_uint32(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_data_uint32(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%" PRIu32, *((Uint32*)manager->print_settings.current_node->data));
 }
 
-void nqiv_cmd_parser_print_data_atomic_shared_op_result(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_data_atomic_shared_op_result(nqiv_cmd_manager* manager)
 {
 	const nqiv_op_result op_result =
 		SDL_AtomicGet((SDL_atomic_t*)manager->print_settings.current_node->data);
@@ -482,7 +490,7 @@ void nqiv_cmd_parser_print_data_atomic_shared_op_result(nqiv_cmd_manager* manage
 	}
 }
 
-void nqiv_cmd_parser_print_data_key_action_queue(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_data_key_action_queue(nqiv_cmd_manager* manager)
 {
 	assert(!manager->print_settings.dumpcfg);
 	nqiv_queue*         key_actions = (nqiv_queue*)(manager->print_settings.current_node->data);
@@ -509,8 +517,9 @@ void nqiv_cmd_parser_print_data_key_action_queue(nqiv_cmd_manager* manager)
 	manager->print_settings.indent -= 1;
 }
 
-void nqiv_cmd_parser_print_value_image_load_options(
-	const nqiv_cmd_manager* manager, const nqiv_event_image_load_form_options* options)
+static void
+nqiv_cmd_parser_print_value_image_load_options(const nqiv_cmd_manager*                   manager,
+                                               const nqiv_event_image_load_form_options* options)
 {
 	nqiv_cmd_parser_print_value_bool("clear_error", options->clear_error);
 	nqiv_cmd_parser_print_value_bool("first_frame", options->first_frame);
@@ -525,7 +534,7 @@ void nqiv_cmd_parser_print_value_image_load_options(
 	fprintf(stdout, "\n");
 }
 
-void nqiv_cmd_parser_print_data_event_queue(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_data_event_queue(nqiv_cmd_manager* manager)
 {
 	assert(!manager->print_settings.dumpcfg);
 	manager->print_settings.indent += 1;
@@ -596,17 +605,17 @@ void nqiv_cmd_parser_print_data_event_queue(nqiv_cmd_manager* manager)
 	manager->print_settings.indent -= 1;
 }
 
-void nqiv_cmd_parser_print_zoom_default(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_zoom_default(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%s", nqiv_zoom_default_names[manager->state->zoom_default]);
 }
 
-void nqiv_cmd_parser_print_zoom_scale_mode(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_zoom_scale_mode(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%s", nqiv_scale_mode_to_text(manager->state->texture_scale_mode));
 }
 
-void nqiv_cmd_parser_print_thumbnail_path(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_thumbnail_path(nqiv_cmd_manager* manager)
 {
 	if(manager->state->images.thumbnail.root != NULL) {
 		fprintf(stdout, "%s", manager->state->images.thumbnail.root);
@@ -615,7 +624,7 @@ void nqiv_cmd_parser_print_thumbnail_path(nqiv_cmd_manager* manager)
 	}
 }
 
-void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 {
 	if(!manager->print_settings.dumpcfg) {
 		fprintf(stdout, "\n");
@@ -651,14 +660,14 @@ void nqiv_cmd_parser_print_queue_size(nqiv_cmd_manager* manager)
 	}
 }
 
-void nqiv_cmd_parser_print_log_level(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_log_level(nqiv_cmd_manager* manager)
 {
 	SDL_LockMutex(manager->state->logger.lock);
 	fprintf(stdout, "%s", nqiv_log_level_names[SDL_AtomicGet(&manager->state->logger.level) / 10]);
 	SDL_UnlockMutex(manager->state->logger.lock);
 }
 
-void nqiv_cmd_parser_print_log_prefix(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_log_prefix(nqiv_cmd_manager* manager)
 {
 	SDL_LockMutex(manager->state->logger.lock);
 	if(strlen(manager->state->logger.prefix_format) == 0 && !manager->print_settings.dumpcfg) {
@@ -669,56 +678,56 @@ void nqiv_cmd_parser_print_log_prefix(nqiv_cmd_manager* manager)
 	SDL_UnlockMutex(manager->state->logger.lock);
 }
 
-void nqiv_cmd_parser_print_alpha_background_color_one(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_alpha_background_color_one(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8,
 	        manager->state->alpha_checker_color_one.r, manager->state->alpha_checker_color_one.g,
 	        manager->state->alpha_checker_color_one.b, manager->state->alpha_checker_color_one.a);
 }
 
-void nqiv_cmd_parser_print_alpha_background_color_two(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_alpha_background_color_two(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8,
 	        manager->state->alpha_checker_color_two.r, manager->state->alpha_checker_color_two.g,
 	        manager->state->alpha_checker_color_two.b, manager->state->alpha_checker_color_two.a);
 }
 
-void nqiv_cmd_parser_print_background_color(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_background_color(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->background_color.r,
 	        manager->state->background_color.g, manager->state->background_color.b,
 	        manager->state->background_color.a);
 }
 
-void nqiv_cmd_parser_print_error_color(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_error_color(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->error_color.r,
 	        manager->state->error_color.g, manager->state->error_color.b,
 	        manager->state->error_color.a);
 }
 
-void nqiv_cmd_parser_print_loading_color(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_loading_color(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->loading_color.r,
 	        manager->state->loading_color.g, manager->state->loading_color.b,
 	        manager->state->loading_color.a);
 }
 
-void nqiv_cmd_parser_print_selection_color(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_selection_color(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->selection_color.r,
 	        manager->state->selection_color.g, manager->state->selection_color.b,
 	        manager->state->selection_color.a);
 }
 
-void nqiv_cmd_parser_print_mark_color(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_mark_color(nqiv_cmd_manager* manager)
 {
 	fprintf(stdout, "%" PRIu8 " %" PRIu8 " %" PRIu8 " %" PRIu8, manager->state->mark_color.r,
 	        manager->state->mark_color.g, manager->state->mark_color.b,
 	        manager->state->mark_color.a);
 }
 
-void nqiv_cmd_parser_print_window_height(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_window_height(nqiv_cmd_manager* manager)
 {
 	int w;
 	int h;
@@ -726,7 +735,7 @@ void nqiv_cmd_parser_print_window_height(nqiv_cmd_manager* manager)
 	fprintf(stdout, "%d", h);
 }
 
-void nqiv_cmd_parser_print_window_width(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_window_width(nqiv_cmd_manager* manager)
 {
 	int w;
 	int h;
@@ -734,7 +743,7 @@ void nqiv_cmd_parser_print_window_width(nqiv_cmd_manager* manager)
 	fprintf(stdout, "%d", w);
 }
 
-void nqiv_cmd_print_str_list(const nqiv_cmd_manager* manager, const nqiv_array* list)
+static void nqiv_cmd_print_str_list(const nqiv_cmd_manager* manager, const nqiv_array* list)
 {
 	const int    list_len = nqiv_array_get_units_count(list);
 	const char** strs = list->data;
@@ -762,14 +771,14 @@ void nqiv_cmd_print_str_list(const nqiv_cmd_manager* manager, const nqiv_array* 
 	}
 }
 
-void nqiv_cmd_parser_print_log_stream(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_log_stream(nqiv_cmd_manager* manager)
 {
 	SDL_LockMutex(manager->state->logger.lock);
 	nqiv_cmd_print_str_list(manager, manager->state->logger_stream_names);
 	SDL_UnlockMutex(manager->state->logger.lock);
 }
 
-void nqiv_cmd_parser_print_pruner(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_pruner(nqiv_cmd_manager* manager)
 {
 	const int         list_len = nqiv_array_get_units_count(manager->state->pruner.pruners);
 	nqiv_pruner_desc* pruners = manager->state->pruner.pruners->data;
@@ -799,7 +808,7 @@ void nqiv_cmd_parser_print_pruner(nqiv_cmd_manager* manager)
 	}
 }
 
-void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
 {
 	const int          list_len = nqiv_array_get_units_count(manager->state->keybinds.lookup);
 	nqiv_keybind_pair* pairs = manager->state->keybinds.lookup->data;
@@ -830,7 +839,7 @@ void nqiv_cmd_parser_print_keybind(nqiv_cmd_manager* manager)
 	}
 }
 
-void nqiv_cmd_parser_print_thread(nqiv_cmd_manager* manager)
+static void nqiv_cmd_parser_print_thread(nqiv_cmd_manager* manager)
 {
 	const int         list_len = nqiv_array_get_units_count(manager->state->thread_specs);
 	nqiv_worker_spec* thread_specs = manager->state->thread_specs->data;
@@ -961,7 +970,8 @@ const nqiv_cmd_arg_desc nqiv_parser_arg_type_pruner = {
 	.setting = {{0}},
 };
 
-bool nqiv_keyrate_press_action_from_string(const char* data, nqiv_keyrate_press_action* output)
+static bool nqiv_keyrate_press_action_from_string(const char*                data,
+                                                  nqiv_keyrate_press_action* output)
 {
 	nqiv_keyrate_press_action action;
 	for(action = NQIV_KEYRATE_START; action <= NQIV_KEYRATE_END; ++action) {
@@ -995,7 +1005,7 @@ int nqiv_cmd_scan_not_whitespace(const char* data, const int start, const int en
 	return -1;
 }
 
-int nqiv_cmd_scan_whitespace_and_eol(const char* data, const int start, const int end)
+static int nqiv_cmd_scan_whitespace_and_eol(const char* data, const int start, const int end)
 {
 	int bidx;
 	for(bidx = start; bidx < end; ++bidx) {
@@ -1006,7 +1016,7 @@ int nqiv_cmd_scan_whitespace_and_eol(const char* data, const int start, const in
 	return -1;
 }
 
-int nqiv_cmd_scan_not_whitespace_and_eol(const char* data, const int start, const int end)
+static int nqiv_cmd_scan_not_whitespace_and_eol(const char* data, const int start, const int end)
 {
 	int bidx;
 	for(bidx = start; bidx < end; ++bidx) {
@@ -1017,16 +1027,16 @@ int nqiv_cmd_scan_not_whitespace_and_eol(const char* data, const int start, cons
 	return -1;
 }
 
-void nqiv_cmd_print_comment_prefix(const nqiv_cmd_manager* manager)
+static void nqiv_cmd_print_comment_prefix(const nqiv_cmd_manager* manager)
 {
 	(void)manager;
 
 	fprintf(stdout, "#");
 }
 
-void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
-                               const nqiv_cmd_arg_desc* arg,
-                               void (*print_prefix)(const nqiv_cmd_manager*))
+static void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
+                                      const nqiv_cmd_arg_desc* arg,
+                                      void (*print_prefix)(const nqiv_cmd_manager*))
 {
 	switch(arg->type) {
 	case NQIV_CMD_ARG_INT:
@@ -1252,9 +1262,9 @@ void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 	}
 }
 
-void nqiv_cmd_print_args(nqiv_cmd_manager*               manager,
-                         const nqiv_cmd_arg_desc* const* args,
-                         void (*print_prefix)(const nqiv_cmd_manager*))
+static void nqiv_cmd_print_args(nqiv_cmd_manager*               manager,
+                                const nqiv_cmd_arg_desc* const* args,
+                                void (*print_prefix)(const nqiv_cmd_manager*))
 {
 	assert(args != NULL);
 	int idx = 0;
@@ -1267,10 +1277,10 @@ void nqiv_cmd_print_args(nqiv_cmd_manager*               manager,
 	}
 }
 
-void nqiv_cmd_dumpcfg(nqiv_cmd_manager*    manager,
-                      const nqiv_cmd_node* current_node,
-                      const bool           recurse,
-                      const char*          current_cmd)
+static void nqiv_cmd_dumpcfg(nqiv_cmd_manager*    manager,
+                             const nqiv_cmd_node* current_node,
+                             const bool           recurse,
+                             const char*          current_cmd)
 {
 	if(current_node->deprecated) {
 		return;
@@ -1315,9 +1325,8 @@ void nqiv_cmd_dumpcfg(nqiv_cmd_manager*    manager,
 	}
 }
 
-void nqiv_cmd_print_help(nqiv_cmd_manager*    manager,
-                         const nqiv_cmd_node* current_node,
-                         const int            recurse)
+static void
+nqiv_cmd_print_help(nqiv_cmd_manager* manager, const nqiv_cmd_node* current_node, const int recurse)
 {
 	if(current_node->deprecated && manager->print_settings.indent > 0) {
 		return;
@@ -1347,12 +1356,12 @@ void nqiv_cmd_print_help(nqiv_cmd_manager*    manager,
 	manager->print_settings.indent -= 1;
 }
 
-int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
-                             const nqiv_cmd_node* current_node,
-                             const int            tidx,
-                             const int            start_idx,
-                             const int            eolpos,
-                             nqiv_cmd_arg_token*  token)
+static int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
+                                    const nqiv_cmd_node* current_node,
+                                    const int            tidx,
+                                    const int            start_idx,
+                                    const int            eolpos,
+                                    nqiv_cmd_arg_token*  token)
 {
 	char*                    mutdata = manager->buffer->data;
 	int                      output = -1;
@@ -1620,21 +1629,21 @@ int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 	return output;
 }
 
-nqiv_log_level nqiv_cmd_parse_error_status(const nqiv_cmd_manager* manager)
+static nqiv_log_level nqiv_cmd_parse_error_status(const nqiv_cmd_manager* manager)
 {
 	return manager->state->cmd_parse_error_quit ? NQIV_LOG_ERROR : NQIV_LOG_WARNING;
 }
 
-nqiv_log_level nqiv_cmd_store_error_status(const nqiv_cmd_manager* manager)
+static nqiv_log_level nqiv_cmd_store_error_status(const nqiv_cmd_manager* manager)
 {
 	return manager->state->cmd_apply_error_quit ? NQIV_LOG_ERROR : NQIV_LOG_WARNING;
 }
 
-bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
-                         const nqiv_cmd_node* current_node,
-                         const int            start_idx,
-                         const int            eolpos,
-                         nqiv_cmd_arg_token*  tokens)
+static bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
+                                const nqiv_cmd_node* current_node,
+                                const int            start_idx,
+                                const int            eolpos,
+                                nqiv_cmd_arg_token*  tokens)
 {
 	bool  error = false;
 	int   idx = start_idx;
@@ -1666,10 +1675,10 @@ bool nqiv_cmd_parse_args(nqiv_cmd_manager*    manager,
 	return !error;
 }
 
-nqiv_op_result nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
-                                     const nqiv_cmd_node* current_node,
-                                     const int            idx,
-                                     const int            eolpos)
+static nqiv_op_result nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
+                                            const nqiv_cmd_node* current_node,
+                                            const int            idx,
+                                            const int            eolpos)
 {
 	nqiv_cmd_arg_token tokens[NQIV_CMD_MAX_ARGS] = {0};
 	if(!nqiv_cmd_parse_args(manager, current_node, idx, eolpos, tokens)) {
@@ -1696,10 +1705,10 @@ nqiv_op_result nqiv_cmd_execute_node(nqiv_cmd_manager*    manager,
 	return NQIV_SUCCESS;
 }
 
-void nqiv_cmd_acknowledge(const nqiv_cmd_manager* manager,
-                          const char*             cmd,
-                          const Uint64            time,
-                          const nqiv_op_result    status)
+static void nqiv_cmd_acknowledge(const nqiv_cmd_manager* manager,
+                                 const char*             cmd,
+                                 const Uint64            time,
+                                 const nqiv_op_result    status)
 {
 	if(manager->state->cmd_acknowledge) {
 		const char* status_message = "Successful";
@@ -1832,7 +1841,7 @@ bool nqiv_cmd_parse(nqiv_cmd_manager* manager)
 	return status != NQIV_FAIL;
 }
 
-bool nqiv_cmd_add_byte(nqiv_cmd_manager* manager, const char byte)
+static bool nqiv_cmd_add_byte(nqiv_cmd_manager* manager, const char byte)
 {
 	assert(byte != '\0');
 	char to_add = byte;
@@ -1862,7 +1871,7 @@ bool nqiv_cmd_add_byte(nqiv_cmd_manager* manager, const char byte)
 	return true;
 }
 
-bool nqiv_cmd_finish_cmd(nqiv_cmd_manager* manager)
+static bool nqiv_cmd_finish_cmd(nqiv_cmd_manager* manager)
 {
 	if(manager->print_settings.in_escape) {
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
@@ -1883,7 +1892,7 @@ bool nqiv_cmd_finish_cmd(nqiv_cmd_manager* manager)
 	return true;
 }
 
-bool nqiv_cmd_add_cmd(nqiv_cmd_manager* manager, const char* str)
+static bool nqiv_cmd_add_cmd(nqiv_cmd_manager* manager, const char* str)
 {
 	assert(nqiv_array_get_units_count(manager->buffer) == 0);
 	assert(!manager->print_settings.in_escape);
@@ -1969,7 +1978,7 @@ bool nqiv_cmd_consume_stream(nqiv_cmd_manager* manager, FILE* stream)
 	return result == NQIV_FAIL ? false : true;
 }
 
-nqiv_cmd_node* nqiv_cmd_get_last_peer(nqiv_cmd_node* first_peer)
+static nqiv_cmd_node* nqiv_cmd_get_last_peer(nqiv_cmd_node* first_peer)
 {
 	assert(first_peer != NULL);
 	nqiv_cmd_node* current_peer;
@@ -1981,7 +1990,7 @@ nqiv_cmd_node* nqiv_cmd_get_last_peer(nqiv_cmd_node* first_peer)
 }
 
 /* TODO: Why can't we const this? */
-int nqiv_cmd_get_args_list_length(const nqiv_cmd_arg_desc** args)
+static int nqiv_cmd_get_args_list_length(const nqiv_cmd_arg_desc** args)
 {
 	assert(args != NULL);
 	int count;
@@ -1990,7 +1999,7 @@ int nqiv_cmd_get_args_list_length(const nqiv_cmd_arg_desc** args)
 	return count + 1;
 }
 
-void nqiv_cmd_add_child_node(nqiv_cmd_node* parent, nqiv_cmd_node* child)
+static void nqiv_cmd_add_child_node(nqiv_cmd_node* parent, nqiv_cmd_node* child)
 {
 	assert(parent != NULL);
 	if(child != NULL) {
@@ -1999,14 +2008,14 @@ void nqiv_cmd_add_child_node(nqiv_cmd_node* parent, nqiv_cmd_node* child)
 	}
 }
 
-void nqiv_cmd_add_peer_node(nqiv_cmd_node* first_peer, nqiv_cmd_node* new_peer)
+static void nqiv_cmd_add_peer_node(nqiv_cmd_node* first_peer, nqiv_cmd_node* new_peer)
 {
 	if(new_peer != NULL) {
 		nqiv_cmd_get_last_peer(first_peer)->peer = new_peer;
 	}
 }
 
-void nqiv_cmd_add_child_or_peer(nqiv_cmd_node* parent, nqiv_cmd_node* node)
+static void nqiv_cmd_add_child_or_peer(nqiv_cmd_node* parent, nqiv_cmd_node* node)
 {
 	if(parent->child != NULL) {
 		nqiv_cmd_add_peer_node(parent->child, node);
@@ -2015,7 +2024,7 @@ void nqiv_cmd_add_child_or_peer(nqiv_cmd_node* parent, nqiv_cmd_node* node)
 	}
 }
 
-void nqiv_cmd_destroy_node(nqiv_cmd_node* node)
+static void nqiv_cmd_destroy_node(nqiv_cmd_node* node)
 {
 	assert(node != NULL);
 	assert(node->name != NULL);
@@ -2037,10 +2046,10 @@ void nqiv_cmd_destroy_node(nqiv_cmd_node* node)
 	free(node);
 }
 
-nqiv_cmd_node* nqiv_cmd_make_base_node(bool*                     status,
-                                       const char*               name,
-                                       const char*               description,
-                                       const nqiv_cmd_arg_desc** args)
+static nqiv_cmd_node* nqiv_cmd_make_base_node(bool*                     status,
+                                              const char*               name,
+                                              const char*               description,
+                                              const nqiv_cmd_arg_desc** args)
 {
 	const size_t node_size = sizeof(nqiv_cmd_node);
 	const size_t node_pad = 8 - (node_size % 8);
@@ -2079,13 +2088,14 @@ nqiv_cmd_node* nqiv_cmd_make_base_node(bool*                     status,
 	return node;
 }
 
-nqiv_cmd_node* nqiv_cmd_make_leaf_node(bool*       status,
-                                       const char* name,
-                                       const char* description,
-                                       void*       data,
-                                       bool (*store_value)(nqiv_cmd_manager*, nqiv_cmd_arg_token*),
-                                       void (*print_value)(nqiv_cmd_manager*),
-                                       const nqiv_cmd_arg_desc** args)
+static nqiv_cmd_node* nqiv_cmd_make_leaf_node(bool*       status,
+                                              const char* name,
+                                              const char* description,
+                                              void*       data,
+                                              bool (*store_value)(nqiv_cmd_manager*,
+                                                                  nqiv_cmd_arg_token*),
+                                              void (*print_value)(nqiv_cmd_manager*),
+                                              const nqiv_cmd_arg_desc** args)
 {
 	nqiv_cmd_node* node = nqiv_cmd_make_base_node(status, name, description, args);
 	if(node == NULL) {
@@ -2100,10 +2110,10 @@ nqiv_cmd_node* nqiv_cmd_make_leaf_node(bool*       status,
 	return node;
 }
 
-nqiv_cmd_node* nqiv_cmd_add_child_branch_node(bool*          status,
-                                              nqiv_cmd_node* parent,
-                                              const char*    name,
-                                              const char*    description)
+static nqiv_cmd_node* nqiv_cmd_add_child_branch_node(bool*          status,
+                                                     nqiv_cmd_node* parent,
+                                                     const char*    name,
+                                                     const char*    description)
 {
 	if(parent == NULL || !*status) {
 		return NULL;
@@ -2113,15 +2123,15 @@ nqiv_cmd_node* nqiv_cmd_add_child_branch_node(bool*          status,
 	return node;
 }
 
-nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool*          status,
-                                            nqiv_cmd_node* parent,
-                                            const char*    name,
-                                            const char*    description,
-                                            void*          data,
-                                            bool (*store_value)(nqiv_cmd_manager*,
-                                                                nqiv_cmd_arg_token*),
-                                            void (*print_value)(nqiv_cmd_manager*),
-                                            const nqiv_cmd_arg_desc** args)
+static nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool*          status,
+                                                   nqiv_cmd_node* parent,
+                                                   const char*    name,
+                                                   const char*    description,
+                                                   void*          data,
+                                                   bool (*store_value)(nqiv_cmd_manager*,
+                                                                       nqiv_cmd_arg_token*),
+                                                   void (*print_value)(nqiv_cmd_manager*),
+                                                   const nqiv_cmd_arg_desc** args)
 {
 	if(parent == NULL || !*status) {
 		return NULL;
@@ -2134,8 +2144,8 @@ nqiv_cmd_node* nqiv_cmd_add_child_leaf_node(bool*          status,
 
 #define STACKLEN 16
 
-void nqiv_cmd_manager_build_cmdtree_set_current(nqiv_cmd_node**   current_node,
-                                                const nqiv_array* stack)
+static void nqiv_cmd_manager_build_cmdtree_set_current(nqiv_cmd_node**   current_node,
+                                                       const nqiv_array* stack)
 {
 	assert(nqiv_array_get_units_count(stack) > 0);
 	assert(nqiv_array_get_units_count(stack) < STACKLEN);
@@ -2144,25 +2154,26 @@ void nqiv_cmd_manager_build_cmdtree_set_current(nqiv_cmd_node**   current_node,
 	assert(*current_node != NULL);
 }
 
-void nqiv_cmd_manager_build_cmdtree_deprecate(bool* deprecated)
+static void nqiv_cmd_manager_build_cmdtree_deprecate(bool* deprecated)
 {
 	assert(*deprecated == false);
 	*deprecated = true;
 }
 
-void nqiv_cmd_manager_build_cmdtree_apply_deprecate(nqiv_cmd_node* tmp_node, bool* deprecated)
+static void nqiv_cmd_manager_build_cmdtree_apply_deprecate(nqiv_cmd_node* tmp_node,
+                                                           bool*          deprecated)
 {
 	tmp_node->deprecated = *deprecated;
 	*deprecated = false;
 }
 
-void nqiv_cmd_manager_build_cmdtree_b(nqiv_cmd_node** current_node,
-                                      nqiv_array*     stack,
-                                      nqiv_cmd_node** tmp_node,
-                                      bool*           deprecated,
-                                      bool*           status,
-                                      const char*     name,
-                                      const char*     description)
+static void nqiv_cmd_manager_build_cmdtree_b(nqiv_cmd_node** current_node,
+                                             nqiv_array*     stack,
+                                             nqiv_cmd_node** tmp_node,
+                                             bool*           deprecated,
+                                             bool*           status,
+                                             const char*     name,
+                                             const char*     description)
 {
 	nqiv_cmd_manager_build_cmdtree_set_current(current_node, stack);
 	assert(*tmp_node == NULL);
@@ -2172,17 +2183,18 @@ void nqiv_cmd_manager_build_cmdtree_b(nqiv_cmd_node** current_node,
 	*tmp_node = NULL;
 }
 
-void nqiv_cmd_manager_build_cmdtree_l(nqiv_cmd_node**   current_node,
-                                      const nqiv_array* stack,
-                                      nqiv_cmd_node**   tmp_node,
-                                      bool*             deprecated,
-                                      bool*             status,
-                                      const char*       name,
-                                      const char*       description,
-                                      void*             data,
-                                      bool (*store_value)(nqiv_cmd_manager*, nqiv_cmd_arg_token*),
-                                      void (*print_value)(nqiv_cmd_manager*),
-                                      const nqiv_cmd_arg_desc** args)
+static void nqiv_cmd_manager_build_cmdtree_l(nqiv_cmd_node**   current_node,
+                                             const nqiv_array* stack,
+                                             nqiv_cmd_node**   tmp_node,
+                                             bool*             deprecated,
+                                             bool*             status,
+                                             const char*       name,
+                                             const char*       description,
+                                             void*             data,
+                                             bool (*store_value)(nqiv_cmd_manager*,
+                                                                 nqiv_cmd_arg_token*),
+                                             void (*print_value)(nqiv_cmd_manager*),
+                                             const nqiv_cmd_arg_desc** args)
 {
 	nqiv_cmd_manager_build_cmdtree_set_current(current_node, stack);
 	assert(args == NULL || nqiv_cmd_get_args_list_length(args) < NQIV_CMD_MAX_ARGS);
@@ -2193,7 +2205,7 @@ void nqiv_cmd_manager_build_cmdtree_l(nqiv_cmd_node**   current_node,
 	*tmp_node = NULL;
 }
 
-void nqiv_cmd_manager_build_cmdtree_pop(nqiv_cmd_node** current_node, nqiv_array* stack)
+static void nqiv_cmd_manager_build_cmdtree_pop(nqiv_cmd_node** current_node, nqiv_array* stack)
 {
 	assert(nqiv_array_get_units_count(stack) > 0);
 	nqiv_array_pop(stack, NULL);
@@ -2224,7 +2236,7 @@ void nqiv_cmd_manager_build_cmdtree_pop(nqiv_cmd_node** current_node, nqiv_array
 #define LP(NAME, DESCRIPTION, PRINT_VALUE) L(NAME, DESCRIPTION, NULL, NULL, PRINT_VALUE, NULL)
 #define POP                                nqiv_cmd_manager_build_cmdtree_pop(&current_node, &stack);
 // NOLINTBEGIN(google-readability-function-size,readability-function-size)
-bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
+static bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 {
 	const nqiv_cmd_arg_desc* sendkey_args[] = {&nqiv_parser_arg_type_key_action, NULL};
 	const nqiv_cmd_arg_desc* idxname_args[] = {&nqiv_parser_arg_type_int_natural,

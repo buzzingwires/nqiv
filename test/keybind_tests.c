@@ -7,9 +7,9 @@
 
 #include "keybind_tests.h"
 
-bool keybind_test_parse_print_entry(const bool  expected,
-                                    const char* input_buf_arg,
-                                    const char* compare_buf_arg)
+static bool keybind_test_parse_print_entry(const bool  expected,
+                                           const char* input_buf_arg,
+                                           const char* compare_buf_arg)
 {
 	bool              result = true;
 	nqiv_keybind_pair pair = {0};
@@ -104,7 +104,7 @@ void keybind_test_parse_print(void)
 	assert(keybind_test_parse_print_entry(false, "rgui+q=quit", "rgui+q=quit"));
 }
 
-bool add_keybind_string(nqiv_keybind_manager* manager, const char* text)
+static bool add_keybind_string(nqiv_keybind_manager* manager, const char* text)
 {
 	nqiv_keybind_pair pair = {0};
 	return nqiv_keybind_text_to_keybind(text, &pair) != -1 && nqiv_keybind_add(manager, &pair);
