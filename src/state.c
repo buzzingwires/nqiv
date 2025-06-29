@@ -89,7 +89,7 @@ bool nqiv_add_logger_path(nqiv_state* state, const char* path)
 		}
 		return false;
 	}
-	strncpy(persistent_path, path, strlen(path));
+	memcpy(persistent_path, path, strlen(path));
 	assert(strcmp(persistent_path, path) == 0);
 	if(!nqiv_array_push(state->logger_stream_names, &persistent_path)) {
 		free(persistent_path);

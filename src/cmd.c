@@ -2077,10 +2077,10 @@ static nqiv_cmd_node* nqiv_cmd_make_base_node(bool*                     status,
 		assert((ptrdiff_t)((char*)(node->args) - (char*)node) % 8 == 0);
 		memcpy(node->args, args, args_size);
 	}
-	strncpy(node->name, name, strlen(name));
+	memcpy(node->name, name, strlen(name));
 	assert(node->name[strlen(name)] == '\0');
 	assert(strcmp(node->name, name) == 0);
-	strncpy(node->description, description, strlen(description));
+	memcpy(node->description, description, strlen(description));
 	assert(node->description[strlen(description)] == '\0');
 	assert(strcmp(node->description, description) == 0);
 	assert(node->args == NULL || node->args[nqiv_cmd_get_args_list_length(args) - 1] == NULL);
