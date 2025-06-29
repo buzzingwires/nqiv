@@ -336,6 +336,7 @@ bool nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* de
 	int idx;
 	for(idx = 0; cmds[idx] != NULL; ++idx) {
 		if(!nqiv_cmd_add_cmd_and_parse(&state->cmds, cmds[idx])) {
+			fprintf(stderr, "Error occurred when adding builtin commands. ");
 			return false;
 		}
 	}
@@ -402,16 +403,17 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 	if(!nqiv_check_and_print_logger_error(&state->logger)) {
 		return NQIV_FAIL;
 	}
+	if(!nqiv_add_logger_path(state, "stderr")) {
+		fputs("Failed to add stderr for preliminary logging.\n");
+		return NQIV_FAIL;
+	}
 	if(!nqiv_image_manager_init(&state->images, &state->logger, STARTING_QUEUE_LENGTH)) {
-		fputs("Failed to initialize image manager.\n", stderr);
 		return NQIV_FAIL;
 	}
 	if(!nqiv_pruner_init(&state->pruner, &state->logger, STARTING_QUEUE_LENGTH)) {
-		fputs("Failed to initialize pruner.\n", stderr);
 		return NQIV_FAIL;
 	}
 	if(!nqiv_keybind_create_manager(&state->keybinds, &state->logger, STARTING_QUEUE_LENGTH)) {
-		fputs("Failed to initialize keybind manager.\n", stderr);
 		return NQIV_FAIL;
 	}
 	nqiv_set_keyrate_defaults(&state->keystates);
@@ -419,14 +421,12 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 	                             STARTING_QUEUE_LENGTH, THREAD_QUEUE_BIN_COUNT)
 	   || !nqiv_priority_queue_set_max_data_length(&state->thread_queue, THREAD_QUEUE_MAX_LENGTH)
 	   || !nqiv_priority_queue_set_min_add_count(&state->thread_queue, THREAD_QUEUE_ADD_COUNT)) {
-		fputs("Failed to initialize thread queue.\n", stderr);
 		return NQIV_FAIL;
 	}
 	state->images.thread_queue = &state->thread_queue;
 	state->images.thread_wakeup_signaler = &state->thread_wakeup_signaler;
 	if(!nqiv_queue_init(&state->key_actions, &state->logger, sizeof(nqiv_keybind_pair*),
 	                    STARTING_QUEUE_LENGTH)) {
-		fputs("Failed to initialize key action queue.\n", stderr);
 		return NQIV_FAIL;
 	}
 	nqiv_state_set_default_colors(state);
@@ -476,6 +476,7 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 			assert(false);
 		}
 	}
+	nqiv_close_log_streams(state);
 	if(load_default) {
 		char default_config_path[PATH_MAX + 1] = {0};
 		if(nqiv_get_default_cfg(default_config_path, PATH_MAX)) {
@@ -534,6 +535,7 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 		}
 	}
 	if(!success) {
+		fprintf(stderr, "Error occurred during parsing of command line option '%c'.\n", option);
 		return NQIV_FAIL;
 	}
 	const char* arg;
@@ -2030,6 +2032,7 @@ nqiv_op_result nqiv_run(nqiv_state* state)
 int main(int argc, char* argv[])
 {
 	if(argc == 0) {
+		fputs("argc is zero- not a normal error.\n", stderr);
 		return 0;
 	}
 
