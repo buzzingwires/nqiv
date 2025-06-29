@@ -2602,6 +2602,9 @@ bool nqiv_cmd_manager_build_cmdtree(nqiv_cmd_manager* manager)
 			LC("apply_error_quit", "Quit if there are errors applying correctly-parsed commands.",
 			   &(manager->state->cmd_apply_error_quit), nqiv_cmd_parser_set_data_bool,
 			   nqiv_cmd_parser_print_data_bool, bool_args);
+			LC("from_stdin", "Read commands from stdin. Replacement for the old `-s` command line flag.",
+			   &(manager->state->cmd_read_stdin), nqiv_cmd_parser_set_data_bool,
+			   nqiv_cmd_parser_print_data_bool, bool_args);
 			LC("acknowledge",
 			   "When finished with commands (successfully or unsuccessfully), print a message to "
 			   "stdout acknowledging this and offering "

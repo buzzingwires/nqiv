@@ -133,7 +133,7 @@ run_nqiv()
 	# Actually run nqiv
 	if [ -z "$L_QUIT" ]
 	then
-		eval nqiv -C "$l_filelist_path" -s "$L_PASSTHROUGH_ARGS"
+		eval nqiv -C "$l_filelist_path" "$L_PASSTHROUGH_ARGS"
 	fi
 
 	# Cleanup

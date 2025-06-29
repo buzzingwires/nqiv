@@ -356,7 +356,6 @@ void nqiv_print_args(const char* exe)
 {
 	nqiv_print_version();
 	fprintf(stderr, "\n");
-	fprintf(stderr, "-s/--cmd-from-stdin Read commands from stdin.\n");
 	fprintf(stderr, "-B/--built-in-config Force the built in config to load. It will do so in the "
 	                "order it is specified.\n");
 	fprintf(stderr, "-N/--no-default-cfg Do not try to load the default config file (or settings "
@@ -439,7 +438,6 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 		return NQIV_FAIL;
 	}
 	const struct optparse_long longopts[] = {
-		{"cmd-from-stdin", 's', OPTPARSE_NONE},
         {"built-in-config", 'B', OPTPARSE_NONE},
 		{"no-default-cfg", 'N', OPTPARSE_NONE},
         {"cmd", 'c', OPTPARSE_REQUIRED},
@@ -466,7 +464,6 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 		case '?':
 			fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
 			return NQIV_FAIL;
-		case 's':
 		case 'c':
 		case 'B':
 		case 'C':
@@ -508,10 +505,6 @@ nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 	optparse_init(&options, argv);
 	while(success && (option = optparse_long(&options, longopts, NULL)) != -1) {
 		switch(option) {
-		case 's':
-			/*success = success && nqiv_cmd_consume_stream(&state->cmds, stdin);*/
-			state->cmd_read_stdin = true;
-			break;
 		case 'c':
 			success = success && nqiv_cmd_add_cmd_and_parse(&state->cmds, options.optarg);
 			break;

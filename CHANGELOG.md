@@ -44,7 +44,7 @@ Unreleased
 
 * `append thread ...` allows user-specified threads to handle specific types of events. This is especially handy for having threads always ready to react to loading images and animation frames without interruption from gallery loading.
 
-* nqiv still accepts stdin input when started by nqivf.sh
+* nqivf.sh no longer specifies that nqiv will accept commands from stdin by default. Will default to config file/user-set options.
 
 * `set cmd acknowledge` will print messages informing of processed commands and when nqiv is reading from stdin.
 
@@ -58,7 +58,9 @@ Unreleased
 
 * nqiv should actually respond to sendkey commands now.
 
-* nqiv can now read commands from stdin while it's running when `-s` is passed.
+* nqiv can now read commands from stdin while it's running when `set cmd from_stdin true` is set
+
+* `-s` is replaced by `set cmd from_stdin true`
 
 * `nqivf.sh` now version sorts its results as the default behavior. It should correctly sort numbers (1, 2, 10, etc' instead of 1, 10, 2), in addition to letters.
 
