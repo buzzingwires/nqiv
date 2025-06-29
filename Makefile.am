@@ -38,3 +38,7 @@ install-exec-local:
 	(test -e src/nqiv && cp src/nqiv "$(DESTDIR)$(bindir)") \
 	|| (test -e src/nqiv.exe && cp src/nqiv.exe "$(DESTDIR)$(bindir)") \
 	|| true
+	mkdir -p "$(DESTDIR)$(datadir)/icons/hicolor/256x256/apps/"
+	mkdir -p "$(DESTDIR)$(datadir)/applications/"
+	cp media/icons/256x256/nqiv.png "$(DESTDIR)$(datadir)/icons/hicolor/256x256/apps/nqiv.png"
+	cp scripts/nqiv.desktop "$(DESTDIR)$(datadir)/applications/"
