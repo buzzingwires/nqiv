@@ -1968,7 +1968,11 @@ static void nqiv_wait_on_threads(nqiv_state* state)
 static void
 nqiv_run_fail(nqiv_state* state, const char* msg, const int thread_number, SDL_Thread* loose_thread)
 {
-	nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "%s thread %d.", msg, thread_number);
+	if(thread_number >= 0) {
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "%s thread %d.", msg, thread_number);
+	} else {
+		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "%s", msg);
+	}
 	SDL_AtomicSet(&state->running, NQIV_FAIL);
 	nqiv_cond_wake_all(&state->thread_wakeup_signaler);
 	if(loose_thread != NULL) {
@@ -1993,6 +1997,12 @@ static nqiv_op_result nqiv_run(nqiv_state* state)
 	}
 	standard_event_bins[THREAD_QUEUE_BIN_COUNT] = -1;
 	const int thread_specs_len = nqiv_array_get_units_count(state->thread_specs);
+	nqiv_worker_main_args* thread_args = calloc(state->thread_count + thread_specs_len, sizeof(nqiv_worker_main_args));
+	if(thread_args == NULL) {
+		nqiv_run_fail(state, "Failed to create thread args array.", -1, NULL);
+		return NQIV_FAIL;
+	}
+	int a = 0;
 	int       t;
 	for(t = 0; t < state->thread_count; ++t) {
 		nqiv_worker_main_args args = {.logger = &state->logger,
@@ -2005,15 +2015,19 @@ static nqiv_op_result nqiv_run(nqiv_state* state)
 		                              .transaction_group = &state->thread_event_transaction_group,
 		                              .dormant_count = &state->dormant_thread_count,
 		                              .running = &state->running};
-		SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Worker", &args);
+		memcpy(&(thread_args[a]), &args, sizeof(nqiv_worker_main_args));
+		SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Worker", &(thread_args[a]));
 		if(this_thread == NULL) {
 			nqiv_run_fail(state, "Failed to create SDL", t, NULL);
+			free(thread_args);
 			return NQIV_FAIL;
 		}
 		if(!nqiv_array_push(state->thread_pointers, &this_thread)) {
 			nqiv_run_fail(state, "Failed to append SDL", t, this_thread);
+			free(thread_args);
 			return NQIV_FAIL;
 		}
+		++a;
 	}
 	nqiv_worker_spec* thread_specs = state->thread_specs->data;
 	for(t = 0; t < thread_specs_len; ++t) {
@@ -2034,22 +2048,28 @@ static nqiv_op_result nqiv_run(nqiv_state* state)
 		                              .transaction_group = &state->thread_event_transaction_group,
 		                              .dormant_count = &state->dormant_thread_count,
 		                              .running = &state->running};
+		memcpy(&(thread_args[a]), &args, sizeof(nqiv_worker_main_args));
 		SDL_Thread*           this_thread =
-			SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Specified Worker", &args);
+			SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Specified Worker", &(thread_args[a]));
 		if(this_thread == NULL) {
 			nqiv_run_fail(state, "Failed to create SDL specified", t, NULL);
+			free(thread_args);
 			return NQIV_FAIL;
 		}
 		if(!nqiv_array_push(state->thread_pointers, &this_thread)) {
 			nqiv_run_fail(state, "Failed to append SDL specified", t, this_thread);
+			free(thread_args);
 			return NQIV_FAIL;
 		}
+		++a;
 	}
+	assert(nqiv_array_get_units_count(state->thread_pointers) == state->thread_count + thread_specs_len);
 	state->restart_threads = false;
 	result = nqiv_master_thread(state);
 	assert(SDL_AtomicGet(&state->running) != NQIV_SUCCESS);
 	nqiv_cond_wake_all(&state->thread_wakeup_signaler);
 	nqiv_wait_on_threads(state);
+	free(thread_args);
 	return result;
 }
 /* clang-format on */
