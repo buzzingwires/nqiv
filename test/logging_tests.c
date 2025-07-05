@@ -17,6 +17,48 @@ static size_t get_file_contents(FILE* f, char* buf, const int n)
 	return bytes_read;
 }
 
+static size_t check_log_step(const char* buf, const char* compare)
+{
+	assert(strncmp(buf, compare, strlen(compare)) == 0);
+	return strlen(compare);
+}
+
+static size_t check_log_numbers(const char* buf, const char* compare)
+{
+	size_t offset = 0;
+	for(offset = 0; offset < strlen(compare); ++offset) {
+		assert(buf[offset] != '\0');
+		if(compare[offset] == '0') {
+			assert(buf[offset] >= '0');
+			assert(buf[offset] <= '9');
+		} else {
+			assert(buf[offset] == compare[offset]);
+		}
+	}
+	assert(compare[offset] == '\0');
+	return offset;
+}
+
+static size_t check_log_entry(const char* buf, const nqiv_log_level level, const char* message)
+{
+	const char* level_msg = NULL;
+	if(level == NQIV_LOG_DEBUG) {
+		level_msg = "LOG#DEBUG ";
+	} else if(level == NQIV_LOG_INFO) {
+		level_msg = "LOG#INFO ";
+	} else if(level == NQIV_LOG_WARNING) {
+		level_msg = "LOG#WARNING ";
+	} else if(level == NQIV_LOG_ERROR) {
+		level_msg = "LOG#ERROR ";
+	}
+	assert(level_msg != NULL);
+	size_t offset = 0;
+	offset += check_log_step(buf + offset, level_msg);
+	offset += check_log_numbers(buf + offset, "0000-00-00 00:00:00-0000 ");
+	offset += check_log_step(buf + offset, message);
+	return offset;
+}
+
 void logging_test_general(void)
 {
 	nqiv_log_ctx ctx = {0};
@@ -46,10 +88,6 @@ void logging_test_general(void)
 	assert(strlen(ctx.error_message) == 0);
 	streams_len = ctx.streams->position / (int)sizeof(FILE*);
 	assert(streams_len == 2);
-	nqiv_log_add_stream(&ctx, stderr);
-	assert(strlen(ctx.error_message) == 0);
-	streams_len = ctx.streams->position / (int)sizeof(FILE*);
-	assert(streams_len == 3);
 
 	nqiv_log_write(&ctx, NQIV_LOG_DEBUG, "Should not be listed because debug.\n");
 	nqiv_log_write(&ctx, NQIV_LOG_INFO, "Should be listed because equal to info.\n");
@@ -62,10 +100,12 @@ void logging_test_general(void)
 	memset(buf2, 0, 500);
 	assert(get_file_contents(testfile_1, buf1, 500) == get_file_contents(testfile_2, buf2, 500));
 	assert(strncmp(buf1, buf2, 500) == 0);
-	assert(strncmp(buf1, "LOG#INFO ", strlen("LOG#INFO ")) == 0);
-	assert(buf1[strlen("LOG#INFO ")] >= '0');
-	assert(buf1[strlen("LOG#INFO ")] <= '9');
-	assert(buf1[strlen("LOG#INFO 0000-00-00 00:00:00+0000")] == ' ');
+
+	size_t offset = 0;
+	offset += check_log_entry(buf1 + offset, NQIV_LOG_INFO, "Should be listed because equal to info.\n");
+	offset += check_log_entry(buf1 + offset, NQIV_LOG_WARNING, "Should be listed because greater than info.\n");
+	offset += check_log_entry(buf1 + offset, NQIV_LOG_WARNING, "Entry with value 5.\n");
+	assert(offset == strlen(buf1));
 
 	fclose(testfile_1);
 	fclose(testfile_2);
