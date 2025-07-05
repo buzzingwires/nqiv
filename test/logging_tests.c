@@ -102,8 +102,10 @@ void logging_test_general(void)
 	assert(strncmp(buf1, buf2, 500) == 0);
 
 	size_t offset = 0;
-	offset += check_log_entry(buf1 + offset, NQIV_LOG_INFO, "Should be listed because equal to info.\n");
-	offset += check_log_entry(buf1 + offset, NQIV_LOG_WARNING, "Should be listed because greater than info.\n");
+	offset +=
+		check_log_entry(buf1 + offset, NQIV_LOG_INFO, "Should be listed because equal to info.\n");
+	offset += check_log_entry(buf1 + offset, NQIV_LOG_WARNING,
+	                          "Should be listed because greater than info.\n");
 	offset += check_log_entry(buf1 + offset, NQIV_LOG_WARNING, "Entry with value 5.\n");
 	assert(offset == strlen(buf1));
 

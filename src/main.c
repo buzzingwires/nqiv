@@ -1970,14 +1970,15 @@ static nqiv_op_result nqiv_run(nqiv_state* state)
 		standard_event_bins[c] = c;
 	}
 	standard_event_bins[THREAD_QUEUE_BIN_COUNT] = -1;
-	const int thread_specs_len = nqiv_array_get_units_count(state->thread_specs);
-	nqiv_worker_main_args* thread_args = calloc(state->thread_count + thread_specs_len, sizeof(nqiv_worker_main_args));
+	const int              thread_specs_len = nqiv_array_get_units_count(state->thread_specs);
+	nqiv_worker_main_args* thread_args =
+		calloc(state->thread_count + thread_specs_len, sizeof(nqiv_worker_main_args));
 	if(thread_args == NULL) {
 		nqiv_run_fail(state, "Failed to create thread args array.", -1, NULL);
 		return NQIV_FAIL;
 	}
 	int a = 0;
-	int       t;
+	int t;
 	for(t = 0; t < state->thread_count; ++t) {
 		nqiv_worker_main_args args = {.logger = &state->logger,
 		                              .queue = &state->thread_queue,
@@ -1990,7 +1991,8 @@ static nqiv_op_result nqiv_run(nqiv_state* state)
 		                              .dormant_count = &state->dormant_thread_count,
 		                              .running = &state->running};
 		memcpy(&(thread_args[a]), &args, sizeof(nqiv_worker_main_args));
-		SDL_Thread* this_thread = SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Worker", &(thread_args[a]));
+		SDL_Thread* this_thread =
+			SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Worker", &(thread_args[a]));
 		if(this_thread == NULL) {
 			nqiv_run_fail(state, "Failed to create SDL", t, NULL);
 			free(thread_args);
@@ -2023,7 +2025,7 @@ static nqiv_op_result nqiv_run(nqiv_state* state)
 		                              .dormant_count = &state->dormant_thread_count,
 		                              .running = &state->running};
 		memcpy(&(thread_args[a]), &args, sizeof(nqiv_worker_main_args));
-		SDL_Thread*           this_thread =
+		SDL_Thread* this_thread =
 			SDL_CreateThread(nqiv_worker_main_sdl, "nqiv Specified Worker", &(thread_args[a]));
 		if(this_thread == NULL) {
 			nqiv_run_fail(state, "Failed to create SDL specified", t, NULL);
@@ -2037,7 +2039,8 @@ static nqiv_op_result nqiv_run(nqiv_state* state)
 		}
 		++a;
 	}
-	assert(nqiv_array_get_units_count(state->thread_pointers) == state->thread_count + thread_specs_len);
+	assert(nqiv_array_get_units_count(state->thread_pointers)
+	       == state->thread_count + thread_specs_len);
 	state->restart_threads = false;
 	result = nqiv_master_thread(state);
 	assert(SDL_AtomicGet(&state->running) != NQIV_SUCCESS);
