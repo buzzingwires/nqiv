@@ -88,7 +88,7 @@ Run `scripts/update_default_cfg.sh` and check whether `default.cfg` has been uni
 
 It is recommended to run the linters `scripts/lint_cppcheck.sh` (slow and exhaustive) and `scripts/lint_clang-tidy.sh` (in that order of importance).
 
-`scripts/show_icon.sh` and `scripts/show_logo.sh` provide basic functionality tests.
+`scripts/show_logo.sh` can provide a basic functionality test.
 
 Further, consider running nqiv with valgrind.
 
@@ -111,7 +111,7 @@ These scripts are specifically written against the dash shell. They try to be po
 
 * `setup_cross_env.sh`: Script containing tools for building the Windows version of nqiv. Bootstrap MXE, prepare Windows dependencies, set up an environment, and package the build.
 
-* `show_icon.sh`: nqiv's icon is in fact a screenshot. Take a shot of the window opened by this.
+* `show_icon.sh`: This requires a single integer argument for the height and width. nqiv's icons are in fact a screenshots. Take a shot of the window opened by this.
 
 * `show_logo.sh`: nqiv's logo is also a screenshot. Take a shot of the window opened by this.
 

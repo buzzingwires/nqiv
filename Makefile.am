@@ -38,7 +38,19 @@ install-exec-local:
 	(test -e src/nqiv && cp src/nqiv "$(DESTDIR)$(bindir)") \
 	|| (test -e src/nqiv.exe && cp src/nqiv.exe "$(DESTDIR)$(bindir)") \
 	|| true
+	mkdir -p "$(DESTDIR)$(datadir)/icons/hicolor/16x16/apps/"
+	mkdir -p "$(DESTDIR)$(datadir)/icons/hicolor/22x22/apps/"
+	mkdir -p "$(DESTDIR)$(datadir)/icons/hicolor/24x24/apps/"
+	mkdir -p "$(DESTDIR)$(datadir)/icons/hicolor/32x32/apps/"
+	mkdir -p "$(DESTDIR)$(datadir)/icons/hicolor/48x48/apps/"
+	mkdir -p "$(DESTDIR)$(datadir)/icons/hicolor/128x128/apps/"
 	mkdir -p "$(DESTDIR)$(datadir)/icons/hicolor/256x256/apps/"
 	mkdir -p "$(DESTDIR)$(datadir)/applications/"
+	cp media/icons/16x16/nqiv.png "$(DESTDIR)$(datadir)/icons/hicolor/16x16/apps/nqiv.png"
+	cp media/icons/22x22/nqiv.png "$(DESTDIR)$(datadir)/icons/hicolor/22x22/apps/nqiv.png"
+	cp media/icons/24x24/nqiv.png "$(DESTDIR)$(datadir)/icons/hicolor/24x24/apps/nqiv.png"
+	cp media/icons/32x32/nqiv.png "$(DESTDIR)$(datadir)/icons/hicolor/32x32/apps/nqiv.png"
+	cp media/icons/48x48/nqiv.png "$(DESTDIR)$(datadir)/icons/hicolor/48x48/apps/nqiv.png"
+	cp media/icons/128x128/nqiv.png "$(DESTDIR)$(datadir)/icons/hicolor/128x128/apps/nqiv.png"
 	cp media/icons/256x256/nqiv.png "$(DESTDIR)$(datadir)/icons/hicolor/256x256/apps/nqiv.png"
 	cp scripts/nqiv.desktop "$(DESTDIR)$(datadir)/applications/"
