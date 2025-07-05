@@ -100,7 +100,7 @@ struct nqiv_state
 	/* Threads will update the master after processing this many events. 0 to process all. */
 	int                  thread_event_interval;
 	int                  vips_threads;
-	/* The transaction group of an event is compared against this, protected by a mutex lock. If the
+	/* The transaction group of an event is compared against this. If the
 	 * event is less than the current number, it is considered out of date and discarded. An event
 	 * with a transaction group of -1 is never out of date. This feature primarily exists to solve
 	 * the problem of events still being queued for images that are no longer visible. */

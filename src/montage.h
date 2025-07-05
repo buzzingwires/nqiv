@@ -5,11 +5,6 @@
 
 #include "image.h"
 
-/*
- * 'Montage' mode represents images in the form of thumbnails. This module paginates and determines
- * their placement based on their size and the size of the screen
- */
-
 typedef struct nqiv_montage_dimensions
 {
 	int    window_width;

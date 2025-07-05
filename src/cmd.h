@@ -13,35 +13,6 @@
 #include "pruner.h"
 #include "worker.h"
 
-/*
- * The nqiv_cmd_manager is the primary means by which configuration directives
- * and command line arguments are passed to nqiv.
- *
- * It works by representing a parse tree with branch nodes and leaf nodes.
- *
- * Branch nodes may have other branch nodes or leaf nodes as children. Leaf
- * nodes point to functions that allow their relevant values to be stored or
- * printed and have a list of arguments that are handled by their store
- * function. They are expected to have at least a print or store function. Some perform actions
- * only, while others are internal state that should only be accessed for debugging and the like.
- *
- * Commands are case-sensitive and terminate at the end of a line. Each 'node'
- * is traversed based on a space-separated name. A line may begin with # to make
- * it a comment, where it will be passed over by the parser. Help may be printed
- * for any node, its children, or recursively, or a functional list of
- * documented commands may be printed. The intent of this system is to be
- * self-documenting.
- *
- * Command example:
- *
- */
-/* clang-format off */
-/*
- * set      color  background 0             0            0            255
- * BRANCH   BRANCH LEAF       UINT8(0-255)  UINT8(0-255) UINT8(0-255) UINT8(0-255)
- */
-/* clang-format on */
-
 /* Max number of args for a cmd */
 #define NQIV_CMD_MAX_ARGS 8
 /* Used to build the full name of a command from nodes. */
@@ -156,12 +127,6 @@ struct nqiv_cmd_manager
 	nqiv_cmd_manager_print_settings print_settings;
 	nqiv_cmd_node*                  root_node;
 };
-
-/*Read characters until we get an EOL. Then, begin by traversing the tree to find the name of the
- * node. Once we no longer find names, we begin grabbing the parameters. We do paremeters by seeing
- * if they match whatever format. Then we create an array of structs, with a type enum, pointer to
- * the string, a union with the raw data, if relevant. Whenever we're finished with text, we can
- * traverse the string forward.*/
 
 struct nqiv_cmd_node
 {

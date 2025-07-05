@@ -12,22 +12,6 @@
 #include "queue.h"
 #include "logging.h"
 
-/*
- * Image data is stored and managed within an nqiv_image_manager object, which
- * also contains settings pertaining to zooming, animation, as well as thumbnail
- * behavior.
- *
- * An nqiv_image object is the representation of an image and its thumbnail,
- * which are respectively respectively represented by twin 'nqiv_image_form'
- * objects. A form is loaded in stages. First, the VIPS library representation
- * is loaded, then the raw image pixel data is extracted, then this pixel data
- * is used to back an SDL surface, and finally, the surface is loaded into a
- * texture, which is what will actually be displayed. Each stage may be
- * performed in a worker thread, except for texture loading and unloading, which
- * must be performed from the master, due to the constraints of OpenGL, which
- * backs SDL2's textures at the time of writing.
- */
-
 typedef struct nqiv_image_form_animation
 {
 	int    frame;           /* Which frame are we currently on? */

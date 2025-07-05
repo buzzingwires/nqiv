@@ -933,26 +933,6 @@ void nqiv_image_manager_zoom_out_more(nqiv_image_manager* manager)
 		true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount_more);
 }
 
-/*
- *
-    When zoomed all the way out, we have a rect called the 'canvas rect'.
-    We imagine this rect has the same aspect ratio as the screen,
-    but is big enough to accomodate the entirety of the image.
-    Pick the biggest side of the image and set the corresponding side of the rect to that.
-    Use that to calculate the other side of the source rect, based on aspect ratio.
-    The position should be zero, since this rect corresponds to the entire screen.
-
-    To zoom in, shrink this rect proportionally to the aspect ratio and center accordingly.
-
-    To calculate the actual source rect of the image,
-    find the center point of the image and the center point of the canvas rect.
-    Move the image in the canvas rect such that it is aligned.
-    Any edges of the image that overflow the canvas rect will be clipped to the size of the canvas
- rect. Take them where they are clipped, and any non-overflowing edges, as is.
-
-    To calculate the actual destination rect, divide the height and width of the canvas rect with
- the screen size. Use these to scale the dimensions of the source rect into the screen size.
- */
 static void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
                                                   const bool          do_zoom,
                                                   const bool          do_stretch,

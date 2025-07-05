@@ -4,31 +4,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-/*
- * nqiv_array is a multipurpose datastructure that may variously function as an
- * array, a stack, and a string builder. Its correctness and performance (in
- * that order) are considered especially important to nqiv.
- *
- * The array object contains a pointer to a certain amount of memory. This
- * memory may be dynamically allocated by nqiv_array_create (which also
- * dynamically allocates the array object itself) and freed by
- * nqiv_array_destroy. nqiv_array may also be backed by an existing (often
- * static) section of memory specified by nqiv_array_inherit
- *
- * Normally, the data reserved for the array will be capped at the starting
- * length. This cap must be manually changed and will be expanded in intervals
- * of min_add_count. Expanding max_data_length on static memory is to be
- * avoided.
- *
- * Within the allocated memory, position specifies the actual end of the array.
- * When position surpasses the length of the data, it may be reallocated as
- * discussed, or the operation will fail.
- *
- * Operations on the array will typically be done by reading or writing memory
- * of unit_length. Operations followed by _count will work on a certain number
- * of units, while other operations will just work on one.
- */
-
 /* Intermediate bufsize for nqiv_array_push_sprintf The operation will fail if
  * this is exceeded. */
 #define NQIV_ARRAY_SPRINTF_BUFLEN 4096

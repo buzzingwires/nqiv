@@ -157,15 +157,6 @@ static void nqiv_pruner_run_set(nqiv_pruner*              pruner,
 static void
 nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqiv_image* image)
 {
-	/* Check loaded self, pruner, datapoint, void ptr */
-	/* Check loaded ahead, pruner, datapoint ( param 1 (point to start counting), param 2 (max
-	 * count) ), void ptr */
-	/* Check loaded ahead, pruner, datapoint ( param 1 (point to start counting), param 2 (max
-	 * count) ), void ptr */
-	/* Check bytes ahead, pruner, form (param), datapoint ( param 1 (point to start counting), param
-	 * 2 (max count) ), void ptr */
-	/* Check bytes behind, pruner, form (param), datapoint ( param 1 (point to start counting),
-	 * param 2 (max count) ), void ptr */
 	nqiv_pruner_run_set(pruner, &(desc->vips_set), &image->image, image->image.vips,
 	                    image->image.effective_width * image->image.effective_height * 4);
 	nqiv_pruner_run_set(pruner, &(desc->surface_set), &image->image, image->image.surface,
@@ -344,13 +335,6 @@ int nqiv_pruner_run(nqiv_pruner*         pruner,
 	return output;
 }
 
-/*
-SUM OR AND
-thumbnail_vips thumbnail_data thumbnail_surface thumbnail_texture vips data surface texture
-loaded_ahead INTEGER loaded_behind INTEGER bytes_ahead INTEGER bytes_behind INTEGER self
-UNLOAD
-vips data surface texture
-*/
 static int nqiv_pruner_parse_int(
 	nqiv_log_ctx* logger, const char* text, const int idx, const int end_idx, int* output)
 {

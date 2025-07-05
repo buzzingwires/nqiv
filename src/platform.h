@@ -2,13 +2,7 @@
 #define NQIV_PLATFORM_H
 
 /*
- * A major philosophy of nqiv is that conditional compilation should be kept to
- * a minimum and that when it is necessary, it should primarily be restricted
- * to a module that provides platform-specific features with a standard
- * interface that matches the idioms of the wider project. Additionally, any
- * platform-related sanity checks may be performed here.
- *
- * Further, when this header is included, it should be included first since its
+ * When this header is included, it should be included first since its
  * behavior can affect the behavior of other headers.
  */
 

@@ -9,24 +9,6 @@
 #include "queue.h"
 #include "montage.h"
 
-/*
- * Pruners are parsed from text strings and are run against each image at
- * certain intervals to identify certain conditions and dispatch events to
- * unload image form properties (some, such as textures, are also unloaded
- * directly due to OpenGL requiring such things happen on the master thread).
- *
- * These text strings (directives) declaratively manipulate various states do a
- * few different things: Select what methods will be used to determine whether
- * the given unload operations should be performed (nqiv_pruner_count_op),
- * elect whether the operation will be performed on thumbnail or image forms,
- * or both, which data in the form will be operated on (vips, data, surface,
- * texture), which checks will be run on these and with what settings
- * (nqiv_pruner_desc_dataset), which data to unload, and whether to 'hard'
- * unload them, even if the corresponding texture doesn't exist.
- *
- * See 'help append pruner' for command documentation.
- */
-
 #define NQIV_PRUNER_DESC_STRLEN 2048 /* Notation for pruner should not be longer than this. */
 
 /* These can be checked together. */

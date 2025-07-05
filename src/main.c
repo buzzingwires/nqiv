@@ -26,32 +26,6 @@
 #define OPTPARSE_API static
 #include "optparse.h"
 
-/*
- * nqiv follows this general method of operation:
- * - Initialize data structures and dependencies.
- * - Parse the first argument pass to determine which default config to use.
- * - Parse the second argument pass with default config to actually take further
- *   options. In general, command line args are primarily a way to funnel
- *   commands into the parser specified in cmd.h
- * - Load a list of images as positional arguments.
- * - Start worker threads. See worker.h
- * - The master thread follows this cycle:
- *   - Check if any worker threads request a quit. If the running state does not show an error and
- * thread restarts are permitted, then do so.
- *   - Lock threads from receiving new tasks. If none are busy, check for any commands input on
- * stdin. Apply them if necessary, quit early on errors.
- *   - Wait on an SDL event
- *   - If it's a key/mouse-related event, match and filter the keybind,
- *     then perform the related action. Otherwise, it can be a response from
- *     a worker or a command. Finally,update the state and do any needed rendering.
- *     - Do pruning if necessary.
- *     - Update transaction group depending on state of montage.
- *     - Dispatch relevant loading events and load textures.
- *     - Set the title.
- *     - Render the image or montage.
- *     - Repaint the screen as necessary.
- */
-
 static void nqiv_close_log_streams(nqiv_state* state)
 {
 	const int streams_len = nqiv_array_get_units_count(state->logger.streams);

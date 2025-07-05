@@ -3,12 +3,6 @@
 
 #include "image.h"
 
-/*
- * Thumbnail management according to the Freedesktop Thumbnail Managing standard 0.9.0 at the time
- * of writing, as well as creation of thumbnail VIPS data for situations where a thumbnail is
- * needed, but the file won't actually be saved.
- */
-
 /* Get corresponding file dimension to the given dimension. */
 int nqiv_thumbnail_get_closest_size(const int size);
 

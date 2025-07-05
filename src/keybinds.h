@@ -11,29 +11,6 @@
 #include "logging.h"
 #include "keyrate.h"
 
-/*
- * Parse the keybind notation, and create an object from it that can be matched
- * to data from SDL events to translate them to key actions with certain
- * filtering/keyrate characteristics recognized by keyrate.h
- *
- * Parsing is case sensitive and retrieves match and action data separated by
- * '+' from two lists separated by '='. After successfully splitting each option
- * by '+', attempt to match them by whatever works first. Keymod, scroll, mouse
- * click, scancode for the match list. Filter/keyrate info, then action for the
- * second. See code or the 'help append keybind' command for more info. Keymods
- * must be mixed with other matches, but other matches cannot be mixed with one
- * another.
- *
- * Lookups are relatively simple. Build a match object from event info, and set
- * the mode to compare the relevant properties. If there is a match, a pointer
- * to the keybind pair will be pushed to the provided queue. Note that these
- * pointers could be broken if the list is reallocated- it shouldn't be since
- * its length is static and everything is currently handled by the master
- * thread, so they should all be processed before a potentially reallocation,
- * anyway.
- *
- */
-
 #define NQIV_KEYBIND_STRLEN 1024 /* Keybind notation should not be longer than this. */
 
 typedef enum nqiv_key_action
