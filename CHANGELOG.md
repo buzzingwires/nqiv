@@ -56,7 +56,7 @@ Unreleased
 
 * Optimize command parsing to be about 1.89 times faster.
 
-* There are now a variety of icon sizes and a more flexible script to generate them.
+* There are now a variety of icon sizes and a more flexible script to generate them. They are also copied by `make install`
 
 * OpenMP is no longer part of the project so nqiv builds on platforms where it's not readily available (such as OpenBSD)
 
