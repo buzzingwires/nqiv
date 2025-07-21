@@ -35,6 +35,7 @@ static bool nqiv_montage_compare_range(const nqiv_montage_state* first,
 
 void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 {
+	/* Clamp the new index to a sane value. */
 	int       new_idx = idx;
 	const int images_len = nqiv_array_get_units_count(state->images->images);
 	if(new_idx >= images_len) {
@@ -44,48 +45,84 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 		new_idx = 0;
 	}
 
-	if(state->positions.start != state->positions.end && new_idx >= state->positions.start
+	int       range_length = state->positions.end - state->positions.start;
+	const int whole_rows = range_length / state->dimensions.count_per_row;
+	/* If there is a partial row in the given range and its length length matches that of the
+	 * partial row for the whole montage.
+	 */
+	const int partial_row_length = range_length % state->dimensions.count_per_row;
+	const int partial_row = (partial_row_length != 0
+	                         && partial_row_length == images_len % state->dimensions.count_per_row)
+	                            ? 1
+	                            : 0;
+	const int row_count = state->dimensions.count / state->dimensions.count_per_row;
+
+	/* If we have changed the selection or the row count matches the current rows (as calculated
+	 * above), but not gone outside the current montage range, and that montage range has been
+	 * sanely set to include a whole page (or less if we're at the end of the montage where
+	 * incomplete rows may appear), set the new selection and skip range calculations. */
+	if((state->positions.selection != new_idx || whole_rows + partial_row == row_count)
+	   && state->positions.start != state->positions.end && new_idx >= state->positions.start
 	   && new_idx < state->positions.end
-	   && ((state->positions.end == images_len
-	        && state->positions.end - state->positions.start <= state->dimensions.count)
-	       || state->positions.end - state->positions.start == state->dimensions.count)) {
+	   && ((state->positions.end == images_len && range_length <= state->dimensions.count)
+	       || range_length == state->dimensions.count)) {
 		state->positions.selection = new_idx;
 		return;
 	}
 
+	/* Track the current state. We will compare to this after updating and set a flag if it has
+	 * changed. */
 	nqiv_montage_state original = {0};
 	memcpy(&original, state, sizeof(nqiv_montage_state));
 
+	int row = (new_idx / state->dimensions.count_per_row);
+	int row_index = state->dimensions.count_per_row * row;
 	if(state->positions.selection > new_idx) {
-		const int row = (new_idx / state->dimensions.count_per_row);
-		const int row_index = state->dimensions.count_per_row * row;
+		/* If new selection is behind the old one, move backwards so the page starts at the
+		 * beginning of the new selection's row. */
 		state->positions.start = row_index;
 		state->positions.end = row_index + state->dimensions.count;
-	} else {
-		const int row = (new_idx / state->dimensions.count_per_row) + 1;
-		const int row_index = state->dimensions.count_per_row * row;
+	} else if(state->positions.selection < new_idx) {
+		/* If new selection is after the old one, move forward so the page ends after the new
+		 * selection's row. */
+		row += 1;
+		row_index = state->dimensions.count_per_row * row;
 		state->positions.start = row_index - state->dimensions.count;
 		state->positions.end = row_index;
+	} else if(range_length != state->dimensions.count) {
+		/* On size changes, recalculate the range of the current selection's page. */
+		const int page = new_idx / state->dimensions.count;
+		const int page_start = (state->dimensions.count * page);
+		state->positions.start = page_start;
+		state->positions.end = page_start + state->dimensions.count;
 	}
 	state->positions.selection = new_idx;
 
+	/* Cap the end of the page to the end of the montage. */
 	if(state->positions.end > images_len) {
 		state->positions.end = images_len;
 	}
+
+	/* At the end of the montage, it is possible for the given page to not fill the range (as
+	 * implied above). Fill it in with as many preceding complete rows that will fit. We don't cram
+	 * as many images as possible since that will throw off the composition of each row. */
+	range_length = state->positions.end - state->positions.start;
+	const int range_length_diff = state->dimensions.count - range_length;
+	const int addable_rows = range_length_diff / state->dimensions.count_per_row;
+	state->positions.start -= addable_rows * state->dimensions.count_per_row;
+
+	/* Cap the start of the page to the start of the montage. */
 	if(state->positions.start < 0) {
 		state->positions.start = 0;
 	}
 
-	const int range_length = state->positions.end - state->positions.start;
-	if(range_length < state->dimensions.count) {
-		const int end_diff = state->dimensions.count - range_length;
-		const int final_diff = images_len - state->positions.end;
-		state->positions.end += end_diff < final_diff ? end_diff : final_diff;
-	}
-
+	range_length = state->positions.end - state->positions.start;
 	assert(state->positions.selection >= state->positions.start);
 	assert(state->positions.selection < state->positions.end
 	       || (state->positions.selection == 0 && state->positions.end == 0));
+	assert(state->positions.end > state->positions.start
+	       || (state->positions.selection == 0 && state->positions.end == 0));
+	assert(range_length <= state->dimensions.count);
 
 	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Setting montage selection to %d.\n",
 	               state->positions.selection);
