@@ -463,14 +463,118 @@ bool nqiv_pruner_append(nqiv_pruner* pruner, const nqiv_pruner_desc* desc)
 	return true;
 }
 
-static bool
-nqiv_pruner_check_token(const char* text, const int idx, const int end, const char* subs)
+static bool nqiv_pruner_check_token(
+	nqiv_log_ctx* logger, const char* text, int* idx, const int end, const char* subs)
 {
-	int token_end = nqiv_cmd_scan_whitespace(text, idx, end);
+	nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing '%s' at %s\n", subs, &text[*idx]);
+	int token_end = nqiv_cmd_scan_whitespace(text, *idx, end);
 	if(token_end == -1) {
 		token_end = end;
 	}
-	return strncmp(&text[idx], subs, strlen(subs)) == 0 && idx + (int)strlen(subs) == token_end;
+	if(strncmp(&text[*idx], subs, strlen(subs)) == 0 && *idx + (int)strlen(subs) == token_end) {
+		*idx += (int)strlen(subs);
+		return true;
+	}
+	return false;
+}
+
+typedef struct nqiv_pruner_create_common_args
+{
+	nqiv_log_ctx*              logger;
+	const char*                text;
+	int*                       idx;
+	const int                  end;
+	bool*                      inside_no;
+	bool*                      inside_unload;
+	bool*                      inside_image;
+	bool*                      inside_thumbnail;
+	nqiv_pruner_desc_dataset** set;
+	nqiv_pruner_desc_dataset** thumbnail_set;
+} nqiv_pruner_create_common_args;
+
+static bool nqiv_pruner_create_desc_toggle(const nqiv_pruner_create_common_args* c,
+                                           const char*                           name,
+                                           bool*                                 inside_x)
+{
+	if(nqiv_pruner_check_token(c->logger, c->text, c->idx, c->end, name)) {
+		if(*c->inside_no) {
+			nqiv_log_write(c->logger, NQIV_LOG_DEBUG, "Disabling '%s'\n", name);
+			*inside_x = false;
+			*c->inside_no = false;
+		} else {
+			nqiv_log_write(c->logger, NQIV_LOG_DEBUG, "Enabling '%s'\n", name);
+			*inside_x = true;
+		}
+		return true;
+	}
+	return false;
+}
+
+static void nqiv_pruner_desc_create_unload_flag(const bool* inside_hard,
+                                                bool*       unload,
+                                                bool*       unload_soft,
+                                                const bool  value)
+{
+	if(*inside_hard) {
+		if(unload != NULL) {
+			*unload = value;
+		}
+	} else if(unload_soft != NULL) {
+		*unload_soft = value;
+	}
+}
+
+static void nqiv_pruner_create_desc_unload_pair(const nqiv_pruner_create_common_args* c,
+                                                const bool*                           inside_hard,
+                                                bool*                                 unload,
+                                                bool*                                 unload_soft,
+                                                bool*      unload_thumbnail,
+                                                bool*      unload_thumbnail_soft,
+                                                const bool value)
+{
+	if(*c->inside_thumbnail) {
+		nqiv_pruner_desc_create_unload_flag(inside_hard, unload_thumbnail, unload_thumbnail_soft,
+		                                    value);
+	}
+	if(*c->inside_image) {
+		nqiv_pruner_desc_create_unload_flag(inside_hard, unload, unload_soft, value);
+	}
+}
+
+static bool nqiv_pruner_create_desc_datatype(const nqiv_pruner_create_common_args* c,
+                                             const bool*                           inside_hard,
+                                             const char*                           name,
+                                             bool*                                 unload,
+                                             bool*                                 unload_soft,
+                                             bool*                                 unload_thumbnail,
+                                             bool*                     unload_thumbnail_soft,
+                                             nqiv_pruner_desc_dataset* new_set,
+                                             nqiv_pruner_desc_dataset* new_thumbnail_set)
+{
+	if(nqiv_pruner_check_token(c->logger, c->text, c->idx, c->end, name)) {
+		assert(!*c->inside_unload || *c->set == NULL);
+		if(*c->inside_no) {
+			if(*c->inside_unload) {
+				nqiv_pruner_create_desc_unload_pair(c, inside_hard, unload, unload_soft,
+				                                    unload_thumbnail, unload_thumbnail_soft, false);
+			}
+			if(*c->set == new_set) {
+				nqiv_log_write(c->logger, NQIV_LOG_DEBUG, "Disabling %s\n", name);
+				*c->set = NULL;
+				*c->thumbnail_set = NULL;
+			}
+			*c->inside_no = false;
+		} else if(*c->inside_unload) {
+			nqiv_pruner_create_desc_unload_pair(c, inside_hard, unload, unload_soft,
+			                                    unload_thumbnail, unload_thumbnail_soft, true);
+		} else {
+			nqiv_log_write(c->logger, NQIV_LOG_DEBUG, "Enabling %s\n", name);
+			*c->set = new_set;
+			*c->thumbnail_set = new_thumbnail_set;
+		}
+		return true;
+	}
+	return false;
 }
 
 bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner_desc* desc)
@@ -478,16 +582,27 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 	memset(desc, 0, sizeof(nqiv_pruner_desc));
 	/* TODO Make it so we can set multiple sets at once? */
 	/* If we have to deprecate something, write it to the dummy objects. */
-	nqiv_pruner_desc_dataset  dummy_set = {0};
-	nqiv_pruner_desc_dataset* set = NULL;
-	nqiv_pruner_desc_dataset* thumbnail_set = NULL;
-	bool                      inside_no = false;
-	bool                      inside_unload = false;
-	bool                      inside_hard = false;
-	bool                      inside_image = true;
-	bool                      inside_thumbnail = false;
-	const int                 end = nqiv_strlen(text);
-	int                       idx = 0;
+	nqiv_pruner_desc_dataset             dummy_set = {0};
+	nqiv_pruner_desc_dataset*            set = NULL;
+	nqiv_pruner_desc_dataset*            thumbnail_set = NULL;
+	bool                                 inside_no = false;
+	bool                                 inside_unload = false;
+	const bool                           always_hard = true;
+	bool                                 inside_hard = false;
+	bool                                 inside_image = true;
+	bool                                 inside_thumbnail = false;
+	const int                            end = nqiv_strlen(text);
+	int                                  idx = 0;
+	const nqiv_pruner_create_common_args common = {.logger = logger,
+	                                               .text = text,
+	                                               .idx = &idx,
+	                                               .end = end,
+	                                               .inside_no = &inside_no,
+	                                               .inside_unload = &inside_unload,
+	                                               .inside_image = &inside_image,
+	                                               .inside_thumbnail = &inside_thumbnail,
+	                                               .set = &set,
+	                                               .thumbnail_set = &thumbnail_set};
 	nqiv_log_write(logger, NQIV_LOG_DEBUG, "Generating pruner desc from %s\n", text);
 	if(end > NQIV_PRUNER_DESC_STRLEN) {
 		nqiv_log_write(logger, NQIV_LOG_ERROR, "Pruner desc must be %d characters or less.\n",
@@ -499,219 +614,38 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 		if(idx == -1) {
 			break;
 		}
-		/* Basic modifier states. */
-		if(nqiv_pruner_check_token(text, idx, end, "hard")) {
-			if(inside_no) {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling 'hard' at %s\n", &text[idx]);
-				inside_hard = false;
-				inside_no = false;
-			} else {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling 'hard' at %s\n", &text[idx]);
-				inside_hard = true;
+		if(nqiv_pruner_create_desc_toggle(&common, "hard", &inside_hard)
+		   || nqiv_pruner_create_desc_toggle(&common, "no", &inside_no)
+		   || nqiv_pruner_create_desc_toggle(&common, "thumbnail", &inside_thumbnail)
+		   || nqiv_pruner_create_desc_toggle(&common, "image", &inside_image)
+		   || nqiv_pruner_create_desc_datatype(
+			   &common, &inside_hard, "vips", &desc->unload_vips, &desc->unload_vips_soft,
+			   &desc->unload_thumbnail_vips, &desc->unload_thumbnail_vips_soft, &desc->vips_set,
+			   &desc->thumbnail_vips_set)
+		   || nqiv_pruner_create_desc_datatype(
+			   &common, &inside_hard, "surface", &desc->unload_surface, &desc->unload_surface_soft,
+			   &desc->unload_thumbnail_surface, &desc->unload_thumbnail_surface_soft,
+			   &desc->surface_set, &desc->thumbnail_surface_set)
+		   || nqiv_pruner_create_desc_datatype(&common, &always_hard, "texture",
+		                                       &desc->unload_texture, NULL,
+		                                       &desc->unload_thumbnail_texture, NULL,
+		                                       &desc->texture_set, &desc->thumbnail_texture_set)) {
+			/* NOOP */
+		} else if(nqiv_pruner_create_desc_toggle(&common, "unload", &inside_unload)) {
+			if(inside_unload && set != NULL) {
+				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling checks for unload\n");
+				set = NULL;
+				thumbnail_set = NULL;
 			}
-			idx += strlen("hard");
-		} else if(nqiv_pruner_check_token(text, idx, end, "no")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'no' at %s\n", &text[idx]);
-			if(inside_no) {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling 'no' at %s\n", &text[idx]);
-				inside_no = false;
-			} else {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling 'no' at %s\n", &text[idx]);
-				inside_no = true;
-			}
-			idx += strlen("no");
-		} else if(nqiv_pruner_check_token(text, idx, end, "unload")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'unload' at %s\n", &text[idx]);
-			idx += strlen("unload");
-			if(inside_no) {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling unload\n");
-				inside_unload = false;
-				inside_no = false;
-			} else {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling unload\n");
-				if(set != NULL) {
-					nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling checks for unload\n");
-					set = NULL;
-					thumbnail_set = NULL;
-				}
-				inside_unload = true;
-			}
-		} else if(nqiv_pruner_check_token(text, idx, end, "thumbnail")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'thumbnail' at %s\n", &text[idx]);
-			idx += strlen("thumbnail");
-			if(inside_no) {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling thumbnail\n");
-				inside_thumbnail = false;
-				inside_no = false;
-			} else {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling thumbnail\n");
-				inside_thumbnail = true;
-			}
-		} else if(nqiv_pruner_check_token(text, idx, end, "image")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'image' at %s\n", &text[idx]);
-			idx += strlen("image");
-			if(inside_no) {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling image\n");
-				inside_image = false;
-				inside_no = false;
-			} else {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling image\n");
-				inside_image = true;
-			}
-		} else if(nqiv_pruner_check_token(text, idx, end, "vips")) {
-			/* Determine which data we are working on. */
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'vips' at %s\n", &text[idx]);
-			idx += strlen("vips");
-			assert(!inside_unload || set == NULL);
-			if(inside_no) {
-				if(inside_unload) {
-					if(inside_thumbnail) {
-						if(inside_hard) {
-							desc->unload_thumbnail_vips = false;
-						} else {
-							desc->unload_thumbnail_vips_soft = false;
-						}
-					}
-					if(inside_image) {
-						if(inside_hard) {
-							desc->unload_vips = false;
-						} else {
-							desc->unload_vips_soft = false;
-						}
-					}
-				}
-				if(set == &desc->vips_set) {
-					nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling vips\n");
-					set = NULL;
-					thumbnail_set = NULL;
-				}
-				inside_no = false;
-			} else if(inside_unload) {
-				if(inside_thumbnail) {
-					if(inside_hard) {
-						desc->unload_thumbnail_vips = true;
-					} else {
-						desc->unload_thumbnail_vips_soft = true;
-					}
-				}
-				if(inside_image) {
-					if(inside_hard) {
-						desc->unload_vips = true;
-					} else {
-						desc->unload_vips_soft = true;
-					}
-				}
-			} else {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling vips\n");
-				set = &desc->vips_set;
-				thumbnail_set = &desc->thumbnail_vips_set;
-			}
-		} else if(nqiv_pruner_check_token(text, idx, end, "raw")) {
-			nqiv_log_write(logger, NQIV_LOG_WARNING, "Skipping deprecated 'raw' at at %s\n",
-			               &text[idx]);
-			idx += strlen("raw");
-			assert(!inside_unload || set == NULL);
-			if(inside_no) {
-				if(set == &dummy_set) {
-					nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling dummy object for raw\n");
-					set = NULL;
-					thumbnail_set = NULL;
-				}
-				inside_no = false;
-			} else if(inside_unload) {
-				/* NOOP */
-			} else {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Writing raw to dummy object\n");
-				set = &dummy_set;
-				thumbnail_set = &dummy_set;
-			}
-		} else if(nqiv_pruner_check_token(text, idx, end, "surface")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'surface' at %s\n", &text[idx]);
-			idx += strlen("surface");
-			assert(!inside_unload || set == NULL);
-			if(inside_no) {
-				if(inside_unload) {
-					if(inside_thumbnail) {
-						if(inside_hard) {
-							desc->unload_thumbnail_surface = false;
-						} else {
-							desc->unload_thumbnail_surface_soft = false;
-						}
-					}
-					if(inside_image) {
-						if(inside_hard) {
-							desc->unload_surface = false;
-						} else {
-							desc->unload_surface_soft = false;
-						}
-					}
-				}
-				if(set == &desc->surface_set) {
-					nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling surface\n");
-					set = NULL;
-					thumbnail_set = NULL;
-				}
-				inside_no = false;
-			} else if(inside_unload) {
-				if(inside_thumbnail) {
-					if(inside_hard) {
-						desc->unload_thumbnail_surface = true;
-					} else {
-						desc->unload_thumbnail_surface_soft = true;
-					}
-				}
-				if(inside_image) {
-					if(inside_hard) {
-						desc->unload_surface = true;
-					} else {
-						desc->unload_surface_soft = true;
-					}
-				}
-			} else {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling surface\n");
-				set = &desc->surface_set;
-				thumbnail_set = &desc->thumbnail_surface_set;
-			}
-		} else if(nqiv_pruner_check_token(text, idx, end, "texture")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'texture' at %s\n", &text[idx]);
-			idx += strlen("texture");
-			assert(!inside_unload || set == NULL);
-			if(inside_no) {
-				if(inside_unload) {
-					if(inside_thumbnail) {
-						desc->unload_thumbnail_texture = false;
-					}
-					if(inside_image) {
-						desc->unload_texture = false;
-					}
-				}
-				if(set == &desc->texture_set) {
-					nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling texture\n");
-					set = NULL;
-					thumbnail_set = NULL;
-				}
-				inside_no = false;
-			} else if(inside_unload) {
-				if(inside_thumbnail) {
-					desc->unload_thumbnail_texture = true;
-				}
-				if(inside_image) {
-					desc->unload_texture = true;
-				}
-			} else {
-				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Enabling texture\n");
-				set = &desc->texture_set;
-				thumbnail_set = &desc->thumbnail_texture_set;
-			}
+		} else if(nqiv_pruner_create_desc_datatype(&common, &inside_hard, "raw", NULL, NULL, NULL,
+		                                           NULL, &dummy_set, &dummy_set)) {
+			nqiv_log_write(logger, NQIV_LOG_WARNING, "'raw' is deprecated and has been skipped.\n");
 		} else if(inside_unload) {
 			nqiv_log_write(logger, NQIV_LOG_ERROR,
 			               "Unload still enabled while parsing checks and comparisons at %s\n",
 			               &text[idx]);
 			return false;
-		} else if(nqiv_pruner_check_token(text, idx, end, "sum")) {
-			/* Determine which checks to run. */
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'sum' at %s\n", &text[idx]);
-			idx += strlen("sum");
+		} else if(nqiv_pruner_check_token(logger, text, &idx, end, "sum")) {
 			if(inside_no) {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling sum\n");
 				desc->counter &= ~NQIV_PRUNER_COUNT_OP_SUM;
@@ -722,9 +656,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				desc->counter |= NQIV_PRUNER_COUNT_OP_SUM;
 				idx = nqiv_pruner_parse_int(logger, text, idx, end, &desc->state_check.total_sum);
 			}
-		} else if(nqiv_pruner_check_token(text, idx, end, "or")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'or' at %s\n", &text[idx]);
-			idx += strlen("or");
+		} else if(nqiv_pruner_check_token(logger, text, &idx, end, "or")) {
 			if(inside_no) {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling or\n");
 				desc->counter &= ~NQIV_PRUNER_COUNT_OP_OR;
@@ -735,9 +667,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				desc->counter |= NQIV_PRUNER_COUNT_OP_OR;
 				desc->state_check.or_result = true;
 			}
-		} else if(nqiv_pruner_check_token(text, idx, end, "and")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'and' at %s\n", &text[idx]);
-			idx += strlen("and");
+		} else if(nqiv_pruner_check_token(logger, text, &idx, end, "and")) {
 			if(inside_no) {
 				nqiv_log_write(logger, NQIV_LOG_DEBUG, "Disabling and\n");
 				desc->counter &= ~NQIV_PRUNER_COUNT_OP_AND;
@@ -748,9 +678,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				desc->counter |= NQIV_PRUNER_COUNT_OP_AND;
 				desc->state_check.and_result = true;
 			}
-		} else if(nqiv_pruner_check_token(text, idx, end, "not_animated")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'not_animated' %s\n", &text[idx]);
-			idx += strlen("not_animated");
+		} else if(nqiv_pruner_check_token(logger, text, &idx, end, "not_animated")) {
 			idx = nqiv_pruner_parse_check(
 				logger, text, idx, end, inside_no, inside_image, inside_thumbnail,
 				set != NULL ? &set->not_animated : &desc->vips_set.not_animated,
@@ -763,37 +691,27 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 			nqiv_log_write(logger, NQIV_LOG_ERROR,
 			               "Failed to continue with unknown set target from %s\n", &text[idx]);
 			return false;
-		} else if(nqiv_pruner_check_token(text, idx, end, "loaded_ahead")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'loaded_ahead' %s\n", &text[idx]);
-			idx += strlen("loaded_ahead");
+		} else if(nqiv_pruner_check_token(logger, text, &idx, end, "loaded_ahead")) {
 			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_image,
 			                              inside_thumbnail, &set->loaded_ahead,
 			                              &thumbnail_set->loaded_ahead, nqiv_pruner_parse_int_pair);
 			inside_no = false;
-		} else if(nqiv_pruner_check_token(text, idx, end, "loaded_behind")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'loaded_behind' %s\n", &text[idx]);
-			idx += strlen("loaded_behind");
+		} else if(nqiv_pruner_check_token(logger, text, &idx, end, "loaded_behind")) {
 			idx = nqiv_pruner_parse_check(
 				logger, text, idx, end, inside_no, inside_image, inside_thumbnail,
 				&set->loaded_behind, &thumbnail_set->loaded_behind, nqiv_pruner_parse_int_pair);
 			inside_no = false;
-		} else if(nqiv_pruner_check_token(text, idx, end, "bytes_ahead")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'bytes_ahead' %s\n", &text[idx]);
-			idx += strlen("bytes_ahead");
+		} else if(nqiv_pruner_check_token(logger, text, &idx, end, "bytes_ahead")) {
 			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_image,
 			                              inside_thumbnail, &set->bytes_ahead,
 			                              &thumbnail_set->bytes_ahead, nqiv_pruner_parse_int_pair);
 			inside_no = false;
-		} else if(nqiv_pruner_check_token(text, idx, end, "bytes_behind")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'bytes_behind' %s\n", &text[idx]);
-			idx += strlen("bytes_behind");
+		} else if(nqiv_pruner_check_token(logger, text, &idx, end, "bytes_behind")) {
 			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_image,
 			                              inside_thumbnail, &set->bytes_behind,
 			                              &thumbnail_set->bytes_behind, nqiv_pruner_parse_int_pair);
 			inside_no = false;
-		} else if(nqiv_pruner_check_token(text, idx, end, "self_opened")) {
-			nqiv_log_write(logger, NQIV_LOG_DEBUG, "Parsing 'self_opened' %s\n", &text[idx]);
-			idx += strlen("self_opened");
+		} else if(nqiv_pruner_check_token(logger, text, &idx, end, "self_opened")) {
 			idx = nqiv_pruner_parse_check(logger, text, idx, end, inside_no, inside_image,
 			                              inside_thumbnail, &set->loaded_self,
 			                              &thumbnail_set->loaded_self, nqiv_pruner_set_true);

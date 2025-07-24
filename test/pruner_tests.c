@@ -611,6 +611,7 @@ static void
 pruner_test_string_simplification(nqiv_log_ctx* logger, const char* start, const char* result)
 {
 	char             desc_str[NQIV_PRUNER_DESC_STRLEN + 1] = {0};
+	char             desc_str_remade[NQIV_PRUNER_DESC_STRLEN + 1] = {0};
 	nqiv_pruner_desc desc = {0};
 
 	memset(&desc, 0, sizeof(nqiv_pruner_desc));
@@ -619,6 +620,13 @@ pruner_test_string_simplification(nqiv_log_ctx* logger, const char* start, const
 	assert(nqiv_pruner_create_desc(logger, start, &desc));
 	assert(nqiv_pruner_desc_to_string(&desc, desc_str));
 	assert(strcmp(desc_str, result) == 0);
+
+	memset(&desc, 0, sizeof(nqiv_pruner_desc));
+	memset(desc_str_remade, 0, NQIV_PRUNER_DESC_STRLEN);
+
+	assert(nqiv_pruner_create_desc(logger, desc_str, &desc));
+	assert(nqiv_pruner_desc_to_string(&desc, desc_str_remade));
+	assert(strcmp(desc_str, desc_str_remade) == 0);
 }
 
 void pruner_test_toggle(void)
@@ -647,6 +655,13 @@ void pruner_test_toggle(void)
 		&logger, "image thumbnail unload vips raw surface texture hard vips raw surface texture ",
 		"unload thumbnail hard vips surface texture no hard vips surface");
 	pruner_test_string_simplification(&logger, "unload no hard texture", "unload hard texture");
+
+	pruner_test_string_simplification(&logger, "no no or", "or");
+
+	pruner_test_string_simplification(&logger, "no or no or or", "or");
+
+	pruner_test_string_simplification(&logger, "unload texture no texture surface",
+	                                  "unload surface");
 
 	nqiv_log_destroy(&logger);
 }
