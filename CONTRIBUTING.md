@@ -39,7 +39,7 @@ It is recommended to also check `./configure --help`. Note that `CFLAGS` set fro
 * [libvips](https://www.libvips.org/)
 * [jemalloc](https://jemalloc.net/) (Not strictly required, but highly recommended for personal use, and required for binary releases when applicable.)
 * [optparse](https://github.com/skeeto/optparse/tree/master) (Bundled into the project with minimal edits)
-* [GLib](https://docs.gtk.org/glib/) (Should be included by libvips but worth
+* [GLib](https://docs.gtk.org/glib/) (Should be a prerequisite for libvips but worth
   mentioning, since it's also used for some utility functions.)
 
 ### Make Targets ###

@@ -1036,7 +1036,7 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
 	assert(dstrect->h > 0);
 	double src_aspect;
 	double dst_aspect;
-	/* Basically guestimate fit level based on biggest side of image, makingit
+	/* Basically guestimate fit level based on biggest side of image, making it
 	 * proportional to the ratio between it and the screen's corresponding
 	 * side. */
 	if(srcrect->w > srcrect->h) {
