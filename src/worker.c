@@ -75,7 +75,7 @@ static int nqiv_worker_string_to_int(
 	return -1;
 }
 
-static int nqiv_cmd_scan_comma_list_sep(const char* data, const int start, const int end)
+static int nqiv_worker_scan_comma_list_sep(const char* data, const int start, const int end)
 {
 	int bidx;
 	for(bidx = start; bidx < end; ++bidx) {
@@ -108,7 +108,7 @@ nqiv_worker_string_to_bin_list(const char* string, const int idx, const int end_
 			return -1; /* Trailing comma. Not allowed. */
 		}
 
-		int seg_end_idx = nqiv_cmd_scan_comma_list_sep(string, nidx, end_idx);
+		int seg_end_idx = nqiv_worker_scan_comma_list_sep(string, nidx, end_idx);
 		if(seg_end_idx == -1) {
 			seg_end_idx = end_idx;
 		}
