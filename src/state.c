@@ -1,7 +1,8 @@
 #include <assert.h>
 
-#include "state.h"
+#include "helpers.h"
 #include "drawing.h"
+#include "state.h"
 
 #include <SDL2/SDL.h>
 
@@ -201,7 +202,7 @@ static bool nqiv_create_border_rect_texture(nqiv_log_ctx*    logger,
 		return false;
 	}
 	int pixel_size = ((rect->w + rect->h) / 2) / 64;
-	pixel_size = pixel_size > 0 ? pixel_size : 1;
+	pixel_size = NQIV_MAX(pixel_size, 1);
 	nqiv_draw_rect(surface, rect, dash_size, color, dash_color, pixel_size);
 	if(!nqiv_sdl_surface_to_texture(logger, renderer, surface, texture)) {
 		return false;

@@ -12,6 +12,7 @@
 #include "event.h"
 #include "array.h"
 #include "queue.h"
+#include "helpers.h"
 #include "image.h"
 #include "thumbnail.h"
 #include "state.h"
@@ -143,7 +144,7 @@ void nqiv_log_vips_exception(nqiv_log_ctx*          logger,
 {
 	char* error = vips_error_buffer_copy();
 	nqiv_log_write(logger, NQIV_LOG_WARNING, "Vips exception for form %s of path %s (%s)\n",
-	               form == &image->image ? "image" : "thumbnail", image->image.path, error);
+	               NQIV_SAYFORM(image, form), image->image.path, error);
 	g_free(error);
 }
 
@@ -254,7 +255,7 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 	assert(form->vips == NULL);
 	if(form->path == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING, "No path for %s form in image %s\n",
-		               form == &image->image ? "image" : "thumbnail", image->image.path);
+		               NQIV_SAYFORM(image, form), image->image.path);
 		form->error = true;
 		return false;
 	}
@@ -297,7 +298,7 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 	}
 
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Form %s vips loaded for image %s\n",
-	               form == &image->image ? "image" : "thumbnail", image->image.path);
+	               NQIV_SAYFORM(image, form), image->image.path);
 	return true;
 }
 
@@ -320,7 +321,7 @@ static bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		   == -1) {
 			nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 			               "Failed to crop out oversized vips region to resize of form %s of %s\n",
-			               form == &image->image ? "image" : "thumbnail", image->image.path);
+			               NQIV_SAYFORM(image, form), image->image.path);
 			form->error = true;
 			return false;
 		}
@@ -329,17 +330,14 @@ static bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		               "Cropped selection from %dx%d+%dx%d to %dx%d for form %s of %s\n",
 		               form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y,
 		               vips_image_get_width(used_vips), vips_image_get_height(used_vips),
-		               form == &image->image ? "image" : "thumbnail", image->image.path);
+		               NQIV_SAYFORM(image, form), image->image.path);
 	}
 
 	if(form->srcrect.w > image->parent->max_texture_width
 	   || form->srcrect.h > image->parent->max_texture_height) {
-		const int largest_dimension =
-			form->srcrect.w > form->srcrect.h ? form->srcrect.w : form->srcrect.h;
+		const int largest_dimension = NQIV_MAX(form->srcrect.w, form->srcrect.h);
 		const int smallest_texture_dimension =
-			image->parent->max_texture_width > image->parent->max_texture_height
-				? image->parent->max_texture_height
-				: image->parent->max_texture_width;
+			NQIV_MIN(image->parent->max_texture_height, image->parent->max_texture_width);
 		const double resize_ratio = (double)smallest_texture_dimension / (double)largest_dimension;
 		if(vips_resize(used_vips, &new_vips, resize_ratio, NULL) == -1) {
 			if(used_vips != form->vips) {
@@ -347,7 +345,7 @@ static bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 			}
 			nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 			               "Failed to resize oversized vips region for form %s of %s",
-			               form == &image->image ? "image" : "thumbnail", image->image.path);
+			               NQIV_SAYFORM(image, form), image->image.path);
 			form->error = true;
 			return false;
 		}
@@ -359,7 +357,7 @@ static bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		               "Resized oversized selection %dx%d+%dx%d to %dx%d for form %s of %s\n",
 		               form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y,
 		               vips_image_get_width(used_vips), vips_image_get_height(used_vips),
-		               form == &image->image ? "image" : "thumbnail", image->image.path);
+		               NQIV_SAYFORM(image, form), image->image.path);
 	}
 
 	const VipsBandFormat band_format = vips_image_get_format(used_vips);
@@ -449,7 +447,7 @@ static bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		}
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 		               "Failed to extract raw image data for form %s of %s\n",
-		               form == &image->image ? "image" : "thumbnail", image->image.path);
+		               NQIV_SAYFORM(image, form), image->image.path);
 		form->error = true;
 		return false;
 	}
@@ -463,7 +461,7 @@ static bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 		}
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 		               "Failed to allocate memory for raw image data for form %s of %s\n",
-		               form == &image->image ? "image" : "thumbnail", image->image.path);
+		               NQIV_SAYFORM(image, form), image->image.path);
 		form->error = true;
 		return false;
 	}
@@ -476,10 +474,9 @@ static bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	}
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
 	               "Loaded raw of size %zu for image form %s frame %d with pixel offset %d at "
-	               "delay of %d for %s of image path %s\n",
-	               data_size, form == &image->image ? "image" : "thumbnail", form->animation.frame,
-	               frame_offset, form->animation.delay,
-	               form == &image->image ? "image" : "thumbnail", image->image.path);
+	               "delay of %d for image path %s\n",
+	               data_size, NQIV_SAYFORM(image, form), form->animation.frame, frame_offset,
+	               form->animation.delay, image->image.path);
 	return true;
 }
 
@@ -501,13 +498,12 @@ bool nqiv_image_load_surface(nqiv_image* image, nqiv_image_form* form)
 	if(form->surface == NULL) {
 		nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
 		               "Failed to create SDL surface for form %s of %s (%s).",
-		               form == &image->image ? "image" : "thumbnail", image->image.path,
-		               SDL_GetError());
+		               NQIV_SAYFORM(image, form), image->image.path, SDL_GetError());
 		form->error = true;
 		return false;
 	}
 	nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG, "Loaded surface of form %s of image %s\n",
-	               form == &image->image ? "image" : "thumbnail", image->image.path);
+	               NQIV_SAYFORM(image, form), image->image.path);
 	return true;
 }
 
@@ -803,12 +799,12 @@ static void nqiv_image_calculate_zoom_dimension(const double least,
 		new_target = catch_point;
 	}
 	if(inclusive_least) {
-		new_target = new_target < least ? least : new_target;
+		new_target = NQIV_MAX(new_target, least);
 	} else {
 		new_target = new_target <= least ? *target : new_target;
 	}
 	if(inclusive_most) {
-		new_target = new_target > most ? most : new_target;
+		new_target = NQIV_MIN(new_target, most);
 	} else {
 		new_target = new_target >= most ? *target : new_target;
 	}
@@ -855,26 +851,25 @@ void nqiv_image_manager_pan_coordinates(nqiv_image_manager* manager, const SDL_R
 	                                        * manager->zoom.pan_coordinate_y_multiplier);
 }
 
+static double nqiv_image_managet_get_smallest_zoom(nqiv_image_manager* manager)
+{
+	return NQIV_MIN(fabs(manager->zoom.zoom_in_amount), manager->zoom.actual_size_level);
+}
+
 void nqiv_image_manager_zoom_in(nqiv_image_manager* manager)
 {
-	const double zoom_in_amount = fabs(manager->zoom.zoom_in_amount);
-	const double smallest = zoom_in_amount < manager->zoom.actual_size_level
-	                            ? zoom_in_amount
-	                            : manager->zoom.actual_size_level;
 	nqiv_image_calculate_zoom_dimension(
-		smallest, true, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max,
-		true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount);
+		nqiv_image_managet_get_smallest_zoom(manager), true, manager->zoom.actual_size_level,
+		manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio,
+		manager->zoom.zoom_in_amount);
 }
 
 void nqiv_image_manager_zoom_out(nqiv_image_manager* manager)
 {
-	const double zoom_in_amount = fabs(manager->zoom.zoom_in_amount);
-	const double smallest = zoom_in_amount < manager->zoom.actual_size_level
-	                            ? zoom_in_amount
-	                            : manager->zoom.actual_size_level;
 	nqiv_image_calculate_zoom_dimension(
-		smallest, true, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max,
-		true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount);
+		nqiv_image_managet_get_smallest_zoom(manager), true, manager->zoom.actual_size_level,
+		manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio,
+		manager->zoom.zoom_out_amount);
 }
 
 void nqiv_image_manager_pan_center(nqiv_image_manager* manager)
@@ -913,24 +908,18 @@ void nqiv_image_manager_pan_down_more(nqiv_image_manager* manager)
 
 void nqiv_image_manager_zoom_in_more(nqiv_image_manager* manager)
 {
-	const double zoom_in_amount = fabs(manager->zoom.zoom_in_amount);
-	const double smallest = zoom_in_amount < manager->zoom.actual_size_level
-	                            ? zoom_in_amount
-	                            : manager->zoom.actual_size_level;
 	nqiv_image_calculate_zoom_dimension(
-		smallest, true, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max,
-		true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_in_amount_more);
+		nqiv_image_managet_get_smallest_zoom(manager), true, manager->zoom.actual_size_level,
+		manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio,
+		manager->zoom.zoom_in_amount_more);
 }
 
 void nqiv_image_manager_zoom_out_more(nqiv_image_manager* manager)
 {
-	const double zoom_in_amount = fabs(manager->zoom.zoom_in_amount);
-	const double smallest = zoom_in_amount < manager->zoom.actual_size_level
-	                            ? zoom_in_amount
-	                            : manager->zoom.actual_size_level;
 	nqiv_image_calculate_zoom_dimension(
-		smallest, true, manager->zoom.actual_size_level, manager->zoom.image_to_viewport_ratio_max,
-		true, &manager->zoom.image_to_viewport_ratio, manager->zoom.zoom_out_amount_more);
+		nqiv_image_managet_get_smallest_zoom(manager), true, manager->zoom.actual_size_level,
+		manager->zoom.image_to_viewport_ratio_max, true, &manager->zoom.image_to_viewport_ratio,
+		manager->zoom.zoom_out_amount_more);
 }
 
 static void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
@@ -1196,7 +1185,7 @@ static void nqiv_image_manager_decrement_thumbnail_size_base(nqiv_image_manager*
 {
 	/* This should not be done by a thread. Only master can modify to guarantee value. */
 	const int new_size = SDL_AtomicGet(&manager->thumbnail.size) - adjust;
-	SDL_AtomicSet(&manager->thumbnail.size, new_size >= adjust ? new_size : adjust);
+	SDL_AtomicSet(&manager->thumbnail.size, NQIV_MAX(new_size, adjust));
 }
 
 void nqiv_image_manager_increment_thumbnail_size(nqiv_image_manager* manager)

@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <assert.h>
 
+#include "helpers.h"
 #include "array.h"
 
 int nqiv_array_get_units_count(const nqiv_array* array)
@@ -19,7 +20,7 @@ int nqiv_array_get_units_count(const nqiv_array* array)
 int nqiv_array_get_last_idx(const nqiv_array* array)
 {
 	const int units_count = nqiv_array_get_units_count(array);
-	return units_count > 0 ? units_count - 1 : 0;
+	return NQIV_MAX(units_count - 1, 0);
 }
 
 nqiv_array* nqiv_array_create(const int unit_size, const int unit_count)
@@ -251,7 +252,7 @@ static bool nqiv_array_pop_count(nqiv_array* array, void* ptr, const int count)
 {
 	bool      output = false;
 	const int last_idx = nqiv_array_get_units_count(array);
-	const int start_idx = last_idx > count ? last_idx - count : 0;
+	const int start_idx = NQIV_MAX(last_idx - count, 0);
 	if(ptr == NULL || nqiv_array_get_count(array, start_idx, ptr, count)) {
 		nqiv_array_remove_count(array, start_idx, count);
 		output = true;

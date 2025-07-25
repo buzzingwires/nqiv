@@ -5,6 +5,7 @@
 
 #include "logging.h"
 #include "array.h"
+#include "helpers.h"
 #include "event.h"
 #include "montage.h"
 #include "image.h"
@@ -42,9 +43,9 @@ static void nqiv_pruner_update_state_boolean(nqiv_pruner* pruner, const bool val
 	pruner->state.and_is_set = true;
 	pruner->state.or_result = pruner->state.or_result || value;
 	pruner->state.and_result = pruner->state.and_result && value;
-	nqiv_log_write(
-		pruner->logger, NQIV_LOG_DEBUG, "New prune state boolean is or_result: %s and_result: %s\n",
-		pruner->state.or_result ? "true" : "false", pruner->state.and_result ? "true" : "false");
+	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG,
+	               "New prune state boolean is or_result: %s and_result: %s\n",
+	               NQIV_BOOLSTR(pruner->state.or_result), NQIV_BOOLSTR(pruner->state.and_result));
 }
 
 static void nqiv_pruner_update_state_integer(nqiv_pruner* pruner, const int value)
@@ -62,7 +63,7 @@ static void nqiv_pruner_run_not_animated(nqiv_pruner*                pruner,
 		const bool result = !(((nqiv_image_form*)object)->animation.exists);
 		datapoint->value.as_bool = result;
 		nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "not_animated result is: %s\n",
-		               result ? "true" : "false");
+		               NQIV_BOOLSTR(result));
 		nqiv_pruner_update_state_boolean(pruner, result);
 	}
 }
@@ -75,7 +76,7 @@ static void nqiv_pruner_run_loaded_self(nqiv_pruner*                pruner,
 		const bool result = object != NULL;
 		datapoint->value.as_bool = result;
 		nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "loaded_self result is: %s\n",
-		               result ? "true" : "false");
+		               NQIV_BOOLSTR(result));
 		nqiv_pruner_update_state_boolean(pruner, result);
 	}
 }
@@ -90,7 +91,7 @@ static void nqiv_pruner_loaded_count_body(nqiv_pruner*                pruner,
 	const bool result = datapoint->value.as_int > datapoint->condition.as_int_pair[1];
 	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG,
 	               "count_body result is %s new datapoint value %d compared to %d\n",
-	               result ? "true" : "false", datapoint->value.as_int,
+	               NQIV_BOOLSTR(result), datapoint->value.as_int,
 	               datapoint->condition.as_int_pair[1]);
 	nqiv_pruner_update_state_boolean(pruner, result);
 	nqiv_pruner_update_state_integer(pruner, increment);
@@ -203,7 +204,7 @@ static int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 		assert(desc->counter != NQIV_PRUNER_COUNT_OP_UNKNOWN);
 		pruner->state.idx = iidx;
 		const int raw_start_idx = montage->positions.start - montage->preload.behind;
-		pruner->state.montage_start = raw_start_idx >= 0 ? raw_start_idx : 0;
+		pruner->state.montage_start = NQIV_MAX(raw_start_idx, 0);
 		pruner->state.montage_end = montage->positions.end + montage->preload.ahead;
 		pruner->state.or_result = false;
 		pruner->state.and_result = false;

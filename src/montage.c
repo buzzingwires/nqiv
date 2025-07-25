@@ -3,6 +3,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "helpers.h"
 #include "image.h"
 #include "montage.h"
 
@@ -146,8 +147,8 @@ void nqiv_montage_calculate_dimensions(nqiv_montage_state* state, const int widt
 		(double)(thumbnail_size) / (double)(state->dimensions.window_width);
 	const double raw_height_ratio =
 		(double)(thumbnail_size) / (double)(state->dimensions.window_height);
-	const double width_ratio = raw_width_ratio >= 1.0 ? 1.0 : raw_width_ratio;
-	const double height_ratio = raw_height_ratio >= 1.0 ? 1.0 : raw_height_ratio;
+	const double width_ratio = NQIV_MIN(raw_width_ratio, 1.0);
+	const double height_ratio = NQIV_MIN(raw_height_ratio, 1.0);
 	int          count_per_column;
 	const double row_leftover = nqiv_montage_calculate_axis(&count_per_column, height_ratio);
 	const double column_leftover =

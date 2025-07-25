@@ -13,6 +13,7 @@
 
 #include "logging.h"
 #include "array.h"
+#include "helpers.h"
 #include "state.h"
 #include "keybinds.h"
 #include "keyrate.h"
@@ -381,7 +382,7 @@ static void nqiv_cmd_parser_print_data_atomic_int(nqiv_cmd_manager* manager)
 
 static void nqiv_cmd_parser_print_value_bool(const char* name, const bool value)
 {
-	fprintf(stdout, "%s: %s ", name, value ? "TRUE" : "FALSE");
+	fprintf(stdout, "%s: %s ", name, NQIV_CBOOLSTR(value));
 }
 
 static void nqiv_cmd_parser_print_value_is_null(const char* name, const void* value)
@@ -462,7 +463,7 @@ static void nqiv_cmd_parser_print_data_images(nqiv_cmd_manager* manager)
 
 static void nqiv_cmd_parser_print_data_bool(nqiv_cmd_manager* manager)
 {
-	fprintf(stdout, "%s", *((bool*)manager->print_settings.current_node->data) ? "true" : "false");
+	fprintf(stdout, "%s", NQIV_BOOLSTR(*((bool*)manager->print_settings.current_node->data)));
 }
 
 static void nqiv_cmd_parser_print_data_uint64(nqiv_cmd_manager* manager)
@@ -569,10 +570,9 @@ static void nqiv_cmd_parser_print_data_event_queue(nqiv_cmd_manager* manager)
 				fprintf(stdout,
 				        "set_thumbnail_path: %s create_thubmnail: %s "
 				        "borrow_thumbnail_dimension_metadata: %s\n",
-				        e->options.image_load.set_thumbnail_path ? "TRUE" : "FALSE",
-				        e->options.image_load.create_thumbnail ? "TRUE" : "FALSE",
-				        e->options.image_load.borrow_thumbnail_dimension_metadata ? "TRUE"
-				                                                                  : "FALSE");
+				        NQIV_CBOOLSTR(e->options.image_load.set_thumbnail_path),
+				        NQIV_CBOOLSTR(e->options.image_load.create_thumbnail),
+				        NQIV_CBOOLSTR(e->options.image_load.borrow_thumbnail_dimension_metadata));
 				nqiv_cmd_print_indent(manager);
 				fprintf(stdout, "IMAGE\n");
 				manager->print_settings.indent += 1;

@@ -136,6 +136,8 @@ nqiv lives in `src/` and is coded against the C99 standard.
 
 * `typedefs.h`: Just some forward declares and other circularly shared things, when necessary. This file **shouldn't include any other nqiv file** and should be **included before the circularly referenced elements** are needed.
 
+* `helpers.h`: Common macros or other code go here. Consider putting and checking for common patterns here.
+
 * `state.h`: Central state object and related data. Other objects compose this.
 
 ### Data Structures

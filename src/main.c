@@ -10,6 +10,7 @@
 #include <SDL2/SDL.h>
 
 #include "typedefs.h"
+#include "helpers.h"
 #include "logging.h"
 #include "image.h"
 #include "worker.h"
@@ -361,13 +362,12 @@ static nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 	state->no_resample_oversized = true;
 	state->show_loading_indicator = true;
 	state->pending_thread_count = SDL_GetCPUCount() / 3;
-	state->pending_thread_count = state->pending_thread_count > 0 ? state->pending_thread_count : 1;
+	state->pending_thread_count = NQIV_MAX(state->pending_thread_count, 1);
 	state->restart_threads = true;
 	state->vips_threads = SDL_GetCPUCount() / 2;
-	state->vips_threads = state->vips_threads > 0 ? state->vips_threads : 1;
+	state->vips_threads = NQIV_MAX(state->vips_threads, 1);
 	state->thread_event_interval = 100 / state->pending_thread_count;
-	state->thread_event_interval =
-		state->thread_event_interval > 0 ? state->thread_event_interval : 1;
+	state->thread_event_interval = NQIV_MAX(state->thread_event_interval, 1);
 	state->extra_wakeup_delay = state->pending_thread_count * 20;
 	state->prune_delay = 5000 / state->extra_wakeup_delay;
 	state->event_timeout = 250000 / state->extra_wakeup_delay;
@@ -1154,12 +1154,10 @@ static bool render_montage(nqiv_state* state, const bool hard, const bool preloa
 	}
 	state->render_cleared = !preload_only;
 	const int images_len = nqiv_array_get_units_count(state->images.images);
-	const int biggest_preload_behind = state->image_preload.behind > state->montage.preload.behind
-	                                       ? state->image_preload.behind
-	                                       : state->montage.preload.behind;
-	const int biggest_preload_ahead = state->image_preload.ahead > state->montage.preload.ahead
-	                                      ? state->image_preload.ahead
-	                                      : state->montage.preload.ahead;
+	const int biggest_preload_behind =
+		NQIV_MAX(state->image_preload.behind, state->montage.preload.behind);
+	const int biggest_preload_ahead =
+		NQIV_MAX(state->image_preload.ahead, state->montage.preload.ahead);
 	const int raw_start_idx = state->montage.positions.start - biggest_preload_behind;
 	const int raw_end = state->montage.positions.end + biggest_preload_ahead;
 	const int raw_montage_preload_start_idx =
@@ -1169,16 +1167,12 @@ static bool render_montage(nqiv_state* state, const bool hard, const bool preloa
 	const int raw_montage_preload_end = state->montage.positions.end + state->montage.preload.ahead;
 	const int raw_image_preload_end =
 		state->montage.positions.selection + state->image_preload.ahead;
-	const int montage_preload_start_idx =
-		raw_montage_preload_start_idx >= 0 ? raw_montage_preload_start_idx : 0;
-	const int montage_preload_end =
-		raw_montage_preload_end <= images_len ? raw_montage_preload_end : images_len;
-	const int image_preload_start_idx =
-		raw_image_preload_start_idx >= 0 ? raw_image_preload_start_idx : 0;
-	const int image_preload_end =
-		raw_image_preload_end <= images_len ? raw_image_preload_end : images_len;
-	const int    start_idx = raw_start_idx >= 0 ? raw_start_idx : 0;
-	const int    end = raw_end <= images_len ? raw_end : images_len;
+	const int    montage_preload_start_idx = NQIV_MAX(raw_montage_preload_start_idx, 0);
+	const int    montage_preload_end = NQIV_MIN(raw_montage_preload_end, images_len);
+	const int    image_preload_start_idx = NQIV_MAX(raw_image_preload_start_idx, 0);
+	const int    image_preload_end = NQIV_MIN(raw_image_preload_end, images_len);
+	const int    start_idx = NQIV_MAX(raw_start_idx, 0);
+	const int    end = NQIV_MIN(raw_end, images_len);
 	nqiv_image** images = state->images.images->data;
 	int          idx;
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
