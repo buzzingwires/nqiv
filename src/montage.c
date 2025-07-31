@@ -37,14 +37,8 @@ static bool nqiv_montage_compare_range(const nqiv_montage_state* first,
 void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 {
 	/* Clamp the new index to a sane value. */
-	int       new_idx = idx;
 	const int images_len = nqiv_array_get_units_count(state->images->images);
-	if(new_idx >= images_len) {
-		new_idx = images_len - 1;
-	}
-	if(new_idx < 0) {
-		new_idx = 0;
-	}
+	const int new_idx = NQIV_CLAMP(idx, 0, NQIV_MAX(images_len - 1, 0));
 
 	int       range_length = state->positions.end - state->positions.start;
 	const int whole_rows = range_length / state->dimensions.count_per_row;
@@ -57,6 +51,11 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 	                            ? 1
 	                            : 0;
 	const int row_count = state->dimensions.count / state->dimensions.count_per_row;
+
+	/* We know the final selection in advance, make sure to always report its change. */
+	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Setting montage selection from %d to %d.\n",
+	               state->positions.selection, new_idx);
+	state->selection_changed = new_idx != state->positions.selection;
 
 	/* If we have changed the selection or the row count matches the current rows (as calculated
 	 * above), but not gone outside the current montage range, and that montage range has been
@@ -125,8 +124,6 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 	       || (state->positions.selection == 0 && state->positions.end == 0));
 	assert(range_length <= state->dimensions.count);
 
-	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Setting montage selection to %d.\n",
-	               state->positions.selection);
 	state->range_changed = state->range_changed || !nqiv_montage_compare_range(&original, state);
 }
 

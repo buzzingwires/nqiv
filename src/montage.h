@@ -49,6 +49,8 @@ typedef struct nqiv_montage_state
 	 * Used to set loading 'transaction group' to discard queued out of sight thumbnails.
 	 */
 	bool                    range_changed;
+	/* Did the last nqiv_montage_set_selection call successfully change the selection? */
+	bool                    selection_changed;
 } nqiv_montage_state;
 
 /* Set operations set to a specific value, jump operations set to an offset from the current value,
