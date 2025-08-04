@@ -291,9 +291,9 @@ static bool nqiv_state_create_alpha_background_texture(nqiv_state* state)
 	window_rect.y = 0;
 	window_rect.w = state->alpha_background_width;
 	window_rect.h = state->alpha_background_height;
-	if(!nqiv_create_alpha_background_texture(state, &window_rect,
-	                                         ((window_rect.x + window_rect.h) / 2)
-	                                             / ALPHA_BACKGROUND_CHECKER_PROPORTION,
+	const int thickness =
+		((window_rect.w + window_rect.h) / 2) / ALPHA_BACKGROUND_CHECKER_PROPORTION;
+	if(!nqiv_create_alpha_background_texture(state, &window_rect, thickness,
 	                                         &state->texture_alpha_background)) {
 		return false;
 	}

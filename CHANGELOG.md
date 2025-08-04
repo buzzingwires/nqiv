@@ -46,6 +46,8 @@ Unreleased
 
 * Fix issue with montage selection outline not showing at tiny sizes.
 
+* Fix issue with alpha background checker size inconsistency.
+
 * Don't keep zooming out if thumbnail is smaller than zoomed pixels.
 
 * More robust parsing of integers.

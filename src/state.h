@@ -25,7 +25,7 @@
 #define STARTING_QUEUE_LENGTH 512
 /* Used to calculate the dimensions of alpha background checks. Divided against average of window
  * width and height */
-#define ALPHA_BACKGROUND_CHECKER_PROPORTION 32
+#define ALPHA_BACKGROUND_CHECKER_PROPORTION 72
 /* Sufficient for PATH_MAX and other info. */
 #define WINDOW_TITLE_LEN (1024 + PATH_MAX)
 
