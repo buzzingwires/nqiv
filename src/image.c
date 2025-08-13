@@ -1013,6 +1013,7 @@ static void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
 			dstrect_y += (display_height - dstrect_h) / 2;
 		}
 	}
+
 	/* Round dimensions up to prepare our integer values. */
 	srcrect_w = ceil(srcrect_w);
 	srcrect_h = ceil(srcrect_h);
@@ -1023,56 +1024,59 @@ static void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
 	dstrect_x = ceil(dstrect_x);
 	dstrect_y = ceil(dstrect_y);
 
-	/* Here, we fix rounding errors by calculating the difference between the aspect ratios of our
-	 * viewport and sample area. The goal is to get the dimensions to match as closely as possible.
-	 */
-	double ratio_diff = dstrect_w / dstrect_h - srcrect_w / srcrect_h;
-	bool   ratio_diff_positive = ratio_diff > 0.0;
-	while(ratio_diff != 0.0) {
-		const double old_w = dstrect_w;
-		const double old_h = dstrect_h;
-		const double old_x = dstrect_x;
-		const double old_y = dstrect_y;
-		/* If the aspect ratio of viewport is wider than sample area, we will first aim to shrink
-		 * its width, then to grow its height, until we completely run out of room. */
-		if(ratio_diff_positive) {
-			if(dstrect_w > 0) {
-				dstrect_w -= 1.0;
-				/* Keep centered. */
-				if(display_width - (dstrect_x + dstrect_w) > dstrect_x + 1.0) {
-					dstrect_x += 1.0;
+	if(!do_stretch) {
+		/* Here, we fix rounding errors by calculating the difference between the aspect ratios of
+		 * our viewport and sample area. The goal is to get the dimensions to match as closely as
+		 * possible.
+		 */
+		double ratio_diff = dstrect_w / dstrect_h - srcrect_w / srcrect_h;
+		bool   ratio_diff_positive = ratio_diff > 0.0;
+		while(ratio_diff != 0.0) {
+			const double old_w = dstrect_w;
+			const double old_h = dstrect_h;
+			const double old_x = dstrect_x;
+			const double old_y = dstrect_y;
+			/* If the aspect ratio of viewport is wider than sample area, we will first aim to
+			 * shrink its width, then to grow its height, until we completely run out of room. */
+			if(ratio_diff_positive) {
+				if(dstrect_w > 0) {
+					dstrect_w -= 1.0;
+					/* Keep centered. */
+					if(display_width - (dstrect_x + dstrect_w) > dstrect_x + 1.0) {
+						dstrect_x += 1.0;
+					}
+				} else if(dstrect_h < display_height) {
+					dstrect_h += 1.0;
+					if((display_height - (dstrect_y + dstrect_h)) + 1.0 < dstrect_y) {
+						dstrect_y -= 1.0;
+					}
 				}
-			} else if(dstrect_h < display_height) {
-				dstrect_h += 1.0;
-				if((display_height - (dstrect_y + dstrect_h)) + 1.0 < dstrect_y) {
-					dstrect_y -= 1.0;
+			} else {
+				/* If narrower, do the inverse. */
+				if(dstrect_w < display_width) {
+					dstrect_w += 1.0;
+					if((display_width - (dstrect_x + dstrect_w)) + 1.0 < dstrect_x) {
+						dstrect_x -= 1.0;
+					}
+				} else if(dstrect_h > 0) {
+					dstrect_h -= 1.0;
+					if(display_height - (dstrect_y + dstrect_h) > dstrect_y + 1.0) {
+						dstrect_y += 1.0;
+					}
 				}
 			}
-		} else {
-			/* If narrower, do the inverse. */
-			if(dstrect_w < display_width) {
-				dstrect_w += 1.0;
-				if((display_width - (dstrect_x + dstrect_w)) + 1.0 < dstrect_x) {
-					dstrect_x -= 1.0;
-				}
-			} else if(dstrect_h > 0) {
-				dstrect_h -= 1.0;
-				if(display_height - (dstrect_y + dstrect_h) > dstrect_y + 1.0) {
-					dstrect_y += 1.0;
-				}
+			/* Check the new difference, if it is bigger than before, we know we have fit as tightly
+			 * as possible. Restore previous values and break. */
+			const double new_ratio_diff = dstrect_w / dstrect_h - srcrect_w / srcrect_h;
+			if(fabs(new_ratio_diff) > fabs(ratio_diff)) {
+				dstrect_w = old_w;
+				dstrect_h = old_h;
+				dstrect_x = old_x;
+				dstrect_y = old_y;
+				break;
 			}
+			ratio_diff = new_ratio_diff;
 		}
-		/* Check the new difference, if it is bigger than before, we know we have fit as tightly as
-		 * possible. Restore previous values and break. */
-		const double new_ratio_diff = dstrect_w / dstrect_h - srcrect_w / srcrect_h;
-		if(fabs(new_ratio_diff) > fabs(ratio_diff)) {
-			dstrect_w = old_w;
-			dstrect_h = old_h;
-			dstrect_x = old_x;
-			dstrect_y = old_y;
-			break;
-		}
-		ratio_diff = new_ratio_diff;
 	}
 
 	srcrect->w = (int)srcrect_w;
