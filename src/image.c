@@ -1093,7 +1093,6 @@ static void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
 }
 
 void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
-                                                  const bool          tight_fit,
                                                   const SDL_Rect*     srcrect,
                                                   const SDL_Rect*     dstrect)
 {
@@ -1146,7 +1145,7 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
 			SDL_Rect dst = {0};
 			dst.w = dstrect->w;
 			dst.h = dstrect->h;
-			nqiv_image_manager_calculate_zoomrect(manager, tight_fit, false, &src, &dst);
+			nqiv_image_manager_calculate_zoomrect(manager, true, false, &src, &dst);
 			if(dst.w <= dstrect->w && dst.h <= dstrect->h) {
 				current_ratio = manager->zoom.image_to_viewport_ratio;
 				if(dst.w == dstrect->w || dst.h == dstrect->h) {

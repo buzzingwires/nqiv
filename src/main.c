@@ -697,8 +697,12 @@ static bool render_from_form(nqiv_state*     state,
 			if(form->master_dimensions_set && form->fallback_texture != NULL
 			   && form->master_srcrect.w > 0 && form->master_srcrect.h > 0
 			   && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
-				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage,
-				                                             &tmp_srcrect, &tmp_dstrect);
+				/* Montage doesn't do zooming- no need to get parameters. This also prevents
+				 * parameters from getting wiped out in keep mode. */
+				if(!is_montage) {
+					nqiv_image_manager_calculate_zoom_parameters(&state->images, &tmp_srcrect,
+					                                             &tmp_dstrect);
+				}
 				nqiv_apply_zoom_modifications(state, first_frame);
 				nqiv_image_manager_retrieve_zoomrect(
 					&state->images, !is_montage, state->stretch_images, &tmp_srcrect, &tmp_dstrect);
@@ -773,8 +777,12 @@ static bool render_from_form(nqiv_state*     state,
 		memcpy(&form->master_srcrect, &srcrect, sizeof(SDL_Rect));
 		memcpy(&form->master_dstrect, &dstrect_zoom, sizeof(SDL_Rect));
 		form->master_dimensions_set = true;
-		nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect,
-		                                             dstrect_zoom_ptr);
+		/* Montage doesn't do zooming- no need to get parameters. This also prevents parameters from
+		 * getting wiped out in keep mode. */
+		if(!is_montage) {
+			nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect,
+			                                             dstrect_zoom_ptr);
+		}
 		nqiv_apply_zoom_modifications(state, first_frame);
 		nqiv_image_manager_retrieve_zoomrect(&state->images, !is_montage, state->stretch_images,
 		                                     &srcrect, dstrect_zoom_ptr);
@@ -820,8 +828,12 @@ static bool render_from_form(nqiv_state*     state,
 				memcpy(&form->master_srcrect, &srcrect, sizeof(SDL_Rect));
 				memcpy(&form->master_dstrect, &dstrect_zoom, sizeof(SDL_Rect));
 				form->master_dimensions_set = true;
-				nqiv_image_manager_calculate_zoom_parameters(&state->images, !is_montage, &srcrect,
-				                                             dstrect_zoom_ptr);
+				/* Montage doesn't do zooming- no need to get parameters. This also prevents
+				 * parameters from getting wiped out in keep mode. */
+				if(!is_montage) {
+					nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect,
+					                                             dstrect_zoom_ptr);
+				}
 				nqiv_apply_zoom_modifications(state, first_frame);
 				nqiv_image_manager_retrieve_zoomrect(
 					&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr);

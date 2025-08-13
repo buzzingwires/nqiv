@@ -198,7 +198,6 @@ void nqiv_image_manager_retrieve_zoomrect(nqiv_image_manager* manager,
 /* Calculate rations, actual size, fit amounts, etc' based on display and image
  * dimensions. */
 void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
-                                                  const bool          tight_fit,
                                                   const SDL_Rect*     srcrect,
                                                   const SDL_Rect*     dstrect);
 int  nqiv_image_manager_get_zoom_percent(nqiv_image_manager* manager);
