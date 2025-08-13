@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 #include <errno.h>
 #include <assert.h>
 
@@ -946,69 +947,149 @@ static void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
 	assert(dstrect->x >= 0);
 	assert(dstrect->y >= 0);
 
-	double canvas_rect_w;
-	double canvas_rect_h;
-	if(srcrect->w > srcrect->h) {
-		const double screen_aspect = (double)dstrect->h / (double)dstrect->w;
-		canvas_rect_w = (double)srcrect->w;
-		canvas_rect_h = (double)srcrect->w * screen_aspect;
+	double srcrect_w = (double)srcrect->w;
+	double srcrect_h = (double)srcrect->h;
+	double srcrect_x = (double)srcrect->x;
+	double srcrect_y = (double)srcrect->y;
+	double dstrect_w = (double)dstrect->w;
+	double dstrect_h = (double)dstrect->h;
+	double dstrect_x = (double)dstrect->x;
+	double dstrect_y = (double)dstrect->y;
+
+	/* We fit the sample area (srcrect) for the image inside of a canvas made using its largest side
+	 * matching, and the smaller side changed so that the aspect ratio matches that of the viewport
+	 * (dstrect). */
+	double canvas_rect_w = srcrect_w;
+	double canvas_rect_h = srcrect_h;
+	if(srcrect_w > srcrect_h) {
+		canvas_rect_h = srcrect_w * (dstrect_h / dstrect_w);
 	} else {
-		const double screen_aspect = (double)dstrect->w / (double)dstrect->h;
-		canvas_rect_w = (double)srcrect->h * screen_aspect;
-		canvas_rect_h = srcrect->h;
+		canvas_rect_w = srcrect_h * (dstrect_w / dstrect_h);
 	}
 
+	/* Apply basic zooming to the canvas. */
 	if(do_zoom) {
 		canvas_rect_w *= manager->zoom.image_to_viewport_ratio;
 		canvas_rect_h *= manager->zoom.image_to_viewport_ratio;
 	}
 
-	if((double)srcrect->w > canvas_rect_w) {
-		const double diff = (double)srcrect->w - canvas_rect_w;
-		srcrect->w -= (int)(diff);
-		srcrect->x += (int)(diff / 2.0);
+	/* Align the sample area with the canvas and clip off overflowing edges.  */
+	if(srcrect_w > canvas_rect_w) {
+		const double diff = srcrect_w - canvas_rect_w;
+		srcrect_w -= diff;
+		srcrect_x += (diff / 2.0);
 	}
-	if((double)srcrect->h > canvas_rect_h) {
-		const double diff = (double)srcrect->h - canvas_rect_h;
-		srcrect->h -= (int)(diff);
-		srcrect->y += (int)(diff / 2.0);
+	if(srcrect_h > canvas_rect_h) {
+		const double diff = srcrect_h - canvas_rect_h;
+		srcrect_h -= diff;
+		srcrect_y += (diff / 2.0);
 	}
 
+	/* Apply basic panning to the canvas. */
 	if(do_zoom) {
-		srcrect->x += (int)((double)srcrect->x * manager->zoom.viewport_horizontal_shift);
-		srcrect->y += (int)((double)srcrect->y * manager->zoom.viewport_vertical_shift);
+		srcrect_x += srcrect_x * manager->zoom.viewport_horizontal_shift;
+		srcrect_y += srcrect_y * manager->zoom.viewport_vertical_shift;
 	}
 
+	const double display_width = dstrect_w;
+	const double display_height = dstrect_h;
 	if(!do_stretch) {
-		const int    display_width = dstrect->w;
-		const int    display_height = dstrect->h;
-		const double canvas_dst_w_ratio = (double)dstrect->w / canvas_rect_w;
-		const double canvas_dst_h_ratio = (double)dstrect->h / canvas_rect_h;
-		const int    new_src_w = (int)((double)srcrect->w * canvas_dst_w_ratio);
-		const int    new_src_h = (int)((double)srcrect->h * canvas_dst_h_ratio);
-		dstrect->w = new_src_w;
-		dstrect->h = new_src_h;
-		if(dstrect->w < display_width) {
-			const int diff = display_width - dstrect->w;
-			dstrect->x += diff / 2;
+		/* Get proportion of the viewport to the canvas and use that to scale the viewport to the
+		 * sample area. */
+		dstrect_w = srcrect_w * (dstrect_w / canvas_rect_w);
+		dstrect_h = srcrect_h * (dstrect_h / canvas_rect_h);
+		/* Clip the edges of the viewport to match the display, if it's larger, otherwise center it
+		 * in the display.  */
+		if(dstrect_w > display_width) {
+			dstrect_w = display_width;
+			dstrect_h = dstrect_h * (display_width / dstrect_w);
+		} else if(dstrect_w < display_width) {
+			dstrect_x += (display_width - dstrect_w) / 2;
 		}
-		if(dstrect->h < display_height) {
-			const int diff = display_height - dstrect->h;
-			dstrect->y += diff / 2;
+		if(dstrect_h > display_height) {
+			dstrect_h = display_height;
+			dstrect_w = dstrect_w * (display_height / dstrect_h);
+		} else if(dstrect_h < display_height) {
+			dstrect_y += (display_height - dstrect_h) / 2;
 		}
 	}
-	if(dstrect->x < 0) {
-		dstrect->x = 0;
+	/* Round dimensions up to prepare our integer values. */
+	srcrect_w = ceil(srcrect_w);
+	srcrect_h = ceil(srcrect_h);
+	srcrect_x = ceil(srcrect_x);
+	srcrect_y = ceil(srcrect_y);
+	dstrect_w = ceil(dstrect_w);
+	dstrect_h = ceil(dstrect_h);
+	dstrect_x = ceil(dstrect_x);
+	dstrect_y = ceil(dstrect_y);
+
+	/* Here, we fix rounding errors by calculating the difference between the aspect ratios of our
+	 * viewport and sample area. The goal is to get the dimensions to match as closely as possible.
+	 */
+	double ratio_diff = dstrect_w / dstrect_h - srcrect_w / srcrect_h;
+	bool   ratio_diff_positive = ratio_diff > 0.0;
+	while(ratio_diff != 0.0) {
+		const double old_w = dstrect_w;
+		const double old_h = dstrect_h;
+		const double old_x = dstrect_x;
+		const double old_y = dstrect_y;
+		/* If the aspect ratio of viewport is wider than sample area, we will first aim to shrink
+		 * its width, then to grow its height, until we completely run out of room. */
+		if(ratio_diff_positive) {
+			if(dstrect_w > 0) {
+				dstrect_w -= 1.0;
+				/* Keep centered. */
+				if(display_width - (dstrect_x + dstrect_w) > dstrect_x + 1.0) {
+					dstrect_x += 1.0;
+				}
+			} else if(dstrect_h < display_height) {
+				dstrect_h += 1.0;
+				if((display_height - (dstrect_y + dstrect_h)) + 1.0 < dstrect_y) {
+					dstrect_y -= 1.0;
+				}
+			}
+		} else {
+			/* If narrower, do the inverse. */
+			if(dstrect_w < display_width) {
+				dstrect_w += 1.0;
+				if((display_width - (dstrect_x + dstrect_w)) + 1.0 < dstrect_x) {
+					dstrect_x -= 1.0;
+				}
+			} else if(dstrect_h > 0) {
+				dstrect_h -= 1.0;
+				if(display_height - (dstrect_y + dstrect_h) > dstrect_y + 1.0) {
+					dstrect_y += 1.0;
+				}
+			}
+		}
+		/* Check the new difference, if it is bigger than before, we know we have fit as tightly as
+		 * possible. Restore previous values and break. */
+		const double new_ratio_diff = dstrect_w / dstrect_h - srcrect_w / srcrect_h;
+		if(fabs(new_ratio_diff) > fabs(ratio_diff)) {
+			dstrect_w = old_w;
+			dstrect_h = old_h;
+			dstrect_x = old_x;
+			dstrect_y = old_y;
+			break;
+		}
+		ratio_diff = new_ratio_diff;
 	}
-	if(dstrect->y < 0) {
-		dstrect->y = 0;
-	}
-	if(dstrect->w <= 0) {
-		dstrect->w = 1;
-	}
-	if(dstrect->h <= 0) {
-		dstrect->h = 1;
-	}
+
+	srcrect->w = (int)srcrect_w;
+	srcrect->h = (int)srcrect_h;
+	srcrect->x = (int)srcrect_x;
+	srcrect->y = (int)srcrect_y;
+	dstrect->w = (int)dstrect_w;
+	dstrect->h = (int)dstrect_h;
+	dstrect->x = (int)dstrect_x;
+	dstrect->y = (int)dstrect_y;
+
+	assert(dstrect->x >= 0);
+	assert(dstrect->y >= 0);
+	assert(dstrect->w >= 1);
+	assert(dstrect->h >= 1);
+	assert(dstrect->h <= (int)display_height);
+	assert(dstrect->w <= (int)display_width);
 }
 
 void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
