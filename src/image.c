@@ -1147,8 +1147,14 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
 			dst.w = dstrect->w;
 			dst.h = dstrect->h;
 			nqiv_image_manager_calculate_zoomrect(manager, tight_fit, false, &src, &dst);
-			if(dst.w < dstrect->w && dst.h < dstrect->h) {
+			if(dst.w <= dstrect->w && dst.h <= dstrect->h) {
 				current_ratio = manager->zoom.image_to_viewport_ratio;
+				if(dst.w == dstrect->w || dst.h == dstrect->h) {
+					if(ever_set) {
+						manager->zoom.fit_level = current_ratio;
+					}
+					break;
+				}
 			} else {
 				if(ever_set) {
 					manager->zoom.fit_level = current_ratio;
