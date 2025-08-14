@@ -998,31 +998,24 @@ static void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
 		 * sample area. */
 		dstrect_w = srcrect_w * (dstrect_w / canvas_rect_w);
 		dstrect_h = srcrect_h * (dstrect_h / canvas_rect_h);
-		/* Clip the edges of the viewport to match the display, if it's larger, otherwise center it
-		 * in the display.  */
-		if(dstrect_w > display_width) {
-			dstrect_w = display_width;
-			dstrect_h = dstrect_h * (display_width / dstrect_w);
-		} else if(dstrect_w < display_width) {
+		/* Center viewport in display if it's smaller. */
+		if(dstrect_w < display_width) {
 			dstrect_x += (display_width - dstrect_w) / 2;
 		}
-		if(dstrect_h > display_height) {
-			dstrect_h = display_height;
-			dstrect_w = dstrect_w * (display_height / dstrect_h);
-		} else if(dstrect_h < display_height) {
+		if(dstrect_h < display_height) {
 			dstrect_y += (display_height - dstrect_h) / 2;
 		}
 	}
 
 	/* Round dimensions up to prepare our integer values. */
-	srcrect_w = ceil(srcrect_w);
-	srcrect_h = ceil(srcrect_h);
-	srcrect_x = ceil(srcrect_x);
-	srcrect_y = ceil(srcrect_y);
-	dstrect_w = ceil(dstrect_w);
-	dstrect_h = ceil(dstrect_h);
-	dstrect_x = ceil(dstrect_x);
-	dstrect_y = ceil(dstrect_y);
+	srcrect_w = round(srcrect_w);
+	srcrect_h = round(srcrect_h);
+	srcrect_x = round(srcrect_x);
+	srcrect_y = round(srcrect_y);
+	dstrect_w = round(dstrect_w);
+	dstrect_h = round(dstrect_h);
+	dstrect_x = round(dstrect_x);
+	dstrect_y = round(dstrect_y);
 
 	if(!do_stretch) {
 		/* Here, we fix rounding errors by calculating the difference between the aspect ratios of
@@ -1036,33 +1029,18 @@ static void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
 			const double old_h = dstrect_h;
 			const double old_x = dstrect_x;
 			const double old_y = dstrect_y;
-			/* If the aspect ratio of viewport is wider than sample area, we will first aim to
-			 * shrink its width, then to grow its height, until we completely run out of room. */
+			/* If the aspect ratio of viewport is wider than sample area, grow its height. */
 			if(ratio_diff_positive) {
-				if(dstrect_w > 0) {
-					dstrect_w -= 1.0;
-					/* Keep centered. */
-					if(display_width - (dstrect_x + dstrect_w) > dstrect_x + 1.0) {
-						dstrect_x += 1.0;
-					}
-				} else if(dstrect_h < display_height) {
-					dstrect_h += 1.0;
-					if((display_height - (dstrect_y + dstrect_h)) + 1.0 < dstrect_y) {
-						dstrect_y -= 1.0;
-					}
+				dstrect_h += 1.0;
+				/* Keep centered. */
+				if((display_height - (dstrect_y + dstrect_h)) + 1.0 < dstrect_y) {
+					dstrect_y -= 1.0;
 				}
 			} else {
-				/* If narrower, do the inverse. */
-				if(dstrect_w < display_width) {
-					dstrect_w += 1.0;
-					if((display_width - (dstrect_x + dstrect_w)) + 1.0 < dstrect_x) {
-						dstrect_x -= 1.0;
-					}
-				} else if(dstrect_h > 0) {
-					dstrect_h -= 1.0;
-					if(display_height - (dstrect_y + dstrect_h) > dstrect_y + 1.0) {
-						dstrect_y += 1.0;
-					}
+				/* If narrower, grow its width. */
+				dstrect_w += 1.0;
+				if((display_width - (dstrect_x + dstrect_w)) + 1.0 < dstrect_x) {
+					dstrect_x -= 1.0;
 				}
 			}
 			/* Check the new difference, if it is bigger than before, we know we have fit as tightly
@@ -1088,12 +1066,10 @@ static void nqiv_image_manager_calculate_zoomrect(nqiv_image_manager* manager,
 	dstrect->x = (int)dstrect_x;
 	dstrect->y = (int)dstrect_y;
 
-	assert(dstrect->x >= 0);
-	assert(dstrect->y >= 0);
-	assert(dstrect->w >= 1);
-	assert(dstrect->h >= 1);
-	assert(dstrect->h <= (int)display_height);
-	assert(dstrect->w <= (int)display_width);
+	dstrect->x = NQIV_MAX(dstrect->x, 0);
+	dstrect->y = NQIV_MAX(dstrect->y, 0);
+	dstrect->w = NQIV_MAX(dstrect->w, 1);
+	dstrect->h = NQIV_MAX(dstrect->h, 1);
 }
 
 void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
