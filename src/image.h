@@ -47,9 +47,6 @@ typedef struct nqiv_image_form
 	SDL_Rect                  master_dstrect;
 	bool                      master_dimensions_set;
 	bool                      master_animation_exists;
-	/* Have we tried and failed to load a thumbnail? If the thumbnail is
-	 * successfully created later on, this may be reset. */
-	bool                      thumbnail_load_failed;
 	/* Was there some kind of error with this form? */
 	bool                      error;
 } nqiv_image_form;
@@ -66,6 +63,9 @@ struct nqiv_image
 	/* Have we tried to create a thumbnail, successfully or otherwise? Don't
 	 * retry. */
 	bool                thumbnail_attempted;
+	/* Have we tried and failed to load a thumbnail? If the thumbnail is
+	 * successfully created later on, this may be reset. */
+	bool                thumbnail_load_failed;
 	/* Used to visually mark images and select them for certain operations. */
 	bool                marked;
 };

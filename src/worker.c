@@ -215,9 +215,9 @@ static void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_
 				 * from the image for rendering, without actually generating a full on-disk
 				 * thumbnail. */
 				if(form == &image->thumbnail) {
-					if(image->parent->thumbnail.load && !form->thumbnail_load_failed) {
+					if(image->parent->thumbnail.load && !image->thumbnail_load_failed) {
 						success = nqiv_image_load_vips(image, form);
-						form->thumbnail_load_failed = !success;
+						image->thumbnail_load_failed = !success;
 					} else {
 						success = false;
 					}
@@ -329,28 +329,28 @@ static void nqiv_worker_main(nqiv_log_ctx*        logger,
 							if(image->image.vips == NULL) {
 								if(nqiv_image_load_vips(image, &image->image)
 								   && !nqiv_thumbnail_matches_image(image)) {
-									image->thumbnail.thumbnail_load_failed =
+									image->thumbnail_load_failed =
 										!nqiv_thumbnail_create(image)
-										&& image->thumbnail.thumbnail_load_failed;
+										&& image->thumbnail_load_failed;
 								}
 							} else if(!nqiv_thumbnail_matches_image(image)) {
-								image->thumbnail.thumbnail_load_failed =
+								image->thumbnail_load_failed =
 									!nqiv_thumbnail_create(image)
-									&& image->thumbnail.thumbnail_load_failed;
+									&& image->thumbnail_load_failed;
 							}
 						} else {
 							/* Otherwise, load the image vips and create the thumbnail from scratch.
 							 */
 							if(image->image.vips == NULL) {
 								if(nqiv_image_load_vips(image, &image->image)) {
-									image->thumbnail.thumbnail_load_failed =
+									image->thumbnail_load_failed =
 										!nqiv_thumbnail_create(image)
-										&& image->thumbnail.thumbnail_load_failed;
+										&& image->thumbnail_load_failed;
 								}
 							} else {
-								image->thumbnail.thumbnail_load_failed =
+								image->thumbnail_load_failed =
 									!nqiv_thumbnail_create(image)
-									&& image->thumbnail.thumbnail_load_failed;
+									&& image->thumbnail_load_failed;
 							}
 						}
 						image->thumbnail_attempted = true;

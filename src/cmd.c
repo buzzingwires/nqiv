@@ -404,7 +404,6 @@ static void nqiv_cmd_parser_print_value_image_form(nqiv_cmd_manager*      manage
 	fprintf(stdout, "Dimensions %dx%d Effective Dimensions %dx%d ", form->width, form->height,
 	        form->effective_width, form->effective_height);
 	nqiv_cmd_parser_print_value_bool("master_dimensions_set", form->master_dimensions_set);
-	nqiv_cmd_parser_print_value_bool("thumbnail_load_failed", form->thumbnail_load_failed);
 	nqiv_cmd_parser_print_value_bool("error", form->error);
 	fprintf(stdout, "\n");
 	nqiv_cmd_print_indent(manager);
@@ -436,6 +435,7 @@ static void nqiv_cmd_parser_print_value_image(nqiv_cmd_manager* manager, const n
 {
 	nqiv_cmd_parser_print_value_bool("marked", image->thumbnail_attempted);
 	nqiv_cmd_parser_print_value_bool("thumbnail_attempted", image->thumbnail_attempted);
+	nqiv_cmd_parser_print_value_bool("thumbnail_load_failed", image->thumbnail_load_failed);
 	fprintf(stdout, "\n");
 	nqiv_cmd_print_indent(manager);
 	fprintf(stdout, "IMAGE FORM: ");
