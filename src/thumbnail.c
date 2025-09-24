@@ -235,6 +235,8 @@ bool nqiv_thumbnail_create_vips(nqiv_image* image)
 	image->thumbnail.animation.frame = 0;
 	image->thumbnail.animation.exists = false;
 
+	image->thumbnail_ephemeral_attempted = true;
+
 	return true;
 }
 
@@ -246,7 +248,7 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	if(image->thumbnail.path == NULL) {
 		return false;
 	}
-	if(!nqiv_thumbnail_create_vips(image)) {
+	if(image->thumbnail.vips == NULL && !nqiv_thumbnail_create_vips(image)) {
 		return false;
 	}
 	char actualpath[NQIV_URI_LEN + 1];

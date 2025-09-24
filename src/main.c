@@ -857,9 +857,9 @@ static bool render_from_form(nqiv_state*     state,
 			}
 		}
 	}
-	if(form->error) {
+	if(form->error && (is_montage || !hard)) {
 		/* If we're working with a thumbnail and a successful image, try to recover. */
-		if(is_montage && !image->image.error) {
+		if(is_montage && ((!image->thumbnail_attempted && state->images.thumbnail.save) || !image->thumbnail_ephemeral_attempted || hard) && (hard || !image->image.error)) {
 			/* If reloading, indicate so. */
 			if(first_frame || state->first_frame_pending || hard) {
 				if(!render_texture(&cleared, dstrect, state,
@@ -869,7 +869,7 @@ static bool render_from_form(nqiv_state*     state,
 					return false;
 				}
 			}
-			if(!image->thumbnail_attempted && state->images.thumbnail.save) {
+			if((!image->thumbnail_attempted || hard) && state->images.thumbnail.save) {
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 				               "Creating thumbnail after failing to load it.\n");
 				nqiv_event event = {0};
@@ -878,6 +878,7 @@ static bool render_from_form(nqiv_state*     state,
 				event.options.image_load.set_thumbnail_path = true;
 				event.options.image_load.thumbnail_options.clear_error =
 					state->images.thumbnail.save;
+				event.options.image_load.image_options.clear_error = image->image.error && hard;
 				event.options.image_load.create_thumbnail = true;
 				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_FAIL,
 				                           &event, dstrect == NULL)) {
@@ -885,12 +886,14 @@ static bool render_from_form(nqiv_state*     state,
 					return false;
 				}
 			} else {
+				assert(!image->thumbnail_ephemeral_attempted || hard);
 				/* An 'ephemeral' thumbnail is generated from the image file, but not saved. */
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 				               "Generating ephemeral thumbnail for image.\n");
 				nqiv_event event = {0};
 				event.type = NQIV_EVENT_IMAGE_LOAD;
 				event.options.image_load.image = image;
+				event.options.image_load.image_options.clear_error = image->image.error && hard;
 				event.options.image_load.thumbnail_options.clear_error = true;
 				if(hard) {
 					event.options.image_load.thumbnail_options.vips = true;
@@ -915,7 +918,7 @@ static bool render_from_form(nqiv_state*     state,
 			}
 		}
 	} else {
-		/* No error */
+		/* No error or hard reload */
 		assert(!resample_zoom || form->texture == NULL);
 		if(form->texture != NULL
 		   && ((first_frame || state->first_frame_pending) || !form->animation.frame_rendered)) {
@@ -958,6 +961,7 @@ static bool render_from_form(nqiv_state*     state,
 				event.options.image_load.set_thumbnail_path = true;
 				event.options.image_load.thumbnail_options.clear_error =
 					state->images.thumbnail.save;
+				event.options.image_load.image_options.clear_error = image->image.error && hard;
 				event.options.image_load.create_thumbnail = state->images.thumbnail.save;
 				if(hard) {
 					event.options.image_load.thumbnail_options.vips = true;
@@ -1010,6 +1014,7 @@ static bool render_from_form(nqiv_state*     state,
 					(first_frame || state->first_frame_pending);
 				event.options.image_load.image_options.next_frame =
 					!(first_frame || state->first_frame_pending) && form->animation.frame_rendered;
+				event.options.image_load.image_options.clear_error = image->image.error && hard;
 				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_IMAGE_LOAD, &event,
 				                           dstrect == NULL)) {
 					nqiv_image_unlock(image);
