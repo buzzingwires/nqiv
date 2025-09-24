@@ -323,7 +323,8 @@ static void nqiv_worker_main(nqiv_log_ctx*        logger,
 					                                   &image->image);
 					if(!image->thumbnail_attempted && image_load->create_thumbnail) {
 						/* If we can load the thumbnail and are allowed to create it, then make sure
-						 * it also is up to date. This involves loading the image form, as well. */
+						 * it also is up to date. This involves loading the image form, as well. It is possible the thumbnail doesn't exist, so we should make sure not to keep the error from it failing to load. */
+						const bool old_error = image->thumbnail.error;
 						if(image->thumbnail.vips == NULL
 						   && nqiv_image_load_vips(image, &image->thumbnail)) {
 							if(image->image.vips == NULL) {
@@ -339,6 +340,7 @@ static void nqiv_worker_main(nqiv_log_ctx*        logger,
 									&& image->thumbnail_load_failed;
 							}
 						} else {
+							image->thumbnail.error = old_error;
 							/* Otherwise, load the image vips and create the thumbnail from scratch.
 							 */
 							if(image->image.vips == NULL) {

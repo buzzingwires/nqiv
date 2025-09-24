@@ -652,6 +652,25 @@ static void nqiv_apply_zoom_modifications(nqiv_state* state, const bool first_fr
 	}
 }
 
+bool save_unloaded_thumbnail(nqiv_state* state, nqiv_image* image, const bool preload)
+{
+	if(state->images.thumbnail.save && !image->thumbnail_attempted) {
+		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
+		               "Creating thumbnail for instance that won't load it.\n");
+		nqiv_event event = {0};
+		event.type = NQIV_EVENT_IMAGE_LOAD;
+		event.options.image_load.image = image;
+		event.options.image_load.set_thumbnail_path = true;
+		event.options.image_load.thumbnail_options.clear_error = true;
+		event.options.image_load.create_thumbnail = true;
+		if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO, &event,
+		                           preload)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 /* TODO STEP FRAME? */
 /* TODO Reset frame */
 static bool render_from_form(nqiv_state*     state,
@@ -840,22 +859,9 @@ static bool render_from_form(nqiv_state*     state,
 			}
 		}
 	}
-	if(!is_montage && state->images.thumbnail.save) {
-		if(!image->thumbnail_attempted) {
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
-			               "Creating thumbnail for instance that won't load it.\n");
-			nqiv_event event = {0};
-			event.type = NQIV_EVENT_IMAGE_LOAD;
-			event.options.image_load.image = image;
-			event.options.image_load.set_thumbnail_path = true;
-			event.options.image_load.thumbnail_options.clear_error = true;
-			event.options.image_load.create_thumbnail = true;
-			if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO, &event,
-			                           dstrect == NULL)) {
-				nqiv_image_unlock(image);
-				return false;
-			}
-		}
+	if(!is_montage && !save_unloaded_thumbnail(state, image, dstrect == NULL)) {
+		nqiv_image_unlock(image);
+		return false;
 	}
 	if(form->error && (is_montage || !hard)) {
 		/* If we're working with a thumbnail and a successful image, try to recover. */
@@ -922,11 +928,19 @@ static bool render_from_form(nqiv_state*     state,
 		assert(!resample_zoom || form->texture == NULL);
 		if(form->texture != NULL
 		   && ((first_frame || state->first_frame_pending) || !form->animation.frame_rendered)) {
-			/* If we have a texture and don't need to render the next frame, do nothing. */
+			/* If we have a texture and don't need to render the next frame, there isn't much to do. Just save the thumbnail data if it happens to not already be done (probably because the save setting was changed) */
+			if(!save_unloaded_thumbnail(state, image, dstrect == NULL)) {
+				nqiv_image_unlock(image);
+				return false;
+			}
 		} else if(form->surface != NULL && !resample_zoom
 		          && (is_montage || !(first_frame) || !form->animation.exists || dstrect == NULL)) {
 			/* Use the surface we have to make a texture, no need to resample or grab the next
-			 * frame. */
+			 * frame. Do save thumbnail data if it hasn't already been done (probably because of the save setting being changed) */
+			if(!save_unloaded_thumbnail(state, image, dstrect == NULL)) {
+				nqiv_image_unlock(image);
+				return false;
+			}
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading texture for image %s\n",
 			               image->image.path);
 			form->texture = SDL_CreateTextureFromSurface(state->renderer, form->surface);
