@@ -267,11 +267,12 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 		return false;
 	}
 
+	/* srcrect dimensions can be zero in the case of borrowing thumbnail dimensions. */
 	const int old_width = form->width;
 	const int old_height = form->height;
 	form->width = vips_image_get_width(form->vips);
 	form->height = vips_image_get_height(form->vips);
-	if(old_width != form->width || old_height != form->height) {
+	if(old_width != form->width || old_height != form->height || form->srcrect.w == 0 || form->srcrect.h == 0) {
 		form->srcrect.x = 0;
 		form->srcrect.y = 0;
 		form->srcrect.w = form->width;
@@ -309,6 +310,8 @@ static bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 	assert(form != NULL);
 	assert(form->vips != NULL);
 	assert(form->data == NULL);
+	assert(form->srcrect.w != 0);
+	assert(form->srcrect.h != 0);
 
 	const int frame_offset = form->height * (form->animation.exists ? form->animation.frame : 0);
 

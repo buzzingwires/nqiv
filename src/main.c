@@ -652,7 +652,7 @@ static void nqiv_apply_zoom_modifications(nqiv_state* state, const bool first_fr
 	}
 }
 
-bool save_unloaded_thumbnail(nqiv_state* state, nqiv_image* image, const bool preload)
+static bool save_unloaded_thumbnail(nqiv_state* state, nqiv_image* image, const bool preload)
 {
 	if(state->images.thumbnail.save && !image->thumbnail_attempted) {
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
@@ -865,7 +865,10 @@ static bool render_from_form(nqiv_state*     state,
 	}
 	if(form->error && (is_montage || !hard)) {
 		/* If we're working with a thumbnail and a successful image, try to recover. */
-		if(is_montage && ((!image->thumbnail_attempted && state->images.thumbnail.save) || !image->thumbnail_ephemeral_attempted || hard) && (hard || !image->image.error)) {
+		if(is_montage
+		   && ((!image->thumbnail_attempted && state->images.thumbnail.save)
+		       || !image->thumbnail_ephemeral_attempted || hard)
+		   && (hard || !image->image.error)) {
 			/* If reloading, indicate so. */
 			if(first_frame || state->first_frame_pending || hard) {
 				if(!render_texture(&cleared, dstrect, state,
@@ -928,7 +931,9 @@ static bool render_from_form(nqiv_state*     state,
 		assert(!resample_zoom || form->texture == NULL);
 		if(form->texture != NULL
 		   && ((first_frame || state->first_frame_pending) || !form->animation.frame_rendered)) {
-			/* If we have a texture and don't need to render the next frame, there isn't much to do. Just save the thumbnail data if it happens to not already be done (probably because the save setting was changed) */
+			/* If we have a texture and don't need to render the next frame, there isn't much to do.
+			 * Just save the thumbnail data if it happens to not already be done (probably because
+			 * the save setting was changed) */
 			if(!save_unloaded_thumbnail(state, image, dstrect == NULL)) {
 				nqiv_image_unlock(image);
 				return false;
@@ -936,7 +941,8 @@ static bool render_from_form(nqiv_state*     state,
 		} else if(form->surface != NULL && !resample_zoom
 		          && (is_montage || !(first_frame) || !form->animation.exists || dstrect == NULL)) {
 			/* Use the surface we have to make a texture, no need to resample or grab the next
-			 * frame. Do save thumbnail data if it hasn't already been done (probably because of the save setting being changed) */
+			 * frame. Do save thumbnail data if it hasn't already been done (probably because of the
+			 * save setting being changed) */
 			if(!save_unloaded_thumbnail(state, image, dstrect == NULL)) {
 				nqiv_image_unlock(image);
 				return false;

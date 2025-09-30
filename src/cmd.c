@@ -433,9 +433,17 @@ static void nqiv_cmd_parser_print_value_image_form(nqiv_cmd_manager*      manage
 
 static void nqiv_cmd_parser_print_value_image(nqiv_cmd_manager* manager, const nqiv_image* image)
 {
-	nqiv_cmd_parser_print_value_bool("marked", image->thumbnail_attempted);
-	nqiv_cmd_parser_print_value_bool("thumbnail_attempted", image->thumbnail_attempted);
+	nqiv_cmd_parser_print_value_bool("marked", image->marked);
+	fprintf(stdout, "\n");
+	nqiv_cmd_print_indent(manager);
 	nqiv_cmd_parser_print_value_bool("thumbnail_load_failed", image->thumbnail_load_failed);
+	fprintf(stdout, "\n");
+	nqiv_cmd_print_indent(manager);
+	nqiv_cmd_parser_print_value_bool("thumbnail_attempted", image->thumbnail_attempted);
+	fprintf(stdout, "\n");
+	nqiv_cmd_print_indent(manager);
+	nqiv_cmd_parser_print_value_bool("thumbnail_ephemeral_attempted",
+	                                 image->thumbnail_ephemeral_attempted);
 	fprintf(stdout, "\n");
 	nqiv_cmd_print_indent(manager);
 	fprintf(stdout, "IMAGE FORM: ");
