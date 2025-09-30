@@ -27,3 +27,4 @@ cross/
 linuxdeploy-i386.AppImage
 linuxdeploy-x86_64.AppImage
 nqiv.AppImage
+.ccls-cache
