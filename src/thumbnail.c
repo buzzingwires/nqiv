@@ -248,7 +248,8 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 	if(image->thumbnail.path == NULL) {
 		return false;
 	}
-	if(image->thumbnail.vips == NULL && !nqiv_thumbnail_create_vips(image)) {
+	nqiv_unload_image_form_vips(&image->thumbnail);
+	if(!nqiv_thumbnail_create_vips(image)) {
 		return false;
 	}
 	char actualpath[NQIV_URI_LEN + 1];

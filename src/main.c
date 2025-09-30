@@ -655,14 +655,16 @@ static void nqiv_apply_zoom_modifications(nqiv_state* state, const bool first_fr
 static bool save_unloaded_thumbnail(nqiv_state* state, nqiv_image* image, const bool preload)
 {
 	if(state->images.thumbnail.save && !image->thumbnail_attempted) {
+		nqiv_unload_image_form_texture(&image->thumbnail);
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 		               "Creating thumbnail for instance that won't load it.\n");
 		nqiv_event event = {0};
 		event.type = NQIV_EVENT_IMAGE_LOAD;
 		event.options.image_load.image = image;
 		event.options.image_load.set_thumbnail_path = true;
-		event.options.image_load.thumbnail_options.clear_error = true;
 		event.options.image_load.create_thumbnail = true;
+		event.options.image_load.thumbnail_options.clear_error = true;
+		event.options.image_load.thumbnail_options.surface = true;
 		if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO, &event,
 		                           preload)) {
 			return false;
@@ -889,6 +891,7 @@ static bool render_from_form(nqiv_state*     state,
 					state->images.thumbnail.save;
 				event.options.image_load.image_options.clear_error = image->image.error && hard;
 				event.options.image_load.create_thumbnail = true;
+				event.options.image_load.thumbnail_options.surface = true;
 				if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_FAIL,
 				                           &event, dstrect == NULL)) {
 					nqiv_image_unlock(image);
