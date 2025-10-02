@@ -235,8 +235,6 @@ bool nqiv_thumbnail_create_vips(nqiv_image* image)
 	image->thumbnail.animation.frame = 0;
 	image->thumbnail.animation.exists = false;
 
-	image->thumbnail_ephemeral_attempted = true;
-
 	return true;
 }
 
@@ -244,14 +242,9 @@ bool nqiv_thumbnail_create(nqiv_image* image)
 {
 	assert(image != NULL);
 	assert(image->parent != NULL);
+	assert(image->thumbnail.path != NULL);
+	assert(image->thumbnail.vips != NULL);
 
-	if(image->thumbnail.path == NULL) {
-		return false;
-	}
-	nqiv_unload_image_form_vips(&image->thumbnail);
-	if(!nqiv_thumbnail_create_vips(image)) {
-		return false;
-	}
 	char actualpath[NQIV_URI_LEN + 1];
 	if(!nqiv_thumbnail_render_uri(image, actualpath)) {
 		return false;

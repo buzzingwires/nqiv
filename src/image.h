@@ -63,11 +63,6 @@ struct nqiv_image
 	/* Have we tried to create a thumbnail, successfully or otherwise? Don't
 	 * retry. */
 	bool                thumbnail_attempted;
-	/* Whether we are currently loading a thumbnail using temporary non-disk data. */
-	bool                thumbnail_ephemeral_attempted;
-	/* Have we tried and failed to load a thumbnail? If the thumbnail is
-	 * successfully created later on, this may be reset. */
-	bool                thumbnail_load_failed;
 	/* Used to visually mark images and select them for certain operations. */
 	bool                marked;
 };

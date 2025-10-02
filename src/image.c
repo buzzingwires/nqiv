@@ -1228,7 +1228,7 @@ bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const 
 				event.options.image_load.thumbnail_options.surface =
 					images[idx]->thumbnail.surface != NULL;
 				if(!nqiv_priority_queue_push(manager->thread_queue,
-				                             NQIV_EVENT_PRIORITY_REATTEMPT_THUMBNAIL, &event)) {
+				                             NQIV_EVENT_PRIORITY_UNLOAD, &event)) {
 					nqiv_image_unlock(images[idx]);
 					return false;
 				}

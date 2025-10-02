@@ -19,7 +19,6 @@ static bool nqiv_worker_bins_kv_to_string(const char* key, const int* values, nq
 	bool success = true;
 	int  idx;
 	for(idx = 0; values[idx] >= 0; ++idx) {
-		assert(values[idx] != 0);
 		if(!started) {
 			success = success && nqiv_array_push_str(builder, key);
 			success = success && nqiv_array_push_str(builder, " ");
@@ -52,7 +51,7 @@ bool nqiv_worker_spec_to_string(const nqiv_worker_spec* spec, char* string)
 	success =
 		success && nqiv_worker_int_kv_to_string("event_interval", spec->event_interval, &builder);
 	success =
-		success && nqiv_worker_bins_kv_to_string("priorities", &(spec->queue_bins[1]), &builder);
+		success && nqiv_worker_bins_kv_to_string("priorities", &(spec->queue_bins[0]), &builder);
 	if(success
 	   && (string[nqiv_array_get_last_idx(&builder)] == ' '
 	       || string[nqiv_array_get_last_idx(&builder)] == ',')) {
@@ -89,10 +88,9 @@ static int nqiv_worker_scan_comma_list_sep(const char* data, const int start, co
 static int
 nqiv_worker_string_to_bin_list(const char* string, const int idx, const int end_idx, int* output)
 {
-	int oidx = 1;
+	int oidx = 0;
 	int cidx = idx;
 	while(true) {
-		assert(oidx != 0);
 		int nidx = nqiv_cmd_scan_not_whitespace(string, cidx, end_idx);
 		if(nidx == -1) {
 			return cidx; /* Nothing more to parse. Caller's responsibility. */
@@ -133,10 +131,9 @@ bool nqiv_worker_string_to_spec(const char* string, nqiv_worker_spec* spec)
 {
 	nqiv_worker_spec new_spec = {.delay_base = -1, .event_interval = -1, .queue_bins = {0}};
 	int              idx;
-	for(idx = 1; idx < THREAD_QUEUE_BIN_COUNT + 1; ++idx) {
+	for(idx = 0; idx < THREAD_QUEUE_BIN_COUNT + 1; ++idx) {
 		new_spec.queue_bins[idx] = -1;
 	}
-	assert(new_spec.queue_bins[0] == 0);
 	bool      success = true;
 	const int end_idx = nqiv_strlen(string);
 	if(end_idx >= NQIV_WORKER_SPEC_STRLEN) {
@@ -189,10 +186,11 @@ bool nqiv_worker_string_to_spec(const char* string, nqiv_worker_spec* spec)
 	return false;
 }
 
-static void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_options* options,
+static void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_options* top_options,
                                                nqiv_image*                               image,
                                                nqiv_image_form*                          form)
 {
+	const nqiv_event_image_load_form_options* options = form == &image->thumbnail ? &(top_options->thumbnail_options) : &(top_options->image_options);
 	if(options->unload) {
 		if(options->surface || (options->surface_soft && form->texture != NULL)) {
 			nqiv_unload_image_form_surface(form);
@@ -202,29 +200,31 @@ static void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_
 		}
 	} else {
 		if(form->texture != NULL && !(options->vips || options->surface)) {
+			/* Assume we're good to go if we have a texture and no hard reloads. */
+			assert(!form->error);
 			return;
 		}
 		bool success = true;
+		bool loaded_non_disk = false;
 		if(options->vips || options->vips_soft) {
 			if((form->vips != NULL && options->vips) || form->vips == NULL) {
-				if(form->vips != NULL) {
-					assert(options->vips);
-					nqiv_unload_image_form_vips(form);
-				}
-				/* Load thumbnail if allowed. If not, or if fail, we create the thumbnail VIPS data
-				 * from the image for rendering, without actually generating a full on-disk
-				 * thumbnail. */
+				/* If we're doing a hard reload, unload vips. */
+				assert(options->vips || form->vips == NULL);
+				nqiv_unload_image_form_vips(form);
+				assert(form->vips == NULL);
 				if(form == &image->thumbnail) {
-					if(image->parent->thumbnail.load && !image->thumbnail_load_failed) {
+					/* Loading allowed, do that. */
+					if(image->parent->thumbnail.load) {
 						success = nqiv_image_load_vips(image, form);
-						image->thumbnail_load_failed = !success;
 					} else {
 						success = false;
 					}
+					/* Create non-disk data. */
 					if(!success) {
 						if(image->image.vips != NULL) {
 							success = nqiv_thumbnail_create_vips(image);
 						} else {
+							/* Load image data if needed for that. */
 							if(nqiv_image_load_vips(image, &image->image)) {
 								success = nqiv_thumbnail_create_vips(image);
 							} else {
@@ -232,11 +232,37 @@ static void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_
 							}
 						}
 						form->error = !success;
+						loaded_non_disk = true;
 					}
 				} else {
 					success = nqiv_image_load_vips(image, form);
 				}
+			} else {
+				/* We gauge success by whether we have a valid VIPS instance, even if it's old.
+				 * This is because creating a thumbnail may have made one, even if it failed
+				 * in actually saving the file.
+				 */
+				success = form->vips != NULL;
 			}
+		}
+		if(success && !image->thumbnail_attempted && top_options->create_thumbnail) {
+			/* We should only create a thumbnail while also sending vips or vips_soft */
+			assert(image->thumbnail.vips != NULL);
+			if(!loaded_non_disk) {
+				/* Load image data so that we can see if the thumbnail needs to be updated. */
+				if(image->image.vips == NULL) {
+					success = nqiv_image_load_vips(image, &image->image);
+				}
+				/* Images don't match. Unload and recreate thumbnail. */
+				if(!nqiv_thumbnail_matches_image(image)) {
+					nqiv_unload_image_form_vips(&image->thumbnail);
+					success = nqiv_thumbnail_create_vips(image);
+					form->error = !success;
+				}
+			}
+			/* Try to save the thumbnail from the data, but if we can't, don't set the error. We'll still use the non-disk data. */
+			nqiv_thumbnail_create(image);
+			image->thumbnail_attempted = true;
 		}
 		if(success && options->first_frame) {
 			success = nqiv_image_form_first_frame(image, form);
@@ -249,12 +275,17 @@ static void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_form_
 				if(options->surface) {
 					nqiv_unload_image_form_surface(form);
 					success = nqiv_image_load_surface(image, form);
+				} else {
+					/* We were *not* able to make an up to date surface and we should *not*
+					 * be soft loads when a surface is already present.
+					 */
+					assert(false);
 				}
 			} else {
 				success = nqiv_image_load_surface(image, form);
 			}
 		}
-		(void)success;
+		assert(form->error == !success);
 	}
 }
 
@@ -319,43 +350,9 @@ static void nqiv_worker_main(nqiv_log_ctx*        logger,
 					   && !nqiv_thumbnail_calculate_path(image, &image->thumbnail.path, false)) {
 						image->thumbnail_attempted = true;
 					}
-					nqiv_worker_handle_image_load_form(&image_load->image_options, image,
+					nqiv_worker_handle_image_load_form(image_load, image,
 					                                   &image->image);
-					if(!image->thumbnail_attempted && image_load->create_thumbnail) {
-						/* If we can load the thumbnail and are allowed to create it, then make sure
-						 * it also is up to date. This involves loading the image form, as well. It
-						 * is possible the thumbnail doesn't exist, so we should make sure not to
-						 * keep the error from it failing to load. */
-						const bool old_error = image->thumbnail.error;
-						if(image->thumbnail.vips == NULL
-						   && nqiv_image_load_vips(image, &image->thumbnail)) {
-							if(image->image.vips == NULL) {
-								if(nqiv_image_load_vips(image, &image->image)
-								   && !nqiv_thumbnail_matches_image(image)) {
-									image->thumbnail_load_failed = !nqiv_thumbnail_create(image)
-									                               && image->thumbnail_load_failed;
-								}
-							} else if(!nqiv_thumbnail_matches_image(image)) {
-								image->thumbnail_load_failed =
-									!nqiv_thumbnail_create(image) && image->thumbnail_load_failed;
-							}
-						} else {
-							image->thumbnail.error = old_error;
-							/* Otherwise, load the image vips and create the thumbnail from scratch.
-							 */
-							if(image->image.vips == NULL) {
-								if(nqiv_image_load_vips(image, &image->image)) {
-									image->thumbnail_load_failed = !nqiv_thumbnail_create(image)
-									                               && image->thumbnail_load_failed;
-								}
-							} else {
-								image->thumbnail_load_failed =
-									!nqiv_thumbnail_create(image) && image->thumbnail_load_failed;
-							}
-						}
-						image->thumbnail_attempted = true;
-					}
-					nqiv_worker_handle_image_load_form(&image_load->thumbnail_options, image,
+					nqiv_worker_handle_image_load_form(image_load, image,
 					                                   &image->thumbnail);
 					if(image_load->borrow_thumbnail_dimension_metadata) {
 						nqiv_image_borrow_thumbnail_dimensions(image);

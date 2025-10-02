@@ -7,37 +7,27 @@
 #include "event.h"
 
 const char* const nqiv_event_priority_names[] = {
-	"quit",
-	"image_load_animation",
-	"reattempt_thumbnail",
+	"animation",
+	"unload",
 	"prune",
-	"image_load",
-	"thumbnail_load_ephemeral",
+	"image",
 	"thumbnail_load",
-	"thumbnail_save_load_fail",
-	"thumbnail_save_load_no",
-	"preload_image_load",
-	"preload_thumbnail_load_ephemeral",
+	"thumbnail_save",
+	"preload_image",
 	"preload_thumbnail_load",
-	"preload_thumbnail_save_load_fail",
-	"preload_thumbnail_save_load_no",
+	"preload_thumbnail_save",
 };
 
 const char* const nqiv_event_priority_descriptions[] = {
-	"Stop the thread.",
 	"Load frames of an animation.",
-	"Reload thumbnails- usually if the size changes or something.",
-	"Prune images.",
+	"Request unloading of images.",
+	"Automatically prune images.",
 	"Load a displayed image.",
-	"Load thumbnail from existing image data.",
-	"Load thumbnail from disc.",
-	"Create thumbnail after failing to load it from disc.",
-	"Create thumbnail we don't actually intend to view.",
-	"Lower priority variant of 'image_load' for preloading.",
-	"Lower priority variant of 'thumbnail_load_ephemeral' for preloading.",
-	"Lower priority variant of 'thumbnail_load' for preloading.",
-	"Lower priority variant of 'thumbnail_save_load_fail' for preloading.",
-	"Lower priority variant of 'thumbnail_save_load_no' for preloading.",
+	"Load a montage image.",
+	"Save a montage thumbnail.",
+	"Preload image not currently displayed.",
+	"Preload montage image not currently displayed.",
+	"Save montage thumbnail not currently displayed.",
 };
 
 nqiv_event_priority nqiv_text_to_event_priority(const char* text, const int length)

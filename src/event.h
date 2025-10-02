@@ -12,33 +12,24 @@ typedef enum nqiv_event_priority
 {
 	/* Error/initial status. */
 	NQIV_EVENT_PRIORITY_UNKNOWN = -1,
-	/* When told to quit, do so immediately */
-	NQIV_EVENT_PRIORITY_QUIT = 0,
 	/* Fulfill animation frames early for low latency. */
-	NQIV_EVENT_PRIORITY_IMAGE_LOAD_ANIMATION = 1,
-	/* Unload old thumbnails right away when a new size is needed. */
-	NQIV_EVENT_PRIORITY_REATTEMPT_THUMBNAIL = 2,
-	/* Prune old stuff before loading new. */
-	NQIV_EVENT_PRIORITY_PRUNE = 3,
+	NQIV_EVENT_PRIORITY_ANIMATION = 0,
+	/* Unload requests should be done right away, rather than after old stuff has finished loading. */
+	NQIV_EVENT_PRIORITY_UNLOAD = 1,
+	/* Automated pruning should come slightly behind requested unloading. */
+	NQIV_EVENT_PRIORITY_PRUNE = 2,
 	/* Loading a displayed image should be higher priority than thumbnails. */
-	NQIV_EVENT_PRIORITY_IMAGE_LOAD = 4,
-	/* Loading thumbnails from image data is slower than thumbnail files. Do it first. */
-	NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD_EPHEMERAL = 5,
-	/* First attempt to load a normal thumbnail file. */
-	NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD = 6,
-	/* Then try to create the file if it's not available. */
-	NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_FAIL = 7,
-	/* Finally save a thumbnail we'll never even try to use. */
-	NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE_LOAD_NO = 8,
+	NQIV_EVENT_PRIORITY_IMAGE = 3,
+	NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD = 4,
+	/* Special requests to save thumbnails should come after loading for the user to see.. */
+	NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE = 5,
 	/* We have equivalents to main events for preloading of images. */
-	NQIV_EVENT_PRIORITY_PRELOAD_IMAGE_LOAD = 9,
-	NQIV_EVENT_PRIORITY_PRELOAD_THUMBNAIL_LOAD_EPHEMERAL = 10,
-	NQIV_EVENT_PRIORITY_PRELOAD_THUMBNAIL_LOAD = 11,
-	NQIV_EVENT_PRIORITY_PRELOAD_THUMBNAIL_SAVE_LOAD_FAIL = 12,
-	NQIV_EVENT_PRIORITY_PRELOAD_THUMBNAIL_SAVE_LOAD_NO = 13,
+	NQIV_EVENT_PRIORITY_PRELOAD_IMAGE = 6,
+	NQIV_EVENT_PRIORITY_PRELOAD_THUMBNAIL_LOAD = 7,
+	NQIV_EVENT_PRIORITY_PRELOAD_THUMBNAIL_SAVE = 8,
 	/* Helpers for iterating through priorities. */
-	NQIV_EVENT_PRIORITY_FIRST = NQIV_EVENT_PRIORITY_IMAGE_LOAD_ANIMATION,
-	NQIV_EVENT_PRIORITY_LAST = NQIV_EVENT_PRIORITY_PRELOAD_THUMBNAIL_SAVE_LOAD_NO,
+	NQIV_EVENT_PRIORITY_FIRST = NQIV_EVENT_PRIORITY_ANIMATION,
+	NQIV_EVENT_PRIORITY_LAST = NQIV_EVENT_PRIORITY_PRELOAD_THUMBNAIL_SAVE,
 } nqiv_event_priority;
 
 /* Bins for thread priority queue. This is one bigger than necessary so preload events can be placed

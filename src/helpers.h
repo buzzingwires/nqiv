@@ -10,4 +10,6 @@
 
 #define NQIV_SAYFORM(image, form) ((form) == &(image)->image ? "image" : "thumbnail")
 
+#define NQIV_ASSIGNIF(var, cond, val) ((var) = (cond) ? (val) : (var));
+
 #endif /* NQIV_HELPERS_H */
