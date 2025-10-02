@@ -858,23 +858,26 @@ static bool render_from_form(nqiv_state*     state,
 			return false;
 		}
 	} else {
-		if(state->images.thumbnail.save && !image->thumbnail_attempted) {
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Saving for '%s'.\n", image->image.path);
-			nqiv_event event = {0};
-			event.type = NQIV_EVENT_IMAGE_LOAD;
-			nqiv_event_image_load_form_options* options = is_montage ? &(event.options.image_load.thumbnail_options) : &(event.options.image_load.image_options);
-			event.options.image_load.image = image;
-			options->vips_soft = true;
-			event.options.image_load.set_thumbnail_path = true;
-			event.options.image_load.create_thumbnail = true;
-			if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE, &event,
-			                           dstrect == NULL)) {
-				nqiv_image_unlock(image);
-				return false;
+		/* No errors or requested reload */
+		const bool save_thumbnail = is_montage && state->images.thumbnail.save && !image->thumbnail_attempted;
+		/* If we don't display the texture or have some other special reason, we'll need to reload the image data. */
+		bool force_reload = resample_zoom || form->animation.frame_rendered;
+		bool displayed_texture = false;
+		if(!force_reload && (form->surface != NULL || form->texture != NULL)) {
+			if(form->texture == NULL) {
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading texture for %s for '%s'.\n", NQIV_SAYFORM(image, form), image->image.path);
+				form->texture = SDL_CreateTextureFromSurface(state->renderer, form->surface);
+				nqiv_unload_image_form_fallback_texture(form);
+				form->fallback_texture = form->texture;
+				if(form->texture == NULL) {
+				    nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
+				                   "Failed to load texture for image form %s (%s).\n", form->path,
+				                   SDL_GetError());
+				    nqiv_image_unlock(image);
+				    return false;
+				}
 			}
-		}
-		const bool force_reload = resample_zoom || form->animation.frame_rendered;
-		if(form->texture != NULL && !force_reload) {
+			assert(form->texture != NULL);
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Displaying texture for %s for '%s'.\n", NQIV_SAYFORM(image, form), image->image.path);
 			assert(!resample_zoom);
 			if(dstrect_zoom_ptr != NULL
@@ -899,21 +902,10 @@ static bool render_from_form(nqiv_state*     state,
 			NQIV_ASSIGNIF(state->is_loading, dstrect != NULL, false);
 			NQIV_ASSIGNIF(state->first_frame_pending, dstrect != NULL, false);
 			NQIV_ASSIGNIF(form->animation.frame_rendered, dstrect != NULL && form->animation.exists, true);
-		} else if(form->surface != NULL && !force_reload) {
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading texture for %s for '%s'.\n", NQIV_SAYFORM(image, form), image->image.path);
-			assert(form->texture == NULL);
-			NQIV_ASSIGNIF(state->is_loading, dstrect != NULL && (state->first_frame_pending || !form->animation.exists), true);
-			form->texture = SDL_CreateTextureFromSurface(state->renderer, form->surface);
-			nqiv_unload_image_form_fallback_texture(form);
-			form->fallback_texture = form->texture;
-			if(form->texture == NULL) {
-			    nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
-			                   "Failed to load texture for image form %s (%s).\n", form->path,
-			                   SDL_GetError());
-			    nqiv_image_unlock(image);
-			    return false;
-			}
-		} else {
+			force_reload = force_reload || form->animation.frame_rendered;
+			displayed_texture = true;
+		}
+		if(force_reload || !displayed_texture) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Loading data for %s for '%s'.\n", NQIV_SAYFORM(image, form), image->image.path);
 			NQIV_ASSIGNIF(state->is_loading, dstrect != NULL && (state->first_frame_pending || !form->animation.exists), true);
 			assert((form->animation.frame_rendered && form->animation.exists) || !form->animation.frame_rendered);
@@ -930,7 +922,7 @@ static bool render_from_form(nqiv_state*     state,
 			if(is_montage) {
 				NQIV_ASSIGNIF(event.options.image_load.set_thumbnail_path, form->path == NULL, true);
 				NQIV_ASSIGNIF(event.options.image_load.borrow_thumbnail_dimension_metadata, image->image.height == 0 || image->image.width == 0, true);
-				NQIV_ASSIGNIF(event.options.image_load.create_thumbnail, !image->thumbnail_attempted, true);
+				NQIV_ASSIGNIF(event.options.image_load.create_thumbnail, save_thumbnail, true);
 			}
 			nqiv_event_priority priority = NQIV_EVENT_PRIORITY_UNKNOWN;
 			if(form->animation.exists) {
@@ -942,6 +934,20 @@ static bool render_from_form(nqiv_state*     state,
 			}
 			assert(priority != NQIV_EVENT_PRIORITY_UNKNOWN);
 			if(!nqiv_send_thread_event(state, priority, &event,
+			                           dstrect == NULL)) {
+				nqiv_image_unlock(image);
+				return false;
+			}
+		} else if(save_thumbnail) {
+			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Saving for thumbnail for '%s'.\n", image->image.path);
+			nqiv_event event = {0};
+			event.type = NQIV_EVENT_IMAGE_LOAD;
+			nqiv_event_image_load_form_options* options = &(event.options.image_load.thumbnail_options);
+			event.options.image_load.image = image;
+			options->vips_soft = true;
+			NQIV_ASSIGNIF(event.options.image_load.set_thumbnail_path, form->path == NULL, true);
+			event.options.image_load.create_thumbnail = true;
+			if(!nqiv_send_thread_event(state, NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE, &event,
 			                           dstrect == NULL)) {
 				nqiv_image_unlock(image);
 				return false;

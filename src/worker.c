@@ -199,11 +199,6 @@ static void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_optio
 			nqiv_unload_image_form_vips(form);
 		}
 	} else {
-		if(form->texture != NULL && !(options->vips || options->surface)) {
-			/* Assume we're good to go if we have a texture and no hard reloads. */
-			assert(!form->error);
-			return;
-		}
 		bool success = true;
 		bool loaded_non_disk = false;
 		if(options->vips || options->vips_soft) {
@@ -245,7 +240,7 @@ static void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_optio
 				success = form->vips != NULL;
 			}
 		}
-		if(success && !image->thumbnail_attempted && top_options->create_thumbnail) {
+		if(success && form == &image->thumbnail && !image->thumbnail_attempted && top_options->create_thumbnail) {
 			/* We should only create a thumbnail while also sending vips or vips_soft */
 			assert(image->thumbnail.vips != NULL);
 			if(!loaded_non_disk) {
@@ -253,15 +248,17 @@ static void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_optio
 				if(image->image.vips == NULL) {
 					success = nqiv_image_load_vips(image, &image->image);
 				}
-				/* Images don't match. Unload and recreate thumbnail. */
+				/* Images don't match. Unload and recreate thumbnail. If we can't actually save it, we can at least use the new data to display, so don't set the error.  */
 				if(!nqiv_thumbnail_matches_image(image)) {
 					nqiv_unload_image_form_vips(&image->thumbnail);
 					success = nqiv_thumbnail_create_vips(image);
 					form->error = !success;
+					nqiv_thumbnail_create(image);
 				}
+			} else {
+				/* Try to save the thumbnail from the non-disk data, but if we can't, don't set the error. We'll still use the non-disk data. */
+				nqiv_thumbnail_create(image);
 			}
-			/* Try to save the thumbnail from the data, but if we can't, don't set the error. We'll still use the non-disk data. */
-			nqiv_thumbnail_create(image);
 			image->thumbnail_attempted = true;
 		}
 		if(success && options->first_frame) {
@@ -271,21 +268,13 @@ static void nqiv_worker_handle_image_load_form(const nqiv_event_image_load_optio
 			success = nqiv_image_form_next_frame(image, form);
 		}
 		if(success && (options->surface || options->surface_soft)) {
-			if(form->surface != NULL) {
-				if(options->surface) {
-					nqiv_unload_image_form_surface(form);
-					success = nqiv_image_load_surface(image, form);
-				} else {
-					/* We were *not* able to make an up to date surface and we should *not*
-					 * be soft loads when a surface is already present.
-					 */
-					assert(false);
-				}
-			} else {
+			if(form->surface != NULL && options->surface) {
+				nqiv_unload_image_form_surface(form);
+				success = nqiv_image_load_surface(image, form);
+			} else if(form->surface == NULL) {
 				success = nqiv_image_load_surface(image, form);
 			}
 		}
-		assert(form->error == !success);
 	}
 }
 
@@ -354,7 +343,7 @@ static void nqiv_worker_main(nqiv_log_ctx*        logger,
 					                                   &image->image);
 					nqiv_worker_handle_image_load_form(image_load, image,
 					                                   &image->thumbnail);
-					if(image_load->borrow_thumbnail_dimension_metadata) {
+					if(image_load->borrow_thumbnail_dimension_metadata && (image->image.width == 0 || image->image.height == 0)) {
 						nqiv_image_borrow_thumbnail_dimensions(image);
 					}
 					nqiv_image_unlock(image);
