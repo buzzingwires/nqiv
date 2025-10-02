@@ -922,7 +922,6 @@ static bool render_from_form(nqiv_state*     state,
 			if(is_montage) {
 				NQIV_ASSIGNIF(event.options.image_load.set_thumbnail_path, form->path == NULL, true);
 				NQIV_ASSIGNIF(event.options.image_load.borrow_thumbnail_dimension_metadata, image->image.height == 0 || image->image.width == 0, true);
-				NQIV_ASSIGNIF(event.options.image_load.create_thumbnail, save_thumbnail, true);
 			}
 			nqiv_event_priority priority = NQIV_EVENT_PRIORITY_UNKNOWN;
 			if(form->animation.exists) {
@@ -938,7 +937,8 @@ static bool render_from_form(nqiv_state*     state,
 				nqiv_image_unlock(image);
 				return false;
 			}
-		} else if(save_thumbnail) {
+		}
+		if(save_thumbnail) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Saving for thumbnail for '%s'.\n", image->image.path);
 			nqiv_event event = {0};
 			event.type = NQIV_EVENT_IMAGE_LOAD;
