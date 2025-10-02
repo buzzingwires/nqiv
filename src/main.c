@@ -955,7 +955,7 @@ static bool render_from_form(nqiv_state*     state,
 		}
 	}
 	/* Simple quick overdrawn stuff, loading indicator, selection and mark boxes. */
-	if(state->is_loading) {
+	if(state->show_loading_indicator && state->is_loading) {
 		if(!render_texture(&cleared, dstrect, state, state->texture_montage_unloaded_background,
 		                   NULL, dstrect_zoom_ptr == NULL ? dstrect : dstrect_zoom_ptr)) {
 			nqiv_image_unlock(image);
