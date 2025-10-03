@@ -317,52 +317,6 @@ static bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 
 	VipsImage* used_vips = form->vips;
 	VipsImage* new_vips;
-	if(form->srcrect.x != 0 || form->srcrect.y + frame_offset != 0
-	   || form->srcrect.w != vips_image_get_width(used_vips)
-	   || form->srcrect.h != vips_image_get_height(used_vips)) {
-		if(vips_crop(used_vips, &new_vips, form->srcrect.x, form->srcrect.y + frame_offset,
-		             form->srcrect.w, form->srcrect.h, NULL)
-		   == -1) {
-			nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-			               "Failed to crop out oversized vips region to resize of form %s of %s\n",
-			               NQIV_SAYFORM(image, form), image->image.path);
-			form->error = true;
-			return false;
-		}
-		used_vips = new_vips;
-		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
-		               "Cropped selection from %dx%d+%dx%d to %dx%d for form %s of %s\n",
-		               form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y,
-		               vips_image_get_width(used_vips), vips_image_get_height(used_vips),
-		               NQIV_SAYFORM(image, form), image->image.path);
-	}
-
-	if(form->srcrect.w > image->parent->max_texture_width
-	   || form->srcrect.h > image->parent->max_texture_height) {
-		const int largest_dimension = NQIV_MAX(form->srcrect.w, form->srcrect.h);
-		const int smallest_texture_dimension =
-			NQIV_MIN(image->parent->max_texture_height, image->parent->max_texture_width);
-		const double resize_ratio = (double)smallest_texture_dimension / (double)largest_dimension;
-		if(vips_resize(used_vips, &new_vips, resize_ratio, NULL) == -1) {
-			if(used_vips != form->vips) {
-				g_object_unref(used_vips);
-			}
-			nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
-			               "Failed to resize oversized vips region for form %s of %s",
-			               NQIV_SAYFORM(image, form), image->image.path);
-			form->error = true;
-			return false;
-		}
-		if(used_vips != form->vips) {
-			g_object_unref(used_vips);
-		}
-		used_vips = new_vips;
-		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
-		               "Resized oversized selection %dx%d+%dx%d to %dx%d for form %s of %s\n",
-		               form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y,
-		               vips_image_get_width(used_vips), vips_image_get_height(used_vips),
-		               NQIV_SAYFORM(image, form), image->image.path);
-	}
 
 	const VipsBandFormat band_format = vips_image_get_format(used_vips);
 	if(band_format == VIPS_FORMAT_NOTSET) {
@@ -442,6 +396,56 @@ static bool nqiv_image_load_raw(nqiv_image* image, nqiv_image_form* form)
 			g_object_unref(used_vips);
 		}
 		used_vips = new_vips;
+	}
+
+	if(form->srcrect.x != 0 || form->srcrect.y + frame_offset != 0
+	   || form->srcrect.w != vips_image_get_width(used_vips)
+	   || form->srcrect.h != vips_image_get_height(used_vips)) {
+		if(vips_crop(used_vips, &new_vips, form->srcrect.x, form->srcrect.y + frame_offset,
+		             form->srcrect.w, form->srcrect.h, NULL)
+		   == -1) {
+			nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
+			               "Failed to crop out oversized vips region to resize of form %s of %s\n",
+			               NQIV_SAYFORM(image, form), image->image.path);
+			form->error = true;
+			return false;
+		}
+		if(used_vips != form->vips) {
+			g_object_unref(used_vips);
+		}
+		used_vips = new_vips;
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
+		               "Cropped selection from %dx%d+%dx%d to %dx%d for form %s of %s\n",
+		               form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y,
+		               vips_image_get_width(used_vips), vips_image_get_height(used_vips),
+		               NQIV_SAYFORM(image, form), image->image.path);
+	}
+
+	if(form->srcrect.w > image->parent->max_texture_width
+	   || form->srcrect.h > image->parent->max_texture_height) {
+		const int largest_dimension = NQIV_MAX(form->srcrect.w, form->srcrect.h);
+		const int smallest_texture_dimension =
+			NQIV_MIN(image->parent->max_texture_height, image->parent->max_texture_width);
+		const double resize_ratio = (double)smallest_texture_dimension / (double)largest_dimension;
+		if(vips_resize(used_vips, &new_vips, resize_ratio, NULL) == -1) {
+			if(used_vips != form->vips) {
+				g_object_unref(used_vips);
+			}
+			nqiv_log_write(image->parent->logger, NQIV_LOG_WARNING,
+			               "Failed to resize oversized vips region for form %s of %s",
+			               NQIV_SAYFORM(image, form), image->image.path);
+			form->error = true;
+			return false;
+		}
+		if(used_vips != form->vips) {
+			g_object_unref(used_vips);
+		}
+		used_vips = new_vips;
+		nqiv_log_write(image->parent->logger, NQIV_LOG_DEBUG,
+		               "Resized oversized selection %dx%d+%dx%d to %dx%d for form %s of %s\n",
+		               form->srcrect.w, form->srcrect.h, form->srcrect.x, form->srcrect.y,
+		               vips_image_get_width(used_vips), vips_image_get_height(used_vips),
+		               NQIV_SAYFORM(image, form), image->image.path);
 	}
 
 	const void* extracted = vips_image_get_data(used_vips);

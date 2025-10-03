@@ -200,18 +200,11 @@ bool nqiv_thumbnail_create_vips(nqiv_image* image)
 
 	VipsImage* old_vips;
 	VipsImage* thumbnail_vips;
-	if(vips_copy(image->image.vips, &thumbnail_vips, NULL) == -1) {
-		nqiv_log_vips_exception(image->parent->logger, image, &image->image);
-		return false;
-	}
-	old_vips = thumbnail_vips;
-	if(vips_crop(old_vips, &thumbnail_vips, 0, 0, image->image.width, image->image.height, NULL)
+	if(vips_crop(image->image.vips, &thumbnail_vips, 0, 0, image->image.width, image->image.height, NULL)
 	   == -1) {
-		g_object_unref(old_vips);
 		nqiv_log_vips_exception(image->parent->logger, image, &image->image);
 		return false;
 	}
-	g_object_unref(old_vips);
 
 	image->thumbnail.animation.frame = 0;
 	old_vips = thumbnail_vips;
