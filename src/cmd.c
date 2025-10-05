@@ -1006,17 +1006,6 @@ int nqiv_cmd_scan_not_whitespace(const char* data, const int start, const int en
 	return -1;
 }
 
-static int nqiv_cmd_scan_whitespace_and_eol(const char* data, const int start, const int end)
-{
-	int bidx;
-	for(bidx = start; bidx < end; ++bidx) {
-		if(data[bidx] == ' ' || data[bidx] == '\t' || data[bidx] == '\r' || data[bidx] == '\n') {
-			return bidx;
-		}
-	}
-	return -1;
-}
-
 static int nqiv_cmd_scan_not_whitespace_and_eol(const char* data, const int start, const int end)
 {
 	int bidx;
@@ -1026,6 +1015,16 @@ static int nqiv_cmd_scan_not_whitespace_and_eol(const char* data, const int star
 		}
 	}
 	return -1;
+}
+
+static int nqiv_cmd_scan_unspaced_end(const char* data, const int start, const int end)
+{
+	int       output = end;
+	const int length = nqiv_cmd_scan_whitespace(data, start, end);
+	if(length != -1) {
+		output = length;
+	}
+	return output;
 }
 
 static void nqiv_cmd_print_comment_prefix(const nqiv_cmd_manager* manager)
@@ -1496,18 +1495,21 @@ static int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd checking bool arg at %d for token %s for input %s\n", tidx,
 			               current_node->name, data);
+			const int      endpos = nqiv_cmd_scan_unspaced_end(data, 0, eolpos - start_idx);
+			const char     endc = nqiv_cmd_tmpterm(mutdata_start, endpos);
+			nqiv_op_result tmp = NQIV_FAIL;
 			if(strcmp(data, "true") == 0) {
-				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
-				               "Cmd bool arg at %d for token %s is true for input %s\n", tidx,
-				               current_node->name, data);
-				token->value.as_bool = true;
-				output = strlen("true");
+				tmp = NQIV_SUCCESS;
 			} else if(strcmp(data, "false") == 0) {
+				tmp = NQIV_PASS;
+			}
+			nqiv_cmd_tmpret(mutdata_start, endpos, endc);
+			if(tmp == NQIV_SUCCESS || tmp == NQIV_PASS) {
+				token->value.as_bool = tmp == NQIV_SUCCESS ? true : false;
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
-				               "Cmd bool arg at %d for token %s is false for input %s\n", tidx,
-				               current_node->name, data);
-				token->value.as_bool = false;
-				output = strlen("false");
+				               "Cmd bool arg at %d for token %s is %s for input %s\n", tidx,
+				               current_node->name, NQIV_CBOOLSTR(token->value.as_bool), data);
+				output = nqiv_strlen(NQIV_BOOLSTR(token->value.as_bool));
 			} else {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_WARNING,
 				               "Cmd error parsing bool arg at %d for token %s with input %s\n",
@@ -1520,7 +1522,10 @@ static int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd checking log level arg at %d for token %s for input %s\n", tidx,
 			               current_node->name, data);
+			const int            endpos = nqiv_cmd_scan_unspaced_end(data, 0, eolpos - start_idx);
+			const char           endc = nqiv_cmd_tmpterm(mutdata_start, endpos);
 			const nqiv_log_level tmp = nqiv_log_level_from_string(data);
+			nqiv_cmd_tmpret(mutdata_start, endpos, endc);
 			if(tmp != NQIV_LOG_UNKNOWN) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 				               "Cmd log level arg at %d for token %s is %s for input %s\n", tidx,
@@ -1539,8 +1544,12 @@ static int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd checking press action arg at %d for token %s for input %s\n", tidx,
 			               current_node->name, data);
+			const int  endpos = nqiv_cmd_scan_unspaced_end(data, 0, eolpos - start_idx);
+			const char endc = nqiv_cmd_tmpterm(mutdata_start, endpos);
 			nqiv_keyrate_press_action tmp;
-			if(nqiv_keyrate_press_action_from_string(data, &tmp)) {
+			const bool                success = nqiv_keyrate_press_action_from_string(data, &tmp);
+			nqiv_cmd_tmpret(mutdata_start, endpos, endc);
+			if(success) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 				               "Cmd press action arg at %d for token %s is %s for input %s\n", tidx,
 				               current_node->name, nqiv_press_action_names[tmp], data);
@@ -1559,11 +1568,8 @@ static int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd checking key action arg at %d for token %s for input %s\n", tidx,
 			               current_node->name, data);
-			int arg_end = nqiv_cmd_scan_whitespace(mutdata, start_idx, eolpos);
-			if(arg_end == -1 || arg_end > eolpos) {
-				arg_end = eolpos;
-			}
-			const nqiv_key_action tmp = nqiv_text_to_key_action(data, arg_end - start_idx);
+			const int             endpos = nqiv_cmd_scan_unspaced_end(data, 0, eolpos - start_idx);
+			const nqiv_key_action tmp = nqiv_text_to_key_action(data, endpos);
 			if(tmp != NQIV_KEY_ACTION_NONE) {
 				nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 				               "Cmd key action arg at %d for token %s is %s for input %s\n", tidx,
@@ -1642,15 +1648,7 @@ static int nqiv_cmd_parse_arg_token(nqiv_cmd_manager*    manager,
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd checking spaceless arg at %d for token %s for input %s\n", tidx,
 			               current_node->name, data);
-			const int length = nqiv_cmd_scan_whitespace_and_eol(data, 0, eolpos - start_idx);
-			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
-			               "Cmd spaceless string at %d for token %s for input %s\n", tidx,
-			               current_node->name, data);
-			if(length != -1) {
-				output = length;
-			} else {
-				output = eolpos - start_idx;
-			}
+			output = nqiv_cmd_scan_unspaced_end(data, 0, eolpos - start_idx);
 		} else {
 			nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG,
 			               "Cmd string at %d for token %s for input %s\n", tidx, current_node->name,
