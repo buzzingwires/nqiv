@@ -77,10 +77,9 @@ void worker_test_spec_parse_print(void)
 	spec.queue_bins[3] = NQIV_EVENT_PRIORITY_IMAGE;
 	spec.queue_bins[4] = NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD;
 	spec.queue_bins[5] = NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE;
-	worker_test_spec_parse_print_instance(
-		&spec, "extra_wakeup_delay 1 event_interval 2 priorities "
-			   "animation,unload,prune,image,thumbnail_load,"
-			   "thumbnail_save");
+	worker_test_spec_parse_print_instance(&spec, "extra_wakeup_delay 1 event_interval 2 priorities "
+	                                             "animation,unload,prune,image,thumbnail_load,"
+	                                             "thumbnail_save");
 	worker_test_spec_parse_print_instance_stringdiff(
 		&spec,
 		"extra_wakeup_delay 1 event_interval 2 priorities animation , "
@@ -108,24 +107,23 @@ void worker_test_spec_parse_print(void)
 		"thumbnail_save");
 	spec.queue_bins[4] = NQIV_EVENT_PRIORITY_THUMBNAIL_LOAD;
 	spec.queue_bins[5] = NQIV_EVENT_PRIORITY_THUMBNAIL_SAVE;
-	worker_test_spec_parse_print_instance(
-		&spec, "extra_wakeup_delay 1 event_interval 2 priorities "
-			   "animation,unload,prune,image,thumbnail_load,thumbnail_"
-			   "save");
+	worker_test_spec_parse_print_instance(&spec,
+	                                      "extra_wakeup_delay 1 event_interval 2 priorities "
+	                                      "animation,unload,prune,image,thumbnail_load,thumbnail_"
+	                                      "save");
 	spec.delay_base = 100;
 	spec.event_interval = 20;
-	worker_test_spec_parse_print_instance(
-		&spec, "extra_wakeup_delay 100 event_interval 20 priorities "
-			   "animation,unload,prune,image,thumbnail_load,thumbnail_"
-			   "save");
+	worker_test_spec_parse_print_instance(&spec,
+	                                      "extra_wakeup_delay 100 event_interval 20 priorities "
+	                                      "animation,unload,prune,image,thumbnail_load,thumbnail_"
+	                                      "save");
 	spec.delay_base = -1;
 	spec.event_interval = -1;
 	worker_test_spec_clear_bins(&spec);
 	spec.queue_bins[0] = NQIV_EVENT_PRIORITY_PRUNE;
 	spec.queue_bins[1] = NQIV_EVENT_PRIORITY_IMAGE;
 	worker_test_spec_parse_print_instance_stringdiff(
-		&spec, "priorities image,prune priorities prune,image",
-		"priorities prune,image");
+		&spec, "priorities image,prune priorities prune,image", "priorities prune,image");
 	spec.queue_bins[0] = NQIV_EVENT_PRIORITY_ANIMATION;
 	spec.queue_bins[1] = NQIV_EVENT_PRIORITY_UNLOAD;
 	spec.queue_bins[2] = NQIV_EVENT_PRIORITY_PRUNE;
@@ -143,23 +141,21 @@ void worker_test_spec_parse_print(void)
 	nqiv_worker_spec fail_spec = {.delay_base = -1, .event_interval = -1, .queue_bins = {0}};
 	worker_test_spec_clear_bins(&ref_spec);
 	worker_test_spec_clear_bins(&fail_spec);
-	assert(!nqiv_worker_string_to_spec(
-		"priorities "
-		"animation,animation,animation,animation,animation,animation,"
-		"unload,prune,image,thumbnail_load,thumbnail_save",
-		&fail_spec));
+	assert(
+		!nqiv_worker_string_to_spec("priorities "
+	                                "animation,animation,animation,animation,animation,animation,"
+	                                "unload,prune,image,thumbnail_load,thumbnail_save",
+	                                &fail_spec));
 	assert(worker_test_compare_specs(&ref_spec, &fail_spec));
-	assert(!nqiv_worker_string_to_spec(
-		"priorities "
-		"animation,animation,animation,animation,animation,"
-		"unload,prune,image"
-		",thumbnail_load,thumbnail_save",
-		&fail_spec));
+	assert(!nqiv_worker_string_to_spec("priorities "
+	                                   "animation,animation,animation,animation,animation,"
+	                                   "unload,prune,image"
+	                                   ",thumbnail_load,thumbnail_save",
+	                                   &fail_spec));
 	assert(worker_test_compare_specs(&ref_spec, &fail_spec));
-	assert(!nqiv_worker_string_to_spec(
-		"priorities "
-		"quit,unload,prune,image,thumbnail_load,thumbnail_save",
-		&fail_spec));
+	assert(!nqiv_worker_string_to_spec("priorities "
+	                                   "quit,unload,prune,image,thumbnail_load,thumbnail_save",
+	                                   &fail_spec));
 	assert(worker_test_compare_specs(&ref_spec, &fail_spec));
 	assert(!nqiv_worker_string_to_spec("extra_wakeup_delay -1", &fail_spec));
 	assert(worker_test_compare_specs(&ref_spec, &fail_spec));
@@ -167,14 +163,14 @@ void worker_test_spec_parse_print(void)
 	assert(worker_test_compare_specs(&ref_spec, &fail_spec));
 	assert(!nqiv_worker_string_to_spec("priorities asdf", &fail_spec));
 	assert(worker_test_compare_specs(&ref_spec, &fail_spec));
-	assert(!nqiv_worker_string_to_spec("priorities thumbnail_saveextra_wakeup_delay 0",
-	                                   &fail_spec));
+	assert(
+		!nqiv_worker_string_to_spec("priorities thumbnail_saveextra_wakeup_delay 0", &fail_spec));
 	assert(worker_test_compare_specs(&ref_spec, &fail_spec));
-	assert(!nqiv_worker_string_to_spec("priorities thumbnail_save,extra_wakeup_delay 0",
-	                                   &fail_spec));
+	assert(
+		!nqiv_worker_string_to_spec("priorities thumbnail_save,extra_wakeup_delay 0", &fail_spec));
 	assert(worker_test_compare_specs(&ref_spec, &fail_spec));
-	assert(!nqiv_worker_string_to_spec("priorities ,thumbnail_save extra_wakeup_delay 0",
-	                                   &fail_spec));
+	assert(
+		!nqiv_worker_string_to_spec("priorities ,thumbnail_save extra_wakeup_delay 0", &fail_spec));
 	assert(worker_test_compare_specs(&ref_spec, &fail_spec));
 	assert(!nqiv_worker_string_to_spec("priorities thumbnail_save,", &fail_spec));
 	assert(worker_test_compare_specs(&ref_spec, &fail_spec));

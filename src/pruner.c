@@ -313,8 +313,8 @@ int nqiv_pruner_run(nqiv_pruner*         pruner,
 	int          output = 0;
 	const int    num_images = nqiv_array_get_units_count(images->images);
 	nqiv_image** images_array = images->images->data;
-	int          iidx;
 	if(num_images > 0) {
+		int iidx;
 		for(iidx = montage->positions.selection; iidx >= 0; --iidx) {
 			const int result =
 				nqiv_pruner_run_image(pruner, montage, thread_queue, iidx, images_array[iidx]);
@@ -382,16 +382,11 @@ static int nqiv_pruner_parse_int_pair(nqiv_log_ctx*                       logger
 		return nidx;
 	}
 	nqiv_log_write(logger, NQIV_LOG_DEBUG, "Trying to get integer pair at %s\n", &text[nidx]);
-	const int first_value_orig = output->as_int_pair[0];
 	nidx = nqiv_pruner_parse_int(logger, text, nidx, end_idx, &output->as_int_pair[0]);
 	if(nidx == -1) {
-		output->as_int_pair[0] = first_value_orig;
 		return nidx;
 	}
 	nidx = nqiv_pruner_parse_int(logger, text, nidx, end_idx, &output->as_int_pair[1]);
-	if(nidx == -1) {
-		output->as_int_pair[0] = first_value_orig;
-	}
 	return nidx;
 }
 

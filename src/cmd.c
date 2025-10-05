@@ -1165,17 +1165,22 @@ static void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		print_prefix(manager);
 		fprintf(stdout, "`no` will clear the option that comes after.\n");
 		print_prefix(manager);
+		fprintf(stdout, "\n");
+		print_prefix(manager);
+		fprintf(stdout, "The following specify how checks are counted to determine whether to "
+		                "unload images.\n");
+		print_prefix(manager);
 		fprintf(stdout, "`sum` <MAX> will check the addition of all checked integer values against "
-		                "another specified value to determine success. Disable with `no sum`\n");
+		                "<MAX>. Disable with `no sum`\n");
 		print_prefix(manager);
-		fprintf(stdout,
-		        "`or` will use boolean or with the result of all checks to determine success.\n");
+		fprintf(stdout, "`or` will boolean or the result of all checks.\n");
 		print_prefix(manager);
-		fprintf(stdout,
-		        "`and` will use boolean and with the result of all checks to determine success.\n");
+		fprintf(stdout, "`and` boolean and the result of all checks..\n");
 		print_prefix(manager);
-		fprintf(stdout, "`unload` will cause specified image datatypes to be unloaded in the event "
-		                "of a failed check. Unload cannot be active when specifying checks or "
+		fprintf(stdout, "\n");
+		print_prefix(manager);
+		fprintf(stdout, "`unload` will cause following image datatypes to be unloaded. Unload "
+		                "cannot be active when specifying checks or "
 		                "check comparisons (`sum`, `or`, etc`)\n");
 		print_prefix(manager);
 		fprintf(stdout, "`hard` will cause `unload` to always work. Otherwise, they will only be "
@@ -1183,35 +1188,57 @@ static void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		                "prematurely unloading things needed for the texture). Textures themselves "
 		                "are always hard-unloaded.\n");
 		print_prefix(manager);
+		fprintf(stdout, "\n");
+		print_prefix(manager);
 		fprintf(stdout, "`thumbnail` will cause thumbnail images to be considered by the following "
-		                "operations.\n");
+		                "checks.\n");
 		print_prefix(manager);
 		fprintf(stdout, "`image` will cause normal images to be considered by the following checks "
 		                "(Default behavior)\n");
 		print_prefix(manager);
-		fprintf(stdout, "`vips` will cause the following checks to consider VIPS data only, or for "
+		fprintf(stdout, "\n");
+		print_prefix(manager);
+		fprintf(stdout, "`vips` will cause the following checks to consider VIPS data, or for "
 		                "this data to be unloaded.\n");
 		print_prefix(manager);
 		fprintf(stdout, "`surface` will cause the following checks to consider SDL surface data "
-		                "only, or for this data to be unloaded.\n");
+		                ", or for this data to be unloaded.\n");
 		print_prefix(manager);
 		fprintf(stdout,
-		        "`texture` will cause the following checks to consider SDL texture data only, or "
+		        "`texture` will cause the following checks to consider SDL texture data, or "
 		        "for this data to be unloaded. Textures are always hard-unloaded.\n");
 		print_prefix(manager);
-		fprintf(stdout, "Images are counted from the current selection to the first, then from the image after the current selection, to the last. This behavior prefers keeping images closest to the selection.");
+		fprintf(stdout, "\n");
 		print_prefix(manager);
-		fprintf(stdout, "<THRESHOLD> specifies the number of images ahead or behind the currently displayed montage that the rule will be applied to.\n");
+		fprintf(stdout, "Images are counted from the current selection to the first, then from the "
+		                "image after the current selection, to the last. This behavior prefers "
+		                "keeping images closest to the selection.\n");
 		print_prefix(manager);
-		fprintf(stdout, "<MAX> specifies the value to be reached before the pruning rule is applied.\n");
+		fprintf(stdout, "\n");
 		print_prefix(manager);
-		fprintf(stdout, "`loaded_` operations separately count each specified type of datum that is loaded, against <MAX>\n");
+		fprintf(stdout, "<THRESHOLD> specifies the number of images ahead or behind the currently "
+		                "displayed montage that the check will be applied to.\n");
 		print_prefix(manager);
-		fprintf(stdout, "`_bytes` operations do the same as `_loaded`, but with the size in bytes of each datum.\n");
+		fprintf(stdout, "<MAX> specifies the value to be reached before unloading is performed.\n");
+		print_prefix(manager);
+		fprintf(stdout, "\n");
+		print_prefix(manager);
+		fprintf(stdout, "`loaded_` checks separately count each specified type of datum that is "
+		                "loaded, against <MAX>\n");
+		print_prefix(manager);
+		fprintf(stdout, "`_bytes` operations do the same as `_loaded`, but with the approxmiate "
+		                "size in bytes of each datum.\n");
 		print_prefix(manager);
 		fprintf(stdout, "Each separately tracked value is added to `sum`\n");
 		print_prefix(manager);
-		fprintf(stdout, "So for example, loaded image surfaces will be counted separately from loaded thumbnail textures, even if the rule is specified when both textures and surfaces are active for both images and thumbnails. However, all tracked values are added to `sum`\n");
+		fprintf(stdout, "\n");
+		print_prefix(manager);
+		fprintf(stdout, "So for example, loaded image surfaces will be counted separately from "
+		                "loaded thumbnail textures, even if the check is specified when both "
+		                "textures and surfaces are active for both images and thumbnails. However, "
+		                "all tracked values are added to `sum`\n");
+		print_prefix(manager);
+		fprintf(stdout, "\n");
 		print_prefix(manager);
 		fprintf(stdout, "'loaded_ahead' <THRESHOLD> <MAX>\n");
 		print_prefix(manager);
@@ -1224,7 +1251,7 @@ static void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		fprintf(stdout, "'self_opened' will check if the currently-selected image is loaded.\n");
 		print_prefix(manager);
 		fprintf(stdout, "'not_animated' will check if the currently-selected image is not animated."
-		                " This can be run without specifying data.");
+		                " This can be run without specifying data.\n");
 		manager->print_settings.indent -= 1;
 		break;
 	case NQIV_CMD_ARG_WORKER_SPEC:

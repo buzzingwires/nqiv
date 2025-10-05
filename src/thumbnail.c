@@ -200,7 +200,8 @@ bool nqiv_thumbnail_create_vips(nqiv_image* image)
 
 	VipsImage* old_vips;
 	VipsImage* thumbnail_vips;
-	if(vips_crop(image->image.vips, &thumbnail_vips, 0, 0, image->image.width, image->image.height, NULL)
+	if(vips_crop(image->image.vips, &thumbnail_vips, 0, 0, image->image.width, image->image.height,
+	             NULL)
 	   == -1) {
 		nqiv_log_vips_exception(image->parent->logger, image, &image->image);
 		return false;

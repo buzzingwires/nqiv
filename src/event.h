@@ -14,7 +14,8 @@ typedef enum nqiv_event_priority
 	NQIV_EVENT_PRIORITY_UNKNOWN = -1,
 	/* Fulfill animation frames early for low latency. */
 	NQIV_EVENT_PRIORITY_ANIMATION = 0,
-	/* Unload requests should be done right away, rather than after old stuff has finished loading. */
+	/* Unload requests should be done right away, rather than after old stuff has finished loading.
+	 */
 	NQIV_EVENT_PRIORITY_UNLOAD = 1,
 	/* Automated pruning should come slightly behind requested unloading. */
 	NQIV_EVENT_PRIORITY_PRUNE = 2,

@@ -272,7 +272,8 @@ bool nqiv_image_load_vips(nqiv_image* image, nqiv_image_form* form)
 	const int old_height = form->height;
 	form->width = vips_image_get_width(form->vips);
 	form->height = vips_image_get_height(form->vips);
-	if(old_width != form->width || old_height != form->height || form->srcrect.w == 0 || form->srcrect.h == 0) {
+	if(old_width != form->width || old_height != form->height || form->srcrect.w == 0
+	   || form->srcrect.h == 0) {
 		form->srcrect.x = 0;
 		form->srcrect.y = 0;
 		form->srcrect.w = form->width;
@@ -1231,8 +1232,8 @@ bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const 
 					images[idx]->thumbnail.vips != NULL;
 				event.options.image_load.thumbnail_options.surface =
 					images[idx]->thumbnail.surface != NULL;
-				if(!nqiv_priority_queue_push(manager->thread_queue,
-				                             NQIV_EVENT_PRIORITY_UNLOAD, &event)) {
+				if(!nqiv_priority_queue_push(manager->thread_queue, NQIV_EVENT_PRIORITY_UNLOAD,
+				                             &event)) {
 					nqiv_image_unlock(images[idx]);
 					return false;
 				}
