@@ -314,13 +314,23 @@ int nqiv_pruner_run(nqiv_pruner*         pruner,
 	const int    num_images = nqiv_array_get_units_count(images->images);
 	nqiv_image** images_array = images->images->data;
 	int          iidx;
-	for(iidx = 0; iidx < num_images; ++iidx) {
-		const int result =
-			nqiv_pruner_run_image(pruner, montage, thread_queue, iidx, images_array[iidx]);
-		if(result == -1) {
-			return result;
+	if(num_images > 0) {
+		for(iidx = montage->positions.selection; iidx >= 0; --iidx) {
+			const int result =
+				nqiv_pruner_run_image(pruner, montage, thread_queue, iidx, images_array[iidx]);
+			if(result == -1) {
+				return result;
+			}
+			output += result;
 		}
-		output += result;
+		for(iidx = montage->positions.selection + 1; iidx < num_images; ++iidx) {
+			const int result =
+				nqiv_pruner_run_image(pruner, montage, thread_queue, iidx, images_array[iidx]);
+			if(result == -1) {
+				return result;
+			}
+			output += result;
+		}
 	}
 	int               idx;
 	const int         num_descs = nqiv_array_get_units_count(pruner->pruners);
