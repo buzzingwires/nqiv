@@ -887,27 +887,30 @@ static bool render_from_form(nqiv_state*     state,
 				}
 			}
 			assert(form->texture != NULL);
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Displaying texture for %s for '%s'.\n",
-			               NQIV_SAYFORM(image, form), image->image.path);
 			assert(!resample_zoom);
-			if(dstrect_zoom_ptr != NULL
-			   && !nqiv_state_update_alpha_background_dimensions(state, dstrect_zoom_ptr->w,
-			                                                     dstrect_zoom_ptr->h)) {
-				nqiv_image_unlock(image);
-				return false;
-			}
-			if(!render_texture(&cleared, dstrect, state, state->texture_alpha_background, NULL,
-			                   dstrect_zoom_ptr)) {
-				nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
-				               "Failed to draw image alpha background.\n");
-				nqiv_image_unlock(image);
-				return false;
-			}
-			if(!render_texture(&cleared, NULL, state, form->texture, srcrect_ptr,
-			                   dstrect_zoom_ptr)) {
-				nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to draw image texture.\n");
-				nqiv_image_unlock(image);
-				return false;
+			if(dstrect_zoom_ptr != NULL) {
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
+				               "Displaying texture for %s for '%s'.\n", NQIV_SAYFORM(image, form),
+				               image->image.path);
+				if(!nqiv_state_update_alpha_background_dimensions(state, dstrect_zoom_ptr->w,
+				                                                  dstrect_zoom_ptr->h)) {
+					nqiv_image_unlock(image);
+					return false;
+				}
+				if(!render_texture(&cleared, dstrect, state, state->texture_alpha_background, NULL,
+				                   dstrect_zoom_ptr)) {
+					nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
+					               "Failed to draw image alpha background.\n");
+					nqiv_image_unlock(image);
+					return false;
+				}
+				if(!render_texture(&cleared, NULL, state, form->texture, srcrect_ptr,
+				                   dstrect_zoom_ptr)) {
+					nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
+					               "Failed to draw image texture.\n");
+					nqiv_image_unlock(image);
+					return false;
+				}
 			}
 			NQIV_ASSIGNIF(state->is_loading, dstrect != NULL, false);
 			NQIV_ASSIGNIF(state->first_frame_pending, dstrect != NULL, false);

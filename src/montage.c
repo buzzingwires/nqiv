@@ -52,10 +52,12 @@ void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 	                            : 0;
 	const int row_count = state->dimensions.count / state->dimensions.count_per_row;
 
-	/* We know the final selection in advance, make sure to always report its change. */
-	nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Setting montage selection from %d to %d.\n",
-	               state->positions.selection, new_idx);
 	state->selection_changed = new_idx != state->positions.selection;
+	if(state->selection_changed) {
+		/* We know the final selection in advance, make sure to always report its change. */
+		nqiv_log_write(state->logger, NQIV_LOG_DEBUG, "Setting montage selection from %d to %d.\n",
+		               state->positions.selection, new_idx);
+	}
 
 	/* If we have changed the selection or the row count matches the current rows (as calculated
 	 * above), but not gone outside the current montage range, and that montage range has been
