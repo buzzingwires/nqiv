@@ -48,9 +48,10 @@ typedef struct nqiv_image_form
 	bool                      master_dimensions_set;
 	bool                      master_animation_exists;
 	/* Have we drawn the texture since we last made it? */
-	bool                 master_texture_drawn;
-	/* If a hard reload is requested, specify here so that it can be applied next time the image is locked. */
-	bool                 master_hard_reload_pending;
+	bool                      master_texture_drawn;
+	/* If a hard reload is requested, specify here so that it can be applied next time the image is
+	 * locked. */
+	bool                      master_hard_reload_pending;
 	/* Was there some kind of error with this form? */
 	bool                      error;
 } nqiv_image_form;

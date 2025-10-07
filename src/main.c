@@ -788,9 +788,11 @@ static bool render_from_form(nqiv_state*     state,
 				form->srcrect.w = srcrect.w;
 				form->srcrect.h = srcrect.h;
 			}
-			/* Even if it hasn't changed, unload the texture if it's already been drawn since it is possible for the old texture to be remade from old data before the event to load the new data has been processed. */
+			/* Even if it hasn't changed, unload the texture if it's already been drawn since it is
+			 * possible for the old texture to be remade from old data before the event to load the
+			 * new data has been processed. */
 			if(form->master_texture_drawn) {
-			     nqiv_unload_image_form_texture(form);
+				nqiv_unload_image_form_texture(form);
 			}
 			/* Make sure to use entirety of this. */
 			srcrect_ptr = NULL;
@@ -836,9 +838,7 @@ static bool render_from_form(nqiv_state*     state,
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Forcibly reloading %s for '%s'.\n",
 		               NQIV_SAYFORM(image, form), image->image.path);
 		form->master_hard_reload_pending = false;
-		NQIV_ASSIGNIF(state->is_loading,
-		              dstrect != NULL,
-		              true);
+		NQIV_ASSIGNIF(state->is_loading, dstrect != NULL, true);
 		nqiv_unload_image_form_all_textures(form);
 		nqiv_event event = {0};
 		event.type = NQIV_EVENT_IMAGE_LOAD;
@@ -874,7 +874,8 @@ static bool render_from_form(nqiv_state*     state,
 			is_montage && state->images.thumbnail.save && !image->thumbnail_attempted;
 		/* If we don't display the texture or have some other special reason, we'll need to reload
 		 * the image data. */
-		bool force_reload = resample_zoom || form->animation.frame_rendered || state->first_frame_pending;
+		bool force_reload =
+			resample_zoom || form->animation.frame_rendered || state->first_frame_pending;
 		bool displayed_texture = false;
 		if(!force_reload && (form->surface != NULL || form->texture != NULL)) {
 			if(form->texture == NULL) {

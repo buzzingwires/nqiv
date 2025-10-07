@@ -406,7 +406,8 @@ static void nqiv_cmd_parser_print_value_image_form(nqiv_cmd_manager*      manage
 	fprintf(stdout, "\n");
 	nqiv_cmd_parser_print_value_bool("master_dimensions_set", form->master_dimensions_set);
 	nqiv_cmd_parser_print_value_bool("master_texture_drawn", form->master_texture_drawn);
-	nqiv_cmd_parser_print_value_bool("master_hard_reload_pending", form->master_hard_reload_pending);
+	nqiv_cmd_parser_print_value_bool("master_hard_reload_pending",
+	                                 form->master_hard_reload_pending);
 	nqiv_cmd_parser_print_value_bool("error", form->error);
 	fprintf(stdout, "\n");
 	nqiv_cmd_print_indent(manager);
