@@ -615,9 +615,9 @@ static bool render_texture(bool*           cleared,
 	return true;
 }
 
-static void nqiv_apply_zoom_default(nqiv_state* state, const bool first_frame)
+static void nqiv_apply_zoom_default(nqiv_state* state)
 {
-	if(first_frame || state->first_frame_pending) {
+	if(state->first_frame_pending) {
 		switch(state->zoom_default) {
 		case NQIV_ZOOM_DEFAULT_KEEP:
 			break;
@@ -638,9 +638,9 @@ static void nqiv_apply_zoom_default(nqiv_state* state, const bool first_frame)
 	}
 }
 
-static void nqiv_apply_zoom_modifications(nqiv_state* state, const bool first_frame)
+static void nqiv_apply_zoom_modifications(nqiv_state* state)
 {
-	nqiv_apply_zoom_default(state, first_frame);
+	nqiv_apply_zoom_default(state);
 	if(state->images.zoom.image_to_viewport_ratio == state->images.zoom.fit_level) {
 		nqiv_image_manager_pan_center(&state->images);
 	}
@@ -667,6 +667,8 @@ static bool render_from_form(nqiv_state*     state,
 	/* We try to lock the image. Don't wait on it and block the whole program, if not. Just use
 	 * its fallback texture and return early. */
 	if(!nqiv_image_test_lock(image)) {
+		/* We can't send our hard reload here, so set a flag to do it later. */
+		form->master_hard_reload_pending = form->master_hard_reload_pending || hard;
 		/* If this is a preload, there won't be a location to write to, so don't bother. Nowhere to
 		 * render. */
 		if(dstrect != NULL) {
@@ -680,7 +682,7 @@ static bool render_from_form(nqiv_state*     state,
 				memcpy(&tmp_dstrect, &form->master_dstrect, sizeof(SDL_Rect));
 				tmp_dstrect_ptr = &tmp_dstrect;
 			}
-			state->is_loading = !is_montage && (state->first_frame_pending || first_frame);
+			state->is_loading = !is_montage && state->first_frame_pending;
 			bool clearedtmp = true;
 			if(form->master_dimensions_set && form->fallback_texture != NULL
 			   && form->master_srcrect.w > 0 && form->master_srcrect.h > 0
@@ -691,7 +693,7 @@ static bool render_from_form(nqiv_state*     state,
 					nqiv_image_manager_calculate_zoom_parameters(&state->images, &tmp_srcrect,
 					                                             &tmp_dstrect);
 				}
-				nqiv_apply_zoom_modifications(state, first_frame);
+				nqiv_apply_zoom_modifications(state);
 				nqiv_image_manager_retrieve_zoomrect(
 					&state->images, !is_montage, state->stretch_images, &tmp_srcrect, &tmp_dstrect);
 				if(!nqiv_state_update_alpha_background_dimensions(state, tmp_dstrect.w,
@@ -771,22 +773,24 @@ static bool render_from_form(nqiv_state*     state,
 			nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect,
 			                                             dstrect_zoom_ptr);
 		}
-		nqiv_apply_zoom_modifications(state, first_frame);
+		nqiv_apply_zoom_modifications(state);
 		nqiv_image_manager_retrieve_zoomrect(&state->images, !is_montage, state->stretch_images,
 		                                     &srcrect, dstrect_zoom_ptr);
 		if(!state->no_resample_oversized
 		   && (form->height > state->images.max_texture_height
 		       || form->width > state->images.max_texture_width)) {
-			/* Unload texture and adjust sample area if image needs to be reloaded
-			 * (no_resample_oversized, > texture limits, changed dimensions). */
+			/* Adjust sample area and order image reload if it's changed. */
 			if(form->srcrect.x != srcrect.x || form->srcrect.y != srcrect.y
 			   || form->srcrect.w != srcrect.w || form->srcrect.h != srcrect.h) {
 				resample_zoom = true;
-				nqiv_unload_image_form_texture(form);
 				form->srcrect.x = srcrect.x;
 				form->srcrect.y = srcrect.y;
 				form->srcrect.w = srcrect.w;
 				form->srcrect.h = srcrect.h;
+			}
+			/* Even if it hasn't changed, unload the texture if it's already been drawn since it is possible for the old texture to be remade from old data before the event to load the new data has been processed. */
+			if(form->master_texture_drawn) {
+			     nqiv_unload_image_form_texture(form);
 			}
 			/* Make sure to use entirety of this. */
 			srcrect_ptr = NULL;
@@ -822,17 +826,18 @@ static bool render_from_form(nqiv_state*     state,
 					nqiv_image_manager_calculate_zoom_parameters(&state->images, &srcrect,
 					                                             dstrect_zoom_ptr);
 				}
-				nqiv_apply_zoom_modifications(state, first_frame);
+				nqiv_apply_zoom_modifications(state);
 				nqiv_image_manager_retrieve_zoomrect(
 					&state->images, !is_montage, state->stretch_images, &srcrect, dstrect_zoom_ptr);
 			}
 		}
 	}
-	if(hard) {
+	if(hard || form->master_hard_reload_pending) {
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Forcibly reloading %s for '%s'.\n",
 		               NQIV_SAYFORM(image, form), image->image.path);
+		form->master_hard_reload_pending = false;
 		NQIV_ASSIGNIF(state->is_loading,
-		              dstrect != NULL && (state->first_frame_pending || !form->animation.exists),
+		              dstrect != NULL,
 		              true);
 		nqiv_unload_image_form_all_textures(form);
 		nqiv_event event = {0};
@@ -869,7 +874,7 @@ static bool render_from_form(nqiv_state*     state,
 			is_montage && state->images.thumbnail.save && !image->thumbnail_attempted;
 		/* If we don't display the texture or have some other special reason, we'll need to reload
 		 * the image data. */
-		bool force_reload = resample_zoom || form->animation.frame_rendered;
+		bool force_reload = resample_zoom || form->animation.frame_rendered || state->first_frame_pending;
 		bool displayed_texture = false;
 		if(!force_reload && (form->surface != NULL || form->texture != NULL)) {
 			if(form->texture == NULL) {
@@ -889,6 +894,7 @@ static bool render_from_form(nqiv_state*     state,
 			assert(form->texture != NULL);
 			assert(!resample_zoom);
 			if(dstrect_zoom_ptr != NULL) {
+				assert(dstrect != NULL);
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 				               "Displaying texture for %s for '%s'.\n", NQIV_SAYFORM(image, form),
 				               image->image.path);
@@ -911,11 +917,10 @@ static bool render_from_form(nqiv_state*     state,
 					nqiv_image_unlock(image);
 					return false;
 				}
+				NQIV_ASSIGNIF(form->animation.frame_rendered, form->animation.exists, true);
+				form->master_texture_drawn = true;
+				state->is_loading = false;
 			}
-			NQIV_ASSIGNIF(state->is_loading, dstrect != NULL, false);
-			NQIV_ASSIGNIF(state->first_frame_pending, dstrect != NULL, false);
-			NQIV_ASSIGNIF(form->animation.frame_rendered, dstrect != NULL && form->animation.exists,
-			              true);
 			force_reload = force_reload || form->animation.frame_rendered;
 			displayed_texture = true;
 		}
@@ -962,6 +967,7 @@ static bool render_from_form(nqiv_state*     state,
 				nqiv_image_unlock(image);
 				return false;
 			}
+			state->first_frame_pending = false;
 		}
 		if(save_thumbnail) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Saving for thumbnail for '%s'.\n",
@@ -1157,7 +1163,7 @@ static bool render_image(nqiv_state* state, const bool start, const bool hard)
 		((nqiv_image**)state->images.images->data)[state->montage.positions.selection];
 	SDL_Rect dstrect = {0};
 	SDL_GetWindowSizeInPixels(state->window, &dstrect.w, &dstrect.h);
-	if(!render_from_form(state, image, false, &dstrect, start, false, hard)) {
+	if(!render_from_form(state, image, false, &dstrect, start, true, hard)) {
 		return false;
 	}
 	const bool render_cleared = state->render_cleared;

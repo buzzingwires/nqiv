@@ -41,6 +41,7 @@ static void nqiv_unload_texture_ptr(SDL_Texture** texture, const bool destroy)
 
 void nqiv_unload_image_form_texture(nqiv_image_form* form)
 {
+	form->master_texture_drawn = false;
 	nqiv_unload_texture_ptr(&form->texture, form->fallback_texture != form->texture);
 }
 
