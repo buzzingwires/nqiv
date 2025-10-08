@@ -300,10 +300,10 @@ nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* default
 		"append keybind shift+scroll_forward=zoom_in",
 		"append keybind shift+scroll_backward=zoom_out",
 		"append pruner or thumbnail no image texture self_opened unload surface vips",
-		"append pruner and no thumbnail image texture self_opened not_animated unload surface "
+		"append pruner and no thumbnail image texture self_opened not_animated not_cropped unload surface "
 		"vips",
 		"append pruner or no thumbnail image texture self_opened unload surface",
-		"append pruner and thumbnail no image texture self_opened image no thumbnail not_animated "
+		"append pruner and thumbnail no image texture self_opened image no thumbnail not_animated not_cropped "
 		"hard unload image thumbnail surface vips",
 		"append pruner or thumbnail image texture loaded_behind 0 0 loaded_ahead 0 0 surface "
 		"loaded_behind 0 0 loaded_ahead 0 0 vips "

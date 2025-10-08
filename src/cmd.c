@@ -1255,6 +1255,8 @@ static void nqiv_cmd_print_single_arg(nqiv_cmd_manager*        manager,
 		print_prefix(manager);
 		fprintf(stdout, "'not_animated' will check if the currently-selected image is not animated."
 		                " This can be run without specifying data.\n");
+		print_prefix(manager);
+		fprintf(stdout, "'not_cropped' will check if the currently-selected image is cropped from the full image, such as in the case of its dimensions being larger than the texture size.\n");
 		manager->print_settings.indent -= 1;
 		break;
 	case NQIV_CMD_ARG_WORKER_SPEC:

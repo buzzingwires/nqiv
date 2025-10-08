@@ -55,6 +55,20 @@ static void nqiv_pruner_update_state_integer(nqiv_pruner* pruner, const int valu
 	               pruner->state.total_sum);
 }
 
+static void nqiv_pruner_run_not_cropped(nqiv_pruner*                pruner,
+                                         nqiv_pruner_desc_datapoint* datapoint,
+                                         const void*                 object)
+{
+	if(datapoint->active) {
+		const nqiv_image_form* form = object;
+		const bool result =  pruner->parent->no_resample_oversized || (form->height <= pruner->parent->images.max_texture_height && form->width <= pruner->parent->images.max_texture_width);
+		datapoint->value.as_bool = result;
+		nqiv_log_write(&(pruner->parent->logger), NQIV_LOG_DEBUG, "not_cropped result is: %s\n",
+		               NQIV_BOOLSTR(result));
+		nqiv_pruner_update_state_boolean(pruner, result);
+	}
+}
+
 static void nqiv_pruner_run_not_animated(nqiv_pruner*                pruner,
                                          nqiv_pruner_desc_datapoint* datapoint,
                                          const void*                 object)
@@ -147,6 +161,7 @@ static void nqiv_pruner_run_set(nqiv_pruner*              pruner,
                                 const void*               object,
                                 const int                 size)
 {
+	nqiv_pruner_run_not_cropped(pruner, &(set->not_cropped), form);
 	nqiv_pruner_run_not_animated(pruner, &(set->not_animated), form);
 	nqiv_pruner_run_loaded_self(pruner, &(set->loaded_self), object);
 	nqiv_pruner_run_loaded_ahead(pruner, &(set->loaded_ahead), object);
@@ -284,6 +299,7 @@ static int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 
 static void nqiv_pruner_clean_desc_set(nqiv_pruner_desc_dataset* set)
 {
+	memset(&set->not_cropped.value, 0, sizeof(nqiv_pruner_desc_datapoint_content));
 	memset(&set->not_animated.value, 0, sizeof(nqiv_pruner_desc_datapoint_content));
 	memset(&set->loaded_self.value, 0, sizeof(nqiv_pruner_desc_datapoint_content));
 	memset(&set->loaded_ahead.value, 0, sizeof(nqiv_pruner_desc_datapoint_content));
@@ -679,6 +695,14 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				desc->counter |= NQIV_PRUNER_COUNT_OP_AND;
 				desc->state_check.and_result = true;
 			}
+		} else if(nqiv_pruner_check_token(logger, text, &idx, end, "not_cropped")) {
+			idx = nqiv_pruner_parse_check(
+				logger, text, idx, end, inside_no, inside_image, inside_thumbnail,
+				set != NULL ? &set->not_cropped : &desc->vips_set.not_cropped,
+				thumbnail_set != NULL ? &thumbnail_set->not_cropped
+									  : &desc->thumbnail_vips_set.not_cropped,
+				nqiv_pruner_set_true);
+			inside_no = false;
 		} else if(nqiv_pruner_check_token(logger, text, &idx, end, "not_animated")) {
 			idx = nqiv_pruner_parse_check(
 				logger, text, idx, end, inside_no, inside_image, inside_thumbnail,
@@ -688,7 +712,7 @@ bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner
 				nqiv_pruner_set_true);
 			inside_no = false;
 		} else if(set == NULL) {
-			/* After this point, we need a data to run checks. */
+			/* After this point, we need a data to run checks. The last ones do not rely on a particular dataset. */
 			nqiv_log_write(logger, NQIV_LOG_ERROR,
 			               "Failed to continue with unknown set target from %s\n", &text[idx]);
 			return false;
@@ -769,9 +793,12 @@ static int nqiv_pruner_desc_dataset_to_string(nqiv_pruner_render_state*       st
 {
 	bool success = true;
 	/* Do we have any kinds of checks? */
-	if(set->not_animated.active || set->loaded_self.active || set->loaded_ahead.active
+	if(set->not_cropped.active || set->not_animated.active || set->loaded_self.active || set->loaded_ahead.active
 	   || set->loaded_behind.active || set->bytes_ahead.active || set->bytes_behind.active) {
 		success = success && nqiv_pruner_update_render_state_form(state, builder, new_state);
+	}
+	if(set->not_cropped.active) {
+		success = success && nqiv_array_push_sprintf(builder, "not_cropped ");
 	}
 	if(set->not_animated.active) {
 		success = success && nqiv_array_push_sprintf(builder, "not_animated ");
@@ -824,7 +851,8 @@ static bool nqiv_pruner_desc_datapoint_bool(const nqiv_pruner_desc_datapoint* fi
 bool nqiv_pruner_desc_dataset_compare(const nqiv_pruner_desc_dataset* first,
                                       const nqiv_pruner_desc_dataset* second)
 {
-	return nqiv_pruner_desc_datapoint_bool(&first->not_animated, &second->not_animated)
+	return nqiv_pruner_desc_datapoint_bool(&first->not_cropped, &second->not_cropped)
+		   && nqiv_pruner_desc_datapoint_bool(&first->not_animated, &second->not_animated)
 	       && nqiv_pruner_desc_datapoint_bool(&first->loaded_self, &second->loaded_self)
 	       && nqiv_pruner_desc_datapoint_int(&first->loaded_ahead, &second->loaded_ahead)
 	       && nqiv_pruner_desc_datapoint_int(&first->loaded_behind, &second->loaded_behind)
@@ -874,7 +902,7 @@ static bool nqiv_pruner_desc_dataset_pair_to_string(nqiv_pruner_render_state*   
 	/* If the checks exist and are the same for images and thumbnail, only
 	 * render them once. */
 	if(nqiv_pruner_desc_dataset_compare(image_set, thumbnail_set)
-	   && (image_set->not_animated.active || image_set->loaded_self.active
+	   && (image_set->not_cropped.active || image_set->not_animated.active || image_set->loaded_self.active
 	       || image_set->loaded_ahead.active || image_set->loaded_behind.active
 	       || image_set->bytes_ahead.active || image_set->bytes_behind.active)) {
 		success = success

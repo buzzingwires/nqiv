@@ -41,6 +41,8 @@ typedef struct nqiv_pruner_desc_datapoint
 
 typedef struct nqiv_pruner_desc_dataset
 {
+	/* Is the image cropped from its full version, such as in the case of its dimensions being larger than the texture size? Does not check a data form. Boolean. */
+	nqiv_pruner_desc_datapoint not_cropped;
 	/* Is this image itself animated. Does not check a data form. Boolean. */
 	nqiv_pruner_desc_datapoint not_animated;
 	/* Is the form loaded? Boolean. */
