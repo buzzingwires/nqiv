@@ -300,10 +300,12 @@ nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* default
 		"append keybind shift+scroll_forward=zoom_in",
 		"append keybind shift+scroll_backward=zoom_out",
 		"append pruner or thumbnail no image texture self_opened unload surface vips",
-		"append pruner and no thumbnail image texture self_opened not_animated not_cropped unload surface "
+		"append pruner and no thumbnail image texture self_opened not_animated not_cropped unload "
+	    "surface "
 		"vips",
 		"append pruner or no thumbnail image texture self_opened unload surface",
-		"append pruner and thumbnail no image texture self_opened image no thumbnail not_animated not_cropped "
+		"append pruner and thumbnail no image texture self_opened image no thumbnail not_animated "
+	    "not_cropped "
 		"hard unload image thumbnail surface vips",
 		"append pruner or thumbnail image texture loaded_behind 0 0 loaded_ahead 0 0 surface "
 		"loaded_behind 0 0 loaded_ahead 0 0 vips "
@@ -1182,8 +1184,7 @@ static void nqiv_check_pruning(nqiv_state* state)
 	const Uint64 new_time = SDL_GetTicks64();
 	if(new_time - state->time_of_last_prune > state->prune_delay) {
 		state->time_of_last_prune = new_time;
-		const int prune_count =
-			nqiv_pruner_run(&state->pruner);
+		const int prune_count = nqiv_pruner_run(&state->pruner);
 		if(prune_count == -1) {
 			SDL_AtomicSet(&state->running, NQIV_FAIL);
 		}

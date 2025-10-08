@@ -59,7 +59,8 @@ void pruner_test_default(void)
 	memset(&cmp_desc, 0, sizeof(nqiv_pruner_desc));
 	memset(desc_str, 0, NQIV_PRUNER_DESC_STRLEN);
 	assert(nqiv_pruner_create_desc(
-		&logger, "and no thumbnail image texture self_opened not_cropped not_animated unload surface vips",
+		&logger,
+		"and no thumbnail image texture self_opened not_cropped not_animated unload surface vips",
 		&desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
@@ -120,10 +121,11 @@ void pruner_test_default(void)
 	memset(&desc, 0, sizeof(nqiv_pruner_desc));
 	memset(&cmp_desc, 0, sizeof(nqiv_pruner_desc));
 	memset(desc_str, 0, NQIV_PRUNER_DESC_STRLEN);
-	assert(nqiv_pruner_create_desc(&logger,
-	                               "and thumbnail no image texture self_opened not_cropped not_animated image no thumbnail "
-	                               " hard unload image thumbnail surface vips",
-	                               &desc));
+	assert(nqiv_pruner_create_desc(
+		&logger,
+		"and thumbnail no image texture self_opened not_cropped not_animated image no thumbnail "
+		" hard unload image thumbnail surface vips",
+		&desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
 	assert(nqiv_pruner_desc_compare(&desc, &cmp_desc));
@@ -339,8 +341,7 @@ void pruner_test_default(void)
 	memset(&desc, 0, sizeof(nqiv_pruner_desc));
 	memset(&cmp_desc, 0, sizeof(nqiv_pruner_desc));
 	memset(desc_str, 0, NQIV_PRUNER_DESC_STRLEN);
-	assert(nqiv_pruner_create_desc(&logger, "or thumbnail image not_animated not_cropped",
-	                               &desc));
+	assert(nqiv_pruner_create_desc(&logger, "or thumbnail image not_animated not_cropped", &desc));
 	nqiv_pruner_desc_to_string(&desc, desc_str);
 	assert(nqiv_pruner_create_desc(&logger, desc_str, &cmp_desc));
 	assert(nqiv_pruner_desc_compare(&desc, &cmp_desc));
@@ -395,8 +396,8 @@ static void pruner_test_check_instance(const char*          pruner_string,
                                        const int            montage_position,
                                        const prune_effects* effects)
 {
-	nqiv_state          state = {0};
-	int                 c;
+	nqiv_state state = {0};
+	int        c;
 
 	nqiv_log_init(&state.logger);
 	nqiv_log_set_prefix_format(&state.logger, "#level# #time:%Y-%m-%d %T%z# ");
@@ -404,15 +405,16 @@ static void pruner_test_check_instance(const char*          pruner_string,
 	SDL_AtomicSet(&state.logger.level, NQIV_LOG_ERROR);
 	assert(!nqiv_log_has_error(&state.logger));
 
-	assert(nqiv_priority_queue_init(&state.thread_queue, &state.logger, sizeof(nqiv_event), STARTING_QUEUE_LENGTH,
-	                                THREAD_QUEUE_BIN_COUNT));
+	assert(nqiv_priority_queue_init(&state.thread_queue, &state.logger, sizeof(nqiv_event),
+	                                STARTING_QUEUE_LENGTH, THREAD_QUEUE_BIN_COUNT));
 
 	assert(nqiv_image_manager_init(&state.images, &state.logger, STARTING_QUEUE_LENGTH));
 	assert(SDL_AtomicGet(&state.images.thumbnail.size) == 256);
 	for(c = image_count; c > 0; --c) {
 		nqiv_image* img;
 		assert(nqiv_image_manager_append(&state.images, "DEADBEEF"));
-		assert(nqiv_array_get(state.images.images, nqiv_array_get_last_idx(state.images.images), &img));
+		assert(nqiv_array_get(state.images.images, nqiv_array_get_last_idx(state.images.images),
+		                      &img));
 		img->thumbnail.height = 1;
 		img->thumbnail.width = 1;
 		img->thumbnail.effective_height = 1;
@@ -602,7 +604,8 @@ void pruner_test_check(void)
 	effects.prune_count = 0;
 	effects.load_image_vips = true;
 	effects.unload_image_vips = false;
-	pruner_test_check_instance("and not_animated not_cropped vips self_opened unload vips", 1, 0, &effects);
+	pruner_test_check_instance("and not_animated not_cropped vips self_opened unload vips", 1, 0,
+	                           &effects);
 
 	effects.prune_count = 1;
 	effects.load_image_vips = true;
