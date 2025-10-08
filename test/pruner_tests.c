@@ -362,28 +362,24 @@ static void pruner_test_check_instance(const char*          pruner_string,
                                        const int            montage_position,
                                        const prune_effects* effects)
 {
-	nqiv_log_ctx        logger = {0};
-	nqiv_priority_queue queue = {0};
-	nqiv_image_manager  images = {0};
-	nqiv_montage_state  montage = {0};
-	nqiv_pruner         pruner = {0};
+	nqiv_state          state = {0};
 	int                 c;
 
-	nqiv_log_init(&logger);
-	nqiv_log_set_prefix_format(&logger, "#level# #time:%Y-%m-%d %T%z# ");
-	nqiv_log_add_stream(&logger, stderr);
-	SDL_AtomicSet(&logger.level, NQIV_LOG_ERROR);
-	assert(!nqiv_log_has_error(&logger));
+	nqiv_log_init(&state.logger);
+	nqiv_log_set_prefix_format(&state.logger, "#level# #time:%Y-%m-%d %T%z# ");
+	nqiv_log_add_stream(&state.logger, stderr);
+	SDL_AtomicSet(&state.logger.level, NQIV_LOG_ERROR);
+	assert(!nqiv_log_has_error(&state.logger));
 
-	assert(nqiv_priority_queue_init(&queue, &logger, sizeof(nqiv_event), STARTING_QUEUE_LENGTH,
+	assert(nqiv_priority_queue_init(&state.thread_queue, &state.logger, sizeof(nqiv_event), STARTING_QUEUE_LENGTH,
 	                                THREAD_QUEUE_BIN_COUNT));
 
-	assert(nqiv_image_manager_init(&images, &logger, STARTING_QUEUE_LENGTH));
-	assert(SDL_AtomicGet(&images.thumbnail.size) == 256);
+	assert(nqiv_image_manager_init(&state.images, &state.logger, STARTING_QUEUE_LENGTH));
+	assert(SDL_AtomicGet(&state.images.thumbnail.size) == 256);
 	for(c = image_count; c > 0; --c) {
 		nqiv_image* img;
-		assert(nqiv_image_manager_append(&images, "DEADBEEF"));
-		assert(nqiv_array_get(images.images, nqiv_array_get_last_idx(images.images), &img));
+		assert(nqiv_image_manager_append(&state.images, "DEADBEEF"));
+		assert(nqiv_array_get(state.images.images, nqiv_array_get_last_idx(state.images.images), &img));
 		img->thumbnail.effective_height = 1;
 		img->thumbnail.effective_width = 1;
 		img->thumbnail.vips = effects->load_thumbnail_vips ? (void*)0xDEADBEEF : NULL;
@@ -398,23 +394,23 @@ static void pruner_test_check_instance(const char*          pruner_string,
 		img->image.animation.exists = effects->animated_image;
 	}
 	assert(montage_position >= 0);
-	assert(montage_position <= nqiv_array_get_units_count(images.images));
+	assert(montage_position <= nqiv_array_get_units_count(state.images.images));
 
-	montage.logger = &logger;
-	montage.images = &images;
-	nqiv_montage_calculate_dimensions(&montage, 800, 600);
-	assert(montage.dimensions.count_per_row == 3);
-	assert(montage.dimensions.count == 6);
-	nqiv_montage_set_selection(&montage, montage_position);
+	state.montage.logger = &state.logger;
+	state.montage.images = &state.images;
+	nqiv_montage_calculate_dimensions(&state.montage, 800, 600);
+	assert(state.montage.dimensions.count_per_row == 3);
+	assert(state.montage.dimensions.count == 6);
+	nqiv_montage_set_selection(&state.montage, montage_position);
 
-	assert(nqiv_pruner_init(&pruner, &logger, STARTING_QUEUE_LENGTH));
+	assert(nqiv_pruner_init(&state.pruner, &state, STARTING_QUEUE_LENGTH));
 	nqiv_pruner_desc desc = {0};
-	assert(nqiv_pruner_create_desc(&logger, pruner_string, &desc));
-	assert(nqiv_pruner_append(&pruner, &desc));
+	assert(nqiv_pruner_create_desc(&state.logger, pruner_string, &desc));
+	assert(nqiv_pruner_append(&state.pruner, &desc));
 
-	assert(effects->prune_count == nqiv_pruner_run(&pruner, &montage, &images, &queue));
+	assert(effects->prune_count == nqiv_pruner_run(&state.pruner));
 	nqiv_event e = {0};
-	while(nqiv_priority_queue_pop(&queue, &e)) {
+	while(nqiv_priority_queue_pop(&state.thread_queue, &e)) {
 		assert(e.type == NQIV_EVENT_IMAGE_LOAD);
 		assert(e.transaction_group == 0);
 		assert(e.options.image_load.image != NULL);
@@ -443,7 +439,7 @@ static void pruner_test_check_instance(const char*          pruner_string,
 	}
 	for(c = 0; c < image_count; ++c) {
 		nqiv_image* img;
-		assert(nqiv_array_get(images.images, c, &img));
+		assert(nqiv_array_get(state.images.images, c, &img));
 		img->thumbnail.vips = NULL;
 		img->thumbnail.data = NULL;
 		img->thumbnail.surface = NULL;
@@ -452,10 +448,10 @@ static void pruner_test_check_instance(const char*          pruner_string,
 		img->image.surface = NULL;
 	}
 
-	nqiv_pruner_destroy(&pruner);
-	nqiv_image_manager_destroy(&images);
-	nqiv_priority_queue_destroy(&queue);
-	nqiv_log_destroy(&logger);
+	nqiv_pruner_destroy(&state.pruner);
+	nqiv_image_manager_destroy(&state.images);
+	nqiv_priority_queue_destroy(&state.thread_queue);
+	nqiv_log_destroy(&state.logger);
 }
 
 static void reset_prune_effects(prune_effects* effects)

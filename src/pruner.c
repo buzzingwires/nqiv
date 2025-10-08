@@ -21,16 +21,16 @@ void nqiv_pruner_destroy(nqiv_pruner* pruner)
 	memset(pruner, 0, sizeof(nqiv_pruner));
 }
 
-bool nqiv_pruner_init(nqiv_pruner* pruner, nqiv_log_ctx* logger, const int queue_length)
+bool nqiv_pruner_init(nqiv_pruner* pruner, nqiv_state* parent, const int queue_length)
 {
 	nqiv_array* new_pruners = nqiv_array_create(sizeof(nqiv_pruner_desc), queue_length);
 	if(new_pruners == NULL) {
-		nqiv_log_write(logger, NQIV_LOG_ERROR,
+		nqiv_log_write(&(parent->logger), NQIV_LOG_ERROR,
 		               "Failed to create queue of length %d for pruners array.\n", queue_length);
 		return false;
 	}
 	nqiv_pruner_destroy(pruner);
-	pruner->logger = logger;
+	pruner->parent = parent;
 	pruner->pruners = new_pruners;
 	return true;
 }
@@ -43,7 +43,7 @@ static void nqiv_pruner_update_state_boolean(nqiv_pruner* pruner, const bool val
 	pruner->state.and_is_set = true;
 	pruner->state.or_result = pruner->state.or_result || value;
 	pruner->state.and_result = pruner->state.and_result && value;
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG,
+	nqiv_log_write(&(pruner->parent->logger), NQIV_LOG_DEBUG,
 	               "New prune state boolean is or_result: %s and_result: %s\n",
 	               NQIV_BOOLSTR(pruner->state.or_result), NQIV_BOOLSTR(pruner->state.and_result));
 }
@@ -51,7 +51,7 @@ static void nqiv_pruner_update_state_boolean(nqiv_pruner* pruner, const bool val
 static void nqiv_pruner_update_state_integer(nqiv_pruner* pruner, const int value)
 {
 	pruner->state.total_sum += value;
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "New prune state total_sum is %d\n",
+	nqiv_log_write(&(pruner->parent->logger), NQIV_LOG_DEBUG, "New prune state total_sum is %d\n",
 	               pruner->state.total_sum);
 }
 
@@ -62,7 +62,7 @@ static void nqiv_pruner_run_not_animated(nqiv_pruner*                pruner,
 	if(datapoint->active) {
 		const bool result = !(((nqiv_image_form*)object)->animation.exists);
 		datapoint->value.as_bool = result;
-		nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "not_animated result is: %s\n",
+		nqiv_log_write(&(pruner->parent->logger), NQIV_LOG_DEBUG, "not_animated result is: %s\n",
 		               NQIV_BOOLSTR(result));
 		nqiv_pruner_update_state_boolean(pruner, result);
 	}
@@ -75,7 +75,7 @@ static void nqiv_pruner_run_loaded_self(nqiv_pruner*                pruner,
 	if(datapoint->active) {
 		const bool result = object != NULL;
 		datapoint->value.as_bool = result;
-		nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "loaded_self result is: %s\n",
+		nqiv_log_write(&(pruner->parent->logger), NQIV_LOG_DEBUG, "loaded_self result is: %s\n",
 		               NQIV_BOOLSTR(result));
 		nqiv_pruner_update_state_boolean(pruner, result);
 	}
@@ -89,7 +89,7 @@ static void nqiv_pruner_loaded_count_body(nqiv_pruner*                pruner,
 	 * result against the pruner-wide nqiv_pruner_count_op */
 	datapoint->value.as_int += increment;
 	const bool result = datapoint->value.as_int > datapoint->condition.as_int_pair[1];
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG,
+	nqiv_log_write(&(pruner->parent->logger), NQIV_LOG_DEBUG,
 	               "count_body result is %s new datapoint value %d compared to %d\n",
 	               NQIV_BOOLSTR(result), datapoint->value.as_int,
 	               datapoint->condition.as_int_pair[1]);
@@ -176,8 +176,6 @@ nqiv_pruner_run_desc(nqiv_pruner* pruner, nqiv_pruner_desc* desc, const nqiv_ima
 }
 
 static int nqiv_pruner_run_image(nqiv_pruner*         pruner,
-                                 nqiv_montage_state*  montage,
-                                 nqiv_priority_queue* thread_queue,
                                  const int            iidx,
                                  nqiv_image*          image)
 {
@@ -203,9 +201,9 @@ static int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 		nqiv_pruner_desc* desc = &descs_array[idx];
 		assert(desc->counter != NQIV_PRUNER_COUNT_OP_UNKNOWN);
 		pruner->state.idx = iidx;
-		const int raw_start_idx = montage->positions.start - montage->preload.behind;
+		const int raw_start_idx = pruner->parent->montage.positions.start - pruner->parent->montage.preload.behind;
 		pruner->state.montage_start = NQIV_MAX(raw_start_idx, 0);
-		pruner->state.montage_end = montage->positions.end + montage->preload.ahead;
+		pruner->state.montage_end = pruner->parent->montage.positions.end + pruner->parent->montage.preload.ahead;
 		pruner->state.or_result = false;
 		pruner->state.and_result = false;
 		pruner->state.and_is_set = false;
@@ -217,7 +215,7 @@ static int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 		       && pruner->state.or_result == desc->state_check.or_result)
 		   || (pruner->state.and_is_set && desc->counter & NQIV_PRUNER_COUNT_OP_AND
 		       && pruner->state.and_result == desc->state_check.and_result)) {
-			nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Desc %d pruning image %s\n", idx,
+			nqiv_log_write(&(pruner->parent->logger), NQIV_LOG_DEBUG, "Desc %d pruning image %s\n", idx,
 			               image->image.path);
 			/* TODO: This cannot be called from a thread. If we plan to have the pruner run in a
 			 * thread, we need to do this in a thread safe way, probably by sending an SDL event for
@@ -270,11 +268,11 @@ static int nqiv_pruner_run_image(nqiv_pruner*         pruner,
 		}
 	}
 	/* We send the event if there's something to do. */
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "%sending prune event for image %d.\n",
+	nqiv_log_write(&(pruner->parent->logger), NQIV_LOG_DEBUG, "%sending prune event for image %d.\n",
 	               send_event ? "S" : "Not s", iidx);
 	if(send_event) {
 		event.transaction_group = pruner->thread_event_transaction_group;
-		if(!nqiv_priority_queue_push(thread_queue, NQIV_EVENT_PRIORITY_PRUNE, &event)) {
+		if(!nqiv_priority_queue_push(&(pruner->parent->thread_queue), NQIV_EVENT_PRIORITY_PRUNE, &event)) {
 			nqiv_image_unlock(image);
 			return false;
 		}
@@ -305,27 +303,24 @@ static void nqiv_pruner_clean_desc(nqiv_pruner_desc* desc)
 	nqiv_pruner_clean_desc_set(&desc->thumbnail_texture_set);
 }
 
-int nqiv_pruner_run(nqiv_pruner*         pruner,
-                    nqiv_montage_state*  montage,
-                    nqiv_image_manager*  images,
-                    nqiv_priority_queue* thread_queue)
+int nqiv_pruner_run(nqiv_pruner*         pruner)
 {
 	int          output = 0;
-	const int    num_images = nqiv_array_get_units_count(images->images);
-	nqiv_image** images_array = images->images->data;
+	const int    num_images = nqiv_array_get_units_count(pruner->parent->images.images);
+	nqiv_image** images_array = pruner->parent->images.images->data;
 	if(num_images > 0) {
 		int iidx;
-		for(iidx = montage->positions.selection; iidx >= 0; --iidx) {
+		for(iidx = pruner->parent->montage.positions.selection; iidx >= 0; --iidx) {
 			const int result =
-				nqiv_pruner_run_image(pruner, montage, thread_queue, iidx, images_array[iidx]);
+				nqiv_pruner_run_image(pruner, iidx, images_array[iidx]);
 			if(result == -1) {
 				return result;
 			}
 			output += result;
 		}
-		for(iidx = montage->positions.selection + 1; iidx < num_images; ++iidx) {
+		for(iidx = pruner->parent->montage.positions.selection + 1; iidx < num_images; ++iidx) {
 			const int result =
-				nqiv_pruner_run_image(pruner, montage, thread_queue, iidx, images_array[iidx]);
+				nqiv_pruner_run_image(pruner, iidx, images_array[iidx]);
 			if(result == -1) {
 				return result;
 			}
@@ -340,7 +335,7 @@ int nqiv_pruner_run(nqiv_pruner*         pruner,
 	}
 	memset(&pruner->state, 0, sizeof(nqiv_pruner_state));
 	if(output > 0) {
-		nqiv_log_write(pruner->logger, NQIV_LOG_INFO,
+		nqiv_log_write(&(pruner->parent->logger), NQIV_LOG_INFO,
 		               "Sending %d prune events (texture prunes not counted).\n", output);
 	}
 	return output;
@@ -461,9 +456,9 @@ static int nqiv_pruner_parse_check(nqiv_log_ctx*               logger,
 
 bool nqiv_pruner_append(nqiv_pruner* pruner, const nqiv_pruner_desc* desc)
 {
-	nqiv_log_write(pruner->logger, NQIV_LOG_DEBUG, "Adding desc to pruner list.\n");
+	nqiv_log_write(&(pruner->parent->logger), NQIV_LOG_DEBUG, "Adding desc to pruner list.\n");
 	if(!nqiv_array_push(pruner->pruners, desc)) {
-		nqiv_log_write(pruner->logger, NQIV_LOG_ERROR, "Failed to add pruning desc to list\n");
+		nqiv_log_write(&(pruner->parent->logger), NQIV_LOG_ERROR, "Failed to add pruning desc to list\n");
 		return false;
 	}
 	return true;

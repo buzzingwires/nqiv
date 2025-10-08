@@ -389,7 +389,7 @@ static nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 	if(!nqiv_image_manager_init(&state->images, &state->logger, STARTING_QUEUE_LENGTH)) {
 		return NQIV_FAIL;
 	}
-	if(!nqiv_pruner_init(&state->pruner, &state->logger, STARTING_QUEUE_LENGTH)) {
+	if(!nqiv_pruner_init(&state->pruner, state, STARTING_QUEUE_LENGTH)) {
 		return NQIV_FAIL;
 	}
 	if(!nqiv_keybind_create_manager(&state->keybinds, &state->logger, STARTING_QUEUE_LENGTH)) {
@@ -1183,7 +1183,7 @@ static void nqiv_check_pruning(nqiv_state* state)
 	if(new_time - state->time_of_last_prune > state->prune_delay) {
 		state->time_of_last_prune = new_time;
 		const int prune_count =
-			nqiv_pruner_run(&state->pruner, &state->montage, &state->images, &state->thread_queue);
+			nqiv_pruner_run(&state->pruner);
 		if(prune_count == -1) {
 			SDL_AtomicSet(&state->running, NQIV_FAIL);
 		}

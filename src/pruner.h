@@ -95,18 +95,15 @@ typedef struct nqiv_pruner_desc
 
 typedef struct nqiv_pruner
 {
-	nqiv_log_ctx*     logger;
+	nqiv_state*     parent;
 	nqiv_array*       pruners;
 	nqiv_pruner_state state;
 	int               thread_event_transaction_group;
 } nqiv_pruner;
 
 void nqiv_pruner_destroy(nqiv_pruner* pruner);
-bool nqiv_pruner_init(nqiv_pruner* pruner, nqiv_log_ctx* logger, const int queue_length);
-int  nqiv_pruner_run(nqiv_pruner*         pruner,
-                     nqiv_montage_state*  montage,
-                     nqiv_image_manager*  images,
-                     nqiv_priority_queue* thread_queue);
+bool nqiv_pruner_init(nqiv_pruner* pruner, nqiv_state* parent, const int queue_length);
+int  nqiv_pruner_run(nqiv_pruner*         pruner);
 bool nqiv_pruner_append(nqiv_pruner* pruner, const nqiv_pruner_desc* desc);
 bool nqiv_pruner_create_desc(nqiv_log_ctx* logger, const char* text, nqiv_pruner_desc* desc);
 bool nqiv_pruner_desc_to_string(const nqiv_pruner_desc* desc, char* buf);
