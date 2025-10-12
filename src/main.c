@@ -301,11 +301,11 @@ nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* default
 		"append keybind shift+scroll_backward=zoom_out",
 		"append pruner or thumbnail no image texture self_opened unload surface vips",
 		"append pruner and no thumbnail image texture self_opened not_animated not_cropped unload "
-	    "surface "
+		"surface "
 		"vips",
 		"append pruner or no thumbnail image texture self_opened unload surface",
 		"append pruner and thumbnail no image texture self_opened image no thumbnail not_animated "
-	    "not_cropped "
+		"not_cropped "
 		"hard unload image thumbnail surface vips",
 		"append pruner or thumbnail image texture loaded_behind 0 0 loaded_ahead 0 0 surface "
 		"loaded_behind 0 0 loaded_ahead 0 0 vips "
@@ -648,6 +648,26 @@ static void nqiv_apply_zoom_modifications(nqiv_state* state)
 	}
 }
 
+static void increment_transaction_group(nqiv_state* state)
+{
+	/* This should be reliable, since we only set the atomic from master. */
+	if(!SDL_AtomicCAS(&state->thread_event_transaction_group, INT_MAX, 1)) {
+		const int new_value = SDL_AtomicAdd(&state->thread_event_transaction_group, 1) + 1;
+		state->pruner.thread_event_transaction_group = new_value;
+		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
+		               "Increased transaction group value to %d at position %d.\n", new_value,
+		               state->montage.positions.selection);
+	} else {
+		nqiv_priority_queue_clear(&state->thread_queue);
+		state->pruner.thread_event_transaction_group = 1;
+		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
+		               "Wrapped overflowed transaction group value to 1 and cleared old events "
+		               "at position %d.\n",
+		               state->montage.positions.selection);
+	}
+	state->montage.range_changed = false;
+}
+
 /* TODO STEP FRAME? */
 /* TODO Reset frame */
 static bool render_from_form(nqiv_state*     state,
@@ -684,11 +704,15 @@ static bool render_from_form(nqiv_state*     state,
 				memcpy(&tmp_dstrect, &form->master_dstrect, sizeof(SDL_Rect));
 				tmp_dstrect_ptr = &tmp_dstrect;
 			}
-			state->is_loading = !is_montage && state->first_frame_pending;
+			state->is_loading =
+				!is_montage && (state->first_frame_pending || !form->master_texture_drawn);
 			bool clearedtmp = true;
 			if(form->master_dimensions_set && form->fallback_texture != NULL
 			   && form->master_srcrect.w > 0 && form->master_srcrect.h > 0
 			   && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
+				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
+				               "Displaying fallback texture for %s for '%s'.\n", NQIV_SAYFORM(image, form),
+				               image->image.path);
 				/* Montage doesn't do zooming- no need to get parameters. This also prevents
 				 * parameters from getting wiped out in keep mode. */
 				if(!is_montage) {
@@ -790,11 +814,11 @@ static bool render_from_form(nqiv_state*     state,
 				form->srcrect.w = srcrect.w;
 				form->srcrect.h = srcrect.h;
 			}
-			/* Even if it hasn't changed, unload the texture if it's already been drawn since it is
+			/* Even if it hasn't changed, resample if it's already been drawn since it is
 			 * possible for the old texture to be remade from old data before the event to load the
 			 * new data has been processed. */
 			if(form->master_texture_drawn) {
-				nqiv_unload_image_form_texture(form);
+				resample_zoom = true;
 			}
 			/* Make sure to use entirety of this. */
 			srcrect_ptr = NULL;
@@ -877,7 +901,7 @@ static bool render_from_form(nqiv_state*     state,
 		/* If we don't display the texture or have some other special reason, we'll need to reload
 		 * the image data. */
 		bool force_reload =
-			resample_zoom || form->animation.frame_rendered || state->first_frame_pending;
+			resample_zoom || form->animation.frame_rendered || (state->first_frame_pending && form->animation.exists);
 		bool displayed_texture = false;
 		if(!force_reload && (form->surface != NULL || form->texture != NULL)) {
 			if(form->texture == NULL) {
@@ -932,10 +956,9 @@ static bool render_from_form(nqiv_state*     state,
 			               NQIV_SAYFORM(image, form), image->image.path);
 			NQIV_ASSIGNIF(
 				state->is_loading,
-				dstrect != NULL && (state->first_frame_pending || !form->animation.exists), true);
+				dstrect != NULL && (state->first_frame_pending || (!form->animation.exists && force_reload)), true);
 			assert((form->animation.frame_rendered && form->animation.exists)
 			       || !form->animation.frame_rendered);
-			nqiv_unload_image_form_texture(form);
 			nqiv_event event = {0};
 			event.type = NQIV_EVENT_IMAGE_LOAD;
 			nqiv_event_image_load_form_options* options =
@@ -943,8 +966,9 @@ static bool render_from_form(nqiv_state*     state,
 						   : &(event.options.image_load.image_options);
 			event.options.image_load.image = image;
 			options->vips_soft = true;
-			NQIV_ASSIGNIF(options->surface, force_reload, true);
-			NQIV_ASSIGNIF(options->surface_soft, !force_reload, true);
+			NQIV_ASSIGNIF(options->surface, force_reload && (form->master_texture_drawn || form->animation.frame_rendered || (form->animation.exists && state->first_frame_pending)), true);
+			NQIV_ASSIGNIF(options->surface_soft, !options->surface, true);
+			nqiv_unload_image_form_texture(form);
 			NQIV_ASSIGNIF(options->next_frame,
 			              dstrect != NULL && !state->first_frame_pending
 			                  && form->animation.frame_rendered,
@@ -970,8 +994,9 @@ static bool render_from_form(nqiv_state*     state,
 				nqiv_image_unlock(image);
 				return false;
 			}
-			state->first_frame_pending = false;
 		}
+		NQIV_ASSIGNIF(state->first_frame_pending,
+		              dstrect != NULL && (form->height != 0 && form->width != 0), false);
 		if(save_thumbnail) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Saving for thumbnail for '%s'.\n",
 			               image->image.path);
@@ -1077,9 +1102,39 @@ static bool set_title(nqiv_state* state, nqiv_image* image)
 }
 #undef INT_MAX_STRLEN
 
+static bool render_montage_image(nqiv_state* state, const int idx, const bool preload_only, const bool hard, const int montage_preload_start_idx, const int montage_preload_end, const int image_preload_start_idx, const int image_preload_end)
+{
+	nqiv_image** images = state->images.images->data;
+	nqiv_image* image = images[idx];
+	if(idx >= state->montage.positions.start && idx < state->montage.positions.end
+	   && !preload_only) {
+		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n",
+		               image->image.path, idx);
+		SDL_Rect dstrect;
+		nqiv_montage_get_image_rect(&state->montage, idx, &dstrect);
+		if(!render_from_form(state, image, true, &dstrect, true,
+		                     state->montage.positions.selection == idx, hard)
+		   || (idx == state->montage.positions.selection && !set_title(state, image))) {
+			return false;
+		}
+	} else {
+		if(idx >= montage_preload_start_idx && idx < montage_preload_end
+		   && !render_from_form(state, image, true, NULL, true,
+		                        state->montage.positions.selection == idx, hard)) {
+			return false;
+		}
+		if(!state->in_montage && state->montage.positions.selection != idx
+		   && idx >= image_preload_start_idx && idx < image_preload_end
+		   && !render_from_form(state, image, false, NULL, true,
+		                        state->montage.positions.selection == idx, hard)) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static bool render_montage(nqiv_state* state, const bool hard, const bool preload_only)
 {
-	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage.\n");
 	if(!preload_only && SDL_RenderClear(state->renderer) != 0) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to clear renderer for montage.\n");
 		return false;
@@ -1116,38 +1171,32 @@ static bool render_montage(nqiv_state* state, const bool hard, const bool preloa
 	const int    image_preload_end = NQIV_MIN(raw_image_preload_end, images_len);
 	const int    start_idx = NQIV_MAX(raw_start_idx, 0);
 	const int    end = NQIV_MIN(raw_end, images_len);
-	nqiv_image** images = state->images.images->data;
-	int          idx;
+	const int selection = state->montage.positions.selection;
+	const int max_distance = NQIV_MAX(selection - start_idx, end - selection) + 1;
+	int distance;
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
-	               "Preload Start: %d Preload End: %d Montage Start: %d Montage Selection: %d "
+	               "Rendering montage - Preload Start: %d Preload End: %d Montage Start: %d Montage Selection: %d "
 	               "Montage End %d\n",
 	               start_idx, end, state->montage.positions.start,
 	               state->montage.positions.selection, state->montage.positions.end);
-	for(idx = start_idx; idx < end; ++idx) {
-		nqiv_image* image = images[idx];
-		if(idx >= state->montage.positions.start && idx < state->montage.positions.end
-		   && !preload_only) {
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n",
-			               image->image.path, idx);
-			SDL_Rect dstrect;
-			nqiv_montage_get_image_rect(&state->montage, idx, &dstrect);
-			if(!render_from_form(state, image, true, &dstrect, true,
-			                     state->montage.positions.selection == idx, hard)
-			   || (idx == state->montage.positions.selection && !set_title(state, image))) {
-				return false;
-			}
+	for(distance = 0; distance < max_distance; ++distance) {
+		bool result = true;
+		if(distance == 0) {
+			result = result && render_montage_image(state, selection, preload_only, hard, montage_preload_start_idx, montage_preload_end, image_preload_start_idx, image_preload_end);
 		} else {
-			if(idx >= montage_preload_start_idx && idx < montage_preload_end
-			   && !render_from_form(state, image, true, NULL, true,
-			                        state->montage.positions.selection == idx, hard)) {
-				return false;
+			const int behind = selection - distance;
+			const int ahead = selection + distance;
+			assert(result);
+			/*if(result && ahead >= start_idx && ahead < end) {*/
+			if(ahead >= start_idx && ahead < end) {
+				result = result && render_montage_image(state, ahead, preload_only, hard, montage_preload_start_idx, montage_preload_end, image_preload_start_idx, image_preload_end);
 			}
-			if(!state->in_montage && state->montage.positions.selection != idx
-			   && idx >= image_preload_start_idx && idx < image_preload_end
-			   && !render_from_form(state, image, false, NULL, true,
-			                        state->montage.positions.selection == idx, hard)) {
-				return false;
+			if(result && behind >= start_idx && behind < end) {
+				result = result && render_montage_image(state, behind, preload_only, hard, montage_preload_start_idx, montage_preload_end, image_preload_start_idx, image_preload_end);
 			}
+		}
+		if(!result) {
+			return false;
 		}
 	}
 	return true;
@@ -1200,24 +1249,8 @@ static void render_and_update(nqiv_state* state, const bool first_render, const 
 
 	nqiv_check_pruning(state);
 
-	/* Update transaction group. */
 	if(state->montage.range_changed) {
-		/* This should be reliable, since we only set the atomic from master. */
-		if(!SDL_AtomicCAS(&state->thread_event_transaction_group, INT_MAX, 1)) {
-			const int new_value = SDL_AtomicAdd(&state->thread_event_transaction_group, 1) + 1;
-			state->pruner.thread_event_transaction_group = new_value;
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
-			               "Increased transaction group value to %d at position %d.\n", new_value,
-			               state->montage.positions.selection);
-		} else {
-			nqiv_priority_queue_clear(&state->thread_queue);
-			state->pruner.thread_event_transaction_group = 1;
-			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
-			               "Wrapped overflowed transaction group value to 1 and cleared old events "
-			               "at position %d.\n",
-			               state->montage.positions.selection);
-		}
-		state->montage.range_changed = false;
+		increment_transaction_group(state);
 	}
 	if(state->in_montage) {
 		if(!render_montage(state, hard, false)) {

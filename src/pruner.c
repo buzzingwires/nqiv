@@ -328,20 +328,34 @@ int nqiv_pruner_run(nqiv_pruner* pruner)
 	const int    num_images = nqiv_array_get_units_count(pruner->parent->images.images);
 	nqiv_image** images_array = pruner->parent->images.images->data;
 	if(num_images > 0) {
-		int iidx;
-		for(iidx = pruner->parent->montage.positions.selection; iidx >= 0; --iidx) {
-			const int result = nqiv_pruner_run_image(pruner, iidx, images_array[iidx]);
-			if(result == -1) {
-				return result;
+		const int selection = pruner->parent->montage.positions.selection;
+		const int max_distance = NQIV_MAX(selection, num_images - selection) + 1;
+		int distance;
+		for(distance = 0; distance < max_distance; ++distance) {
+			if(distance == 0) {
+				const int result = nqiv_pruner_run_image(pruner, selection, images_array[selection]);
+				if(result == -1) {
+					return -1;
+				}
+				output += result;
+			} else {
+				const int behind = selection - distance;
+				const int ahead = selection + distance;
+				int behind_result = 0;
+				int ahead_result = 0;
+				/*if(behind_result != -1 && ahead >= 0 && ahead < num_images) {*/
+				if(ahead >= 0 && ahead < num_images) {
+					ahead_result = nqiv_pruner_run_image(pruner, ahead, images_array[ahead]);
+				}
+				if(ahead_result != -1 && behind >= 0 && behind < num_images) {
+					behind_result = nqiv_pruner_run_image(pruner, behind, images_array[behind]);
+				}
+				if(behind_result == -1 || ahead_result == -1) {
+					return -1;
+				}
+				output += behind_result;
+				output += ahead_result;
 			}
-			output += result;
-		}
-		for(iidx = pruner->parent->montage.positions.selection + 1; iidx < num_images; ++iidx) {
-			const int result = nqiv_pruner_run_image(pruner, iidx, images_array[iidx]);
-			if(result == -1) {
-				return result;
-			}
-			output += result;
 		}
 	}
 	int               idx;
