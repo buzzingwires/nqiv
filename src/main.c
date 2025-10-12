@@ -711,8 +711,8 @@ static bool render_from_form(nqiv_state*     state,
 			   && form->master_srcrect.w > 0 && form->master_srcrect.h > 0
 			   && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
-				               "Displaying fallback texture for %s for '%s'.\n", NQIV_SAYFORM(image, form),
-				               image->image.path);
+				               "Displaying fallback texture for %s for '%s'.\n",
+				               NQIV_SAYFORM(image, form), image->image.path);
 				/* Montage doesn't do zooming- no need to get parameters. This also prevents
 				 * parameters from getting wiped out in keep mode. */
 				if(!is_montage) {
@@ -900,8 +900,8 @@ static bool render_from_form(nqiv_state*     state,
 			is_montage && state->images.thumbnail.save && !image->thumbnail_attempted;
 		/* If we don't display the texture or have some other special reason, we'll need to reload
 		 * the image data. */
-		bool force_reload =
-			resample_zoom || form->animation.frame_rendered || (state->first_frame_pending && form->animation.exists);
+		bool force_reload = resample_zoom || form->animation.frame_rendered
+		                    || (state->first_frame_pending && form->animation.exists);
 		bool displayed_texture = false;
 		if(!force_reload && (form->surface != NULL || form->texture != NULL)) {
 			if(form->texture == NULL) {
@@ -956,7 +956,9 @@ static bool render_from_form(nqiv_state*     state,
 			               NQIV_SAYFORM(image, form), image->image.path);
 			NQIV_ASSIGNIF(
 				state->is_loading,
-				dstrect != NULL && (state->first_frame_pending || (!form->animation.exists && force_reload)), true);
+				dstrect != NULL
+					&& (state->first_frame_pending || (!form->animation.exists && force_reload)),
+				true);
 			assert((form->animation.frame_rendered && form->animation.exists)
 			       || !form->animation.frame_rendered);
 			nqiv_event event = {0};
@@ -966,7 +968,11 @@ static bool render_from_form(nqiv_state*     state,
 						   : &(event.options.image_load.image_options);
 			event.options.image_load.image = image;
 			options->vips_soft = true;
-			NQIV_ASSIGNIF(options->surface, force_reload && (form->master_texture_drawn || form->animation.frame_rendered || (form->animation.exists && state->first_frame_pending)), true);
+			NQIV_ASSIGNIF(options->surface,
+			              force_reload
+			                  && (form->master_texture_drawn || form->animation.frame_rendered
+			                      || (form->animation.exists && state->first_frame_pending)),
+			              true);
 			NQIV_ASSIGNIF(options->surface_soft, !options->surface, true);
 			nqiv_unload_image_form_texture(form);
 			NQIV_ASSIGNIF(options->next_frame,
@@ -1102,10 +1108,17 @@ static bool set_title(nqiv_state* state, nqiv_image* image)
 }
 #undef INT_MAX_STRLEN
 
-static bool render_montage_image(nqiv_state* state, const int idx, const bool preload_only, const bool hard, const int montage_preload_start_idx, const int montage_preload_end, const int image_preload_start_idx, const int image_preload_end)
+static bool render_montage_image(nqiv_state* state,
+                                 const int   idx,
+                                 const bool  preload_only,
+                                 const bool  hard,
+                                 const int   montage_preload_start_idx,
+                                 const int   montage_preload_end,
+                                 const int   image_preload_start_idx,
+                                 const int   image_preload_end)
 {
 	nqiv_image** images = state->images.images->data;
-	nqiv_image* image = images[idx];
+	nqiv_image*  image = images[idx];
 	if(idx >= state->montage.positions.start && idx < state->montage.positions.end
 	   && !preload_only) {
 		nqiv_log_write(&state->logger, NQIV_LOG_DEBUG, "Rendering montage image %s at %d.\n",
@@ -1165,34 +1178,44 @@ static bool render_montage(nqiv_state* state, const bool hard, const bool preloa
 	const int raw_montage_preload_end = state->montage.positions.end + state->montage.preload.ahead;
 	const int raw_image_preload_end =
 		state->montage.positions.selection + state->image_preload.ahead;
-	const int    montage_preload_start_idx = NQIV_MAX(raw_montage_preload_start_idx, 0);
-	const int    montage_preload_end = NQIV_MIN(raw_montage_preload_end, images_len);
-	const int    image_preload_start_idx = NQIV_MAX(raw_image_preload_start_idx, 0);
-	const int    image_preload_end = NQIV_MIN(raw_image_preload_end, images_len);
-	const int    start_idx = NQIV_MAX(raw_start_idx, 0);
-	const int    end = NQIV_MIN(raw_end, images_len);
+	const int montage_preload_start_idx = NQIV_MAX(raw_montage_preload_start_idx, 0);
+	const int montage_preload_end = NQIV_MIN(raw_montage_preload_end, images_len);
+	const int image_preload_start_idx = NQIV_MAX(raw_image_preload_start_idx, 0);
+	const int image_preload_end = NQIV_MIN(raw_image_preload_end, images_len);
+	const int start_idx = NQIV_MAX(raw_start_idx, 0);
+	const int end = NQIV_MIN(raw_end, images_len);
 	const int selection = state->montage.positions.selection;
 	const int max_distance = NQIV_MAX(selection - start_idx, end - selection) + 1;
-	int distance;
+	int       distance;
 	nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
-	               "Rendering montage - Preload Start: %d Preload End: %d Montage Start: %d Montage Selection: %d "
+	               "Rendering montage - Preload Start: %d Preload End: %d Montage Start: %d "
+	               "Montage Selection: %d "
 	               "Montage End %d\n",
 	               start_idx, end, state->montage.positions.start,
 	               state->montage.positions.selection, state->montage.positions.end);
 	for(distance = 0; distance < max_distance; ++distance) {
 		bool result = true;
 		if(distance == 0) {
-			result = result && render_montage_image(state, selection, preload_only, hard, montage_preload_start_idx, montage_preload_end, image_preload_start_idx, image_preload_end);
+			result = result
+			         && render_montage_image(state, selection, preload_only, hard,
+			                                 montage_preload_start_idx, montage_preload_end,
+			                                 image_preload_start_idx, image_preload_end);
 		} else {
 			const int behind = selection - distance;
 			const int ahead = selection + distance;
 			assert(result);
 			/*if(result && ahead >= start_idx && ahead < end) {*/
 			if(ahead >= start_idx && ahead < end) {
-				result = result && render_montage_image(state, ahead, preload_only, hard, montage_preload_start_idx, montage_preload_end, image_preload_start_idx, image_preload_end);
+				result = result
+				         && render_montage_image(state, ahead, preload_only, hard,
+				                                 montage_preload_start_idx, montage_preload_end,
+				                                 image_preload_start_idx, image_preload_end);
 			}
 			if(result && behind >= start_idx && behind < end) {
-				result = result && render_montage_image(state, behind, preload_only, hard, montage_preload_start_idx, montage_preload_end, image_preload_start_idx, image_preload_end);
+				result = result
+				         && render_montage_image(state, behind, preload_only, hard,
+				                                 montage_preload_start_idx, montage_preload_end,
+				                                 image_preload_start_idx, image_preload_end);
 			}
 		}
 		if(!result) {

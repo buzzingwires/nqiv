@@ -330,10 +330,11 @@ int nqiv_pruner_run(nqiv_pruner* pruner)
 	if(num_images > 0) {
 		const int selection = pruner->parent->montage.positions.selection;
 		const int max_distance = NQIV_MAX(selection, num_images - selection) + 1;
-		int distance;
+		int       distance;
 		for(distance = 0; distance < max_distance; ++distance) {
 			if(distance == 0) {
-				const int result = nqiv_pruner_run_image(pruner, selection, images_array[selection]);
+				const int result =
+					nqiv_pruner_run_image(pruner, selection, images_array[selection]);
 				if(result == -1) {
 					return -1;
 				}
@@ -341,8 +342,8 @@ int nqiv_pruner_run(nqiv_pruner* pruner)
 			} else {
 				const int behind = selection - distance;
 				const int ahead = selection + distance;
-				int behind_result = 0;
-				int ahead_result = 0;
+				int       behind_result = 0;
+				int       ahead_result = 0;
 				/*if(behind_result != -1 && ahead >= 0 && ahead < num_images) {*/
 				if(ahead >= 0 && ahead < num_images) {
 					ahead_result = nqiv_pruner_run_image(pruner, ahead, images_array[ahead]);
