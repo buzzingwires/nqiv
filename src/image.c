@@ -1115,8 +1115,7 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
 	NQIV_ASSIGNIF(manager->zoom.image_to_viewport_ratio_max,
 	              manager->zoom.actual_size_level > manager->zoom.fit_level,
 	              manager->zoom.actual_size_level);
-	/* Clamp max ratio at 1.0 */
-	assert(manager->zoom.fit_level >= 1.0 || manager->zoom.image_to_viewport_ratio_max < 1.0);
+	/* Clamp levels at 1.0 */
 	manager->zoom.image_to_viewport_ratio_max =
 		NQIV_MAX(1.0, manager->zoom.image_to_viewport_ratio_max);
 	manager->zoom.fit_level = NQIV_MAX(1.0, manager->zoom.fit_level);
