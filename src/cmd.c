@@ -420,7 +420,6 @@ static void nqiv_cmd_parser_print_value_image_form(nqiv_cmd_manager*      manage
 	nqiv_cmd_print_indent(manager);
 	nqiv_cmd_parser_print_value_sdlrect("srcrect", &form->srcrect);
 	nqiv_cmd_parser_print_value_sdlrect("master_srcrect", &form->master_srcrect);
-	nqiv_cmd_parser_print_value_sdlrect("master_dstrect", &form->master_dstrect);
 	fprintf(stdout, "\n");
 	nqiv_cmd_print_indent(manager);
 	fprintf(stdout, "ANIMATION: ");

@@ -698,18 +698,19 @@ static bool render_from_form(nqiv_state*     state,
 			SDL_Rect        tmp_srcrect;
 			SDL_Rect        tmp_dstrect;
 			const SDL_Rect* tmp_dstrect_ptr = dstrect;
-			if(form->master_srcrect.w > 0 && form->master_srcrect.h > 0
-			   && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
+			if(form->master_srcrect.w > 0 && form->master_srcrect.h > 0) {
 				memcpy(&tmp_srcrect, &form->master_srcrect, sizeof(SDL_Rect));
-				memcpy(&tmp_dstrect, &form->master_dstrect, sizeof(SDL_Rect));
+				tmp_dstrect.w = dstrect->w;
+				tmp_dstrect.h = dstrect->h;
+				tmp_dstrect.x = dstrect->x;
+				tmp_dstrect.y = dstrect->y;
 				tmp_dstrect_ptr = &tmp_dstrect;
 			}
 			state->is_loading =
 				!is_montage && (state->first_frame_pending || !form->master_texture_drawn);
 			bool clearedtmp = true;
 			if(form->master_dimensions_set && form->fallback_texture != NULL
-			   && form->master_srcrect.w > 0 && form->master_srcrect.h > 0
-			   && form->master_dstrect.w > 0 && form->master_dstrect.h > 0) {
+			   && form->master_srcrect.w > 0 && form->master_srcrect.h > 0) {
 				nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 				               "Displaying fallback texture for %s for '%s'.\n",
 				               NQIV_SAYFORM(image, form), image->image.path);
@@ -791,7 +792,6 @@ static bool render_from_form(nqiv_state*     state,
 		dstrect_zoom.y = dstrect->y;
 		/* Update master dimensions for fallback. */
 		memcpy(&form->master_srcrect, &srcrect, sizeof(SDL_Rect));
-		memcpy(&form->master_dstrect, &dstrect_zoom, sizeof(SDL_Rect));
 		form->master_dimensions_set = true;
 		/* Montage doesn't do zooming- no need to get parameters. This also prevents parameters from
 		 * getting wiped out in keep mode. */
@@ -846,7 +846,6 @@ static bool render_from_form(nqiv_state*     state,
 				dstrect_zoom.x = dstrect->x;
 				dstrect_zoom.y = dstrect->y;
 				memcpy(&form->master_srcrect, &srcrect, sizeof(SDL_Rect));
-				memcpy(&form->master_dstrect, &dstrect_zoom, sizeof(SDL_Rect));
 				form->master_dimensions_set = true;
 				/* Montage doesn't do zooming- no need to get parameters. This also prevents
 				 * parameters from getting wiped out in keep mode. */

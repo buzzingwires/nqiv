@@ -44,7 +44,6 @@ typedef struct nqiv_image_form
 	/* Master entries are record keeping reserved to the master thread only for
 	 * rendering the fallback texture. They are NOT protected by the lock. */
 	SDL_Rect                  master_srcrect;
-	SDL_Rect                  master_dstrect;
 	bool                      master_dimensions_set;
 	bool                      master_animation_exists;
 	/* Have we drawn the texture since we last made it? */
