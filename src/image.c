@@ -1092,96 +1092,41 @@ void nqiv_image_manager_calculate_zoom_parameters(nqiv_image_manager* manager,
 	assert(srcrect->h > 0);
 	assert(dstrect->w > 0);
 	assert(dstrect->h > 0);
-	double src_aspect;
-	double dst_aspect;
 	/* Basically guestimate fit level based on biggest side of image, making it
 	 * proportional to the ratio between it and the screen's corresponding
 	 * side. */
 	if(srcrect->w > srcrect->h) {
 		manager->zoom.fit_level = (double)dstrect->w / (double)srcrect->w;
-		src_aspect = (double)srcrect->w / (double)srcrect->h;
 	} else {
-		src_aspect = (double)srcrect->h / (double)srcrect->w;
 		manager->zoom.fit_level = (double)dstrect->h / (double)srcrect->h;
 	}
 	manager->zoom.actual_size_level = manager->zoom.fit_level;
-	if(dstrect->w > dstrect->h) {
-		dst_aspect = (double)dstrect->w / (double)dstrect->h;
-	} else {
-		dst_aspect = (double)dstrect->h / (double)dstrect->w;
+	/* If image has a bigger side than display, or both sides are smaller, scale fit level to ratio
+	 * of that side. */
+	if((srcrect->w > dstrect->w || srcrect->h > dstrect->h)
+	   || (srcrect->w < dstrect->w && srcrect->h < dstrect->h)) {
+		manager->zoom.fit_level = NQIV_MAX((double)srcrect->w / (double)dstrect->w,
+		                                   (double)srcrect->h / (double)dstrect->h)
+		                          * manager->zoom.fit_level;
 	}
-	/* If image has a bigger side than display, set fit level to be greater
-	 * than 1.0 + (biggest ratio - smallest ratio) */
-	if(srcrect->w > dstrect->w || srcrect->h > dstrect->h) {
-		if(src_aspect > dst_aspect) {
-			manager->zoom.fit_level = 1.0 + (src_aspect - dst_aspect);
-		} else {
-			manager->zoom.fit_level = 1.0 + (dst_aspect - src_aspect);
-		}
-	}
-	const double original_ratio = manager->zoom.image_to_viewport_ratio;
-	manager->zoom.image_to_viewport_ratio = manager->zoom.fit_level;
 	manager->zoom.image_to_viewport_ratio_max = manager->zoom.fit_level;
-	double current_ratio = manager->zoom.image_to_viewport_ratio;
-	bool   ever_set = false;
-	/* Get a precisely calculated zoom level by repeatedly calculating the real
-	 * zoomrect until the entire image isn't in view. */
-	while(true) {
-		if(manager->zoom.image_to_viewport_ratio > 0.0) {
-			SDL_Rect src = {0};
-			src.w = srcrect->w;
-			src.h = srcrect->h;
-			SDL_Rect dst = {0};
-			dst.w = dstrect->w;
-			dst.h = dstrect->h;
-			nqiv_image_manager_calculate_zoomrect(manager, true, false, &src, &dst);
-			if(dst.w <= dstrect->w && dst.h <= dstrect->h) {
-				current_ratio = manager->zoom.image_to_viewport_ratio;
-				if(dst.w == dstrect->w || dst.h == dstrect->h) {
-					if(ever_set) {
-						manager->zoom.fit_level = current_ratio;
-					}
-					break;
-				}
-			} else {
-				if(ever_set) {
-					manager->zoom.fit_level = current_ratio;
-				}
-				break;
-			}
-		} else {
-			if(ever_set) {
-				manager->zoom.fit_level = current_ratio;
-			}
-			break;
-		}
-		manager->zoom.image_to_viewport_ratio += manager->zoom.zoom_in_amount;
-		manager->zoom.image_to_viewport_ratio_max = manager->zoom.image_to_viewport_ratio;
-		ever_set = true;
-	}
-	manager->zoom.image_to_viewport_ratio = original_ratio;
 	/* If the image is smaller than the screen, make sure we can zoom out
 	 * enough to see its actual size. */
-	if(manager->zoom.actual_size_level > manager->zoom.fit_level) {
-		manager->zoom.image_to_viewport_ratio_max = manager->zoom.actual_size_level;
-	} else {
-		manager->zoom.image_to_viewport_ratio_max = manager->zoom.fit_level;
-	}
+	NQIV_ASSIGNIF(manager->zoom.image_to_viewport_ratio_max,
+	              manager->zoom.actual_size_level > manager->zoom.fit_level,
+	              manager->zoom.actual_size_level);
 	/* Clamp max ratio at 1.0 */
-	if(manager->zoom.image_to_viewport_ratio_max < 1.0) {
-		manager->zoom.image_to_viewport_ratio_max = 1.0;
-		if(manager->zoom.fit_level < 1.0) {
-			manager->zoom.fit_level = 1.0;
-		}
-	}
+	assert(manager->zoom.fit_level >= 1.0 || manager->zoom.image_to_viewport_ratio_max < 1.0);
+	manager->zoom.image_to_viewport_ratio_max =
+		NQIV_MAX(1.0, manager->zoom.image_to_viewport_ratio_max);
+	manager->zoom.fit_level = NQIV_MAX(1.0, manager->zoom.fit_level);
 	assert(manager->zoom.image_to_viewport_ratio_max >= 1.0);
 	nqiv_log_write(manager->logger, NQIV_LOG_DEBUG,
 	               "Zoom parameters - Viewport ratio: %f/%f Fit level: %f Actual Size Level: %f\n",
 	               manager->zoom.image_to_viewport_ratio, manager->zoom.image_to_viewport_ratio_max,
 	               manager->zoom.fit_level, manager->zoom.actual_size_level);
-	if(manager->zoom.image_to_viewport_ratio > manager->zoom.image_to_viewport_ratio_max) {
-		manager->zoom.image_to_viewport_ratio = manager->zoom.image_to_viewport_ratio_max;
-	}
+	manager->zoom.image_to_viewport_ratio =
+		NQIV_MIN(manager->zoom.image_to_viewport_ratio, manager->zoom.image_to_viewport_ratio_max);
 }
 
 void nqiv_image_manager_retrieve_zoomrect(nqiv_image_manager* manager,
