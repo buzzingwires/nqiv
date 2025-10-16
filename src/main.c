@@ -706,8 +706,9 @@ static bool render_from_form(nqiv_state*     state,
 				tmp_dstrect.y = dstrect->y;
 				tmp_dstrect_ptr = &tmp_dstrect;
 			}
-			state->is_loading =
-				!is_montage && (state->first_frame_pending || !form->master_texture_drawn);
+			NQIV_ASSIGNIF(
+				state->is_loading,
+				!is_montage && (state->first_frame_pending || !form->master_texture_drawn), true);
 			bool clearedtmp = true;
 			if(form->master_dimensions_set && form->fallback_texture != NULL
 			   && form->master_srcrect.w > 0 && form->master_srcrect.h > 0) {
