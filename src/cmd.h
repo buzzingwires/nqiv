@@ -80,8 +80,8 @@ typedef union nqiv_cmd_arg_desc_setting
 typedef struct nqiv_cmd_arg_desc
 {
 	/* Type and properties of a particular argument. */
-	nqiv_cmd_arg_type         type;
 	nqiv_cmd_arg_desc_setting setting;
+	nqiv_cmd_arg_type         type;
 } nqiv_cmd_arg_desc;
 
 typedef union nqiv_cmd_arg_value
@@ -101,10 +101,10 @@ typedef union nqiv_cmd_arg_value
 
 typedef struct nqiv_cmd_arg_token
 {
-	nqiv_cmd_arg_type  type;
-	char*              raw; /* Pointer to string containing unparsed arg, and its length */
-	int                length;
 	nqiv_cmd_arg_value value;
+	char*              raw; /* Pointer to string containing unparsed arg, and its length */
+	nqiv_cmd_arg_type  type;
+	int                length;
 } nqiv_cmd_arg_token;
 
 typedef struct nqiv_cmd_node nqiv_cmd_node;

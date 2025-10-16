@@ -86,13 +86,13 @@ typedef union nqiv_event_options
 
 typedef struct nqiv_event
 {
+	nqiv_event_options options;
+	nqiv_event_type    type;
 	/* The transaction group is compared against a current number tracked by the threads. If the
 	 * event is less than the current number, it is considered out of date and discarded. An event
 	 * with a transaction group of -1 is never out of date. This feature primarily exists to solve
 	 * the problem of events still being queued for images that are no longer visible. */
 	int                transaction_group;
-	nqiv_event_options options;
-	nqiv_event_type    type;
 } nqiv_event;
 
 nqiv_event_priority nqiv_text_to_event_priority(const char* text, const int length);

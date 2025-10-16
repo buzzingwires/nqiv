@@ -34,9 +34,9 @@ typedef union nqiv_pruner_desc_datapoint_content
 
 typedef struct nqiv_pruner_desc_datapoint
 {
-	bool                               active;
 	nqiv_pruner_desc_datapoint_content condition;
 	nqiv_pruner_desc_datapoint_content value;
+	bool                               active;
 } nqiv_pruner_desc_datapoint;
 
 typedef struct nqiv_pruner_desc_dataset
