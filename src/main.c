@@ -1193,7 +1193,7 @@ static bool render_montage(nqiv_state* state, const bool hard, const bool preloa
 	               "Montage End %d\n",
 	               start_idx, end, state->montage.positions.start,
 	               state->montage.positions.selection, state->montage.positions.end);
-	for(distance = 0; distance < max_distance; ++distance) {
+	for(distance = max_distance; distance >= 0; --distance) {
 		bool result = true;
 		if(distance == 0) {
 			result = result

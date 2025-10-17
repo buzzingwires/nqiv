@@ -331,7 +331,7 @@ int nqiv_pruner_run(nqiv_pruner* pruner)
 		const int selection = pruner->parent->montage.positions.selection;
 		const int max_distance = NQIV_MAX(selection, num_images - selection) + 1;
 		int       distance;
-		for(distance = 0; distance < max_distance; ++distance) {
+		for(distance = max_distance; distance >= 0; --distance) {
 			if(distance == 0) {
 				const int result =
 					nqiv_pruner_run_image(pruner, selection, images_array[selection]);
