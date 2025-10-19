@@ -356,7 +356,6 @@ static void nqiv_print_args(const char* exe)
 static nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 {
 	if(!nqiv_setup_thread_info(state)) {
-		nqiv_state_clear(state);
 		return NQIV_FAIL;
 	}
 	state->zoom_default = NQIV_ZOOM_DEFAULT_FIT;
@@ -412,7 +411,6 @@ static nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 	}
 	nqiv_state_set_default_colors(state);
 	if(!nqiv_setup_sdl(state)) {
-		nqiv_state_clear(state);
 		return NQIV_FAIL;
 	}
 	nqiv_setup_montage(state);
