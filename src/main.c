@@ -313,7 +313,7 @@ nqiv_load_builtin_config(nqiv_state* state, const char* exe, const char* default
 		"append pruner or sum 0 thumbnail image texture bytes_ahead 0 0 bytes_behind 0 0 surface "
 		"bytes_ahead 0 0 bytes_behind 0 0 vips bytes_ahead 0 "
 		"0 bytes_behind 0 0 hard unload texture surface vips",
-		"append thread priorities animation",
+		"append thread priorities animation event_interval 0 extra_wakeup_delay 0",
 		NULL,
 	};
 	int idx;
