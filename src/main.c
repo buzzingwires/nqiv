@@ -1590,12 +1590,14 @@ static void nqiv_handle_keyactions(nqiv_state*                       state,
 		} else if(pair->action == NQIV_KEY_ACTION_PRINT_MARKED) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
 			               "Received nqiv action image print marked.\n");
+			SDL_LockMutex(state->logger.lock);
 			int iidx;
 			for(iidx = 0; iidx < images_count; ++iidx) {
 				if(images[iidx]->marked) {
 					fprintf(stdout, "%s\n", images[iidx]->image.path);
 				}
 			}
+			SDL_UnlockMutex(state->logger.lock);
 			render_and_update(state, false, false);
 		} else if(pair->action == NQIV_KEY_ACTION_CLEAR_MARKED) {
 			nqiv_log_write(&state->logger, NQIV_LOG_DEBUG,
