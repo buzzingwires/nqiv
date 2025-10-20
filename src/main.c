@@ -973,6 +973,9 @@ static bool render_from_form(nqiv_state*     state,
 			              true);
 			NQIV_ASSIGNIF(options->surface_soft, !options->surface, true);
 			nqiv_unload_image_form_texture(form);
+			if((form->animation.exists && state->first_frame_pending)) {
+				nqiv_unload_image_form_fallback_texture(form);
+			}
 			NQIV_ASSIGNIF(options->next_frame,
 			              dstrect != NULL && !state->first_frame_pending
 			                  && form->animation.frame_rendered,
