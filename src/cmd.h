@@ -117,7 +117,8 @@ typedef struct nqiv_cmd_manager_print_settings
 	bool           dumpcfg;
 	char*          prefix;
 	nqiv_cmd_node* current_node;
-	bool           in_escape; /* Are we currently waiting for an escape sequence? */
+	bool           in_escape;    /* Are we currently waiting for an escape sequence? */
+	bool           finished_cmd; /* Do we have a finished command for parsing? */
 } nqiv_cmd_manager_print_settings;
 
 struct nqiv_cmd_manager

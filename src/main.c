@@ -1728,6 +1728,15 @@ static bool check_cmds(nqiv_state* state)
 	}
 	bool locked = false;
 	while(true) {
+		if(!state->cmds.print_settings.finished_cmd) {
+			const nqiv_op_result op_result = nqiv_cmd_add_stream_cmd(&state->cmds, stdin);
+			if(op_result == NQIV_FAIL) {
+				SDL_AtomicSet(&state->running, NQIV_FAIL);
+				break;
+			} else if(op_result == NQIV_PASS) {
+				break;
+			}
+		}
 		if(!locked) {
 			/* If we see that the dormant thread count is equal to the total number of threads,
 			 * there's a good chance all the threads are in the waiting state or immediately before
@@ -1749,16 +1758,11 @@ static bool check_cmds(nqiv_state* state)
 					nqiv_priority_queue_unlock(&(state->thread_queue));
 					break;
 				}
+			} else {
+				break;
 			}
 		}
-		const nqiv_op_result op_result = nqiv_cmd_add_stream_cmd(&state->cmds, stdin);
-		if(op_result == NQIV_FAIL) {
-			SDL_AtomicSet(&state->running, NQIV_FAIL);
-			break;
-		}
-		if(op_result == NQIV_PASS) {
-			break;
-		}
+		assert(locked);
 		if(!nqiv_cmd_parse(&state->cmds)) {
 			SDL_AtomicSet(&state->running, NQIV_FAIL);
 			break;

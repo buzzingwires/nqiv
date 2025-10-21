@@ -1769,6 +1769,7 @@ static void nqiv_cmd_acknowledge(const nqiv_cmd_manager* manager,
 
 bool nqiv_cmd_parse(nqiv_cmd_manager* manager)
 {
+	assert(manager->print_settings.finished_cmd);
 	assert(!manager->print_settings.in_escape);
 	memset(&manager->print_settings, 0, sizeof(nqiv_cmd_manager_print_settings));
 	char       current_cmd[NQIV_CMD_DUMPCFG_BUFFER_LENGTH + 1] = {0};
@@ -1788,12 +1789,14 @@ bool nqiv_cmd_parse(nqiv_cmd_manager* manager)
 	int idx = nqiv_cmd_scan_not_whitespace_and_eol(data, 0, eolpos);
 	if(idx == -1) {
 		nqiv_array_clear(manager->buffer);
+		manager->print_settings.finished_cmd = false;
 		return true; /* The entire string must be whitespace- nothing to do. */
 	}
 	if(data[idx] == '#') {
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_DEBUG, "Cmd skipping input %s\n",
 		               data + idx);
 		nqiv_array_remove_count(manager->buffer, 0, eolpos + 1);
+		manager->print_settings.finished_cmd = false;
 		return true; /* This line is a comment- ignore it. */
 	}
 	const Uint64 cmd_start_ticks = SDL_GetTicks64();
@@ -1882,6 +1885,7 @@ bool nqiv_cmd_parse(nqiv_cmd_manager* manager)
 	nqiv_array_remove_count(manager->buffer, 0, eolpos + 1);
 	assert(nqiv_array_get_units_count(manager->buffer) == 0);
 	assert(current_cmd_success);
+	manager->print_settings.finished_cmd = false;
 	return status != NQIV_FAIL;
 }
 
@@ -1917,6 +1921,7 @@ static bool nqiv_cmd_add_byte(nqiv_cmd_manager* manager, const char byte)
 
 static bool nqiv_cmd_finish_cmd(nqiv_cmd_manager* manager)
 {
+	assert(!manager->print_settings.finished_cmd);
 	if(manager->print_settings.in_escape) {
 		nqiv_log_write(&manager->state->logger, NQIV_LOG_ERROR,
 		               "Finished adding command but with unfinished escape for nqiv command parser "
@@ -1933,6 +1938,7 @@ static bool nqiv_cmd_finish_cmd(nqiv_cmd_manager* manager)
 		nqiv_cmd_force_quit_main(manager);
 		return false;
 	}
+	manager->print_settings.finished_cmd = true;
 	return true;
 }
 
