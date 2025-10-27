@@ -1052,6 +1052,8 @@ static bool render_from_form(nqiv_state*     state,
 
 /*2305843009213693951*/
 #define INT_MAX_STRLEN 19
+/* This is more than big enough for any percent float we'll reasonably have. */
+#define PERCENT_MAX_STRLEN INT_MAX_STRLEN
 static bool set_title(nqiv_state* state, nqiv_image* image)
 {
 	char idx_string[INT_MAX_STRLEN + 1] = {0};
@@ -1067,8 +1069,9 @@ static bool set_title(nqiv_state* state, nqiv_image* image)
 		snprintf(height_string, INT_MAX_STRLEN, "%d", image->image.height);
 	}
 	if(!state->in_montage) {
-		snprintf(zoom_string, INT_MAX_STRLEN, "%d",
-		         nqiv_image_manager_get_zoom_percent(&state->images));
+		const int written = snprintf(zoom_string, PERCENT_MAX_STRLEN, "%.2f",
+		                             nqiv_image_manager_get_zoom_percent(&state->images));
+		assert(written <= PERCENT_MAX_STRLEN);
 	}
 	const char* path_components[] = {
 		"nqiv - ",

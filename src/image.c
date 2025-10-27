@@ -1140,9 +1140,12 @@ void nqiv_image_manager_retrieve_zoomrect(nqiv_image_manager* manager,
 	               srcrect->x, srcrect->y, dstrect->w, dstrect->h, dstrect->x, dstrect->y);
 }
 
-int nqiv_image_manager_get_zoom_percent(nqiv_image_manager* manager)
+double nqiv_image_manager_get_zoom_percent(nqiv_image_manager* manager)
 {
-	return (int)((manager->zoom.actual_size_level / manager->zoom.image_to_viewport_ratio) * 100.0);
+	const double raw_return =
+		(manager->zoom.actual_size_level / manager->zoom.image_to_viewport_ratio) * 100.0;
+	assert(raw_return >= 0.00);
+	return raw_return;
 }
 
 bool nqiv_image_manager_reattempt_thumbnails(nqiv_image_manager* manager, const int old_size)
