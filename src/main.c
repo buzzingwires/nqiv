@@ -1072,6 +1072,7 @@ static bool set_title(nqiv_state* state, nqiv_image* image)
 		const int written = snprintf(zoom_string, PERCENT_MAX_STRLEN, "%.2f",
 		                             nqiv_image_manager_get_zoom_percent(&state->images));
 		assert(written <= PERCENT_MAX_STRLEN);
+		(void) written;
 	}
 	const char* path_components[] = {
 		"nqiv - ",
