@@ -10,7 +10,9 @@
 	#error "Currently, only Unix, Linux, and windows through MinGW are supported."
 #else
 	/* Standard library headers will have different functionality with this set. */
+	// NOLINTBEGIN(bugprone-reserved-identifier,cert-dcl37-c)
 	#define _GNU_SOURCE
+	// NOLINTEND(bugprone-reserved-identifier,cert-dcl37-c)
 #endif
 
 #if !defined(VERSION)
