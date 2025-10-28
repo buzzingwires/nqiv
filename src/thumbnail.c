@@ -60,7 +60,7 @@ static bool nqiv_thumbnail_render_uri(const nqiv_image* image, char* uri)
 	}
 
 	memset(uri, 0, NQIV_URI_LEN);
-	strncpy(uri, guri, strlen(guri));
+	strncpy(uri, guri, NQIV_URI_LEN);
 	g_free(guri);
 
 	return true;
@@ -68,7 +68,7 @@ static bool nqiv_thumbnail_render_uri(const nqiv_image* image, char* uri)
 
 static bool nqiv_thumbnail_digest_to_builder(nqiv_array* builder, const nqiv_image* image)
 {
-	char actualpath[NQIV_URI_LEN + 1];
+	char actualpath[NQIV_URI_LEN + 1] = {0};
 	if(!nqiv_thumbnail_render_uri(image, actualpath)) {
 		return false;
 	}

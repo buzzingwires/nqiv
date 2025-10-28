@@ -188,7 +188,7 @@ static void write_prefix_increment_slice(char* slice, int* slice_idx, const char
 static void write_prefix(nqiv_log_ctx* ctx, const nqiv_log_level level, FILE* stream)
 {
 	assert(stream != NULL);
-	char slice[NQIV_LOG_PREFIX_FORMAT_LEN];
+	char slice[NQIV_LOG_PREFIX_FORMAT_LEN] = {0};
 	int  slice_idx;
 	write_prefix_clean_slice(slice, &slice_idx);
 	int formatter_start = -1;
