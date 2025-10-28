@@ -94,11 +94,11 @@ Run `scripts/update_default_cfg.sh` and check whether `default.cfg` has been uni
 
 `scripts/show_logo.sh` can provide a basic functionality test.
 
-Linting and static analysis can be done with `scripts/lint_cppcheck.sh` (slow) and `scripts/lint_clang-tidy.sh` (faster, more false-positives).
+Linting and static analysis can be done with `scripts/lint_cppcheck.sh` (slower) and `scripts/lint_clang-tidy.sh` (more false positives). If you feel the linter recommendations are inappropriate, you may disable them with `// cppcheck-suppress <id>` for [Cppcheck](https://cppcheck.sourceforge.io/#documentation) and `// NOLINT(<warning>)` for [clang-tidy](https://clang.llvm.org/extra/clang-tidy/#suppressing-undesired-diagnostics).
 
-Valgrind is recommended for debugging memory errors.
+[Valgrind](https://valgrind.org/) is recommended for debugging memory errors.
 
-Before you are finished, please use `scripts/format_code.sh` to format your code. You may use `/* clang-format off */` and `/* clang-format on */` if there is a section you feel just doesn't work well with the auto-formatting.
+Before you are finished, please use `scripts/format_code.sh` to format your code. You may use `/* clang-format off */` and `/* clang-format on */` if there is a section you feel just doesn't work well with the auto-formatting. See full [documentation](https://clang.llvm.org/docs/ClangFormatStyleOptions.html#disabling-formatting-on-a-piece-of-code)
 
 Feel free to add yourself to `AUTHORS.md`
 
@@ -109,9 +109,9 @@ These scripts are specifically written against the dash shell. They try to be po
 
 * `format_code.sh`: Use clang-format to format code according to the standard for nqiv.
 
-* `lint_cppcheck.sh`: Lint nqiv code using cppcheck. Quite slow but recommended. This linter is less zealous than clang-tidy, so warnings should be avoided.
+* `lint_cppcheck.sh`: Lint nqiv code using cppcheck. Quite slow but less prone to false-positives than clang-tidy.
 
-* `lint_clang-tidy.sh`: Lint nqiv code using clang-tidy. Consider this more of a 'barometer' for potential issues with your code, rather than something absolute.
+* `lint_clang-tidy.sh`: Lint nqiv code using clang-tidy.
 
 * `make_appimage.sh`: Grab linuxdeploy and package nqiv as an AppImage. Make sure nqiv is built with the `--prefix=/usr` configured.
 
