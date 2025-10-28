@@ -104,7 +104,6 @@ static bool nqiv_array_grow(nqiv_array* array, const int new_count, const bool f
 		array->max_data_length == 0 || array->max_data_length >= array->data_length
 			? array->max_data_length
 			: array->data_length;
-	assert(sizeof(void*) == sizeof(char*));
 	memset((char*)array->data + array->position, 0, length - array->position);
 	return true;
 }

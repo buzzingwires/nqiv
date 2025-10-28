@@ -36,6 +36,10 @@ static bool nqiv_montage_compare_range(const nqiv_montage_state* first,
 
 void nqiv_montage_set_selection(nqiv_montage_state* state, const int idx)
 {
+	/* Make sure we actually set the dimensions. */
+	assert(state->dimensions.count >= 1);
+	assert(state->dimensions.count_per_row >= 1);
+
 	/* Clamp the new index to a sane value. */
 	const int images_len = nqiv_array_get_units_count(state->images->images);
 	const int new_idx = NQIV_CLAMP(idx, 0, NQIV_MAX(images_len - 1, 0));

@@ -7,12 +7,9 @@
 #include <errno.h>
 #include <assert.h>
 
-// NOLINTBEGIN
 #include <glib.h>
-// NOLINTEND
 
 #if defined(__MINGW32__)
-	#include <errno.h>
 	#include <direct.h>
 	#include <windows.h>
 char* nqiv_realpath(const char* path, char* resolved_path)
@@ -99,10 +96,8 @@ int32_t nqiv_stdin_agetc(void)
 	}
 }
 #else
-	#include <stdio.h>
 	#include <stdint.h>
 	#include <limits.h>
-	#include <errno.h>
 	#include <sys/types.h>
 	#include <sys/stat.h>
 	#include <unistd.h>
@@ -153,15 +148,15 @@ int32_t nqiv_stdin_agetc(void)
 #endif
 
 #if defined(__unix__) || defined(__linux__) || defined(__gnu_linux__) || defined(__MINGW32__)
-	#include <stdio.h>
+	// NOLINTBEGIN(readability-duplicate-include)
 	#include <stdbool.h>
 	#include <time.h>
-	#include <assert.h>
 	#include <limits.h>
 	#include <sys/types.h>
 	#include <sys/stat.h>
 	#include "platform.h"
 	#include "array.h"
+// NOLINTEND(readability-duplicate-include)
 bool nqiv_stat(const char* path, nqiv_stat_data* data)
 {
 	assert(data != NULL);
@@ -251,7 +246,6 @@ int nqiv_strtoi(const char* str, char** endptr, int base)
 
 int nqiv_ptrdiff(const void* a, const void* b)
 {
-	assert(sizeof(void*) == sizeof(char*));
 	const ptrdiff_t diff = (char*)a - (char*)b;
 	assert(diff >= 0);
 	assert(diff <= INT_MAX);

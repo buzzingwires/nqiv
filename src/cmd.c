@@ -2206,6 +2206,7 @@ static void nqiv_cmd_manager_build_cmdtree_set_current(nqiv_cmd_node**   current
 
 static void nqiv_cmd_manager_build_cmdtree_deprecate(bool* deprecated)
 {
+	assert(deprecated != NULL);
 	assert(*deprecated == false);
 	*deprecated = true;
 }
@@ -2213,6 +2214,8 @@ static void nqiv_cmd_manager_build_cmdtree_deprecate(bool* deprecated)
 static void nqiv_cmd_manager_build_cmdtree_apply_deprecate(nqiv_cmd_node* tmp_node,
                                                            bool*          deprecated)
 {
+	assert(tmp_node != NULL);
+	assert(deprecated != NULL);
 	tmp_node->deprecated = *deprecated;
 	*deprecated = false;
 }
@@ -2228,9 +2231,11 @@ static void nqiv_cmd_manager_build_cmdtree_b(nqiv_cmd_node** current_node,
 	nqiv_cmd_manager_build_cmdtree_set_current(current_node, stack);
 	assert(*tmp_node == NULL);
 	*tmp_node = nqiv_cmd_add_child_branch_node(status, *current_node, name, description);
-	nqiv_cmd_manager_build_cmdtree_apply_deprecate(*tmp_node, deprecated);
-	nqiv_array_push(stack, tmp_node);
-	*tmp_node = NULL;
+	if(*tmp_node != NULL) {
+		nqiv_cmd_manager_build_cmdtree_apply_deprecate(*tmp_node, deprecated);
+		nqiv_array_push(stack, tmp_node);
+		*tmp_node = NULL;
+	}
 }
 
 static void nqiv_cmd_manager_build_cmdtree_l(nqiv_cmd_node**   current_node,
@@ -2251,8 +2256,10 @@ static void nqiv_cmd_manager_build_cmdtree_l(nqiv_cmd_node**   current_node,
 	assert(*tmp_node == NULL);
 	*tmp_node = nqiv_cmd_add_child_leaf_node(status, *current_node, name, description, data,
 	                                         store_value, print_value, args);
-	nqiv_cmd_manager_build_cmdtree_apply_deprecate(*tmp_node, deprecated);
-	*tmp_node = NULL;
+	if(*tmp_node != NULL) {
+		nqiv_cmd_manager_build_cmdtree_apply_deprecate(*tmp_node, deprecated);
+		*tmp_node = NULL;
+	}
 }
 
 static void nqiv_cmd_manager_build_cmdtree_pop(nqiv_cmd_node** current_node, nqiv_array* stack)

@@ -60,7 +60,7 @@ static bool nqiv_thumbnail_render_uri(const nqiv_image* image, char* uri)
 	}
 
 	memset(uri, 0, NQIV_URI_LEN);
-	memcpy(uri, guri, strlen(guri));
+	strncpy(uri, guri, strlen(guri));
 	g_free(guri);
 
 	return true;

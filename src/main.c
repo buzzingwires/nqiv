@@ -187,7 +187,8 @@ static bool nqiv_setup_sdl(nqiv_state* state)
 
 static void nqiv_update_montage_dimensions(nqiv_state* state)
 {
-	int width, height;
+	int width;
+	int height;
 	SDL_GetWindowSizeInPixels(state->window, &width, &height);
 	nqiv_montage_calculate_dimensions(&state->montage, width, height);
 }
@@ -447,7 +448,6 @@ static nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 		case 'c':
 		case 'B':
 		case 'C':
-			assert(true);
 			break;
 		default:
 			assert(false);
@@ -501,7 +501,6 @@ static nqiv_op_result nqiv_parse_args(char* argv[], nqiv_state* state)
 			fprintf(stderr, "%s: %s\n", argv[0], options.errmsg);
 			return NQIV_FAIL;
 		case 'N':
-			assert(true);
 			break;
 		default:
 			assert(false);
@@ -577,13 +576,13 @@ nqiv_send_thread_event(nqiv_state* state, const int level, nqiv_event* event, co
 }
 
 static bool render_texture(bool*           cleared,
-                           const SDL_Rect* cleardst,
+                           const SDL_Rect* clearrect,
                            nqiv_state*     state,
                            SDL_Texture*    texture,
-                           SDL_Rect*       srcrect,
-                           const SDL_Rect* dstrect)
+                           SDL_Rect*       fromrect,
+                           const SDL_Rect* torect)
 {
-	if(dstrect == NULL) {
+	if(torect == NULL) {
 		return true;
 	}
 	if(!*cleared) {
@@ -598,8 +597,8 @@ static bool render_texture(bool*           cleared,
 		*cleared = true;
 		state->render_cleared = true;
 	}
-	if(cleardst != NULL
-	   && SDL_RenderCopy(state->renderer, state->texture_background, NULL, cleardst) != 0) {
+	if(clearrect != NULL
+	   && SDL_RenderCopy(state->renderer, state->texture_background, NULL, clearrect) != 0) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR,
 		               "Failed to clear rendering space using texture background.\n");
 		return false;
@@ -608,7 +607,7 @@ static bool render_texture(bool*           cleared,
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to set texture scale mode.\n");
 		return false;
 	}
-	if(SDL_RenderCopy(state->renderer, texture, srcrect, dstrect) != 0) {
+	if(SDL_RenderCopy(state->renderer, texture, fromrect, torect) != 0) {
 		nqiv_log_write(&state->logger, NQIV_LOG_ERROR, "Failed to copy texture.\n");
 		return false;
 	}
@@ -1072,7 +1071,7 @@ static bool set_title(nqiv_state* state, nqiv_image* image)
 		const int written = snprintf(zoom_string, PERCENT_MAX_STRLEN, "%.2f",
 		                             nqiv_image_manager_get_zoom_percent(&state->images));
 		assert(written <= PERCENT_MAX_STRLEN);
-		(void) written;
+		(void)written;
 	}
 	const char* path_components[] = {
 		"nqiv - ",
@@ -1320,7 +1319,8 @@ static void nqiv_mark_op_toggle(nqiv_state* state, nqiv_image* image)
 
 static int nqiv_get_index_at_mouse(nqiv_state* state)
 {
-	int x, y;
+	int x;
+	int y;
 	SDL_GetMouseState(&x, &y);
 	return nqiv_montage_find_index_at_point(&state->montage, x, y);
 }
@@ -1856,7 +1856,7 @@ static nqiv_op_result nqiv_master_thread(nqiv_state* state)
 			}
 			break;
 		default:
-			assert(true);
+			break;
 		}
 	}
 	if(state->cmd_acknowledge && state->cmd_read_stdin) {

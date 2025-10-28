@@ -7,9 +7,7 @@
 
 #include <SDL2/SDL.h>
 
-// NOLINTBEGIN
 #include <glib.h>
-// NOLINTEND
 
 #include "array.h"
 #include "state.h"
